@@ -12,9 +12,9 @@ use blinc_layout::stateful::stateful_with_key;
 
 static NEXT: AtomicU64 = AtomicU64::new(1);
 
-/// The redraw handle of one widget instance. Cheap to copy.
+/// The redraw handle of one widget instance (also for workbenches that join several widgets). Cheap to copy.
 #[derive(Clone, Copy, Debug)]
-pub(crate) struct Live {
+pub struct Live {
     id: u64,
 }
 
@@ -43,5 +43,11 @@ impl Live {
             .deps([self.counter().signal_id()])
             .on_state(move |_| view());
         blinc_layout::div::div().w_full().child(live)
+    }
+}
+
+impl Default for Live {
+    fn default() -> Self {
+        Self::new()
     }
 }

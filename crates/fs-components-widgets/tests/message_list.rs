@@ -49,7 +49,7 @@ fn the_kind_of_the_sender_changes_the_picture_and_cannot_be_left_out() {
     }
     // the mark is in the header of every one of them, a person too: count ink right of the name
     for (i, s) in shots.iter().enumerate() {
-        let bg = background(s);
+        let bg = s.get_pixel(500, 100).0; // the row's own background (not the border at the edge)
         assert!(
             ink(s, (90, 8, 120, 26), bg) > 40,
             "no mark drawn for kind {i}"

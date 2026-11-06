@@ -92,6 +92,19 @@ impl AgentTree {
         new
     }
 
+    /// Replace all agents by the host's list as it is now; what is closed stays closed.
+    pub fn set_nodes(&self, nodes: Vec<AgentNode>) {
+        {
+            let mut inner = self.lock();
+            inner.rows = None;
+            inner.forest = Forest::new();
+            for n in nodes {
+                inner.forest.apply(n);
+            }
+        }
+        self.live.refresh();
+    }
+
     /// How many agents.
     pub fn len(&self) -> usize {
         self.lock().forest.len()

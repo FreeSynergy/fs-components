@@ -52,6 +52,14 @@ impl ToolCalls {
         Applied::Updated
     }
 
+    /// Replace everything by the host's list as it is now (the host's list is the truth).
+    pub fn replace(&mut self, calls: Vec<ToolCall>) {
+        *self = Self::new();
+        for call in calls {
+            self.apply(call);
+        }
+    }
+
     /// The call with this id.
     pub fn get(&self, id: &str) -> Option<&ToolCall> {
         self.index.get(id).map(|&i| &self.calls[i])

@@ -17,7 +17,7 @@ pub mod avatar_group;
 pub mod keys;
 pub mod lightbox;
 pub mod list_view;
-mod live;
+pub mod live;
 pub mod message_composer;
 pub mod message_list;
 pub mod participant;

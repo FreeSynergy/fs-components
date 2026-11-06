@@ -104,6 +104,19 @@ impl ToolCallView {
         applied
     }
 
+    /// Replace all calls by the host's list as it is now (open details of calls that stay are kept).
+    pub fn replace(&self, calls: Vec<ToolCall>) {
+        {
+            let mut inner = self.lock();
+            inner.calls.replace(calls);
+            let Inner {
+                calls, expanded, ..
+            } = &mut *inner;
+            expanded.retain(|id| calls.get(id).is_some());
+        }
+        self.live.refresh();
+    }
+
     /// A copy of the calls in first-seen order.
     pub fn calls(&self) -> Vec<ToolCall> {
         self.lock().calls.all().to_vec()
