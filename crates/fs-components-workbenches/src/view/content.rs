@@ -1,6 +1,6 @@
-//! The content area: the bar (back, path), a notice, and the document.
+//! The content area: the bar (back, path, actions), a notice, and the document or its editor.
 //!
-//! Pattern: Strategy by state ([`Shown`]) — page, failure or nothing.
+//! Pattern: Strategy by state ([`Shown`], editing or not) — page, editor, failure or nothing.
 
 use blinc_cn::cn;
 use blinc_layout::div::{Div, div};
@@ -9,20 +9,21 @@ use blinc_layout::widgets::scroll::scroll;
 use fs_components_widgets::{LinkHandler, TextView};
 
 use super::actions::Actions;
+use super::editor::editor;
 use crate::reader::{Reader, Shown};
 
 /// The area right of the sidebar.
 pub(crate) fn content(reader: &Reader, actions: &Actions) -> Div {
-    let back = actions.back.clone();
-    let button = cn::button("Back")
-        .disabled(!reader.can_go_back())
-        .on_click(move |_| back());
-    let path = reader.current_path().unwrap_or("");
-    let mut bar = div().class("fs-rd-bar").child(button);
-    bar = bar.child(text(path).class("fs-rd-path"));
-    let mut column = div().flex_col().w_full().flex_1().child(bar);
+    let mut column = div()
+        .flex_col()
+        .w_full()
+        .flex_1()
+        .child(bar(reader, actions));
     if let Some(notice) = reader.notice() {
         column = column.child(div().class("fs-rd-notice").child(text(notice)));
+    }
+    if let Some(editing) = reader.editing() {
+        return column.child(editor(editing, actions));
     }
     let page = match reader.shown() {
         Shown::Nothing => div()
@@ -50,4 +51,28 @@ pub(crate) fn content(reader: &Reader, actions: &Actions) -> Div {
             .w_full()
             .child(scroll().w_full().h_full().content(page)),
     )
+}
+
+/// Back, the path, and the buttons Edit and Export where the source offers them.
+fn bar(reader: &Reader, actions: &Actions) -> Div {
+    let back = actions.back.clone();
+    let mut bar = div().class("fs-rd-bar").child(
+        cn::button("Back")
+            .disabled(!reader.can_go_back())
+            .on_click(move |_| back()),
+    );
+    bar = bar.child(
+        div()
+            .flex_grow()
+            .child(text(reader.current_path().unwrap_or("")).class("fs-rd-path")),
+    );
+    if reader.can_edit() && reader.editing().is_none() && reader.current_path().is_some() {
+        let edit = actions.edit.clone();
+        bar = bar.child(cn::button("Edit").on_click(move |_| edit()));
+    }
+    if reader.can_export() && reader.editing().is_none() && reader.current_path().is_some() {
+        let export = actions.export.clone();
+        bar = bar.child(cn::button("Export").on_click(move |_| export()));
+    }
+    bar
 }

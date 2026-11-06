@@ -30,6 +30,14 @@ pub enum Step {
     Back,
     /// Search for this text.
     Search(String),
+    /// Start editing the page shown.
+    Edit,
+    /// Replace the text being edited.
+    Type(String),
+    /// Save the edit.
+    Save,
+    /// Export the page shown.
+    Export,
 }
 
 /// Apply `steps` to a reader over `source` and write a PNG of `width` x `height` to `path`.
@@ -52,9 +60,14 @@ pub fn snapshot(
             Step::Follow(href) => if let Outcome::External(_) = reader.follow(href) {},
             Step::Back => reader.back(),
             Step::Search(term) => reader.search(term),
+            Step::Edit => reader.begin_edit(),
+            Step::Type(text) => reader.set_draft(text),
+            Step::Save => reader.save(),
+            Step::Export => reader.export(),
         }
     }
     init_runtime();
+    super::setup::register_fonts();
     let field = SearchField::new("Search pages");
     let tree = tree_nodes(reader.entries());
     let actions = Actions::inert();

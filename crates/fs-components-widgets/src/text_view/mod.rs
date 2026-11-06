@@ -9,6 +9,7 @@
 
 mod blocks;
 mod code;
+mod flow;
 mod inline;
 mod list;
 mod look;

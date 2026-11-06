@@ -31,6 +31,20 @@ pub(super) fn table(
                 .clamp(MIN_SHARE, MAX_SHARE)
         })
         .collect();
+    let narrowest: Vec<f32> = (0..columns)
+        .map(|c| {
+            let word = rows
+                .iter()
+                .filter_map(|r| r.get(c))
+                .flat_map(|cell| cell.text.split_whitespace())
+                .map(|w| w.chars().count())
+                .max()
+                .unwrap_or(0);
+            #[allow(clippy::cast_precision_loss)]
+            let chars = word as f32;
+            chars * look.small * 0.7 + 2.0 * look.small
+        })
+        .collect();
     let mut out = div().class("fs-tv-block").class("fs-tv-table").flex_col();
     for (r, row) in rows.iter().enumerate() {
         let mut line = div().class("fs-tv-row");
@@ -44,7 +58,7 @@ pub(super) fn table(
                 size: look.small,
                 bold: r == 0,
             };
-            let mut holder = div().class("fs-tv-cell").flex_grow().w(0.0);
+            let mut holder = div().class("fs-tv-cell").flex_grow().w(narrowest[c]);
             holder = holder.child(inline(cell, face, look, on_link));
             line = line.child(sized(holder, portion, align.get(c).copied()));
         }

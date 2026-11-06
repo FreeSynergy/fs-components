@@ -15,7 +15,7 @@ use crate::text::{Block, Inline};
 
 /// A column holding the elements of `blocks`.
 pub(super) fn blocks(blocks: &[Block], look: &Look, on_link: Option<&LinkHandler>) -> Div {
-    let mut column = div().flex_col().w_full();
+    let mut column = div().flex_col();
     for block in blocks {
         column = column.child(one(block, look, on_link));
     }

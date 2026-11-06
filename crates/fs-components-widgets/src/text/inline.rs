@@ -69,26 +69,4 @@ impl Inline {
     pub fn is_empty(&self) -> bool {
         self.text.is_empty()
     }
-
-    /// Byte offset of character `n` (clamped to the end).
-    pub(crate) fn byte_of(&self, n: usize) -> usize {
-        self.text
-            .char_indices()
-            .nth(n)
-            .map_or(self.text.len(), |(i, _)| i)
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::Inline;
-
-    #[test]
-    fn byte_offsets_count_characters() {
-        let i = Inline::plain("aé😀b");
-        assert_eq!(i.byte_of(0), 0);
-        assert_eq!(i.byte_of(2), 3);
-        assert_eq!(i.byte_of(3), 7);
-        assert_eq!(i.byte_of(99), i.text.len());
-    }
 }

@@ -14,6 +14,16 @@ pub(crate) struct Actions {
     pub follow: Arc<dyn Fn(&str) + Send + Sync>,
     /// Go back one page.
     pub back: Arc<dyn Fn() + Send + Sync>,
+    /// Start editing.
+    pub edit: Arc<dyn Fn() + Send + Sync>,
+    /// The text of the draft changed.
+    pub draft: Arc<dyn Fn(&str) + Send + Sync>,
+    /// Save the draft.
+    pub save: Arc<dyn Fn() + Send + Sync>,
+    /// Drop the draft.
+    pub cancel: Arc<dyn Fn() + Send + Sync>,
+    /// Export the page.
+    pub export: Arc<dyn Fn() + Send + Sync>,
 }
 
 impl Actions {
@@ -23,6 +33,11 @@ impl Actions {
             open: Arc::new(|_| {}),
             follow: Arc::new(|_| {}),
             back: Arc::new(|| {}),
+            edit: Arc::new(|| {}),
+            draft: Arc::new(|_| {}),
+            save: Arc::new(|| {}),
+            cancel: Arc::new(|| {}),
+            export: Arc::new(|| {}),
         }
     }
 }

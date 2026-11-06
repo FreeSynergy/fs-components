@@ -69,4 +69,34 @@ pub trait DataSource: Send + Sync {
     fn start(&self) -> Option<String> {
         None
     }
+
+    /// Can documents be changed? Without it the reader shows no Edit button.
+    fn can_edit(&self) -> bool {
+        false
+    }
+    /// The text of the document at `path` as the person edits it.
+    ///
+    /// # Errors
+    /// [`ReadError`]; a source that cannot edit says so.
+    fn source_text(&self, _path: &str) -> Result<String, ReadError> {
+        Err(ReadError("this source cannot be edited".into()))
+    }
+    /// Store `text` as the new content of the document at `path`.
+    ///
+    /// # Errors
+    /// [`ReadError`] with the reason; the reader keeps the person's text.
+    fn save(&self, _path: &str, _text: &str) -> Result<(), ReadError> {
+        Err(ReadError("this source cannot be edited".into()))
+    }
+    /// Can documents be exported (written out as a file)? Without it there is no Export button.
+    fn can_export(&self) -> bool {
+        false
+    }
+    /// Write the document at `path` out; returns a message saying where it went.
+    ///
+    /// # Errors
+    /// [`ReadError`] with the reason.
+    fn export(&self, _path: &str) -> Result<String, ReadError> {
+        Err(ReadError("this source cannot export".into()))
+    }
 }

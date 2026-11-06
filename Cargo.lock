@@ -385,6 +385,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "blinc_noto_emoji"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f92783fbe9c344c45f4238a16eae32fdac3e2afa5c92888bc67cdcdebb478f07"
+dependencies = [
+ "blinc_text",
+ "tracing",
+]
+
+[[package]]
 name = "blinc_paint"
 version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -944,6 +954,7 @@ dependencies = [
  "blinc_cn",
  "blinc_core",
  "blinc_layout",
+ "blinc_noto_emoji",
  "blinc_theme",
  "fs-components-primitives",
  "fs-components-widgets",

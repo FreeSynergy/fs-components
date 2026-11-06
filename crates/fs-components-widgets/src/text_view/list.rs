@@ -34,7 +34,7 @@ pub(super) fn list(
                         .class("fs-tv-marker")
                         .child(text(marker).size(look.base)),
                 )
-                .child(blocks(&item.blocks, look, on_link).flex_1()),
+                .child(blocks(&item.blocks, look, on_link).flex_grow().w(0.0)),
         );
     }
     column

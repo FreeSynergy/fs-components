@@ -48,6 +48,7 @@ pub fn launch(
     options: &Options,
     source: Arc<dyn DataSource>,
 ) -> std::result::Result<(), ShellError> {
+    super::setup::register_fonts();
     let reader = Arc::new(Mutex::new(Reader::new(source)));
     let tree = Arc::new(tree_nodes(locked(&reader).entries()));
     let field = {
@@ -84,10 +85,14 @@ pub fn launch(
                     .deps([page_v.signal_id()])
                     .on_state(move |_| content(&locked(&reader), &actions))
             };
-            let back = Arc::clone(&actions.back);
+            let (back, save) = (Arc::clone(&actions.back), Arc::clone(&actions.save));
+            let cancel = Arc::clone(&actions.cancel);
             frame(search_box(&field), side, main, ctx.width, ctx.height).on_key_down(move |e| {
-                if e.alt && e.key_code == 0x25 {
-                    back();
+                match e.key_code {
+                    0x25 if e.alt => back(),
+                    0x53 if e.ctrl => save(),
+                    0x1B => cancel(),
+                    _ => {}
                 }
             })
         },
@@ -97,7 +102,14 @@ pub fn launch(
 
 /// The callbacks that change the shared reader and ask the areas to draw again.
 fn actions(reader: &Arc<Mutex<Reader>>) -> Actions {
-    let (open_r, follow_r, back_r) = (Arc::clone(reader), Arc::clone(reader), Arc::clone(reader));
+    let simple = |change: fn(&mut Reader)| -> Arc<dyn Fn() + Send + Sync> {
+        let reader = Arc::clone(reader);
+        Arc::new(move || {
+            change(&mut locked(&reader));
+            bump("fs-rd-page");
+        })
+    };
+    let (open_r, follow_r, draft_r) = (Arc::clone(reader), Arc::clone(reader), Arc::clone(reader));
     Actions {
         open: Arc::new(move |path| {
             locked(&open_r).open(path);
@@ -110,10 +122,13 @@ fn actions(reader: &Arc<Mutex<Reader>>) -> Actions {
             }
             bump("fs-rd-page");
         }),
-        back: Arc::new(move || {
-            locked(&back_r).back();
-            bump("fs-rd-page");
-        }),
+        back: simple(Reader::back),
+        edit: simple(Reader::begin_edit),
+        // Typing is remembered but does not redraw: the text area keeps its own cursor.
+        draft: Arc::new(move |text| locked(&draft_r).set_draft(text)),
+        save: simple(Reader::save),
+        cancel: simple(Reader::cancel_edit),
+        export: simple(Reader::export),
     }
 }
 

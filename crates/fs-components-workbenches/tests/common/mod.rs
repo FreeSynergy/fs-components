@@ -2,6 +2,8 @@
 //!
 //! Pattern: Strategy (test double) — implements `DataSource` over a list in memory.
 
+#![allow(dead_code)] // each test file uses a different subset
+
 use fs_components_workbenches::{
     Block, DataSource, Document, Entry, Hit, Inline, LinkTarget, ReadError,
 };
@@ -57,5 +59,75 @@ impl DataSource for Fake {
 
     fn start(&self) -> Option<String> {
         Some("dir/b".into())
+    }
+}
+
+/// A source that can be edited and exported; keeps its texts in memory.
+#[derive(Default)]
+pub struct Editable {
+    pub texts: std::sync::Mutex<std::collections::BTreeMap<String, String>>,
+    pub exported: std::sync::Mutex<Vec<String>>,
+}
+
+impl Editable {
+    pub fn with(pages: &[(&str, &str)]) -> Self {
+        let s = Self::default();
+        for (p, t) in pages {
+            s.texts.lock().unwrap().insert((*p).into(), (*t).into());
+        }
+        s
+    }
+}
+
+impl DataSource for Editable {
+    fn entries(&self, _prefix: &str) -> Result<Vec<Entry>, ReadError> {
+        Ok(self
+            .texts
+            .lock()
+            .unwrap()
+            .keys()
+            .map(|p| Entry {
+                path: p.clone(),
+                title: p.clone(),
+            })
+            .collect())
+    }
+    fn read(&self, path: &str) -> Result<Document, ReadError> {
+        let text = self.source_text(path)?;
+        Ok(Document {
+            title: path.into(),
+            blocks: vec![Block::Paragraph(Inline::plain(text))],
+        })
+    }
+    fn resolve(&self, _from: &str, href: &str) -> LinkTarget {
+        LinkTarget::Missing(href.into())
+    }
+    fn find(&self, _term: &str) -> Result<Vec<Hit>, ReadError> {
+        Ok(Vec::new())
+    }
+    fn can_edit(&self) -> bool {
+        true
+    }
+    fn source_text(&self, path: &str) -> Result<String, ReadError> {
+        self.texts
+            .lock()
+            .unwrap()
+            .get(path)
+            .cloned()
+            .ok_or_else(|| ReadError(format!("no page {path}")))
+    }
+    fn save(&self, path: &str, text: &str) -> Result<(), ReadError> {
+        if text.contains("FORBIDDEN") {
+            return Err(ReadError("refused".into()));
+        }
+        self.texts.lock().unwrap().insert(path.into(), text.into());
+        Ok(())
+    }
+    fn can_export(&self) -> bool {
+        true
+    }
+    fn export(&self, path: &str) -> Result<String, ReadError> {
+        self.exported.lock().unwrap().push(path.into());
+        Ok(format!("Exported {path}."))
     }
 }

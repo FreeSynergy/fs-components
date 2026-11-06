@@ -6,11 +6,13 @@
 pub const STYLES: &str = r"
 .fs-tv { display: flex; flex-direction: column; width: 100%; }
 .fs-tv-block { width: 100%; margin-bottom: var(--space-3); }
-.fs-tv-heading { margin-top: var(--space-3); }
+.fs-tv-heading { padding-top: var(--space-3); }
+.fs-tv-codespan { background: var(--surface-elevated); border-radius: var(--radius-sm); padding-left: 2px; padding-right: 2px; }
 .fs-tv-quote { border-left-width: 3px; border-left-color: var(--border); padding-left: var(--space-3); }
 .fs-tv-code { background: var(--surface-elevated); border-radius: var(--radius-default); padding: var(--space-3); display: flex; flex-direction: column; }
 .fs-tv-rule { height: 1px; background: var(--border); margin-top: var(--space-2); }
-.fs-tv-item { display: flex; flex-direction: row; gap: var(--space-2); width: 100%; }
+.fs-tv-item { display: flex; flex-direction: row; align-items: flex-start; gap: var(--space-2); width: 100%; }
+.fs-tv-item .fs-tv-block { margin-bottom: var(--space-1); }
 .fs-tv-marker { min-width: 22px; color: var(--text-secondary); }
 .fs-tv-table { border-width: 1px; border-color: var(--border); border-radius: var(--radius-default); }
 .fs-tv-row { display: flex; flex-direction: row; width: 100%; border-bottom-width: 1px; border-bottom-color: var(--border); }

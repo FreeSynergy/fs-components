@@ -7,6 +7,7 @@ use std::sync::Arc;
 
 use fs_components_widgets::Document;
 
+use super::edit::Editing;
 use crate::source::{DataSource, Entry, Hit, LinkTarget};
 
 /// What the content area shows.
@@ -44,14 +45,15 @@ pub enum Outcome {
 
 /// The reader: a data source, what is shown, where we came from, and the search.
 pub struct Reader {
-    source: Arc<dyn DataSource>,
+    pub(super) source: Arc<dyn DataSource>,
     entries: Vec<Entry>,
-    shown: Shown,
-    history: Vec<String>,
+    pub(super) shown: Shown,
+    pub(super) history: Vec<String>,
     term: String,
     hits: Vec<Hit>,
-    problem: Option<String>,
-    notice: Option<String>,
+    pub(super) problem: Option<String>,
+    pub(super) editing: Option<Editing>,
+    pub(super) notice: Option<String>,
 }
 
 impl Reader {
@@ -65,6 +67,7 @@ impl Reader {
             source,
             entries,
             problem,
+            editing: None,
             shown: Shown::Nothing,
             history: Vec::new(),
             term: String::new(),
@@ -126,6 +129,9 @@ impl Reader {
 
     /// Open the document at `path`; the one shown now goes onto the way back.
     pub fn open(&mut self, path: &str) {
+        if self.blocked_by_edit() {
+            return;
+        }
         if self.current_path() == Some(path) {
             return;
         }
@@ -153,6 +159,9 @@ impl Reader {
 
     /// Go back one page.
     pub fn back(&mut self) {
+        if self.blocked_by_edit() {
+            return;
+        }
         if let Some(path) = self.history.pop() {
             self.show(&path);
         }
@@ -174,7 +183,8 @@ impl Reader {
         }
     }
 
-    fn show(&mut self, path: &str) {
+    pub(super) fn show(&mut self, path: &str) {
+        self.editing = None;
         self.notice = None;
         self.shown = match self.source.read(path) {
             Ok(document) => Shown::Page {

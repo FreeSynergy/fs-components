@@ -5,6 +5,7 @@
 
 mod actions;
 mod content;
+mod editor;
 mod frame;
 mod results;
 mod sidebar;
