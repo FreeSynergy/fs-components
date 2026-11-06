@@ -198,3 +198,31 @@ fn a_search_narrows_the_columns_without_a_rebuild() {
     assert!(h.has("board-todo-pear"));
     assert!(!h.has("board-todo-apple"));
 }
+
+#[test]
+fn a_held_card_is_not_snatched_back_by_a_change_elsewhere() {
+    let (shelf, h) = in_status(Shelf::with(&["a", "b"]), 1200.0);
+    let board = h.widget.board();
+    board.grab("a");
+    board.hover(&Place::new("done", 0));
+    h.widget.with_state(|s| {
+        s.select("b");
+    });
+    assert_eq!(board.lanes()[2].items[0].key, "a", "still where it is held");
+    assert!(matches!(board.drop_grabbed(), BoardOutcome::Moved(_)));
+    assert_eq!(shelf.column_of("a").unwrap(), "done");
+    assert_eq!(board.lanes()[2].items[0].key, "a");
+    assert_eq!(board.lanes()[0].items[0].key, "b");
+}
+
+#[test]
+fn typing_into_the_search_field_narrows_the_columns_and_keeps_the_keyboard() {
+    let (_, mut h) = in_status(Shelf::with(&["apple", "pear"]), 1200.0);
+    h.press("search");
+    assert!(h.type_text("pe"), "the field has the keyboard");
+    h.frame();
+    assert!(h.has("board-todo-pear"));
+    assert!(!h.has("board-todo-apple"));
+    assert!(h.type_text("a"), "and still has it");
+    assert_eq!(h.widget.with_state(|s| s.term().to_string()), "pea");
+}

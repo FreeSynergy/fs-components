@@ -165,3 +165,20 @@ fn a_save_without_changes_writes_nothing_and_reads_again() {
     assert!(matches!(s.shown(), Shown::Task { sheet, .. } if sheet.title == "theirs"));
     assert!(s.rows().iter().any(|r| r.title == "theirs"));
 }
+
+#[test]
+fn a_list_that_cannot_be_read_again_stays_as_drawn_and_says_why_but_a_new_search_starts_empty() {
+    let (shelf, mut s) = state(Shelf::with(&["a", "b"]));
+    *shelf.broken_from.lock().unwrap() = Some(0);
+    s.begin_edit();
+    s.save();
+    assert_eq!(
+        s.rows().len(),
+        2,
+        "a failed read says nothing about the tasks"
+    );
+    assert!(s.list_problem().is_some());
+    s.search("a");
+    assert!(s.rows().is_empty(), "these are not the rows of this search");
+    assert!(s.list_problem().is_some());
+}

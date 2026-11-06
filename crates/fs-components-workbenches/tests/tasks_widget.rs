@@ -148,3 +148,17 @@ fn the_compact_variant_offers_no_change_and_no_second_view() {
     }
     assert_eq!(h.widget.context().selected.as_deref(), Some("a"));
 }
+
+#[test]
+fn typing_into_a_long_text_through_real_key_events_reaches_the_draft() {
+    let (_, w) = widget(Shelf::with(&["a"]));
+    let mut h = Harness::new(w, 1200.0, 700.0);
+    h.click("edit");
+    h.press("field-notes");
+    assert!(h.type_text("hello"), "the area has the focus after a click");
+    let value = h.widget.with_state(|s| {
+        s.editing()
+            .and_then(|e| e.draft.value("notes").map(str::to_string))
+    });
+    assert_eq!(value.as_deref(), Some("hello"));
+}

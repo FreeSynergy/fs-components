@@ -14,7 +14,7 @@ use blinc_layout::css_parser::Stylesheet;
 use blinc_layout::event_router::{EventRouter, MouseButton};
 use blinc_layout::prelude::RenderTree;
 use blinc_layout::tree::LayoutNodeId;
-use blinc_layout::widgets::text_input::focused_text_input_node_id;
+use blinc_layout::widgets::text_input::{focused_text_area_node_id, focused_text_input_node_id};
 use fs_components_workbenches::tasks::TasksWidget;
 
 static ONE_AT_A_TIME: Mutex<()> = Mutex::new(());
@@ -151,7 +151,7 @@ impl Harness {
 
     /// Type into the text field that has the focus. Returns `false` if none has.
     pub fn type_text(&mut self, text: &str) -> bool {
-        let Some(node) = focused_text_input_node_id() else {
+        let Some(node) = focused_text_input_node_id().or_else(focused_text_area_node_id) else {
             return false;
         };
         for c in text.chars() {
