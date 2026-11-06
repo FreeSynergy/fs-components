@@ -55,7 +55,7 @@ fn columns() -> Vec<Column> {
 }
 
 fn out(name: &str) -> PathBuf {
-    let dir = std::env::temp_dir().join(format!("fs-list-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("fs-list-{}-{name}", std::process::id()));
     std::fs::create_dir_all(&dir).unwrap();
     dir.join(name)
 }
@@ -76,7 +76,10 @@ fn draw(list: ListView, name: &str) -> Option<image::RgbaImage> {
                 std::fs::create_dir_all(&dir).unwrap();
                 std::fs::copy(&path, PathBuf::from(dir).join(name)).unwrap();
             }
-            Some(image::open(&path).unwrap().to_rgba8())
+            let picture = image::open(&path).unwrap().to_rgba8();
+            std::fs::remove_file(&path).unwrap();
+            let _ = std::fs::remove_dir(path.parent().unwrap());
+            Some(picture)
         }
     }
 }

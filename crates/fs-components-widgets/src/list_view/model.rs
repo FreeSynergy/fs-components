@@ -46,6 +46,8 @@ pub struct Row {
     pub key: String,
     /// The texts, in the order of the columns. Missing ones stay empty, extra ones are not shown.
     pub cells: Vec<String>,
+    /// A short marking that stands out, before the first text; its words come from the caller.
+    pub mark: Option<String>,
 }
 
 impl Row {
@@ -54,7 +56,15 @@ impl Row {
         Self {
             key: key.into(),
             cells,
+            mark: None,
         }
+    }
+
+    /// The row with this marking.
+    #[must_use]
+    pub fn with_mark(mut self, mark: impl Into<String>) -> Self {
+        self.mark = Some(mark.into());
+        self
     }
 }
 
@@ -67,6 +77,11 @@ pub trait RowSource: Send + Sync {
     /// # Errors
     /// A reason a person can read; the list shows it in place of the rows.
     fn rows(&self, first: usize, limit: usize) -> Result<Vec<Row>, String>;
+    /// Where the row with this key is, if the source can say. The keys start from the selected row
+    /// with it; without an answer they go on from the last row they reached.
+    fn position_of(&self, _key: &str) -> Option<usize> {
+        None
+    }
 }
 
 /// Rows that are all in memory.
@@ -87,6 +102,10 @@ impl RowSource for VecRows {
 
     fn rows(&self, first: usize, limit: usize) -> Result<Vec<Row>, String> {
         Ok(self.0.iter().skip(first).take(limit).cloned().collect())
+    }
+
+    fn position_of(&self, key: &str) -> Option<usize> {
+        self.0.iter().position(|row| row.key == key)
     }
 }
 
@@ -124,7 +143,8 @@ impl ListView {
     }
 
     /// The row with this key stands out. The list does not remember a choice by itself: the
-    /// caller answers `on_select` by building the list again with the new key.
+    /// caller answers `on_select` by building the list again with the new key, or refuses by not
+    /// doing so; then neither the keys nor the scroll position move on.
     pub fn selected(mut self, key: Option<&str>) -> Self {
         self.selected = key.map(str::to_owned);
         self

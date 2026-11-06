@@ -7,16 +7,16 @@
 
 use std::sync::Arc;
 
-use blinc_core::reactive::{ReactiveGraph, computed};
 use blinc_layout::div::{Div, div};
 use blinc_layout::text;
 use blinc_layout::widgets::scroll::Scroll;
 
 use super::cache::RowCache;
+use super::cell::{FIRST_CELL_MARK_ROOM, fit_cell};
 use super::keys::key_target;
-use super::model::{ListView, OnSelect, Row};
+use super::model::{ListView, OnSelect, Row, RowSource};
 use super::position::ListPosition;
-use super::window::{column_widths, visible_rows};
+use super::window::column_widths;
 use crate::Element;
 use crate::keys::{KeyEvent, bind_keys};
 
@@ -53,6 +53,10 @@ impl ListView {
         let position = self.position.clone().unwrap_or_default();
         let row_height = self.row_height;
         let total = count as f32 * row_height;
+        if let Some(row) = position.arrived(self.selected.as_deref()) {
+            position.set_cursor(Some(row));
+            bring_into_view(&position, row, row_height, view);
+        }
         let offset = settle(&position, total, view, row_height);
         let rows = rows(&self, &position, &widths, width, count, offset, view);
         let body = Scroll::with_physics(Arc::clone(&position.physics))
@@ -93,14 +97,7 @@ fn rows(
     view: f32,
 ) -> Div {
     let row_height = list.row_height;
-    let watch = position.scroll.watch_y(offset);
-    if watch.try_get().is_none_or(|y| (y - offset).abs() > 0.5) {
-        watch.set(offset);
-    }
-    let window = computed(move |graph: &ReactiveGraph| {
-        let y = graph.get(watch).unwrap_or(offset);
-        visible_rows(y, view, row_height, count).collect::<Vec<usize>>()
-    });
+    let window = position.window(offset, (view, row_height, count));
     let cache = RowCache::new(Arc::clone(&list.source));
     let shared = Shared {
         widths: Arc::clone(widths),
@@ -153,12 +150,26 @@ impl Shared {
         }
         for (column, width) in self.widths.iter().enumerate() {
             let cell = row.cells.get(column).map_or("", String::as_str);
-            element = element.child(
-                div()
-                    .class("fs-list-cell")
-                    .w(*width)
-                    .child(text(cell).no_wrap().no_cursor()),
-            );
+            let mark = row.mark.as_ref().filter(|_| column == 0);
+            let room = width
+                - if mark.is_some() {
+                    FIRST_CELL_MARK_ROOM
+                } else {
+                    0.0
+                };
+            let mut holder = div()
+                .class("fs-list-cell")
+                .flex_row()
+                .items_center()
+                .w(*width);
+            if let Some(mark) = mark {
+                holder = holder.child(
+                    div()
+                        .class("fs-list-mark")
+                        .child(text(mark).no_wrap().no_cursor()),
+                );
+            }
+            element = element.child(holder.child(text(fit_cell(cell, room)).no_wrap().no_cursor()));
         }
         let (key, on_select, position) = (
             row.key.clone(),
@@ -187,7 +198,8 @@ fn head(list: &ListView, widths: &[f32]) -> Div {
     element
 }
 
-/// Keys move the row under the keyboard, keep it in view and report it as chosen.
+/// Keys report the row they lead to. With a selection the caller decides: only a build with that
+/// row selected moves anything, so a refusal moves nothing. Without one they move on their own.
 #[allow(
     clippy::cast_possible_truncation,
     clippy::cast_sign_loss,
@@ -196,25 +208,62 @@ fn head(list: &ListView, widths: &[f32]) -> Div {
 fn with_keys(root: Div, list: &ListView, position: ListPosition, count: usize, view: f32) -> Div {
     let row_height = list.row_height;
     let page = (view / row_height) as usize;
-    let (source, on_select) = (Arc::clone(&list.source), list.on_select.clone());
+    let (source, on_select, selected) = (
+        Arc::clone(&list.source),
+        list.on_select.clone(),
+        list.selected.clone(),
+    );
     let handler = Arc::new(move |event: KeyEvent| {
-        let Some(row) = key_target(event.key, position.cursor(), count, page) else {
+        let start = start_row(source.as_ref(), selected.as_deref(), position.cursor());
+        let Some(row) = key_target(event.key, start, count, page) else {
             return false;
         };
-        position.set_cursor(Some(row));
-        let (top, bottom) = (row as f32 * row_height, (row + 1) as f32 * row_height);
-        let offset = position.offset();
-        if top < offset {
-            position.apply_offset(top);
-        } else if bottom > offset + view {
-            position.apply_offset(bottom - view);
+        let Ok(rows) = source.rows(row, 1) else {
+            return true;
+        };
+        let Some(found) = rows.first() else {
+            return true;
+        };
+        if selected.is_some() {
+            position.going_to(&found.key, row);
+        } else {
+            position.set_cursor(Some(row));
+            bring_into_view(&position, row, row_height, view);
         }
-        if let (Some(on_select), Ok(rows)) = (&on_select, source.rows(row, 1))
-            && let Some(found) = rows.first()
-        {
+        if let Some(on_select) = &on_select {
             on_select(&found.key);
         }
         true
     });
     bind_keys(root, handler)
+}
+
+/// The row the keys start from: the selected one, wherever it is by now; else the last they reached.
+fn start_row(
+    source: &dyn RowSource,
+    selected: Option<&str>,
+    cursor: Option<usize>,
+) -> Option<usize> {
+    let Some(selected) = selected else {
+        return cursor;
+    };
+    let still_there = cursor.filter(|row| {
+        source
+            .rows(*row, 1)
+            .is_ok_and(|rows| rows.first().is_some_and(|r| r.key == selected))
+    });
+    still_there
+        .or_else(|| source.position_of(selected))
+        .or(cursor)
+}
+
+#[allow(clippy::cast_precision_loss)]
+fn bring_into_view(position: &ListPosition, row: usize, row_height: f32, view: f32) {
+    let (top, bottom) = (row as f32 * row_height, (row + 1) as f32 * row_height);
+    let offset = position.offset();
+    if top < offset {
+        position.apply_offset(top);
+    } else if bottom > offset + view {
+        position.apply_offset(bottom - view);
+    }
 }

@@ -6,6 +6,7 @@
 //! about what its rows mean and has no words or colours of its own.
 
 mod cache;
+mod cell;
 mod keys;
 mod model;
 mod position;
@@ -13,6 +14,7 @@ mod styles;
 mod view;
 mod window;
 
+pub use cell::fit_cell;
 pub use keys::key_target;
 pub use model::{Column, ColumnWidth, ListView, OnSelect, Row, RowSource, VecRows};
 pub use position::ListPosition;
