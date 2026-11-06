@@ -6,6 +6,7 @@
 
 use blinc_layout::div::{Div, div};
 use blinc_layout::text;
+use fs_components_widgets::list_view::fit_cell;
 
 use super::actions::CalendarActions;
 use super::detail_bar::bar;
@@ -16,6 +17,13 @@ use crate::calendar::shown::Shown;
 use crate::calendar::state::CalendarState;
 use crate::input_slots::InputSlots;
 
+/// A title is larger than the text `fit_cell` measures, by about this.
+const TITLE_FIT: f32 = 0.7;
+/// What a mark takes of the line, about.
+const MARK_ROOM: f32 = 100.0;
+/// The most of a failure that is pinned, in characters; a failure quotes what was typed.
+const LONGEST_FAILURE: usize = 600;
+
 /// The detail area. `back` adds the way back where the calendar is out of sight.
 pub(super) fn detail(
     state: &CalendarState,
@@ -24,6 +32,7 @@ pub(super) fn detail(
     slots: &InputSlots,
     page_scroll: &PageScroll,
     back: bool,
+    width: f32,
 ) -> Div {
     let mut column = div()
         .flex_col()
@@ -35,7 +44,7 @@ pub(super) fn detail(
         column = column.child(div().class("fs-calendar-notice").child(text(notice)));
     }
     // Marks and the reason of a failed save stay in view, however far the page is scrolled.
-    if let Some(pinned) = pinned(state, name) {
+    if let Some(pinned) = pinned(state, name, width) {
         column = column.child(pinned);
     }
     let page = div()
@@ -47,7 +56,7 @@ pub(super) fn detail(
         form(edit, state.labels(), name, actions, slots, page)
     } else {
         match state.shown() {
-            Shown::Item { sheet, .. } => item(sheet, page),
+            Shown::Item { sheet, .. } => item(sheet, page, width),
             Shown::Failed { reason, .. } => page.child(
                 div()
                     .class("fs-calendar-failed")
@@ -71,7 +80,8 @@ pub(super) fn detail(
 }
 
 /// What must not scroll away: the title and marks of an item, the marks and failure of an edit.
-fn pinned(state: &CalendarState, name: &str) -> Option<Div> {
+#[allow(clippy::cast_precision_loss)]
+fn pinned(state: &CalendarState, name: &str, width: f32) -> Option<Div> {
     let area = div()
         .id(format!("{name}-pinned"))
         .class("fs-calendar-pinned")
@@ -89,21 +99,44 @@ fn pinned(state: &CalendarState, name: &str) -> Option<Div> {
             ));
         }
         if let Some(error) = &edit.error {
-            area = area.child(div().class("fs-calendar-failed").child(text(error)));
+            area = area.child(
+                div()
+                    .class("fs-calendar-failed")
+                    .child(text(cut_to(error, LONGEST_FAILURE))),
+            );
         }
         return Some(area);
     }
     let Shown::Item { sheet, .. } = state.shown() else {
         return None;
     };
+    // One line, however long the title: the page below must stay reachable.
+    let room = width * TITLE_FIT - MARK_ROOM * sheet.marks.len() as f32;
+    let shown = fit_cell(&sheet.title, room);
     let head = div()
         .class("fs-calendar-title")
         .flex_row()
-        .child(div().child(text(&sheet.title).class("fs-calendar-title-text")));
+        .child(div().child(text(shown).no_wrap().class("fs-calendar-title-text")));
     Some(area.child(with_marks(head, &sheet.marks)))
 }
 
-fn item(sheet: &ItemSheet, mut page: Div) -> Div {
+/// `text` cut to `most` characters.
+fn cut_to(text: &str, most: usize) -> String {
+    if text.chars().count() <= most {
+        return text.to_string();
+    }
+    let mut cut: String = text.chars().take(most).collect();
+    cut.push('\u{2026}');
+    cut
+}
+
+#[allow(clippy::cast_precision_loss)]
+fn item(sheet: &ItemSheet, mut page: Div, width: f32) -> Div {
+    // What the pinned line had to cut can be read here, and scrolls.
+    let room = width * TITLE_FIT - MARK_ROOM * sheet.marks.len() as f32;
+    if fit_cell(&sheet.title, room) != sheet.title {
+        page = page.child(div().class("fs-calendar-value").child(text(&sheet.title)));
+    }
     if let Some(note) = &sheet.note {
         page = page.child(div().class("fs-calendar-note").child(text(note)));
     }

@@ -87,3 +87,30 @@ fn a_long_agenda_makes_elements_only_for_what_is_in_view_and_the_wheel_brings_th
 fn position_moved(position: &CalendarPosition) -> bool {
     position.list_offset() > 100.0
 }
+
+#[test]
+fn a_rebuild_with_other_items_of_the_same_number_shows_those() {
+    let _one = serial();
+    let position = CalendarPosition::new();
+    let build = |key: &str| {
+        let item = CalendarItem::timed(
+            key,
+            "Same place",
+            Moment::at(d("2026-11-04"), 9, 0),
+            Moment::at(d("2026-11-04"), 10, 0),
+        );
+        let v = CalendarView::new(
+            ViewRange::Agenda,
+            d("2026-11-04"),
+            names(),
+            Arc::new(vec![item]),
+        )
+        .named("c")
+        .position(&position);
+        layout(v.build(900.0, 400.0), 900.0, 400.0)
+    };
+    assert!(build("old").query_by_id("c-item-old@2026-11-04").is_some());
+    let tree = build("new");
+    assert!(tree.query_by_id("c-item-new@2026-11-04").is_some());
+    assert!(tree.query_by_id("c-item-old@2026-11-04").is_none());
+}

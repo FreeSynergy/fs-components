@@ -135,7 +135,10 @@ impl CalendarState {
     /// What the workbench is showing, for the program around it (ADR 0056).
     pub fn context(&self) -> CalendarContext {
         CalendarContext {
-            item: self.selected().map(str::to_string),
+            item: match &self.editing {
+                Some(edit) => edit.key.clone(),
+                None => self.selected().map(str::to_string),
+            },
             view: self.view,
             date: self.working_day(),
         }

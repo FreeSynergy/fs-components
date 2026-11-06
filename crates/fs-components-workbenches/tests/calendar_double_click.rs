@@ -69,7 +69,7 @@ fn a_double_click_on_cancel_discards_nothing_with_or_without_a_redraw_between() 
     h.rebuild();
     assert!(h.has("keep-editing") && h.has("discard"), "only asking");
     assert!(
-        h.centre("discard").0 > point.0 + 100.0,
+        (h.centre("discard").0 - point.0).abs() > 100.0,
         "the deed is far from the pointer"
     );
     h.press_at(point);
@@ -84,4 +84,24 @@ fn a_double_click_on_cancel_discards_nothing_with_or_without_a_redraw_between() 
     h.click("discard");
     assert_eq!(value(&h), None);
     assert_eq!(diary.title("ada").as_deref(), Some("ada"));
+}
+
+#[test]
+fn a_double_click_on_edit_leaves_the_form_open() {
+    let (_, mut h) = harness();
+    h.click(ADA);
+    let point = h.centre("edit");
+    h.click("edit");
+    assert!(h.widget.with_state(|s| s.editing().is_some()));
+    assert!(
+        (h.centre("save").0 - point.0).abs() > 200.0
+            && (h.centre("cancel").0 - point.0).abs() > 150.0,
+        "neither lies where Edit was"
+    );
+    h.press_at(point);
+    h.rebuild();
+    assert!(
+        h.widget.with_state(|s| s.editing().is_some()),
+        "the second press did nothing"
+    );
 }

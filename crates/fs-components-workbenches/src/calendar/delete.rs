@@ -10,6 +10,9 @@ use super::shown::Shown;
 use super::state::CalendarState;
 use crate::error::ErrorKind;
 
+/// The most of a title that goes into a sentence, in characters.
+const LONGEST_IN_A_SENTENCE: usize = 80;
+
 impl CalendarState {
     /// Is an item shown that can be deleted (show a Delete button)?
     pub fn can_delete(&self) -> bool {
@@ -82,8 +85,14 @@ impl CalendarState {
         }
     }
 
+    /// What to call it in a sentence; a very long title is cut, so the sentence can still be read.
     fn title(&self) -> String {
         match &self.shown {
+            Shown::Item { sheet, .. } if sheet.title.chars().count() > LONGEST_IN_A_SENTENCE => {
+                let mut cut: String = sheet.title.chars().take(LONGEST_IN_A_SENTENCE).collect();
+                cut.push('\u{2026}');
+                cut
+            }
             Shown::Item { sheet, .. } => sheet.title.clone(),
             Shown::Failed { key, .. } => key.clone(),
             Shown::Nothing => String::new(),

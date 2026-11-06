@@ -117,8 +117,10 @@ impl ItemSheet {
 pub struct ItemProblem {
     /// What to open to deal with it, if there is something to open.
     pub key: Option<String>,
-    /// What is wrong, in the source's words.
+    /// What is wrong, in the source's words. Of something marked it does not give the title.
     pub text: String,
+    /// Short markings to be seen with it, in the source's words.
+    pub marks: Vec<String>,
 }
 
 impl ItemProblem {
@@ -127,6 +129,7 @@ impl ItemProblem {
         Self {
             key: Some(key.into()),
             text: text.into(),
+            marks: Vec::new(),
         }
     }
 
@@ -135,7 +138,15 @@ impl ItemProblem {
         Self {
             key: None,
             text: text.into(),
+            marks: Vec::new(),
         }
+    }
+
+    /// With these markings.
+    #[must_use]
+    pub fn marked(mut self, marks: Vec<String>) -> Self {
+        self.marks = marks;
+        self
     }
 }
 
@@ -168,7 +179,7 @@ impl ItemsRead {
 #[non_exhaustive]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CalendarContext {
-    /// The key of the item open, if one is.
+    /// The key of the item open or being edited; `None` while a new one is being made.
     pub item: Option<String>,
     /// What is shown: a month, a week, a day or the agenda.
     pub view: ViewRange,

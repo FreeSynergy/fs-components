@@ -11,6 +11,7 @@ use fs_components_widgets::Picked;
 use fs_components_widgets::list_view::fit_cell;
 
 use super::actions::CalendarActions;
+use super::detail::with_marks;
 use super::frame::Places;
 use crate::calendar::model::ItemProblem;
 use crate::calendar::state::CalendarState;
@@ -19,6 +20,8 @@ use crate::calendar::state::CalendarState;
 const PROBLEM_HEIGHT: f32 = 28.0;
 /// The most lines.
 const MOST_PROBLEMS: usize = 3;
+/// What a mark takes of a line, about.
+const MARK_ROOM: f32 = 90.0;
 
 /// `holder` with the lines added, and the height they take.
 #[allow(clippy::cast_precision_loss)]
@@ -61,6 +64,7 @@ fn problems_shown(count: usize) -> (usize, usize) {
 }
 
 /// One thing that could not be shown; a click opens it, so that it can be read or deleted.
+#[allow(clippy::cast_precision_loss)]
 fn problem_row(
     problem: &ItemProblem,
     index: usize,
@@ -75,8 +79,10 @@ fn problem_row(
         .items_center()
         .overflow_clip()
         .w(width)
-        .h(PROBLEM_HEIGHT)
-        .child(text(fit_cell(&problem.text, width)).no_wrap().no_cursor());
+        .h(PROBLEM_HEIGHT);
+    let room = width - MARK_ROOM * problem.marks.len() as f32;
+    let line = with_marks(line, &problem.marks)
+        .child(text(fit_cell(&problem.text, room)).no_wrap().no_cursor());
     match problem.key.clone() {
         Some(key) => {
             let pick = Arc::clone(&actions.pick);

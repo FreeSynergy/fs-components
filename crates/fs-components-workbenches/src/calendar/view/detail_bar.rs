@@ -2,7 +2,7 @@
 //!
 //! Pattern: Strategy by state — asking and confirming are two actions in different places: what lies
 //! where Delete or Cancel was keeps what is there, and the deed is across the bar, so a second press at
-//! the same point can never be it.
+//! the same point can never be it. Save and Cancel do not lie where Edit was.
 
 use blinc_cn::components::button::ButtonVariant;
 use blinc_layout::div::{Div, div};
@@ -17,24 +17,25 @@ pub(super) fn bar(state: &CalendarState, name: &str, actions: &CalendarActions, 
     let id = |what: &str| format!("{name}-{what}");
     let mut bar = div().class("fs-calendar-bar").flex_row().items_center();
     if let Some(edit) = state.editing() {
-        bar = bar
-            .child(button(
-                id("save"),
-                &labels.save,
-                ButtonVariant::Primary,
-                &actions.save,
-            ))
-            .child(cancel_or_keep(state, name, actions));
+        // Across the bar from Edit and Delete, so the second press of a double-click on Edit lands on
+        // nothing. The deed of a discard is across from what lies under the pointer after Cancel.
         if edit.discard_asked {
-            // The deed is across the bar, so a second press at the same point can never be it.
-            bar = bar.child(div().flex_1()).child(button(
+            bar = bar.child(button(
                 id("discard"),
                 &labels.discard_really,
                 ButtonVariant::Destructive,
                 &actions.confirm_discard,
             ));
         }
-        return bar;
+        return bar
+            .child(div().flex_1())
+            .child(cancel_or_keep(state, name, actions))
+            .child(button(
+                id("save"),
+                &labels.save,
+                ButtonVariant::Primary,
+                &actions.save,
+            ));
     }
     if back {
         bar = bar.child(button(

@@ -180,3 +180,42 @@ fn the_context_of_the_widget_is_a_plain_value() {
     assert_eq!(context.item.as_deref(), Some("bob"));
     assert_eq!(context.view, ViewRange::Month);
 }
+
+#[test]
+fn a_very_long_title_leaves_the_page_in_reach_and_a_long_sentence_is_cut() {
+    let long = "Long title ".repeat(400);
+    let diary = Arc::new(Diary::with(&[("ada", "2026-11-04")]));
+    diary.other_changes("ada", &long);
+    let w = CalendarWidget::new(diary, CalendarLabels::default());
+    w.with_state(|s| s.select("ada"));
+    let h = Harness::new(w, 1300.0, 600.0);
+    let name = h.widget.element_name();
+    let pinned = h
+        .tree
+        .get_absolute_bounds(h.tree.query_by_id(&format!("{name}-pinned")).unwrap())
+        .unwrap();
+    assert!(pinned.height < 100.0, "one line: {pinned:?}");
+    let page = h
+        .tree
+        .get_absolute_bounds(h.tree.query_by_id(&format!("{name}-page")).unwrap())
+        .unwrap();
+    assert!(page.y < 300.0, "the page starts in view: {page:?}");
+    h.widget.with_state(|s| s.ask_delete());
+    let question = h.widget.with_state(|s| s.notice().unwrap().to_string());
+    assert!(question.chars().count() < 200, "{}", question.len());
+}
+
+#[test]
+fn a_problem_about_something_marked_carries_its_mark() {
+    let diary = Diary::with(&[("ada", "2026-11-04")]);
+    diary.problems.lock().unwrap().push(
+        ItemProblem::of("ada", "An event cannot be shown").marked(vec!["Sensitive".to_string()]),
+    );
+    let w = CalendarWidget::new(Arc::new(diary), CalendarLabels::default());
+    let h = Harness::new(w, 1300.0, 800.0);
+    assert!(h.has("problem-0"));
+    assert_eq!(
+        h.widget.with_state(|s| s.problems()[0].marks.clone()),
+        ["Sensitive"]
+    );
+}

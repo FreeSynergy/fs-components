@@ -84,6 +84,7 @@ pub(in crate::calendar) fn workbench(
                     &places.slots,
                     &places.page,
                     true,
+                    width,
                 )),
         )
     } else if width < WIDE_FOR_BOTH {
@@ -103,6 +104,7 @@ pub(in crate::calendar) fn workbench(
                         &places.slots,
                         &places.page,
                         false,
+                        DETAIL_WIDTH,
                     )),
             )
     };
