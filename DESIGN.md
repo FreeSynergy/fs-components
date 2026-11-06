@@ -48,6 +48,17 @@ Version 0.1.0 (untagged until reviewed). First consumer: the wiki app (`fs-wiki-
 * **Gestures** are not here (ADR 0037); clicks and keys are the plain events of the framework.
 * **Offscreen picture** uses Blinc's own `BlincApp::render_tree` into a texture and a PNG. It draws the same view functions as the window, from the same `Reader` state; clicks are not simulated.
 
+## Application shell and how a program uses it
+
+Two crates beside the three layers (provisional, Thread 4 of the sprint):
+
+* `fs-components-render`: `bundle(css)`, `register_fonts()`, `draw_to_png(canvas, build, after_layout, path)`. Knows no workbench and no app, so both may use it. Template method: the order runtime, element, sheet, layout, draw, write is fixed; the caller supplies the element and an optional step after the layout. Variants of `RenderError` tell "no graphics adapter" from a real failure.
+* `fs-components-app`: `Surface` (Strategy: anything the shell can draw), `Screen`, `Shell` (State, no window needed), `AppWidget` (Facade + Observer: one signal per live area, so a status message does not rebuild the workbench), `launch`, `AppWidget::picture`. It holds no words and no colours: labels come from the program, colours from theme variables. Sizes the surface must be told are constants in `styles.rs`.
+
+A program's frontend (ADR 0005, 0009, 0037) is a crate `fs-<program>-app` in the program's repo: arguments, opening the core, labels, `Screen`s. It imports no `blinc_*` crate. Its work surface is a workbench in `fs-components` (open, knows no store and no program core, takes a trait), so another program can embed it.
+
+Not built in the shell: menus, shortcuts for the navigation, window state across runs, compact variants. The window path `launch` itself is not run by tests (no window on the owner's desktop); `AppWidget::build`, which it calls, is drawn offscreen and compared with `picture`. Clicks on the navigation are not simulated.
+
 ## Public types and Blinc
 
 * **Closed types are avoided:** public enums and structs that a later feature will extend are `#[non_exhaustive]` (`Block`, `MarkKind`, `Align`, `LinkTarget`, `Outcome`, `Shown`, `Step`, `ErrorKind`, `Entry`, `Hit`, `Document`, `Labels`, `Options`, `Picture`, ...) and come with constructors; build `Labels`/`Options` by `Default` and assigning fields.

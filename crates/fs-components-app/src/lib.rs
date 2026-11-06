@@ -1,0 +1,27 @@
+//! `fs-components-app`: the shell every FreeSynergy program puts around its workbenches.
+//!
+//! A program describes its [`Screen`]s, each a [`Surface`], and calls [`launch`]. The shell brings
+//! the window, the title bar, the navigation and the status line (ADR 0005: the difference between
+//! widget and app is the shell). It brings no words and no colours of its own: labels come from the
+//! program, colours from the theme. Programs see no Blinc type except [`Element`] (ADR 0009).
+//!
+//! Pattern: Facade — this file only declares modules and re-exports the public API.
+
+#![deny(missing_docs)]
+#![warn(clippy::pedantic)]
+#![allow(clippy::must_use_candidate, clippy::module_name_repetitions)]
+
+mod error;
+mod shell;
+mod styles;
+mod surface;
+mod view;
+mod widget;
+mod window;
+
+pub use error::AppError;
+pub use fs_components_widgets::Element;
+pub use shell::{Shell, Status};
+pub use surface::{Screen, Surface};
+pub use widget::AppWidget;
+pub use window::{WindowOptions, launch};

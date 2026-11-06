@@ -1,0 +1,19 @@
+[package]
+name = "fs-components-app"
+description = "FreeSynergy application shell (layer 4): window, navigation between screens, title bar and status line around workbenches; Blinc stays behind this API"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+fs-components-render = { path = "../fs-components-render" }
+fs-components-widgets = { path = "../fs-components-widgets" }
+blinc_app = "0.6"
+blinc_cn = "0.6"
+blinc_core = "0.6"
+blinc_layout = "0.6"
+blinc_theme = "0.6"
+
+[dev-dependencies]
+image = { version = "0.25", default-features = false, features = ["png"] }
