@@ -1,59 +1,57 @@
-//! A fake data source for the tests.
+//! Fake document sources for the tests.
 //!
-//! Pattern: Strategy (test double) — implements `DataSource` over a list in memory.
+//! Pattern: Strategy (test doubles) — `Fake` is read-only, `Editable` keeps texts in memory with
+//! a revision counter per text, like a store would.
 
 #![allow(dead_code)] // each test file uses a different subset
 
+use std::collections::BTreeMap;
+use std::sync::Mutex;
+
 use fs_components_workbenches::{
-    Block, DataSource, Document, Entry, Hit, Inline, LinkTarget, ReadError,
+    Block, Document, DocumentSource, EditableText, Entry, Hit, Inline, LinkTarget, SourceError,
 };
 
-/// Pages `a`, `dir/b`, and `broken` (which cannot be read).
+/// Documents `a`, `dir/b`, and `broken` (which cannot be read).
 pub struct Fake;
 
-impl DataSource for Fake {
-    fn entries(&self, prefix: &str) -> Result<Vec<Entry>, ReadError> {
+impl DocumentSource for Fake {
+    fn entries(&self, prefix: &str) -> Result<Vec<Entry>, SourceError> {
         Ok(["a", "broken", "dir/b"]
             .iter()
             .filter(|p| p.starts_with(prefix))
-            .map(|p| Entry {
-                path: (*p).into(),
-                title: p.to_uppercase(),
-            })
+            .map(|p| Entry::new(*p, p.to_uppercase()))
             .collect())
     }
 
-    fn read(&self, path: &str) -> Result<Document, ReadError> {
+    fn read(&self, path: &str) -> Result<Document, SourceError> {
         match path {
-            "broken" => Err(ReadError("the file is damaged".into())),
-            "a" | "dir/b" => Ok(Document {
-                title: path.into(),
-                blocks: vec![Block::Paragraph(Inline::plain(format!("text of {path}")))],
-            }),
-            _ => Err(ReadError("unknown".into())),
+            "broken" => Err(SourceError::failed("the file is damaged")),
+            "a" | "dir/b" => Ok(Document::new(
+                path,
+                vec![Block::Paragraph(Inline::plain(format!("text of {path}")))],
+            )),
+            _ => Err(SourceError::not_found("unknown")),
         }
     }
 
     fn resolve(&self, from: &str, href: &str) -> LinkTarget {
         match href {
-            "up" => LinkTarget::Page("a".into()),
+            "up" => LinkTarget::Document("a".into()),
             "web" => LinkTarget::External("https://example.org".into()),
             other => LinkTarget::Missing(format!("{from} -> {other}")),
         }
     }
 
-    fn find(&self, term: &str) -> Result<Vec<Hit>, ReadError> {
+    fn find(&self, term: &str) -> Result<Vec<Hit>, SourceError> {
         if term == "boom" {
-            return Err(ReadError("the index is gone".into()));
+            return Err(SourceError::failed("the index is gone"));
         }
         Ok(self
             .entries("")?
             .into_iter()
             .filter(|e| e.title.to_lowercase().contains(&term.to_lowercase()))
-            .map(|e| Hit {
-                path: e.path,
-                title: e.title,
-            })
+            .map(|e| Hit::new(e.path, e.title))
             .collect())
     }
 
@@ -65,69 +63,100 @@ impl DataSource for Fake {
 /// A source that can be edited and exported; keeps its texts in memory.
 #[derive(Default)]
 pub struct Editable {
-    pub texts: std::sync::Mutex<std::collections::BTreeMap<String, String>>,
-    pub exported: std::sync::Mutex<Vec<String>>,
+    /// path -> (text, revision)
+    pub texts: Mutex<BTreeMap<String, (String, u32)>>,
+    pub exported: Mutex<Vec<(String, String, bool)>>,
 }
 
 impl Editable {
     pub fn with(pages: &[(&str, &str)]) -> Self {
         let s = Self::default();
         for (p, t) in pages {
-            s.texts.lock().unwrap().insert((*p).into(), (*t).into());
+            s.texts
+                .lock()
+                .unwrap()
+                .insert((*p).into(), ((*t).into(), 1));
         }
         s
     }
+
+    /// Another person saves behind the reader's back.
+    pub fn other_saves(&self, path: &str, text: &str) {
+        let mut texts = self.texts.lock().unwrap();
+        let entry = texts.get_mut(path).unwrap();
+        entry.0 = text.into();
+        entry.1 += 1;
+    }
+
+    pub fn text(&self, path: &str) -> String {
+        self.texts.lock().unwrap()[path].0.clone()
+    }
 }
 
-impl DataSource for Editable {
-    fn entries(&self, _prefix: &str) -> Result<Vec<Entry>, ReadError> {
+impl DocumentSource for Editable {
+    fn entries(&self, _prefix: &str) -> Result<Vec<Entry>, SourceError> {
         Ok(self
             .texts
             .lock()
             .unwrap()
             .keys()
-            .map(|p| Entry {
-                path: p.clone(),
-                title: p.clone(),
-            })
+            .map(|p| Entry::new(p.clone(), p.clone()))
             .collect())
     }
-    fn read(&self, path: &str) -> Result<Document, ReadError> {
-        let text = self.source_text(path)?;
-        Ok(Document {
-            title: path.into(),
-            blocks: vec![Block::Paragraph(Inline::plain(text))],
-        })
+    fn read(&self, path: &str) -> Result<Document, SourceError> {
+        let t = self.source_text(path)?;
+        let mut doc = Document::new(path, vec![Block::Paragraph(Inline::plain(t.text))]);
+        doc.revision = t.revision;
+        Ok(doc)
     }
     fn resolve(&self, _from: &str, href: &str) -> LinkTarget {
         LinkTarget::Missing(href.into())
     }
-    fn find(&self, _term: &str) -> Result<Vec<Hit>, ReadError> {
-        Ok(Vec::new())
+    fn find(&self, term: &str) -> Result<Vec<Hit>, SourceError> {
+        Ok(self
+            .texts
+            .lock()
+            .unwrap()
+            .iter()
+            .filter(|(_, (t, _))| t.contains(term))
+            .map(|(p, _)| Hit::new(p.clone(), p.clone()))
+            .collect())
     }
-    fn can_edit(&self) -> bool {
-        true
+    fn can_edit(&self, path: &str) -> bool {
+        path != "locked"
     }
-    fn source_text(&self, path: &str) -> Result<String, ReadError> {
+    fn source_text(&self, path: &str) -> Result<EditableText, SourceError> {
         self.texts
             .lock()
             .unwrap()
             .get(path)
-            .cloned()
-            .ok_or_else(|| ReadError(format!("no page {path}")))
+            .map(|(t, r)| EditableText::new(t.clone(), Some(r.to_string())))
+            .ok_or_else(|| SourceError::not_found(format!("no document {path}")))
     }
-    fn save(&self, path: &str, text: &str) -> Result<(), ReadError> {
+    fn save(&self, path: &str, text: &str, revision: Option<&str>) -> Result<(), SourceError> {
         if text.contains("FORBIDDEN") {
-            return Err(ReadError("refused".into()));
+            return Err(SourceError::failed("refused"));
         }
-        self.texts.lock().unwrap().insert(path.into(), text.into());
+        let mut texts = self.texts.lock().unwrap();
+        let entry = texts
+            .get_mut(path)
+            .ok_or_else(|| SourceError::not_found("gone"))?;
+        if revision != Some(entry.1.to_string().as_str()) {
+            return Err(SourceError::conflict("Someone else changed this document."));
+        }
+        entry.0 = text.into();
+        entry.1 += 1;
         Ok(())
     }
-    fn can_export(&self) -> bool {
+    fn can_export(&self, _path: &str) -> bool {
         true
     }
-    fn export(&self, path: &str) -> Result<String, ReadError> {
-        self.exported.lock().unwrap().push(path.into());
-        Ok(format!("Exported {path}."))
+    fn export(&self, path: &str, target: &str, overwrite: bool) -> Result<String, SourceError> {
+        let mut done = self.exported.lock().unwrap();
+        if !overwrite && done.iter().any(|(p, t, _)| p == path && t == target) {
+            return Err(SourceError::conflict(format!("{target}/{path} exists.")));
+        }
+        done.push((path.into(), target.into(), overwrite));
+        Ok(format!("Exported {path} to {target}."))
     }
 }

@@ -1,51 +1,19 @@
-//! The reader and its transitions.
+//! The reader and its navigation.
 //!
-//! Pattern: State machine over a Strategy (`DataSource`): every transition is one method; the
-//! view only reads.
+//! Pattern: State machine over a Strategy (`DocumentSource`): every transition is one method; the
+//! view only reads. Editing is in `edit.rs`.
 
 use std::sync::Arc;
 
-use fs_components_widgets::Document;
-
 use super::edit::Editing;
-use crate::source::{DataSource, Entry, Hit, LinkTarget};
+use super::state::{Outcome, Shown};
+use crate::labels::Labels;
+use crate::source::{DocumentSource, Entry, Hit, LinkTarget};
 
-/// What the content area shows.
-#[derive(Clone, Debug, PartialEq, Eq, Default)]
-pub enum Shown {
-    /// Nothing opened yet.
-    #[default]
-    Nothing,
-    /// A document.
-    Page {
-        /// Its path.
-        path: String,
-        /// Its content.
-        document: Document,
-    },
-    /// A document that could not be read.
-    Failed {
-        /// Its path.
-        path: String,
-        /// Why.
-        reason: String,
-    },
-}
-
-/// What following a link led to; the shell acts on [`Outcome::External`].
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub enum Outcome {
-    /// A document was opened.
-    Opened,
-    /// An outside address: open it with the system.
-    External(String),
-    /// Nothing there; a notice is shown.
-    Missing,
-}
-
-/// The reader: a data source, what is shown, where we came from, and the search.
+/// The reader: a document source, what is shown, where we came from, and the search.
 pub struct Reader {
-    pub(super) source: Arc<dyn DataSource>,
+    pub(super) source: Arc<dyn DocumentSource>,
+    pub(super) labels: Labels,
     entries: Vec<Entry>,
     pub(super) shown: Shown,
     pub(super) history: Vec<String>,
@@ -54,26 +22,28 @@ pub struct Reader {
     pub(super) problem: Option<String>,
     pub(super) editing: Option<Editing>,
     pub(super) notice: Option<String>,
+    pub(super) export_target: Option<String>,
+    pub(super) overwrite_ok: Option<String>,
 }
 
 impl Reader {
-    /// A reader over `source`; lists everything once and opens the start page.
-    pub fn new(source: Arc<dyn DataSource>) -> Self {
-        let (entries, problem) = match source.entries("") {
-            Ok(entries) => (entries, None),
-            Err(e) => (Vec::new(), Some(format!("The list of pages failed: {e}"))),
-        };
+    /// A reader over `source`; lists everything once and opens the start document.
+    pub fn new(source: Arc<dyn DocumentSource>, labels: Labels) -> Self {
         let mut reader = Self {
             source,
-            entries,
-            problem,
-            editing: None,
+            labels,
+            entries: Vec::new(),
             shown: Shown::Nothing,
             history: Vec::new(),
             term: String::new(),
             hits: Vec::new(),
+            problem: None,
+            editing: None,
             notice: None,
+            export_target: None,
+            overwrite_ok: None,
         };
+        reader.refresh_entries();
         let start = reader
             .source
             .start()
@@ -82,6 +52,30 @@ impl Reader {
             reader.show(&path);
         }
         reader
+    }
+
+    /// Read the list of documents again (after a change).
+    pub fn refresh_entries(&mut self) {
+        match self.source.entries("") {
+            Ok(entries) => {
+                self.entries = entries;
+                self.problem = None;
+            }
+            Err(e) => {
+                self.entries.clear();
+                self.problem = Some(Labels::fill(&self.labels.list_failed, &e.message));
+            }
+        }
+    }
+
+    /// The words the reader shows.
+    pub fn labels(&self) -> &Labels {
+        &self.labels
+    }
+
+    /// Where Export writes to (the caller chooses; without one there is no Export button).
+    pub fn set_export_target(&mut self, target: Option<String>) {
+        self.export_target = target;
     }
 
     /// Every document, in path order.
@@ -97,12 +91,12 @@ impl Reader {
     /// Path of the document shown, if any.
     pub fn current_path(&self) -> Option<&str> {
         match &self.shown {
-            Shown::Page { path, .. } | Shown::Failed { path, .. } => Some(path),
+            Shown::Document { path, .. } | Shown::Failed { path, .. } => Some(path),
             Shown::Nothing => None,
         }
     }
 
-    /// Is there a page to go back to?
+    /// Is there a document to go back to?
     pub fn can_go_back(&self) -> bool {
         !self.history.is_empty()
     }
@@ -117,22 +111,19 @@ impl Reader {
         &self.hits
     }
 
-    /// Why the list of pages or the last search failed, if it did.
+    /// Why the list or the last search failed, if it did.
     pub fn problem(&self) -> Option<&str> {
         self.problem.as_deref()
     }
 
-    /// A short message for the person (a link led nowhere), if any.
+    /// A short message for the person, if any.
     pub fn notice(&self) -> Option<&str> {
         self.notice.as_deref()
     }
 
     /// Open the document at `path`; the one shown now goes onto the way back.
     pub fn open(&mut self, path: &str) {
-        if self.blocked_by_edit() {
-            return;
-        }
-        if self.current_path() == Some(path) {
+        if self.blocked_by_edit() || self.current_path() == Some(path) {
             return;
         }
         if let Some(current) = self.current_path() {
@@ -143,21 +134,24 @@ impl Reader {
 
     /// Follow `href` as written in the document shown.
     pub fn follow(&mut self, href: &str) -> Outcome {
+        if self.blocked_by_edit() {
+            return Outcome::Blocked;
+        }
         let from = self.current_path().unwrap_or_default().to_string();
         match self.source.resolve(&from, href) {
-            LinkTarget::Page(path) => {
+            LinkTarget::Document(path) => {
                 self.open(&path);
                 Outcome::Opened
             }
             LinkTarget::External(url) => Outcome::External(url),
             LinkTarget::Missing(what) => {
-                self.notice = Some(format!("There is nothing at \"{what}\"."));
+                self.notice = Some(Labels::fill(&self.labels.missing_target, &what));
                 Outcome::Missing
             }
         }
     }
 
-    /// Go back one page.
+    /// Go back one step.
     pub fn back(&mut self) {
         if self.blocked_by_edit() {
             return;
@@ -172,6 +166,7 @@ impl Reader {
         self.term = term.trim().to_string();
         self.hits.clear();
         if self.term.is_empty() {
+            self.problem = None;
             return;
         }
         match self.source.find(&self.term) {
@@ -179,21 +174,22 @@ impl Reader {
                 self.hits = hits;
                 self.problem = None;
             }
-            Err(e) => self.problem = Some(format!("The search failed: {e}")),
+            Err(e) => self.problem = Some(Labels::fill(&self.labels.search_failed, &e.message)),
         }
     }
 
     pub(super) fn show(&mut self, path: &str) {
         self.editing = None;
+        self.overwrite_ok = None;
         self.notice = None;
         self.shown = match self.source.read(path) {
-            Ok(document) => Shown::Page {
+            Ok(document) => Shown::Document {
                 path: path.to_string(),
                 document,
             },
             Err(e) => Shown::Failed {
                 path: path.to_string(),
-                reason: e.to_string(),
+                reason: Labels::fill(&self.labels.unreadable, &e.message),
             },
         };
     }

@@ -58,8 +58,15 @@ pub(super) fn table(
                 size: look.small,
                 bold: r == 0,
             };
-            let mut holder = div().class("fs-tv-cell").flex_grow().w(narrowest[c]);
-            holder = holder.child(inline(cell, face, look, on_link));
+            // A strut as wide as the longest word keeps the column from shrinking below it.
+            let strut = div().w(narrowest[c]).h(0.0);
+            let holder = div()
+                .class("fs-tv-cell")
+                .flex_col()
+                .flex_grow()
+                .w(0.0)
+                .child(strut)
+                .child(inline(cell, face, look, on_link));
             line = line.child(sized(holder, portion, align.get(c).copied()));
         }
         out = out.child(line);
@@ -70,5 +77,5 @@ pub(super) fn table(
 /// Give the cell its share of the row.
 fn sized(cell: Div, share: usize, _align: Option<Align>) -> Div {
     #[allow(clippy::cast_precision_loss)]
-    cell.flex_grow_value(share as f32)
+    cell.flex_grow_value(share as f32 * 1.0)
 }

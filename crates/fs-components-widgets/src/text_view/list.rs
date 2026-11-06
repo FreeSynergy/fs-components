@@ -17,6 +17,7 @@ pub(super) fn list(
     items: &[ListItem],
     look: &Look,
     on_link: Option<&LinkHandler>,
+    depth: usize,
 ) -> Div {
     let mut column = div().class("fs-tv-block").flex_col();
     for (i, item) in items.iter().enumerate() {
@@ -34,7 +35,11 @@ pub(super) fn list(
                         .class("fs-tv-marker")
                         .child(text(marker).size(look.base)),
                 )
-                .child(blocks(&item.blocks, look, on_link).flex_grow().w(0.0)),
+                .child(
+                    blocks(&item.blocks, look, on_link, depth)
+                        .flex_grow()
+                        .w(0.0),
+                ),
         );
     }
     column

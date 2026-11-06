@@ -24,14 +24,8 @@ fn plain_text_goes_into_lists_quotes_and_tables() {
         ordered: true,
         start: 3,
         items: vec![
-            ListItem {
-                task: None,
-                blocks: vec![Block::Paragraph(Inline::plain("one"))],
-            },
-            ListItem {
-                task: Some(false),
-                blocks: vec![Block::Paragraph(Inline::plain("two"))],
-            },
+            ListItem::new(vec![Block::Paragraph(Inline::plain("one"))]),
+            ListItem::new(vec![Block::Paragraph(Inline::plain("two"))]).task(false),
         ],
     };
     assert_eq!(list.plain_text(), "one\ntwo");

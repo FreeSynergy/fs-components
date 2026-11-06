@@ -7,14 +7,14 @@ mod common;
 use std::sync::Arc;
 
 use common::Fake;
-use fs_components_workbenches::{Outcome, Reader, Shown};
+use fs_components_workbenches::{Labels, Outcome, Reader, Shown};
 
 fn reader() -> Reader {
-    Reader::new(Arc::new(Fake))
+    Reader::new(Arc::new(Fake), Labels::default())
 }
 
 #[test]
-fn starts_at_the_sources_start_page() {
+fn starts_at_the_sources_start_document() {
     let r = reader();
     assert_eq!(r.current_path(), Some("dir/b"));
     assert!(!r.can_go_back());
@@ -36,14 +36,14 @@ fn open_and_back() {
 }
 
 #[test]
-fn opening_the_page_shown_does_not_grow_the_history() {
+fn opening_the_document_shown_does_not_grow_the_history() {
     let mut r = reader();
     r.open("dir/b");
     assert!(!r.can_go_back());
 }
 
 #[test]
-fn follow_page_external_and_missing() {
+fn follow_document_external_and_missing() {
     let mut r = reader();
     assert_eq!(r.follow("up"), Outcome::Opened);
     assert_eq!(r.current_path(), Some("a"));
@@ -59,18 +59,18 @@ fn follow_page_external_and_missing() {
 }
 
 #[test]
-fn a_page_that_cannot_be_read_is_shown_with_its_reason() {
+fn a_document_that_cannot_be_read_is_shown_with_its_reason() {
     let mut r = reader();
     r.open("broken");
     match r.shown() {
         Shown::Failed { path, reason } => {
             assert_eq!(path, "broken");
-            assert_eq!(reason, "the file is damaged");
+            assert!(reason.contains("the file is damaged"), "{reason}");
         }
         other => panic!("{other:?}"),
     }
     r.back();
-    assert!(matches!(r.shown(), Shown::Page { .. }));
+    assert!(matches!(r.shown(), Shown::Document { .. }));
 }
 
 #[test]
@@ -92,4 +92,13 @@ fn a_failed_search_is_reported_not_hidden() {
     assert!(r.problem().unwrap().contains("the index is gone"));
     r.search("dir");
     assert_eq!(r.problem(), None);
+}
+
+#[test]
+fn all_texts_come_from_the_caller() {
+    let mut labels = Labels::default();
+    labels.missing_target = "Nichts bei \"{}\".".into();
+    let mut r = Reader::new(Arc::new(Fake), labels);
+    r.follow("x");
+    assert!(r.notice().unwrap().starts_with("Nichts bei"));
 }

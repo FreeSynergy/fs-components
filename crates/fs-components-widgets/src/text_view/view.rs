@@ -5,7 +5,7 @@
 
 use std::sync::Arc;
 
-use blinc_layout::div::Div;
+use crate::Element;
 
 use super::{blocks, look};
 use crate::text::Block;
@@ -42,8 +42,8 @@ impl TextView {
     }
 
     /// The element to place in a layout.
-    pub fn build(&self) -> Div {
+    pub fn build(&self) -> impl Element + use<> {
         let look = look::Look::current();
-        blocks::blocks(&self.blocks, &look, self.on_link.as_ref()).class("fs-tv")
+        blocks::blocks(&self.blocks, &look, self.on_link.as_ref(), 0).class("fs-tv")
     }
 }

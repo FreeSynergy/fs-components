@@ -21,8 +21,9 @@ pub(crate) fn frame(
             div()
                 .class("fs-rd-side")
                 .h(height)
+                .min_h(0.0)
                 .child(div().class("fs-rd-search").child(search))
                 .child(side),
         )
-        .child(div().class("fs-rd-main").h(height).child(main))
+        .child(div().class("fs-rd-main").h(height).min_h(0.0).child(main))
 }

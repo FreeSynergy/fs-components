@@ -4,19 +4,20 @@ Shared UI components of FreeSynergy on Blinc 0.6 (released crates, `blinc_* = "0
 
 ## State
 
-Version 0.1.0 (untagged until reviewed). Built for one consumer: the wiki reader (`fs-wiki-app`). Nothing else is planned or built here yet.
+Version 0.1.0 (untagged until reviewed). Built for one consumer: the wiki app (`fs-wiki-app`). Nothing else is planned or built here yet.
 
 | Area | State |
 |---|---|
 | `search-field` (primitive): adapter over `blinc_cn` input, text kept in shared state | done |
-| `text-view` (widget): text with marks is drawn as a flow of runs (see Blinc notes); neutral model (`Block`, `Inline`, `Mark`); headings, paragraphs, lists (also task items), quotes, code, tables, rules, emphasis, strong, strike, code span, links; unknown things arrive as `Block::Plain` and are shown as text | done |
-| `tree-view` (widget): adapter over `blinc_cn` tree (keyboard of the Blinc tree: arrows, Home, End, Enter) | done |
-| `reader` (workbench): `DataSource` trait (`entries`, `read`, `resolve`, `find`, `start`; `entries` and `find` return errors, the reader shows them), state machine `Reader` (open, follow, back, search), window (`launch`) and offscreen picture (`snapshot`) | done |
-| Editing in the reader: `DataSource::can_edit`, `source_text`, `save`; `Reader::begin_edit`, `set_draft`, `save`, `cancel_edit`; unsaved changes block leaving the page; a refused save keeps the draft and shows why. Default of every method is "cannot be edited" | done (typing in the real text area not verified in a window) |
-| Export: `DataSource::can_export`, `export`; an explicit button, saving never writes a file (ADR 0042, 0046) | done |
-| Keyboard: tree keys (Blinc), Alt+Left = back, Tab to the search field and the Back button | done (Alt+Left unverified in a real window) |
-| Pointer cursor over links; scrolling to a `#fragment`; table column alignment; selecting text; images | not built |
-| Accessibility (Blinc has none for these elements, ADR 0009) | not built |
+| `text-view` (widget): neutral model (`Block`, `Inline`, `Mark`); headings, paragraphs, lists (also task items), quotes (nesting depth guarded at 24), code, tables, rules, emphasis (italic, drawn as a rich text), strong, strike, code span, links, hard breaks; unknown things arrive as `Block::Plain` and are shown as text. Text with marks is a flow of runs that wrap (also inside a long word) | done |
+| `tree-view` (widget): adapter over `blinc_cn` tree (keys of the Blinc tree: arrows, Home, End, Enter) | done |
+| `reader` (workbench): `DocumentSource` trait, `Labels` (all texts come from the caller), state machine `Reader` (open, follow, back, search, edit, export) | done |
+| Embedding: `ReaderWidget::new(source, labels, export_target)` and `.build(w, h)` place the reader in a program's own window and layout; `.reader()` gives the state to menus and commands; `launch` is a convenience window; `snapshot` is a picture without a window | done |
+| Editing: `DocumentSource::{can_edit(path), source_text -> EditableText{text, revision}, save(path, text, revision)}`. A save with an old revision is a `Conflict`: nothing is written, the draft stays and the reason is shown. Save without changes writes nothing. The text area's changes of line ends and final newline are undone before comparing and saving. Unsaved changes block leaving the document and refuse `follow` (`Outcome::Blocked`). Cancel with unsaved changes asks first (second Cancel discards); Esc is not handled at all, so it can never throw a draft away. After a save the list, the title and the search results are read again | done |
+| Export: `can_export(path)`, `export(path, target, overwrite)`; the target is chosen by the caller; a taken target is a `Conflict` and the reader asks (press Export again to replace) | done |
+| Scrolling: every column on the way down has `min_h(0)`; a long document is clipped and scrolls (3000 paragraphs draw). Tested offscreen with a scroll offset | done |
+| Keyboard: tree keys (Blinc), Alt+Left back, Ctrl+S save, Tab to search field and buttons. Search results, links and the tree rows are **not** reachable by Tab (the Blinc tree is no Tab stop; links are click targets) | partly |
+| Pointer cursor over links; scrolling to a `#fragment`; table column alignment; selecting text; images; accessibility | not built |
 
 ## Structure and pattern map (ADR 0043)
 
@@ -30,7 +31,8 @@ Version 0.1.0 (untagged until reviewed). Built for one consumer: the wiki reader
 | `widgets/text_view/look.rs` | Value object snapshot | every colour and size read from the theme |
 | `widgets/tree_view` | Adapter + Composite | `TreeNode` to the `blinc_cn` tree |
 | `primitives/search_field` | Adapter | `blinc_cn` input; clone keeps its text across rebuilds |
-| `workbenches/source.rs` | Strategy / Repository | what a workbench needs from outside; it knows no store, no wiki |
+| `workbenches/source.rs`, `error.rs`, `labels.rs` | Strategy / Repository, Value objects | what a workbench needs from outside (it knows no store, no wiki, no language) |
+| `workbenches/shell/widget.rs` | Facade + Observer | `ReaderWidget`: shared state, element, redraw counters |
 | `workbenches/reader` | State | `Shown` + transitions, testable without a window |
 | `workbenches/view` | Adapter | state to elements, `Actions` callbacks (Observer) report what the person does |
 | `workbenches/shell` | Facade | `launch` (window) and `snapshot` (picture); hide Blinc completely |
@@ -42,6 +44,13 @@ Version 0.1.0 (untagged until reviewed). Built for one consumer: the wiki reader
 * **Links.** The text view only reports `href` as written. Resolving it (relative path, external) is the data source's `resolve`, so the workbench does not know what a link means.
 * **Gestures** are not here (ADR 0037); clicks and keys are the plain events of the framework.
 * **Offscreen picture** uses Blinc's own `BlincApp::render_tree` into a texture and a PNG. It draws the same view functions as the window, from the same `Reader` state; clicks are not simulated.
+
+## Public types and Blinc
+
+* **Closed types are avoided:** public enums and structs that a later feature will extend are `#[non_exhaustive]` (`Block`, `MarkKind`, `Align`, `LinkTarget`, `Outcome`, `Shown`, `Step`, `ErrorKind`, `Entry`, `Hit`, `Document`, `Labels`, `Options`, `Picture`, ...) and come with constructors; build `Labels`/`Options` by `Default` and assigning fields.
+* **Blinc in signatures:** the elements our functions return are Blinc elements, because a component is placed in a Blinc layout and a program that embeds the reader owns a Blinc window (ADR 0009: Blinc is the GUI). They appear only as `impl Element` (`TextView::build`, `SearchField::build`, `ReaderWidget::build`), and `Element` is one re-export in `fs-components-widgets`; no other Blinc type is public (data types are ours). Wrapping the trait in a newtype would copy its whole interface for no gain today; revisit when a second GUI backend is real.
+* **Blocking:** `DocumentSource` is synchronous and the reader calls it **on the interface thread**; a slow source freezes the window while it works. This is provisional (a later version makes it async or runs calls on a worker). Numbers for the wiki are in `fs-wiki` DESIGN.md.
+* **Closing the window loses the draft** of an unsaved edit: Blinc has no close hook (listed as a Blinc item). "Unsaved changes block leaving" means leaving a document, not the window.
 
 ## Open points
 
@@ -56,7 +65,9 @@ Blinc notes (0.6.0; to be passed upstream by the owner, reproductions in the rep
 * A rich text is measured in one font weight but bold and italic spans are drawn in another face, so lines with marks run past the edge or overlap. Workaround: marks are drawn as a flow of single-style runs.
 * `RichText` links always call `open_url`; there is no handler for an internal link. Workaround: own click handler per run.
 * Emoji without a font are drawn blank but take their width; the bundled subset (`blinc_noto_emoji::register()`) lacks many (box glyphs).
-* Italic is not drawn (`text(..).italic()` shows upright text with the default font); the `code` flag of a span draws no monospace or chip (`flow.rs` does it itself).
+* `text(..).italic()` shows upright text; a rich text with an italic span does draw italic (used for emphasis). The `code` flag of a span draws no monospace or chip (`flow.rs` does it itself).
+* Layout of a document of 3000 paragraphs without `min_h(0)` overruns a wgpu buffer and aborts; a plain paragraph of 30 KB takes seconds in Blinc's text measuring (reproduction in the report).
+* `BlincContextState::init` panics when called twice, also across threads (two pictures at once): `snapshot` serialises itself.
 * `Scroll` has no `flex_1`; a `min_w` next to `w(0.0)` is ignored. The text area wraps at a narrower width than its box.
 * `blinc_cn::cn_styles` documents `register_cn_styles(ctx)`, which does not exist in 0.6.0 (the bundle `cn_bundle()` does it).
 

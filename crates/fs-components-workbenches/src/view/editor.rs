@@ -7,18 +7,22 @@ use blinc_cn::cn;
 use blinc_cn::components::textarea::textarea;
 use blinc_layout::div::{Div, div};
 use blinc_layout::text;
-use blinc_layout::widgets::text_area::text_area_state;
+use blinc_layout::widgets::text_area::{SharedTextAreaState, text_area_state};
 
 use super::actions::Actions;
+use crate::labels::Labels;
 use crate::reader::Editing;
 
 /// The editor for `editing`.
-pub(crate) fn editor(editing: &Editing, actions: &Actions) -> Div {
-    let state = text_area_state();
-    state
-        .lock()
-        .unwrap_or_else(std::sync::PoisonError::into_inner)
-        .set_value(&editing.draft);
+pub(crate) fn editor(
+    editing: &Editing,
+    labels: &Labels,
+    actions: &Actions,
+    area: Option<&SharedTextAreaState>,
+) -> Div {
+    // The shell keeps one area for the whole edit, so a redraw (failed save, resize) keeps the
+    // cursor and the focus; without one (a picture) a fresh area is made.
+    let state = area.cloned().unwrap_or_else(|| new_area(&editing.draft));
     let draft = actions.draft.clone();
     let area = textarea(&state)
         .w_full()
@@ -27,8 +31,8 @@ pub(crate) fn editor(editing: &Editing, actions: &Actions) -> Div {
     let (save, cancel) = (actions.save.clone(), actions.cancel.clone());
     let mut buttons = div()
         .class("fs-rd-bar")
-        .child(cn::button("Save").on_click(move |_| save()))
-        .child(cn::button("Cancel").on_click(move |_| cancel()));
+        .child(cn::button(labels.save.clone()).on_click(move |_| save()))
+        .child(cn::button(labels.cancel.clone()).on_click(move |_| cancel()));
     if let Some(error) = &editing.error {
         buttons = buttons.child(div().class("fs-rd-failed").child(text(error)));
     }
@@ -36,6 +40,24 @@ pub(crate) fn editor(editing: &Editing, actions: &Actions) -> Div {
         .flex_col()
         .w_full()
         .flex_1()
+        .min_h(0.0)
         .child(buttons)
-        .child(div().class("fs-rd-editor").flex_1().w_full().child(area))
+        .child(
+            div()
+                .class("fs-rd-editor")
+                .flex_1()
+                .min_h(0.0)
+                .w_full()
+                .child(area),
+        )
+}
+
+/// A text area holding `text`.
+pub(crate) fn new_area(text: &str) -> SharedTextAreaState {
+    let state = text_area_state();
+    state
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .set_value(text);
+    state
 }

@@ -7,6 +7,7 @@ pub const STYLES: &str = r"
 .fs-tv { display: flex; flex-direction: column; width: 100%; }
 .fs-tv-block { width: 100%; margin-bottom: var(--space-3); }
 .fs-tv-heading { padding-top: var(--space-3); }
+.fs-tv-run { max-width: 100%; min-width: 0; }
 .fs-tv-codespan { background: var(--surface-elevated); border-radius: var(--radius-sm); padding-left: 2px; padding-right: 2px; }
 .fs-tv-quote { border-left-width: 3px; border-left-color: var(--border); padding-left: var(--space-3); }
 .fs-tv-code { background: var(--surface-elevated); border-radius: var(--radius-default); padding: var(--space-3); display: flex; flex-direction: column; }

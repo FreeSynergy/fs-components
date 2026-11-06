@@ -6,6 +6,7 @@ use blinc_layout::div::{Div, div};
 use blinc_layout::text;
 
 use super::actions::Actions;
+use crate::labels::Labels;
 use crate::reader::Reader;
 
 /// Rows of the hits of the current search.
@@ -15,11 +16,8 @@ pub(crate) fn results(reader: &Reader, actions: &Actions) -> Div {
         return column.child(div().class("fs-rd-empty").child(text(problem)));
     }
     if reader.hits().is_empty() {
-        return column.child(
-            div()
-                .class("fs-rd-empty")
-                .child(text(format!("Nothing found for \"{}\".", reader.term()))),
-        );
+        let message = Labels::fill(&reader.labels().nothing_found, reader.term());
+        return column.child(div().class("fs-rd-empty").child(text(message)));
     }
     for hit in reader.hits() {
         let open = actions.open.clone();

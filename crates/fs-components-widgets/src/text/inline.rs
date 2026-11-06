@@ -4,6 +4,7 @@
 //! layers of the wiki), counted in characters, so the model has no opinion about encodings.
 
 /// What a mark does to the characters it covers.
+#[non_exhaustive]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum MarkKind {
     /// Emphasis (usually italic).
@@ -22,6 +23,7 @@ pub enum MarkKind {
 }
 
 /// A mark over a range of characters (`start..end`, end exclusive).
+#[non_exhaustive]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Mark {
     /// What it does.
@@ -40,6 +42,7 @@ impl Mark {
 }
 
 /// A run of text with marks. Marks may overlap and nest.
+#[non_exhaustive]
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Inline {
     /// The characters.

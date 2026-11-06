@@ -1,0 +1,171 @@
+//! The reader as a thing a program can place in its own window.
+//!
+//! Pattern: Facade + Observer — `ReaderWidget` holds the shared state and builds the element; two
+//! counters (signals) tell the two live areas, sidebar body and content, to draw again after a
+//! change. A program owns the window, menus and gestures (ADR 0005, 0037) and calls
+//! [`ReaderWidget::build`] from its own build function; [`launch`](super::launch) is only the
+//! convenience of a window with nothing else in it.
+
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
+
+use blinc_core::BlincContextState;
+use blinc_layout::prelude::NoState;
+use blinc_layout::stateful::stateful;
+use blinc_layout::widgets::text_area::SharedTextAreaState;
+use fs_components_primitives::SearchField;
+use fs_components_widgets::Element;
+use fs_components_widgets::open_external;
+
+use crate::labels::Labels;
+use crate::reader::{Outcome, Reader};
+use crate::source::DocumentSource;
+use crate::view::{Actions, content, frame, new_area, side_body, tree_nodes};
+
+static NEXT_ID: AtomicU64 = AtomicU64::new(1);
+
+/// The reader, ready to be built into a layout. Cheap to clone; clones share the state.
+#[derive(Clone)]
+pub struct ReaderWidget {
+    id: u64,
+    reader: Arc<Mutex<Reader>>,
+    field: SearchField,
+    area: Arc<Mutex<Option<SharedTextAreaState>>>,
+}
+
+impl ReaderWidget {
+    /// A reader over `source` with `labels`; `export_target` switches Export on.
+    pub fn new(
+        source: Arc<dyn DocumentSource>,
+        labels: Labels,
+        export_target: Option<String>,
+    ) -> Self {
+        let id = NEXT_ID.fetch_add(1, Ordering::Relaxed);
+        let mut reader = Reader::new(source, labels);
+        reader.set_export_target(export_target);
+        let placeholder = reader.labels().search.clone();
+        let reader = Arc::new(Mutex::new(reader));
+        let field = {
+            let reader = Arc::clone(&reader);
+            SearchField::new(&placeholder).on_change(Arc::new(move |term| {
+                locked(&reader).search(term);
+                bump(id, "side");
+            }))
+        };
+        Self {
+            id,
+            reader,
+            field,
+            area: Arc::new(Mutex::new(None)),
+        }
+    }
+
+    /// The state, for a program's menus and commands (open, back, save ...). After a change made
+    /// this way call [`ReaderWidget::refresh`].
+    pub fn reader(&self) -> MutexGuard<'_, Reader> {
+        locked(&self.reader)
+    }
+
+    /// Draw the areas again after the state was changed through [`ReaderWidget::reader`].
+    pub fn refresh(&self) {
+        bump(self.id, "page");
+        bump(self.id, "side");
+    }
+
+    /// The element of the reader, filling `width` x `height`. Call it inside the program's build
+    /// function (it keeps its state in the framework's keyed state).
+    pub fn build(&self, width: f32, height: f32) -> impl Element + use<> {
+        let (id, reader) = (self.id, &self.reader);
+        let page_v = state(id, "page");
+        let side_v = state(id, "side");
+        let actions = self.actions();
+        let side = {
+            let (reader, actions) = (Arc::clone(reader), actions.clone());
+            stateful::<NoState>()
+                .deps([side_v.signal_id()])
+                .on_state(move |_| {
+                    let reader = locked(&reader);
+                    let tree = tree_nodes(reader.entries());
+                    side_body(&reader, &tree, &actions)
+                })
+        };
+        let main = {
+            let (reader, actions, slot) =
+                (Arc::clone(reader), actions.clone(), Arc::clone(&self.area));
+            stateful::<NoState>()
+                .deps([page_v.signal_id()])
+                .on_state(move |_| {
+                    let reader = locked(&reader);
+                    let mut slot = slot.lock().unwrap_or_else(PoisonError::into_inner);
+                    match reader.editing() {
+                        None => *slot = None,
+                        Some(editing) if slot.is_none() => *slot = Some(new_area(&editing.draft)),
+                        Some(_) => {}
+                    }
+                    content(&reader, &actions, None, slot.as_ref())
+                })
+        };
+        let (back, save) = (Arc::clone(&actions.back), Arc::clone(&actions.save));
+        // Esc is not handled: it reaches this element from the text area and the search field too,
+        // and must never throw away a draft.
+        frame(self.field.build(), side, main, width, height).on_key_down(move |e| {
+            match e.key_code {
+                0x25 if e.alt => back(),
+                0x53 if e.ctrl => save(),
+                _ => {}
+            }
+        })
+    }
+
+    /// The callbacks that change the shared reader and ask the areas to draw again.
+    fn actions(&self) -> Actions {
+        let id = self.id;
+        let simple = |change: fn(&mut Reader)| -> Arc<dyn Fn() + Send + Sync> {
+            let reader = Arc::clone(&self.reader);
+            Arc::new(move || {
+                change(&mut locked(&reader));
+                bump(id, "page");
+                bump(id, "side");
+            })
+        };
+        let (open_r, follow_r, draft_r) = (
+            Arc::clone(&self.reader),
+            Arc::clone(&self.reader),
+            Arc::clone(&self.reader),
+        );
+        Actions {
+            open: Arc::new(move |path| {
+                locked(&open_r).open(path);
+                bump(id, "page");
+            }),
+            follow: Arc::new(move |href| {
+                let outcome = locked(&follow_r).follow(href);
+                if let Outcome::External(url) = outcome {
+                    open_external(&url);
+                }
+                bump(id, "page");
+                bump(id, "side"); // the tree marks the page that is now open
+            }),
+            back: simple(Reader::back), // draws both areas (the tree marks the page)
+            edit: simple(Reader::begin_edit),
+            // Typing is remembered but does not redraw: the text area keeps its own cursor.
+            draft: Arc::new(move |text| locked(&draft_r).set_draft(text)),
+            save: simple(Reader::save),
+            cancel: simple(Reader::cancel_edit),
+            export: simple(Reader::export),
+        }
+    }
+}
+
+fn locked(reader: &Mutex<Reader>) -> MutexGuard<'_, Reader> {
+    reader.lock().unwrap_or_else(PoisonError::into_inner)
+}
+
+fn state(id: u64, area: &str) -> blinc_core::State<u64> {
+    BlincContextState::get().use_state_keyed(&format!("fs-rd-{id}-{area}"), || 0u64)
+}
+
+/// Count up the signal of `area`, which makes the areas depending on it draw again.
+fn bump(id: u64, area: &str) {
+    state(id, area).update(|v| v + 1);
+}
