@@ -9,11 +9,12 @@ use blinc_layout::text;
 
 use super::actions::CalendarActions;
 use super::detail_bar::bar;
-use super::form::{InputSlots, form};
+use super::form::form;
 use super::page_scroll::PageScroll;
 use crate::calendar::model::{ItemSheet, SheetSection};
 use crate::calendar::shown::Shown;
 use crate::calendar::state::CalendarState;
+use crate::input_slots::InputSlots;
 
 /// The detail area. `back` adds the way back where the calendar is out of sight.
 pub(super) fn detail(

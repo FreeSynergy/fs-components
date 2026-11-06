@@ -24,7 +24,8 @@ use super::labels::PeopleLabels;
 use super::shown::Variant;
 use super::source::PeopleSource;
 use super::state::PeopleState;
-use super::view::{Areas, InputSlots, button_for, detail, frame, list, list_size};
+use super::view::{Areas, button_for, detail, frame, list, list_size};
+use crate::input_slots::InputSlots;
 
 static NEXT_ID: AtomicU64 = AtomicU64::new(1);
 

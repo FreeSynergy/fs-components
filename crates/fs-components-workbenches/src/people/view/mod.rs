@@ -13,7 +13,6 @@ mod styles;
 
 pub(super) use actions::PeopleActions;
 pub(super) use detail::{button_for, detail};
-pub(super) use form::InputSlots;
 pub(super) use frame::{Areas, frame, list_size};
 pub(super) use list::list;
 pub use styles::styles;

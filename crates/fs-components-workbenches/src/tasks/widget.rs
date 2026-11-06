@@ -25,7 +25,8 @@ use super::labels::TaskLabels;
 use super::shown::Variant;
 use super::source::TaskSource;
 use super::state::TasksState;
-use super::view::{Areas, InputSlots, board_area, detail, frame, list, toolbar, work_size};
+use super::view::{Areas, board_area, detail, frame, list, toolbar, work_size};
+use crate::input_slots::InputSlots;
 
 static NEXT_ID: AtomicU64 = AtomicU64::new(1);
 

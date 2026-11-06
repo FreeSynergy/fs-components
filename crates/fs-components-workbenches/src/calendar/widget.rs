@@ -18,7 +18,8 @@ use super::labels::CalendarLabels;
 use super::shown::Variant;
 use super::source::CalendarSource;
 use super::state::CalendarState;
-use super::view::{InputSlots, PageScroll, Places, workbench};
+use super::view::{PageScroll, Places, workbench};
+use crate::input_slots::InputSlots;
 
 static NEXT_ID: AtomicU64 = AtomicU64::new(1);
 

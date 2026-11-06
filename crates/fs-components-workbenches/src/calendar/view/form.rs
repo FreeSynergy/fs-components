@@ -1,88 +1,21 @@
 //! The form of an edit: one field per value of the draft.
 //!
-//! Pattern: Adapter over `blinc_cn`'s input and text area + Memento — [`InputSlots`] keeps one input
-//! state per field for the whole edit, so a redraw (a failed save, a pressed flag) keeps text and
-//! cursor. Typing reports to the draft and does not redraw. A flag is a plain element: pressing it
-//! changes the draft and draws again.
+//! Pattern: Adapter over `blinc_cn`'s input and text area. [`InputSlots`] keeps one input state per
+//! field for the whole edit. Typing reports to the draft and does not redraw. A flag is a plain
+//! element: pressing it changes the draft and draws again.
 
-use std::collections::HashMap;
-use std::sync::{Arc, Mutex, PoisonError};
+use std::sync::Arc;
 
 use blinc_cn::components::input::{InputSize, input};
 use blinc_cn::components::textarea::{TextareaSize, textarea};
 use blinc_layout::div::{Div, div};
 use blinc_layout::text;
-use blinc_layout::widgets::text_area::{SharedTextAreaState, text_area_state};
-use blinc_layout::widgets::text_input::{SharedTextInputData, text_input_data};
 
 use super::actions::CalendarActions;
 use crate::calendar::draft::{DraftField, FieldKind};
 use crate::calendar::edit::ItemEdit;
 use crate::calendar::labels::CalendarLabels;
-
-/// The input states of one edit.
-#[derive(Default)]
-struct Slots {
-    edit: u64,
-    lines: HashMap<String, SharedTextInputData>,
-    areas: HashMap<String, SharedTextAreaState>,
-}
-
-/// The input states of the edit in progress, tied to that edit by its id.
-#[derive(Clone, Default)]
-pub(in crate::calendar) struct InputSlots(Arc<Mutex<Slots>>);
-
-impl InputSlots {
-    /// The state of a one-line `field`, holding `value`. The lock of the slots is let go before the
-    /// input's own lock is taken.
-    fn line(&self, edit: u64, field: &str, value: &str) -> SharedTextInputData {
-        let data = {
-            let mut slots = self.0.lock().unwrap_or_else(PoisonError::into_inner);
-            slots.for_edit(edit);
-            Arc::clone(
-                slots
-                    .lines
-                    .entry(field.to_string())
-                    .or_insert_with(text_input_data),
-            )
-        };
-        {
-            let mut held = data.lock().unwrap_or_else(PoisonError::into_inner);
-            if held.value != value {
-                held.value = value.to_string();
-                held.cursor = value.chars().count();
-                held.selection_start = None;
-            }
-        }
-        data
-    }
-
-    /// The state of a many-line `field`; holds `value` from when it is made, and after that what
-    /// was typed into it.
-    fn area(&self, edit: u64, field: &str, value: &str) -> SharedTextAreaState {
-        let mut slots = self.0.lock().unwrap_or_else(PoisonError::into_inner);
-        slots.for_edit(edit);
-        Arc::clone(slots.areas.entry(field.to_string()).or_insert_with(|| {
-            let state = text_area_state();
-            state
-                .lock()
-                .unwrap_or_else(PoisonError::into_inner)
-                .set_value(value);
-            state
-        }))
-    }
-}
-
-impl Slots {
-    fn for_edit(&mut self, edit: u64) {
-        if self.edit != edit {
-            *self = Self {
-                edit,
-                ..Self::default()
-            };
-        }
-    }
-}
+use crate::input_slots::InputSlots;
 
 /// The form for `edit`, added to `page`.
 pub(super) fn form(

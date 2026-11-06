@@ -13,7 +13,7 @@ use blinc_layout::widgets::scroll::scroll;
 
 use super::actions::{Act, TaskActions, button};
 use super::form::form;
-use super::slots::InputSlots;
+use crate::input_slots::InputSlots;
 use crate::tasks::context::TaskView;
 use crate::tasks::model::{TaskSection, TaskSheet};
 use crate::tasks::shown::Shown;

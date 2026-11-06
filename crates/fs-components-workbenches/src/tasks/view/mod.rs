@@ -10,7 +10,6 @@ mod detail;
 mod form;
 mod frame;
 mod list;
-mod slots;
 mod styles;
 mod toolbar;
 
@@ -19,6 +18,5 @@ pub(super) use board::board_area;
 pub(super) use detail::detail;
 pub(super) use frame::{Areas, frame, work_size};
 pub(super) use list::list;
-pub(super) use slots::InputSlots;
 pub use styles::styles;
 pub(super) use toolbar::toolbar;

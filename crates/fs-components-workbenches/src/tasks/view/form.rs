@@ -13,7 +13,7 @@ use blinc_layout::text;
 
 use super::actions::{Act, TaskActions, button};
 use super::detail::with_marks;
-use super::slots::InputSlots;
+use crate::input_slots::InputSlots;
 use crate::tasks::draft::{DraftField, FieldKind, FieldOption};
 use crate::tasks::edit::TaskEdit;
 

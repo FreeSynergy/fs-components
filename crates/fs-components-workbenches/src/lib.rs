@@ -14,6 +14,7 @@
 
 pub mod calendar;
 mod error;
+mod input_slots;
 mod labels;
 pub mod llm_chat;
 pub mod people;

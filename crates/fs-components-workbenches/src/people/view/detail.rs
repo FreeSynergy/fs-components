@@ -10,7 +10,8 @@ use blinc_layout::text;
 use blinc_layout::widgets::scroll::scroll;
 
 use super::actions::{Act, PeopleActions};
-use super::form::{InputSlots, form};
+use super::form::form;
+use crate::input_slots::InputSlots;
 use crate::people::model::{PersonSection, PersonSheet};
 use crate::people::shown::Shown;
 use crate::people::state::PeopleState;
