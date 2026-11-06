@@ -124,6 +124,14 @@ impl FilesState {
         }
     }
 
+    /// Leave an input whose try failed, keeping nothing typed; for a host's own way out. A dirty input
+    /// is otherwise two acts.
+    pub fn discard_after_failure(&mut self) {
+        if matches!(&self.ask, Ask::Input(input) if input.error.is_some() || !input.dirty()) {
+            self.ask = Ask::Nothing;
+        }
+    }
+
     /// Do what the input is for.
     pub fn submit_input(&mut self) {
         let Ask::Input(input) = &self.ask else {

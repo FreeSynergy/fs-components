@@ -35,7 +35,11 @@ pub use command::{CarryKind, Carrying, Command};
 pub use context::{FileView, FilesContext, PickedFile, Variant};
 pub use error::{FileError, FileProblem};
 pub use filter::FilterDraft;
+pub use fs_components_widgets::TreeNode;
 pub use fs_components_widgets::file_preview::{Fact, PreviewContent};
+pub use fs_components_widgets::transfer_list::{
+    Action as TransferAction, Outcome as TransferOutcome,
+};
 pub use labels::FileLabels;
 pub use model::{
     EntryKind, EntryPage, EntryRef, FileEntry, FolderInfo, ListFilter, ListRequest, NameRule,
