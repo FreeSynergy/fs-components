@@ -17,15 +17,16 @@ use fs_components_workbenches::{
 struct Fake(Vec<(&'static str, &'static str, Vec<Block>)>);
 
 impl DataSource for Fake {
-    fn entries(&self, prefix: &str) -> Vec<Entry> {
-        self.0
+    fn entries(&self, prefix: &str) -> Result<Vec<Entry>, ReadError> {
+        Ok(self
+            .0
             .iter()
             .filter(|(p, ..)| p.starts_with(prefix))
             .map(|(p, t, _)| Entry {
                 path: (*p).into(),
                 title: (*t).into(),
             })
-            .collect()
+            .collect())
     }
 
     fn read(&self, path: &str) -> Result<Document, ReadError> {
@@ -49,9 +50,10 @@ impl DataSource for Fake {
         }
     }
 
-    fn find(&self, term: &str) -> Vec<Hit> {
+    fn find(&self, term: &str) -> Result<Vec<Hit>, ReadError> {
         let term = term.to_lowercase();
-        self.0
+        Ok(self
+            .0
             .iter()
             .filter(|(_, t, b)| {
                 t.to_lowercase().contains(&term)
@@ -62,7 +64,7 @@ impl DataSource for Fake {
                 path: (*p).into(),
                 title: (*t).into(),
             })
-            .collect()
+            .collect())
     }
 }
 

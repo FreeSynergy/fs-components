@@ -49,7 +49,10 @@ impl std::fmt::Display for ReadError {
 /// from the interface thread.
 pub trait DataSource: Send + Sync {
     /// All documents whose path starts with `prefix` (empty = all), in path order.
-    fn entries(&self, prefix: &str) -> Vec<Entry>;
+    ///
+    /// # Errors
+    /// [`ReadError`] with a reason a person can read.
+    fn entries(&self, prefix: &str) -> Result<Vec<Entry>, ReadError>;
     /// Read one document.
     ///
     /// # Errors
@@ -58,7 +61,10 @@ pub trait DataSource: Send + Sync {
     /// Follow `href` as written in the document at `from`.
     fn resolve(&self, from: &str, href: &str) -> LinkTarget;
     /// Documents that match `term` by name or content.
-    fn find(&self, term: &str) -> Vec<Hit>;
+    ///
+    /// # Errors
+    /// [`ReadError`] with a reason a person can read.
+    fn find(&self, term: &str) -> Result<Vec<Hit>, ReadError>;
     /// The path to show first, if the source has an opinion.
     fn start(&self) -> Option<String> {
         None

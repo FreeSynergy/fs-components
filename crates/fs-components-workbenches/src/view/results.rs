@@ -11,6 +11,9 @@ use crate::reader::Reader;
 /// Rows of the hits of the current search.
 pub(crate) fn results(reader: &Reader, actions: &Actions) -> Div {
     let mut column = div().flex_col().w_full();
+    if let Some(problem) = reader.problem() {
+        return column.child(div().class("fs-rd-empty").child(text(problem)));
+    }
     if reader.hits().is_empty() {
         return column.child(
             div()

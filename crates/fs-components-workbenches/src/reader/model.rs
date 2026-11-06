@@ -50,16 +50,21 @@ pub struct Reader {
     history: Vec<String>,
     term: String,
     hits: Vec<Hit>,
+    problem: Option<String>,
     notice: Option<String>,
 }
 
 impl Reader {
     /// A reader over `source`; lists everything once and opens the start page.
     pub fn new(source: Arc<dyn DataSource>) -> Self {
-        let entries = source.entries("");
+        let (entries, problem) = match source.entries("") {
+            Ok(entries) => (entries, None),
+            Err(e) => (Vec::new(), Some(format!("The list of pages failed: {e}"))),
+        };
         let mut reader = Self {
             source,
             entries,
+            problem,
             shown: Shown::Nothing,
             history: Vec::new(),
             term: String::new(),
@@ -109,6 +114,11 @@ impl Reader {
         &self.hits
     }
 
+    /// Why the list of pages or the last search failed, if it did.
+    pub fn problem(&self) -> Option<&str> {
+        self.problem.as_deref()
+    }
+
     /// A short message for the person (a link led nowhere), if any.
     pub fn notice(&self) -> Option<&str> {
         self.notice.as_deref()
@@ -151,11 +161,17 @@ impl Reader {
     /// Search by name and content; an empty term ends the search.
     pub fn search(&mut self, term: &str) {
         self.term = term.trim().to_string();
-        self.hits = if self.term.is_empty() {
-            Vec::new()
-        } else {
-            self.source.find(&self.term)
-        };
+        self.hits.clear();
+        if self.term.is_empty() {
+            return;
+        }
+        match self.source.find(&self.term) {
+            Ok(hits) => {
+                self.hits = hits;
+                self.problem = None;
+            }
+            Err(e) => self.problem = Some(format!("The search failed: {e}")),
+        }
     }
 
     fn show(&mut self, path: &str) {

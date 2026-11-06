@@ -10,15 +10,15 @@ use fs_components_workbenches::{
 pub struct Fake;
 
 impl DataSource for Fake {
-    fn entries(&self, prefix: &str) -> Vec<Entry> {
-        ["a", "broken", "dir/b"]
+    fn entries(&self, prefix: &str) -> Result<Vec<Entry>, ReadError> {
+        Ok(["a", "broken", "dir/b"]
             .iter()
             .filter(|p| p.starts_with(prefix))
             .map(|p| Entry {
                 path: (*p).into(),
                 title: p.to_uppercase(),
             })
-            .collect()
+            .collect())
     }
 
     fn read(&self, path: &str) -> Result<Document, ReadError> {
@@ -40,15 +40,19 @@ impl DataSource for Fake {
         }
     }
 
-    fn find(&self, term: &str) -> Vec<Hit> {
-        self.entries("")
+    fn find(&self, term: &str) -> Result<Vec<Hit>, ReadError> {
+        if term == "boom" {
+            return Err(ReadError("the index is gone".into()));
+        }
+        Ok(self
+            .entries("")?
             .into_iter()
             .filter(|e| e.title.to_lowercase().contains(&term.to_lowercase()))
             .map(|e| Hit {
                 path: e.path,
                 title: e.title,
             })
-            .collect()
+            .collect())
     }
 
     fn start(&self) -> Option<String> {
