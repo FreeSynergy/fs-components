@@ -13,7 +13,7 @@ mod styles;
 mod view;
 mod window;
 
-pub use keys::{ListKey, key_target};
+pub use keys::key_target;
 pub use model::{Column, ColumnWidth, ListView, OnSelect, Row, RowSource, VecRows};
 pub use position::ListPosition;
 pub use styles::STYLES;

@@ -10,15 +10,15 @@ use std::sync::Arc;
 use blinc_core::reactive::{ReactiveGraph, computed};
 use blinc_layout::div::{Div, div};
 use blinc_layout::text;
-use blinc_layout::widgets::has_focused_text_input;
 use blinc_layout::widgets::scroll::Scroll;
 
 use super::cache::RowCache;
-use super::keys::{ListKey, key_target};
+use super::keys::key_target;
 use super::model::{ListView, OnSelect, Row};
 use super::position::ListPosition;
 use super::window::{column_widths, visible_rows};
 use crate::Element;
+use crate::keys::{KeyEvent, bind_keys};
 
 /// Height of the row of headings in pixels.
 const HEAD_HEIGHT: f32 = 28.0;
@@ -33,11 +33,15 @@ impl ListView {
             .w(width)
             .h(height)
             .min_h(0.0);
+        let root = match &self.name {
+            Some(name) => root.id(name),
+            None => root,
+        };
         let count = self.source.count();
         let widths = Arc::new(column_widths(&self.columns, width));
         let with_head = self.columns.iter().any(|c| !c.title.is_empty());
         let head = with_head.then(|| head(&self, &widths));
-        let view = height - if with_head { HEAD_HEIGHT } else { 0.0 };
+        let view = (height - if with_head { HEAD_HEIGHT } else { 0.0 }).max(0.0);
         let root = match head {
             Some(head) => root.child(head),
             None => root,
@@ -193,15 +197,9 @@ fn with_keys(root: Div, list: &ListView, position: ListPosition, count: usize, v
     let row_height = list.row_height;
     let page = (view / row_height) as usize;
     let (source, on_select) = (Arc::clone(&list.source), list.on_select.clone());
-    root.on_key_down(move |event| {
-        let Some(key) = ListKey::from_code(event.key_code) else {
-            return;
-        };
-        if has_focused_text_input() {
-            return;
-        }
-        let Some(row) = key_target(key, position.cursor(), count, page) else {
-            return;
+    let handler = Arc::new(move |event: KeyEvent| {
+        let Some(row) = key_target(event.key, position.cursor(), count, page) else {
+            return false;
         };
         position.set_cursor(Some(row));
         let (top, bottom) = (row as f32 * row_height, (row + 1) as f32 * row_height);
@@ -216,5 +214,7 @@ fn with_keys(root: Div, list: &ListView, position: ListPosition, count: usize, v
         {
             on_select(&found.key);
         }
-    })
+        true
+    });
+    bind_keys(root, handler)
 }

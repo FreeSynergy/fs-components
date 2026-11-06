@@ -11,9 +11,8 @@ use std::sync::{Arc, Mutex};
 use blinc_layout::event_router::EventRouter;
 use blinc_layout::prelude::RenderTree;
 use common::{Input, layout, serial};
-use fs_components_widgets::list_view::{
-    ListKey, OnSelect, column_widths, key_target, visible_rows,
-};
+use fs_components_widgets::Key;
+use fs_components_widgets::list_view::{OnSelect, column_widths, key_target, visible_rows};
 use fs_components_widgets::{Column, ColumnWidth, ListPosition, ListView, Row, RowSource, VecRows};
 
 struct Numbers(usize);
@@ -88,7 +87,8 @@ fn columns_share_what_the_fixed_ones_leave() {
 
 #[test]
 fn keys_lead_to_a_row_inside_the_list() {
-    use ListKey::{Down, End, Home, PageDown, PageUp, Up};
+    use Key::{Down, End, Enter, Home, PageDown, PageUp, Up};
+    assert_eq!(key_target(Enter, Some(1), 5, 2), None);
     assert_eq!(key_target(Down, None, 5, 2), Some(0));
     assert_eq!(key_target(End, None, 5, 2), Some(4));
     assert_eq!(key_target(Down, Some(4), 5, 2), Some(4));
@@ -194,6 +194,9 @@ fn keys_are_off_by_default_and_when_on_move_the_choice_and_keep_it_in_view() {
         .position(&position)
         .keys(true);
     let mut tree = layout(keyed.build(400.0, 300.0), 400.0, 300.0);
+    input.key_broadcast(&mut tree, 0x28);
+    assert!(chosen.lock().unwrap().is_empty(), "it has not the keyboard");
+    input.focus(&tree, "t");
     input.key_broadcast(&mut tree, 0x28); // down: the first row
     input.key_broadcast(&mut tree, 0x28); // down: the second
     input.key_broadcast(&mut tree, 0x23); // end
@@ -205,4 +208,12 @@ fn keys_are_off_by_default_and_when_on_move_the_choice_and_keep_it_in_view() {
     tree.compute_layout(400.0, 300.0);
     assert!(has_row(&tree, 999), "the end is in view");
     assert!(!has_row(&tree, 0));
+}
+
+#[test]
+fn a_list_may_be_told_no_room_at_all() {
+    let _one = serial();
+    let list = list_of(Numbers(100));
+    let tree = layout(list.build(0.0, 0.0), 0.0, 0.0);
+    drop(tree);
 }

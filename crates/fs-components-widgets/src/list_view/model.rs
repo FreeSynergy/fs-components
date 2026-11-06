@@ -149,16 +149,16 @@ impl ListView {
         self
     }
 
-    /// Switch the arrow keys, Page Up/Down, Home and End on (default off). Keys reach every element
-    /// of a window, so a program with several lists, or its own shortcuts (ADR 0037), leaves them
-    /// off or switches on one list only. They do nothing while a text field has the focus.
+    /// Switch the arrow keys, Page Up/Down, Home and End on (default off): the list becomes a tab
+    /// stop and acts on a key only while it has the keyboard, so several lists and a program's own
+    /// shortcuts (ADR 0037) do not collide.
     pub fn keys(mut self, on: bool) -> Self {
         self.keys = on;
         self
     }
 
-    /// Give every row the element id `<name>-<key>`, so a program or a test can find it. Names must
-    /// differ between lists in one window. Default: no ids.
+    /// Give the list the element id `<name>` and every row `<name>-<key>`, so a program or a test
+    /// can find them. Names must differ between lists in one window. Default: no ids.
     pub fn named(mut self, name: impl Into<String>) -> Self {
         self.name = Some(name.into());
         self
