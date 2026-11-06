@@ -77,3 +77,16 @@ pub fn launch(
     )
     .map_err(|e| ShellError(e.to_string()))
 }
+
+impl std::fmt::Debug for Options {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Options")
+            .field("title", &self.title)
+            .field("width", &self.width)
+            .field("height", &self.height)
+            .field("labels", &self.labels)
+            .field("export_target", &self.export_target)
+            .field("drafts", &self.drafts.as_ref().map(|_| "DraftStore"))
+            .finish()
+    }
+}

@@ -58,10 +58,11 @@ fn one(block: &Block, look: &Look, on_link: Option<&LinkHandler>, depth: usize) 
             .class("fs-tv-block")
             .class("fs-tv-quote")
             .child(blocks(inner, look, on_link, depth + 1)),
-        Block::Code { text, .. } => code(text, look),
         Block::Table { align, rows } => table(align, rows, look, on_link),
         Block::Rule => div().class("fs-tv-block").class("fs-tv-rule"),
-        Block::Plain(text) => paragraph(&Inline::plain(text.clone()), look, None),
+        // Text that could not be mapped: line by line as it is, with its indentation and blank
+        // lines (a paragraph would run the lines together).
+        Block::Code { text, .. } | Block::Plain(text) => code(text, look),
     }
 }
 

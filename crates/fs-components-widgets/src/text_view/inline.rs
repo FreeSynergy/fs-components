@@ -34,6 +34,7 @@ pub(super) fn inline(
 ) -> Div {
     if !inline.marks.is_empty()
         || inline.text.len() > LONG_PLAIN
+        || inline.text.contains('\n')
         || super::fallback::needs_fallback(&inline.text)
     {
         return flow(inline, face, look, on_link);

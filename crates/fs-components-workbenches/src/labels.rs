@@ -56,6 +56,10 @@ pub struct Labels {
     pub discard: String,
     /// The document changed since the backed-up draft was made.
     pub backup_stale: String,
+    /// Restore with typed text present.
+    pub restore_confirm: String,
+    /// A stored draft names another document; `{}` = that name.
+    pub backup_mismatch: String,
     /// `{}` = the reason.
     pub backup_failed: String,
     /// `{}` = the reason.
@@ -93,6 +97,10 @@ impl Default for Labels {
             discard: s("Discard"),
             backup_stale: s(
                 "The document changed after this draft was made. Saving asks before it replaces the newer version.",
+            ),
+            restore_confirm: s("Restoring replaces what you typed. Press Restore again to do it."),
+            backup_mismatch: s(
+                "A stored draft belongs to another document (\"{}\") and was not offered.",
             ),
             backup_failed: s("Backup of your draft failed: {}"),
             list_failed: s("The list failed: {}"),

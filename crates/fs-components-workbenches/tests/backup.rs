@@ -13,7 +13,7 @@ use fs_components_workbenches::{Labels, Reader, ReaderWidget};
 
 fn setup() -> (Arc<Editable>, Arc<MemDrafts>) {
     (
-        Arc::new(Editable::with(&[("a", "original\n")])),
+        Arc::new(Editable::with(&[("a", "original\n"), ("b", "bee\n")])),
         Arc::new(MemDrafts::default()),
     )
 }

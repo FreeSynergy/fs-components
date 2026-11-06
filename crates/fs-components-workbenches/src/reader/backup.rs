@@ -2,18 +2,20 @@
 //!
 //! Pattern: Strategy (`DraftStore`, supplied by the host) + State. The reader keeps no storage of
 //! its own: a program that wants drafts to survive a crash or a closed window gives a store (a
-//! file in its data directory, for example). A backup is written after a short pause in typing
-//! and at most every few seconds while typing goes on, and when the reader is dropped; it is
-//! never written back into the document by itself (ADR 0046): on the next edit of that document
-//! the person is offered the draft and chooses to restore or discard it. A save and a chosen
-//! discard clear it. A failing store is shown, not hidden.
+//! file in its data directory, for example). A draft is backed up after a short pause in typing
+//! and at least every few seconds while typing goes on; a failed backup is retried and shown. A
+//! backup is never written back into the document by itself (ADR 0046): on the next edit of that
+//! document the person is offered it and chooses Restore or Discard, and until then the offered
+//! backup is not touched. A save or a chosen discard clears a backup this edit wrote. The write
+//! itself can run outside the reader's lock ([`BackupJob`]), so a slow store never stalls the
+//! interface.
 
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use super::draft::{Draft, DraftStore};
-use super::edit::Editing;
 use super::model::Reader;
+use crate::error::SourceError;
 use crate::labels::Labels;
 
 /// When to back up.
@@ -29,9 +31,12 @@ pub(super) struct Timing {
 pub(super) struct Backup {
     pub store: Option<Arc<dyn DraftStore>>,
     pub timing: Timing,
-    pub dirty: bool,
+    /// The edit (by id) whose draft has changes that are not in the store yet.
+    pub dirty: Option<u64>,
+    /// The edit whose draft this reader wrote into the store (and may clear again).
+    pub written: Option<u64>,
     pub last_change: Instant,
-    pub last_written: Instant,
+    pub last_attempt: Instant,
     pub problem: Option<String>,
 }
 
@@ -41,16 +46,38 @@ impl Backup {
         Self {
             store: None,
             timing: Timing {
-                pause: Duration::from_secs(1),
-                at_most: Duration::from_secs(10),
+                pause: Duration::from_millis(500),
+                at_most: Duration::from_secs(5),
             },
-            dirty: false,
+            dirty: None,
+            written: None,
             last_change: now,
-            last_written: now,
+            last_attempt: now,
             problem: None,
         }
     }
 }
+
+/// One write to the store, made under the reader's lock and run outside it.
+pub struct BackupJob {
+    store: Arc<dyn DraftStore>,
+    path: String,
+    edit: u64,
+    draft: Option<Draft>,
+}
+
+impl BackupJob {
+    /// Do the write (may be slow; do not hold the reader's lock).
+    pub fn run(&self) -> Result<(), SourceError> {
+        match &self.draft {
+            Some(d) => self.store.save(d),
+            None => self.store.clear(&self.path),
+        }
+    }
+}
+
+/// How long a failed backup waits before it is tried again.
+const RETRY: Duration = Duration::from_secs(2);
 
 impl Reader {
     /// Back drafts up into `store` (none = no backup).
@@ -70,111 +97,113 @@ impl Reader {
 
     /// Remember that the draft changed (called by `set_draft`).
     pub(super) fn note_change(&mut self) {
-        self.backup.dirty = true;
-        self.backup.last_change = Instant::now();
-    }
-
-    /// Back the draft up if it is due: changed, and typing paused or the last backup old. The
-    /// shell calls this every second or so.
-    pub fn backup_if_due(&mut self) {
-        let b = &self.backup;
-        let due = b.dirty
-            && (b.last_change.elapsed() >= b.timing.pause
-                || b.last_written.elapsed() >= b.timing.at_most);
-        if due {
-            self.backup_now();
+        if let Some(e) = &self.editing {
+            self.backup.dirty = Some(e.id);
+            self.backup.last_change = Instant::now();
         }
     }
 
-    /// Back the draft up now (a changed draft only; an unchanged one removes the backup).
-    pub fn backup_now(&mut self) {
-        let (Some(store), Some(path), Some(e)) = (
-            self.backup.store.clone(),
-            self.current_path().map(str::to_string),
-            self.editing.as_ref(),
-        ) else {
-            return;
+    /// The write that is due now, if any: the draft changed, typing paused or the last attempt is
+    /// old, and no backup is waiting for the person's answer. Run it with [`BackupJob::run`]
+    /// (outside the lock) and hand the result to [`Reader::backup_done`].
+    pub fn backup_job(&mut self) -> Option<BackupJob> {
+        let b = &self.backup;
+        let due = |paused: bool| {
+            let since = b.last_attempt.elapsed();
+            let wait = if b.problem.is_some() {
+                RETRY
+            } else {
+                b.timing.pause
+            };
+            (paused && since >= wait) || since >= b.timing.at_most.max(wait)
         };
-        let result = if e.changed() {
-            store.save(&Draft::new(
-                &path,
-                &e.draft,
-                &e.original,
-                e.revision.clone(),
-            ))
-        } else {
-            store.clear(&path)
-        };
-        self.backup.dirty = false;
-        self.backup.last_written = Instant::now();
-        self.backup.problem = result
-            .err()
-            .map(|e| Labels::fill(&self.labels.backup_failed, &e.message));
+        let e = self.editing.as_ref()?;
+        if b.dirty != Some(e.id) || e.backup_offer.is_some() {
+            return None;
+        }
+        if !due(b.last_change.elapsed() >= b.timing.pause) {
+            return None;
+        }
+        self.make_job(false)
     }
 
-    /// Look for a backup of the document being edited and offer it.
-    pub(super) fn find_backup(&mut self, path: &str, editing: &mut Editing) {
-        let Some(store) = self.backup.store.clone() else {
-            return;
+    /// The write for the draft now, due or not (the offered backup is still not touched).
+    pub fn backup_job_now(&mut self) -> Option<BackupJob> {
+        let e = self.editing.as_ref()?;
+        if self.backup.dirty != Some(e.id) || e.backup_offer.is_some() {
+            return None;
+        }
+        self.make_job(true)
+    }
+
+    fn make_job(&mut self, _now: bool) -> Option<BackupJob> {
+        let store = self.backup.store.clone()?;
+        let path = self.current_path()?.to_string();
+        let e = self.editing.as_ref()?;
+        let draft = if e.changed() {
+            Some(Draft::new(&path, &e.draft, &e.original, e.revision.clone()))
+        } else if self.backup.written == Some(e.id) {
+            None // typed and undone: remove what this edit wrote
+        } else {
+            self.backup.dirty = None;
+            return None;
         };
-        match store.load(path) {
-            Ok(Some(d)) if d.text != editing.original => editing.backup_offer = Some(d),
-            Ok(_) => {}
+        Some(BackupJob {
+            store,
+            path,
+            edit: e.id,
+            draft,
+        })
+    }
+
+    /// Record the result of a [`BackupJob`]. A failure keeps the draft marked as not backed up,
+    /// so it is tried again, and is shown.
+    pub fn backup_done(&mut self, job: &BackupJob, result: Result<(), SourceError>) {
+        self.backup.last_attempt = Instant::now();
+        match result {
+            Ok(()) => {
+                self.backup.problem = None;
+                self.backup.written = job.draft.is_some().then_some(job.edit);
+                if self.backup.dirty == Some(job.edit) && !self.changed_since(job) {
+                    self.backup.dirty = None;
+                }
+            }
             Err(e) => {
                 self.backup.problem = Some(Labels::fill(&self.labels.backup_failed, &e.message));
             }
         }
     }
 
-    /// Use the backed-up draft. If the document changed since, the draft keeps the revision it
-    /// was made from, so saving reports the conflict like any other (and a second Save replaces
-    /// the newer version knowingly).
-    pub fn restore_backup(&mut self) {
-        let stale = self.editing.as_ref().and_then(|e| {
-            let offer = e.backup_offer.as_ref()?;
-            (offer.revision != e.revision || offer.original != e.original).then_some(())
-        });
-        let Some(editing) = &mut self.editing else {
-            return;
-        };
-        let Some(offer) = editing.backup_offer.take() else {
-            return;
-        };
-        editing.draft = offer.text;
-        editing.discard_asked = false;
-        if stale.is_some() {
-            editing.revision = offer.revision;
-            editing.error = Some(self.labels.backup_stale.clone());
+    /// Did the draft change after the job was made (more typing during the write)?
+    fn changed_since(&self, job: &BackupJob) -> bool {
+        match (&self.editing, &job.draft) {
+            (Some(e), Some(d)) => e.draft != d.text,
+            _ => false,
         }
-        self.note_change();
     }
 
-    /// Throw the backup away (the person chose to).
-    pub fn discard_backup(&mut self) {
-        if let Some(e) = &mut self.editing {
-            e.backup_offer = None;
+    /// Back the draft up if it is due (the write runs under the caller's lock; a shell that cares
+    /// uses [`Reader::backup_job`] instead).
+    pub fn backup_if_due(&mut self) {
+        if let Some(job) = self.backup_job() {
+            let result = job.run();
+            self.backup_done(&job, result);
         }
-        self.clear_backup();
     }
 
-    /// Remove the backup of the document shown (after a save or a chosen discard).
-    pub(super) fn clear_backup(&mut self) {
-        let (Some(store), Some(path)) = (self.backup.store.clone(), self.current_path()) else {
-            return;
-        };
-        let result = store.clear(path);
-        self.backup.dirty = false;
-        self.backup.problem = result
-            .err()
-            .map(|e| Labels::fill(&self.labels.backup_failed, &e.message));
+    /// Back the draft up now.
+    pub fn backup_now(&mut self) {
+        if let Some(job) = self.backup_job_now() {
+            let result = job.run();
+            self.backup_done(&job, result);
+        }
     }
 }
 
 impl Drop for Reader {
-    /// Closing the window drops the reader: last chance to back the draft up.
+    /// Best effort when a reader is dropped (a window's global state may keep it alive instead,
+    /// then the timer has already written the draft).
     fn drop(&mut self) {
-        if self.backup.dirty {
-            self.backup_now();
-        }
+        self.backup_now();
     }
 }

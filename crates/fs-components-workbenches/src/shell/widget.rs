@@ -69,26 +69,50 @@ impl ReaderWidget {
         }
     }
 
-    /// Back the drafts of edits up into `store` (see [`DraftStore`]): after a pause in typing, at
-    /// least every ten seconds while typing goes on, and when the widget is dropped. A small
-    /// thread does the timing and ends with the widget.
+    /// Back the drafts of edits up into `store` (see [`DraftStore`]): after a pause in typing
+    /// (half a second by default), at least every five seconds while typing goes on; a failed
+    /// backup is retried and shown. A small thread does the timing, writes outside the reader's
+    /// lock, redraws when the message about a failure changes, and ends with the widget. The
+    /// window's global state keeps a built widget alive, so closing the window does **not** drop
+    /// the reader and flush: the loss on a close is at most the last pause (or interval).
     #[must_use]
     pub fn drafts(self, store: Arc<dyn DraftStore>) -> Self {
         self.with_reader(|r| r.set_draft_store(Some(store)));
-        let weak = Arc::downgrade(&self.reader);
+        let (weak, id) = (Arc::downgrade(&self.reader), self.id);
         std::thread::spawn(move || {
             while let Some(reader) = weak.upgrade() {
-                locked(&reader).backup_if_due();
+                let (job, before) = {
+                    let mut r = locked(&reader);
+                    (r.backup_job(), r.backup_problem().map(str::to_string))
+                };
+                if let Some(job) = job {
+                    let result = job.run(); // may be slow: no lock held
+                    let mut r = locked(&reader);
+                    r.backup_done(&job, result);
+                    if r.backup_problem().map(str::to_string) != before {
+                        drop(r);
+                        bump(id, "page");
+                    }
+                }
                 drop(reader);
-                std::thread::sleep(std::time::Duration::from_millis(500));
+                std::thread::sleep(std::time::Duration::from_millis(250));
             }
         });
         self
     }
 
+    /// Back up after `pause` without typing and at least every `at_most` while typing goes on
+    /// (call before [`ReaderWidget::drafts`]).
+    #[must_use]
+    pub fn backup_timing(self, pause: std::time::Duration, at_most: std::time::Duration) -> Self {
+        self.with_reader(|r| r.set_backup_timing(pause, at_most));
+        self
+    }
+
     /// Run `f` with the state, for a program's menus and commands (open, back, save ...). A
     /// closure, so the lock cannot be held across calls (two guards in one statement would
-    /// deadlock the interface thread). After a change made this way call
+    /// deadlock the interface thread). Do not call `with_reader` (or anything else of the widget
+    /// that takes the lock) from inside `f`: that deadlocks. After a change made this way call
     /// [`ReaderWidget::refresh`].
     pub fn with_reader<T>(&self, f: impl FnOnce(&mut Reader) -> T) -> T {
         f(&mut locked(&self.reader))
@@ -104,7 +128,7 @@ impl ReaderWidget {
         self
     }
 
-    /// Draw the areas again after the state was changed through [`ReaderWidget::reader`].
+    /// Draw the areas again after the state was changed through [`ReaderWidget::with_reader`].
     pub fn refresh(&self) {
         bump(self.id, "page");
         bump(self.id, "side");
@@ -162,7 +186,7 @@ impl ReaderWidget {
 
     /// The text area for the edit in progress (none when not editing). A new one is made when the
     /// edit is another one, or when the draft was changed from outside (through
-    /// [`ReaderWidget::reader`]) and the area no longer holds it.
+    /// [`ReaderWidget::with_reader`]) and the area no longer holds it.
     fn sync_area(&self, reader: &Reader) -> Option<SharedTextAreaState> {
         let mut slot = self.area.lock().unwrap_or_else(PoisonError::into_inner);
         let Some(editing) = reader.editing() else {

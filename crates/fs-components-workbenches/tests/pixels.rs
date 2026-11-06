@@ -88,3 +88,51 @@ fn symbols_and_scripts_without_a_default_glyph_are_drawn_not_boxes() {
     let (first, last) = (spans.first().unwrap().0, spans.last().unwrap().1);
     assert!(last - first >= 28, "the glyphs pile up: {spans:?}");
 }
+
+#[test]
+fn unmapped_text_keeps_its_lines_blank_lines_and_indentation() {
+    let tmp = Scratch::new();
+    let draw = |name: &str, text: String| {
+        let file = tmp.file(name);
+        snapshot(
+            Picture::new(Arc::new(Long(vec![Block::Plain(text)])), 700, 300),
+            &file,
+        )
+        .ok()?;
+        Some(pixels(&file))
+    };
+    let short = "first line\n\n    indented line\nlast line".to_string();
+    // The same text made longer than the 1500 bytes where another drawing path used to take over.
+    let long = format!("{short}\n{}", "padding line\n".repeat(150));
+    for (name, text) in [("short.png", short), ("long.png", long)] {
+        let Some(img) = draw(name, text) else {
+            eprintln!("skipped: no graphics");
+            return;
+        };
+        // Rows with dark text in the page area: first line, (blank), indented, last: 3 bands, the
+        // gap between the first two is a blank line.
+        let rows: Vec<u32> = (80..300)
+            .filter(|&y| (340..690).any(|x| common::draw::dark(img.get_pixel(x, y))))
+            .collect();
+        let mut bands: Vec<(u32, u32)> = Vec::new();
+        for y in rows {
+            match bands.last_mut() {
+                Some(b) if y - b.1 <= 2 => b.1 = y,
+                _ => bands.push((y, y)),
+            }
+        }
+        assert!(bands.len() >= 3, "{name}: lines run together: {bands:?}");
+        let gap1 = bands[1].0 - bands[0].1;
+        let gap2 = bands[2].0 - bands[1].1;
+        assert!(gap1 > gap2 + 8, "{name}: the blank line is gone: {bands:?}");
+        let left = |band: (u32, u32)| {
+            (340..690)
+                .find(|&x| (band.0..=band.1).any(|y| common::draw::dark(img.get_pixel(x, y))))
+                .unwrap()
+        };
+        assert!(
+            left(bands[1]) > left(bands[0]) + 15,
+            "{name}: the indentation is lost"
+        );
+    }
+}

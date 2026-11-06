@@ -68,6 +68,8 @@ pub struct Editable {
     /// path -> (text, revision)
     pub texts: Mutex<BTreeMap<String, (String, u32)>>,
     pub exported: Mutex<Vec<(String, String, bool)>>,
+    /// A source without revisions: `save` cannot tell that someone else changed a text.
+    pub no_revisions: std::sync::atomic::AtomicBool,
 }
 
 impl Editable {
@@ -132,7 +134,11 @@ impl DocumentSource for Editable {
             .lock()
             .unwrap()
             .get(path)
-            .map(|(t, r)| EditableText::new(t.clone(), Some(r.to_string())))
+            .map(|(t, r)| {
+                let rev = (!self.no_revisions.load(std::sync::atomic::Ordering::Relaxed))
+                    .then(|| r.to_string());
+                EditableText::new(t.clone(), rev)
+            })
             .ok_or_else(|| SourceError::not_found(format!("no document {path}")))
     }
     fn save(&self, path: &str, text: &str, revision: Option<&str>) -> Result<(), SourceError> {
@@ -143,7 +149,8 @@ impl DocumentSource for Editable {
         let entry = texts
             .get_mut(path)
             .ok_or_else(|| SourceError::not_found("gone"))?;
-        if revision != Some(entry.1.to_string().as_str()) {
+        let checked = !self.no_revisions.load(std::sync::atomic::Ordering::Relaxed);
+        if checked && revision != Some(entry.1.to_string().as_str()) {
             return Err(SourceError::conflict("Someone else changed this document."));
         }
         entry.0 = text.into();
@@ -195,6 +202,10 @@ impl MemDrafts {
         } else {
             Ok(())
         }
+    }
+    /// Put a draft under `key` although it names another document (a store with lossy keys).
+    pub fn plant(&self, key: &str, draft: fs_components_workbenches::Draft) {
+        self.drafts.lock().unwrap().insert(key.into(), draft);
     }
     pub fn has(&self, path: &str) -> bool {
         self.drafts.lock().unwrap().contains_key(path)

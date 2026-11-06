@@ -8,6 +8,7 @@ mod draft;
 mod edit;
 mod exact;
 mod model;
+mod offer;
 mod state;
 
 pub use draft::{Draft, DraftStore};

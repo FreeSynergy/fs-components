@@ -34,6 +34,11 @@ pub struct Editing {
     pub discard_asked: bool,
     /// A backup of an unsaved draft of this document from earlier, offered to the person.
     pub backup_offer: Option<Draft>,
+    /// The person pressed Restore once while there was typed text (the second press restores).
+    pub restore_asked: bool,
+    /// A restored draft for a document that changed, from a source without revisions: the first
+    /// Save only reports it.
+    pub stale: bool,
 }
 
 impl Editing {
@@ -104,6 +109,8 @@ impl Reader {
                     confirmed_revision: None,
                     discard_asked: false,
                     backup_offer: None,
+                    restore_asked: false,
+                    stale: false,
                 });
                 if let Some(mut editing) = self.editing.take() {
                     self.find_backup(&path, &mut editing);
@@ -135,14 +142,24 @@ impl Reader {
             self.notice = Some(self.labels.no_changes.clone());
             return;
         }
-        let draft = editing.draft.clone();
+        if editing.stale {
+            // A restored draft for a document that changed, and the source has no revisions to
+            // tell: report it once before writing.
+            let message = self.labels.backup_stale.clone();
+            if let Some(editing) = &mut self.editing {
+                editing.stale = false;
+                editing.error = Some(message);
+            }
+            return;
+        }
+        let (edit_id, draft) = (editing.id, editing.draft.clone());
         let revision = editing
             .confirmed_revision
             .clone()
             .or_else(|| editing.revision.clone());
         match self.source.save(&path, &draft, revision.as_deref()) {
             Ok(()) => {
-                self.clear_backup();
+                self.clear_own_backup(&path, edit_id);
                 self.show(&path);
                 self.refresh_entries();
                 let term = self.term().to_string();
@@ -171,9 +188,11 @@ impl Reader {
 
     /// Stop editing. With unsaved changes the first call only asks; the second discards.
     pub fn cancel_edit(&mut self) {
+        let path = self.current_path().map(str::to_string);
         let Some(editing) = &mut self.editing else {
             return;
         };
+        let edit_id = editing.id;
         let chosen_discard = editing.changed();
         if chosen_discard && !editing.discard_asked {
             editing.discard_asked = true;
@@ -183,10 +202,10 @@ impl Reader {
         self.editing = None;
         self.overwrite_ok = None;
         self.notice = None;
-        // The backup goes only with a draft the person chose to throw away; an unchanged edit
-        // that never looked at the offer leaves it for next time.
-        if chosen_discard {
-            self.clear_backup();
+        // Only a backup this edit wrote goes with a draft the person chose to throw away; an
+        // offered one that was never answered stays.
+        if let (true, Some(path)) = (chosen_discard, path) {
+            self.clear_own_backup(&path, edit_id);
         }
     }
 
