@@ -117,6 +117,7 @@ Limits:
 * `DocumentSource` is synchronous; a slow source blocks the interface thread.
 * The tree is built completely (all nodes) once, because the Blinc tree is not lazy.
 * Table columns share the width by the length of their longest text (no automatic table layout in Blinc).
+* The reader's redraw counters are signals (`use_signal_keyed`), not `State`: `State::update` does not reach the live areas when a picture was drawn earlier in the same process (test `tests/refresh.rs` fails with `State`). A host must keep one `ReaderWidget` (see its `build` docs).
 * The tree is rebuilt with every sidebar redraw and Blinc keys tree state by call site and counter, so folders that were opened by hand may close again; a blocked `open` can leave the tree highlight on the clicked row. Not fixed; needs a stable tree instance from Blinc.
 * No test sends key events (Esc, Ctrl+S): Blinc offers no offscreen event dispatch we use; the handlers are two lines and Esc is not handled.
 * Table column alignment is not applied; a table with many wide columns may be wider than its box (Blinc has no minimum content width, so words are kept whole instead of broken); the editor text area is not monospace.

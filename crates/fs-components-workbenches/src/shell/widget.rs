@@ -112,6 +112,13 @@ impl ReaderWidget {
 
     /// The element of the reader, filling `width` x `height`. Call it inside the program's build
     /// function (it keeps its state in the framework's keyed state).
+    ///
+    /// **For hosts:** make the `ReaderWidget` once and keep it (clone it into the build closure);
+    /// calling `build` again on the same widget is fine (its keys belong to the widget). Do not
+    /// create a new `ReaderWidget` inside a build function or inside a live area: every new one
+    /// gets new keys, the old one's callbacks, signals and backup thread keep running, and the
+    /// state of the old one is lost. Inside the reader the sidebar rebuilds its tree with each
+    /// redraw, which gives the tree new framework keys (see DESIGN.md).
     pub fn build(&self, width: f32, height: f32) -> impl Element + use<> {
         let (id, reader) = (self.id, &self.reader);
         let page_v = state(id, "page");
@@ -120,7 +127,7 @@ impl ReaderWidget {
         let side = {
             let (reader, actions) = (Arc::clone(reader), actions.clone());
             stateful::<NoState>()
-                .deps([side_v.signal_id()])
+                .deps([side_v.id()])
                 .on_state(move |_| {
                     let reader = locked(&reader);
                     let tree = tree_nodes(reader.entries());
@@ -130,7 +137,7 @@ impl ReaderWidget {
         let main = {
             let (reader, actions, this) = (Arc::clone(reader), actions.clone(), self.clone());
             stateful::<NoState>()
-                .deps([page_v.signal_id()])
+                .deps([page_v.id()])
                 .on_state(move |_| {
                     let reader = locked(&reader);
                     let area = this.sync_area(&reader);
@@ -233,8 +240,11 @@ fn locked(reader: &Mutex<Reader>) -> MutexGuard<'_, Reader> {
     reader.lock().unwrap_or_else(PoisonError::into_inner)
 }
 
-fn state(id: u64, area: &str) -> blinc_core::State<u64> {
-    BlincContextState::get().use_state_keyed(&format!("fs-rd-{id}-{area}"), || 0u64)
+/// A signal, not a `State`: `State::update` does not reach the areas of a window when a picture
+/// was drawn earlier in the process (the picture sets the reactive state up without the notifier),
+/// `Signal::update` does in both orders.
+fn state(id: u64, area: &str) -> blinc_core::Signal<u64> {
+    BlincContextState::get().use_signal_keyed(&format!("fs-rd-{id}-{area}"), || 0u64)
 }
 
 /// Count up the signal of `area`, which makes the areas depending on it draw again.
