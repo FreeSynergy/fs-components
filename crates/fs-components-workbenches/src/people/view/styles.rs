@@ -2,12 +2,10 @@
 //!
 //! Pattern: Template — only theme variables; widget sheets are joined here.
 
-use fs_components_widgets::list_view;
-
 /// The style sheet of the workbench and the widgets it uses; add it to the theme of the window that
 /// holds a [`PeopleWidget`](crate::people::PeopleWidget).
 pub fn styles() -> String {
-    [LAYOUT, list_view::STYLES, &fs_components_widgets::styles()].concat()
+    [LAYOUT, &fs_components_widgets::styles()].concat()
 }
 
 const LAYOUT: &str = r"

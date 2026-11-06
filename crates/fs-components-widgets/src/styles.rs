@@ -3,7 +3,8 @@
 //! Pattern: Composite of templates — joins the sheets of the single widgets.
 
 use crate::{
-    avatar_group, lightbox, share_dialog, sortable_list, text_view, transfer_list, tree_view,
+    avatar_group, lightbox, list_view, share_dialog, sortable_list, text_view, transfer_list,
+    tree_view,
 };
 
 /// The CSS of all widgets in this crate; the shell adds it to the theme once.
@@ -11,6 +12,7 @@ pub fn styles() -> String {
     [
         text_view::STYLES,
         tree_view::STYLES,
+        list_view::STYLES,
         avatar_group::STYLES,
         transfer_list::STYLES,
         sortable_list::STYLES,
