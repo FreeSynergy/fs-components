@@ -11,7 +11,9 @@
 #![warn(clippy::pedantic)]
 #![allow(clippy::must_use_candidate, clippy::module_name_repetitions)]
 
+mod args;
 mod error;
+mod new_file;
 mod shell;
 mod styles;
 mod surface;
@@ -19,8 +21,10 @@ mod view;
 mod widget;
 mod window;
 
+pub use args::parse_size;
 pub use error::AppError;
 pub use fs_components_widgets::Element;
+pub use new_file::write_new_file;
 pub use shell::{Shell, Status};
 pub use surface::{Screen, Surface};
 pub use widget::AppWidget;
