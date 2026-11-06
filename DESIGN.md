@@ -139,6 +139,19 @@ Limits:
 * Keys are tested through a built widget (`tests/keys.rs`, `broadcast_key_event`): Ctrl+S, Alt+Left, Esc does nothing, `keys(false)`.
 * Table column alignment is not applied; a table with many wide columns may be wider than its box (Blinc has no minimum content width, so words are kept whole instead of broken); the editor text area is not monospace.
 
+## Chat components (provisional, Thread 1, item 5)
+
+Source: `docs/en/programs/apps/assistant/index.md` (patterns from the Strata, CodeAF and Zed analyses), ADR 0053 and 0054, the messenger contract draft 0.2 (read only, to make the shapes fit). **Components know nothing of the messenger, a model or any API**: neutral data types, content through traits, no network code, no streaming transport (the host feeds the components).
+
+| Component | State |
+|---|---|
+| `tool-call` (widget `tool_call`) | done: `ToolCall` (id, name, kind, state, summary, risk, end, detail, result, options, revision), `ToolCalls` (kept by id: an update replaces where it stood, never appends; a lower revision is `Stale`; a settled call is final), `ToolCallView` handle (clonable, no guard returned), `Labels` from the caller. The **kind** (reads, writes, runs a command, connected tool, unknown) is the first chip of a card, before the name and before any detail; state and the host's risk follow. A question always draws its options (never folded away); a click is reported as `Outcome::Chose{call, option, choice}` and **decides and executes nothing**; only an offered option of a call that is a question answers (`NotAsked` otherwise). No default answer, no automatic approval. Details (full text, result, "summary written by the agent") open on request and stay open across updates. The emergency stop is not here (the engine's job, ADR 0054) |
+
+| Where | Pattern | Why |
+|---|---|---|
+| `widgets/tool_call/{model,store}` | Value objects + State, Repository (in memory) | the neutral call; id-keyed in-place update |
+| `widgets/tool_call/{card,handle}` | Adapter + Observer + Facade | Blinc elements; `Sinks` are the only way a card reports; outcome callback |
+
 ## Charts (`crates/fs-components-charts`) - provisional
 
 Source of the requirements: `docs/en/components/charts.md` (Vega-Lite subset, own Rust interpreter, mandatory text alternative, scene description so charts can be plugins). The Vega-Lite specification (v5/v6 schema and docs) is the standard that is read; no code of Vega, Vega-Lite, Blinc or any chart library is used.

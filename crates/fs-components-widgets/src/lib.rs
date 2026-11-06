@@ -23,6 +23,7 @@ pub mod sortable_list;
 mod styles;
 pub mod text;
 pub mod text_view;
+pub mod tool_call;
 pub mod transfer_list;
 pub mod tree_view;
 
@@ -38,6 +39,7 @@ pub use sortable_list::{Item, Lane, SortableList};
 pub use styles::styles;
 pub use text::{Align, Block, Document, Inline, ListItem, Mark, MarkKind};
 pub use text_view::{LinkHandler, TextView, fallback_family, missing_glyphs, open_external};
+pub use tool_call::{ToolCall, ToolCallView};
 pub use transfer_list::{Transfer, TransferList};
 pub use tree_view::{TreeNode, TreeView};
 
