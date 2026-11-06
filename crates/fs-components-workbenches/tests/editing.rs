@@ -170,3 +170,119 @@ fn per_path_permission_decides_the_edit_button() {
     r.open("free");
     assert!(r.can_edit());
 }
+
+#[test]
+fn text_the_area_cannot_hold_is_kept_exactly_or_announced() {
+    let source = Arc::new(Editable::with(&[
+        ("blank", "x\n\n"),
+        ("mixed", "a\r\nb\nc"),
+        ("crlf", "a\r\nb\r\n"),
+        ("lf", "a\nb\n"),
+    ]));
+    let mut r = Reader::new(source.clone(), Labels::default());
+    // Untouched: whatever the text area gives back, the original is what stays.
+    for (path, typed) in [
+        ("blank", "x"),
+        ("mixed", "a\nb\nc"),
+        ("crlf", "a\nb"),
+        ("lf", "a\nb"),
+    ] {
+        r.open(path);
+        r.begin_edit();
+        r.set_draft(typed);
+        assert!(!r.editing().unwrap().changed(), "{path} counts as changed");
+        r.cancel_edit();
+    }
+    // The person is told what saving would change.
+    r.open("blank");
+    r.begin_edit();
+    assert!(
+        r.editing()
+            .unwrap()
+            .note
+            .as_ref()
+            .unwrap()
+            .contains("blank lines")
+    );
+    r.cancel_edit();
+    r.open("mixed");
+    r.begin_edit();
+    assert!(
+        r.editing()
+            .unwrap()
+            .note
+            .as_ref()
+            .unwrap()
+            .contains("line ends")
+    );
+    r.cancel_edit();
+    r.open("lf");
+    r.begin_edit();
+    assert!(r.editing().unwrap().note.is_none());
+    // A paste of CRLF on LF leaves no stray \r; a paste of LF on CRLF stays CRLF.
+    r.set_draft("a\r\nb\r\nc");
+    assert_eq!(r.editing().unwrap().draft, "a\nb\nc\n");
+    r.cancel_edit();
+    r.cancel_edit();
+    r.open("crlf");
+    r.begin_edit();
+    r.set_draft("a\nb\nc");
+    assert_eq!(r.editing().unwrap().draft, "a\r\nb\r\nc\r\n");
+}
+
+#[test]
+fn the_overwrite_confirmation_belongs_to_path_and_target() {
+    let (source, mut r) = reader();
+    r.export();
+    r.export();
+    assert!(r.notice().unwrap().contains("Press Export again"));
+    // The target changes: the next press asks again instead of replacing.
+    r.set_export_target(Some("elsewhere".into()));
+    r.export();
+    assert!(source.exported.lock().unwrap().iter().all(|e| !e.2));
+    // Edit and cancel clear a pending confirmation.
+    r.set_export_target(Some("out".into()));
+    r.export();
+    assert!(r.notice().unwrap().contains("Press Export again"));
+    r.begin_edit();
+    r.cancel_edit();
+    r.export();
+    assert!(
+        r.notice().unwrap().contains("Press Export again"),
+        "must ask again"
+    );
+}
+
+#[test]
+fn after_a_conflict_the_next_save_replaces_knowingly() {
+    let (source, mut r) = reader();
+    r.begin_edit();
+    r.set_draft("mine");
+    source.other_saves("a", "theirs\n");
+    r.save();
+    assert!(
+        r.editing()
+            .unwrap()
+            .error
+            .as_ref()
+            .unwrap()
+            .contains("Press Save again")
+    );
+    assert_eq!(source.text("a"), "theirs\n");
+    r.save();
+    assert!(r.editing().is_none());
+    assert_eq!(source.text("a"), "mine\n");
+}
+
+#[test]
+fn a_failed_list_stays_visible_after_search_and_save() {
+    use common::Failing;
+    let mut r = Reader::new(Arc::new(Failing), Labels::default());
+    assert!(r.problem().unwrap().contains("list"));
+    r.search("x");
+    r.search("");
+    assert!(
+        r.problem().unwrap().contains("list"),
+        "an empty search must not erase it"
+    );
+}

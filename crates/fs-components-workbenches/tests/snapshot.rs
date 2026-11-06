@@ -14,10 +14,27 @@ use fs_components_workbenches::{
     SourceError, Step, snapshot,
 };
 
-fn out(name: &str) -> PathBuf {
-    let dir = std::env::temp_dir().join(format!("fs-wb-{}", std::process::id()));
-    std::fs::create_dir_all(&dir).unwrap();
-    dir.join(name)
+/// A folder for the pictures of one test, removed when the test ends (also when it fails).
+struct Scratch(PathBuf);
+
+impl Scratch {
+    fn new() -> Self {
+        static N: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+        let n = N.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        let dir = std::env::temp_dir().join(format!("fs-wb-{}-{n}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        Self(dir)
+    }
+
+    fn file(&self, name: &str) -> PathBuf {
+        self.0.join(name)
+    }
+}
+
+impl Drop for Scratch {
+    fn drop(&mut self) {
+        let _ = std::fs::remove_dir_all(&self.0);
+    }
 }
 
 fn pixels(path: &PathBuf) -> image::RgbaImage {
@@ -54,9 +71,10 @@ fn paragraphs(n: usize) -> Vec<Block> {
 
 #[test]
 fn snapshot_draws_something_and_refuses_size_zero() {
+    let tmp = Scratch::new();
     let mut picture = Picture::new(Arc::new(Fake), 400, 300);
     picture.steps = vec![Step::Open("a".into()), Step::Search("dir".into())];
-    let file = out("s.png");
+    let file = tmp.file("s.png");
     match snapshot(picture, &file) {
         Err(e) => eprintln!("skipped: {e}"),
         Ok(s) => {
@@ -72,8 +90,9 @@ fn snapshot_draws_something_and_refuses_size_zero() {
 
 #[test]
 fn a_long_document_has_a_bounded_viewport_and_scrolls() {
+    let tmp = Scratch::new();
     let source = Arc::new(Long(paragraphs(200)));
-    let top_file = out("top.png");
+    let top_file = tmp.file("top.png");
     let Ok(t) = snapshot(Picture::new(source.clone(), 700, 400), &top_file) else {
         eprintln!("skipped: no graphics");
         return;
@@ -90,7 +109,7 @@ fn a_long_document_has_a_bounded_viewport_and_scrolls() {
     );
     let mut down = Picture::new(source, 700, 400);
     down.steps = vec![Step::Scroll(1500)];
-    let down_file = out("down.png");
+    let down_file = tmp.file("down.png");
     let d = snapshot(down, &down_file).unwrap();
     assert!(
         d.scroll.offset > 1000.0,
@@ -106,8 +125,9 @@ fn a_long_document_has_a_bounded_viewport_and_scrolls() {
 }
 #[test]
 fn thousands_of_paragraphs_draw_without_a_crash() {
+    let tmp = Scratch::new();
     let source = Arc::new(Long(paragraphs(3000)));
-    let file = out("many.png");
+    let file = tmp.file("many.png");
     match snapshot(Picture::new(source, 700, 400), &file) {
         Err(e) => eprintln!("skipped: {e}"),
         Ok(s) => assert!(s.scroll.content_height > s.scroll.viewport_height),
@@ -116,13 +136,14 @@ fn thousands_of_paragraphs_draw_without_a_crash() {
 
 #[test]
 fn a_long_word_in_marked_text_stays_inside_the_window() {
+    let tmp = Scratch::new();
     let word = "x".repeat(120);
     let text = format!("start {word} end");
     let blocks = vec![Block::Paragraph(Inline::new(
         text,
         vec![Mark::new(MarkKind::Strong, 0, 5)],
     ))];
-    let file = out("word.png");
+    let file = tmp.file("word.png");
     let picture = Picture::new(Arc::new(Long(blocks)), 700, 300);
     let Ok(_) = snapshot(picture, &file) else {
         eprintln!("skipped: no graphics");
@@ -141,12 +162,16 @@ fn a_long_word_in_marked_text_stays_inside_the_window() {
 
 #[test]
 fn emphasis_and_strong_look_different_from_plain_text() {
+    let tmp = Scratch::new();
     let make = |kind: Option<MarkKind>| {
-        let marks = kind.map(|k| vec![Mark::new(k, 0, 5)]).unwrap_or_default();
+        // "Plain" still goes through the flow path (an empty mark), so the comparison is fair.
+        let marks = kind
+            .map(|k| vec![Mark::new(k, 0, 5)])
+            .unwrap_or_else(|| vec![Mark::new(MarkKind::Strong, 3, 3)]);
         vec![Block::Paragraph(Inline::new("Words in the text", marks))]
     };
     let draw = |name: &str, kind: Option<MarkKind>| {
-        let file = out(name);
+        let file = tmp.file(name);
         snapshot(Picture::new(Arc::new(Long(make(kind))), 700, 200), &file).ok()?;
         Some(pixels(&file))
     };
@@ -167,4 +192,22 @@ fn emphasis_and_strong_look_different_from_plain_text() {
         "strong is drawn like plain text"
     );
     assert!(diff(&em, &strong) > 20, "emphasis and strong look the same");
+}
+
+#[test]
+fn a_very_long_paragraph_draws_in_reasonable_time() {
+    let tmp = Scratch::new();
+    let word = "lorem ipsum dolor sit amet ";
+    let text = word.repeat(30_000 / word.len());
+    let source = Arc::new(Long(vec![Block::Paragraph(Inline::plain(text))]));
+    let started = std::time::Instant::now();
+    if snapshot(Picture::new(source, 700, 400), &tmp.file("long.png")).is_err() {
+        eprintln!("skipped: no graphics");
+        return;
+    }
+    assert!(
+        started.elapsed() < std::time::Duration::from_secs(6),
+        "30 KB in one paragraph took {:?} (debug build; 8.7 s before the flow path)",
+        started.elapsed()
+    );
 }

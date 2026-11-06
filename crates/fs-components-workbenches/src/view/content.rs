@@ -21,6 +21,7 @@ pub(crate) fn content(
     actions: &Actions,
     physics: Option<&SharedScrollPhysics>,
     area: Option<&SharedTextAreaState>,
+    rows: usize,
 ) -> Div {
     let mut column = div()
         .flex_col()
@@ -32,7 +33,7 @@ pub(crate) fn content(
         column = column.child(div().class("fs-rd-notice").child(text(notice)));
     }
     if let Some(editing) = reader.editing() {
-        return column.child(editor(editing, reader.labels(), actions, area));
+        return column.child(editor(editing, reader.labels(), actions, area, rows));
     }
     let page = div().class("fs-rd-page").w_full();
     let page = match reader.shown() {

@@ -19,12 +19,13 @@ pub struct Reader {
     pub(super) history: Vec<String>,
     term: String,
     hits: Vec<Hit>,
-    pub(super) problem: Option<String>,
+    pub(super) list_problem: Option<String>,
+    pub(super) search_problem: Option<String>,
     pub(super) editing: Option<Editing>,
     pub(super) edit_counter: u64,
     pub(super) notice: Option<String>,
     pub(super) export_target: Option<String>,
-    pub(super) overwrite_ok: Option<String>,
+    pub(super) overwrite_ok: Option<(String, String)>,
 }
 
 impl Reader {
@@ -38,7 +39,8 @@ impl Reader {
             history: Vec::new(),
             term: String::new(),
             hits: Vec::new(),
-            problem: None,
+            list_problem: None,
+            search_problem: None,
             editing: None,
             edit_counter: 0,
             notice: None,
@@ -61,11 +63,11 @@ impl Reader {
         match self.source.entries("") {
             Ok(entries) => {
                 self.entries = entries;
-                self.problem = None;
+                self.list_problem = None;
             }
             Err(e) => {
                 self.entries.clear();
-                self.problem = Some(Labels::fill(&self.labels.list_failed, &e.message));
+                self.list_problem = Some(Labels::fill(&self.labels.list_failed, &e.message));
             }
         }
     }
@@ -115,7 +117,9 @@ impl Reader {
 
     /// Why the list or the last search failed, if it did.
     pub fn problem(&self) -> Option<&str> {
-        self.problem.as_deref()
+        self.list_problem
+            .as_deref()
+            .or(self.search_problem.as_deref())
     }
 
     /// A short message for the person, if any.
@@ -168,15 +172,17 @@ impl Reader {
         self.term = term.trim().to_string();
         self.hits.clear();
         if self.term.is_empty() {
-            self.problem = None;
+            self.search_problem = None;
             return;
         }
         match self.source.find(&self.term) {
             Ok(hits) => {
                 self.hits = hits;
-                self.problem = None;
+                self.search_problem = None;
             }
-            Err(e) => self.problem = Some(Labels::fill(&self.labels.search_failed, &e.message)),
+            Err(e) => {
+                self.search_problem = Some(Labels::fill(&self.labels.search_failed, &e.message));
+            }
         }
     }
 

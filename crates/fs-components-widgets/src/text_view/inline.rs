@@ -14,6 +14,10 @@ use super::flow::flow;
 use super::look::Look;
 use crate::text::Inline;
 
+/// A paragraph longer than this many bytes goes through `flow.rs` even without marks: Blinc's
+/// measuring of one very long rich text is slow (30 KB took about 8 s), many small runs are not.
+const LONG_PLAIN: usize = 1500;
+
 /// How the text of one block is set.
 #[derive(Clone, Copy)]
 pub(super) struct Face {
@@ -28,7 +32,7 @@ pub(super) fn inline(
     look: &Look,
     on_link: Option<&LinkHandler>,
 ) -> Div {
-    if !inline.marks.is_empty() {
+    if !inline.marks.is_empty() || inline.text.len() > LONG_PLAIN {
         return flow(inline, face, look, on_link);
     }
     let text = if inline.text.is_empty() {

@@ -44,6 +44,10 @@ pub struct Labels {
     pub not_exported: String,
     /// Export would replace something; `{}` = the reason. Press again to confirm.
     pub overwrite_confirm: String,
+    /// Warning before saving a text the text area cannot hold exactly; `{}` = what changes.
+    pub lossy: String,
+    /// After a conflict; `{}` = what happened. Pressing Save again replaces the other version.
+    pub conflict_confirm: String,
     /// `{}` = the reason.
     pub list_failed: String,
     /// `{}` = the reason.
@@ -72,6 +76,8 @@ impl Default for Labels {
             cannot_edit: s("Cannot edit this: {}"),
             not_exported: s("Not exported: {}"),
             overwrite_confirm: s("{} Press Export again to replace it."),
+            lossy: s("Saving will also change: {}."),
+            conflict_confirm: s("{} Your text is kept. Press Save again to replace their version."),
             list_failed: s("The list failed: {}"),
             search_failed: s("The search failed: {}"),
         }

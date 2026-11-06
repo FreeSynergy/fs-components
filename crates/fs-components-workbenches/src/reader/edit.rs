@@ -23,6 +23,11 @@ pub struct Editing {
     pub revision: Option<String>,
     /// Why the last save failed, if it did.
     pub error: Option<String>,
+    /// After a conflict: the revision found then. Saving again with it replaces the other's
+    /// version knowingly (the person was told).
+    pub confirmed_revision: Option<String>,
+    /// What saving will change besides the person's edits (see [`lossy_note`]), if anything.
+    pub note: Option<String>,
     /// The person pressed Cancel once with unsaved changes.
     pub discard_asked: bool,
 }
@@ -37,15 +42,25 @@ impl Editing {
     /// put back into the form of the original, so that saving does not rewrite what was not
     /// touched.
     pub(crate) fn restore_form(&self, typed: &str) -> String {
-        let mut text = typed.to_string();
+        if same_text(typed, &self.original) {
+            // Nothing but what the text area cannot hold differs: the original, exactly.
+            return self.original.clone();
+        }
+        let mut text = typed.replace("\r\n", "\n");
         if self.original.ends_with('\n') && !text.ends_with('\n') {
             text.push('\n');
         }
-        if self.original.contains("\r\n") && !text.contains("\r\n") {
+        if self.original.contains("\r\n") {
             text = text.replace('\n', "\r\n");
         }
         text
     }
+}
+
+/// Equal apart from line ends and blank lines at the end.
+fn same_text(a: &str, b: &str) -> bool {
+    let norm = |s: &str| s.replace("\r\n", "\n").trim_end_matches('\n').to_string();
+    norm(a) == norm(b)
 }
 
 impl Reader {
@@ -72,6 +87,7 @@ impl Reader {
         if self.editing.is_some() {
             return;
         }
+        self.overwrite_ok = None;
         let Some(path) = self.current_path().map(str::to_string) else {
             return;
         };
@@ -79,12 +95,15 @@ impl Reader {
             Ok(editable) => {
                 self.notice = None;
                 self.edit_counter += 1;
+                let note = lossy_note(&editable.text).map(|r| Labels::fill(&self.labels.lossy, &r));
                 self.editing = Some(Editing {
                     id: self.edit_counter,
                     original: editable.text.clone(),
                     draft: editable.text,
+                    note,
                     revision: editable.revision,
                     error: None,
+                    confirmed_revision: None,
                     discard_asked: false,
                 });
             }
@@ -112,7 +131,11 @@ impl Reader {
             self.notice = Some(self.labels.no_changes.clone());
             return;
         }
-        let (draft, revision) = (editing.draft.clone(), editing.revision.clone());
+        let draft = editing.draft.clone();
+        let revision = editing
+            .confirmed_revision
+            .clone()
+            .or_else(|| editing.revision.clone());
         match self.source.save(&path, &draft, revision.as_deref()) {
             Ok(()) => {
                 self.show(&path);
@@ -122,13 +145,20 @@ impl Reader {
                 self.notice = Some(self.labels.saved.clone());
             }
             Err(e) => {
-                let reason = if e.kind == ErrorKind::Conflict {
-                    e.message.clone()
+                let conflict = e.kind == ErrorKind::Conflict;
+                let reason = if conflict {
+                    Labels::fill(&self.labels.conflict_confirm, &e.message)
                 } else {
                     Labels::fill(&self.labels.not_saved, &e.message)
                 };
+                // After a conflict the next Save, with the revision found now, replaces the
+                // other version: the person has been told and keeps the draft in view.
+                let latest = conflict
+                    .then(|| self.source.source_text(&path).ok().and_then(|t| t.revision))
+                    .flatten();
                 if let Some(editing) = &mut self.editing {
                     editing.error = Some(reason);
+                    editing.confirmed_revision = latest;
                 }
             }
         }
@@ -145,6 +175,7 @@ impl Reader {
             return;
         }
         self.editing = None;
+        self.overwrite_ok = None;
         self.notice = None;
     }
 
@@ -157,12 +188,13 @@ impl Reader {
         ) else {
             return;
         };
-        let overwrite = self.overwrite_ok.as_deref() == Some(path.as_str());
+        let asked = (path.clone(), target.clone());
+        let overwrite = self.overwrite_ok.as_ref() == Some(&asked);
         self.overwrite_ok = None;
         self.notice = Some(match self.source.export(&path, &target, overwrite) {
             Ok(message) => message,
             Err(e) if e.kind == ErrorKind::Conflict => {
-                self.overwrite_ok = Some(path);
+                self.overwrite_ok = Some(asked);
                 Labels::fill(&self.labels.overwrite_confirm, &e.message)
             }
             Err(e) => Labels::fill(&self.labels.not_exported, &e.message),
@@ -178,4 +210,20 @@ impl Reader {
         self.editing = None;
         false
     }
+}
+
+/// What saving would change in `original` beyond the person's edits, because the text area cannot
+/// hold it: Windows or mixed line ends (they are unified), blank lines at the end (they are
+/// reduced to one line end). `None` when the text survives as it is.
+pub fn lossy_note(original: &str) -> Option<String> {
+    let mut reasons = Vec::new();
+    let crlf = original.matches("\r\n").count();
+    let lf_only = original.matches('\n').count() - crlf;
+    if crlf > 0 && lf_only > 0 {
+        reasons.push("mixed line ends become one kind");
+    }
+    if original.ends_with("\n\n") || original.ends_with("\r\n\r\n") {
+        reasons.push("blank lines at the end are dropped");
+    }
+    (!reasons.is_empty()).then(|| reasons.join("; "))
 }

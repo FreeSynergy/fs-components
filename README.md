@@ -8,7 +8,7 @@ Three crates, one per layer (`conventions/CONVENTIONS.md` §2 of fs-documentatio
 |---|---|---|
 | `fs-components-primitives` | 1 primitives | `search-field` |
 | `fs-components-widgets` | 2 widgets | `text-view` (draws a neutral model of blocks and marks), `tree-view` |
-| `fs-components-workbenches` | 3 workbenches | `reader`: lists, opens, follows and searches documents of any `DataSource`; window and offscreen picture |
+| `fs-components-workbenches` | 3 workbenches | `reader`: lists, opens, follows and searches documents of any `DocumentSource`; window and offscreen picture |
 
 Try it without any data: `cargo run -p fs-components-workbenches --example reader`, or `... --example reader -- --snapshot out.png` for a picture drawn without a window.
 

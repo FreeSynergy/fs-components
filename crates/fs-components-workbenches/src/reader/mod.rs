@@ -7,6 +7,6 @@ mod edit;
 mod model;
 mod state;
 
-pub use edit::Editing;
+pub use edit::{Editing, lossy_note};
 pub use model::Reader;
 pub use state::{Outcome, Shown};

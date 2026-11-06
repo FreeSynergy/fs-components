@@ -20,7 +20,7 @@ use fs_components_widgets::open_external;
 use crate::labels::Labels;
 use crate::reader::{Outcome, Reader};
 use crate::source::DocumentSource;
-use crate::view::{Actions, content, frame, new_area, side_body, tree_nodes};
+use crate::view::{Actions, content, editor_rows, frame, new_area, side_body, tree_nodes};
 
 static NEXT_ID: AtomicU64 = AtomicU64::new(1);
 
@@ -31,6 +31,7 @@ pub struct ReaderWidget {
     reader: Arc<Mutex<Reader>>,
     field: SearchField,
     area: Arc<Mutex<Option<AreaSlot>>>,
+    keys: bool,
 }
 
 /// The text area of the edit in progress: tied to that edit (its id), so an edit of another
@@ -64,13 +65,26 @@ impl ReaderWidget {
             reader,
             field,
             area: Arc::new(Mutex::new(None)),
+            keys: true,
         }
     }
 
-    /// The state, for a program's menus and commands (open, back, save ...). After a change made
-    /// this way call [`ReaderWidget::refresh`].
-    pub fn reader(&self) -> MutexGuard<'_, Reader> {
-        locked(&self.reader)
+    /// Run `f` with the state, for a program's menus and commands (open, back, save ...). A
+    /// closure, so the lock cannot be held across calls (two guards in one statement would
+    /// deadlock the interface thread). After a change made this way call
+    /// [`ReaderWidget::refresh`].
+    pub fn with_reader<T>(&self, f: impl FnOnce(&mut Reader) -> T) -> T {
+        f(&mut locked(&self.reader))
+    }
+
+    /// Switch the reader's own keys (Alt+Left back, Ctrl+S save) off or on (default on). Keys
+    /// reach every element of a window, so a program with several readers, or its own shortcuts
+    /// (ADR 0037: gestures and keys belong to the frontend), switches them off and calls the
+    /// reader itself.
+    #[must_use]
+    pub fn keys(mut self, on: bool) -> Self {
+        self.keys = on;
+        self
     }
 
     /// Draw the areas again after the state was changed through [`ReaderWidget::reader`].
@@ -103,19 +117,23 @@ impl ReaderWidget {
                 .on_state(move |_| {
                     let reader = locked(&reader);
                     let area = this.sync_area(&reader);
-                    content(&reader, &actions, None, area.as_ref())
+                    let rows = editor_rows(height);
+                    content(&reader, &actions, None, area.as_ref(), rows)
                 })
         };
         let (back, save) = (Arc::clone(&actions.back), Arc::clone(&actions.save));
         // Esc is not handled: it reaches this element from the text area and the search field too,
         // and must never throw away a draft.
-        frame(self.field.build(), side, main, width, height).on_key_down(move |e| {
-            match e.key_code {
+        let ui = frame(self.field.build(), side, main, width, height);
+        if self.keys {
+            ui.on_key_down(move |e| match e.key_code {
                 0x25 if e.alt => back(),
                 0x53 if e.ctrl => save(),
                 _ => {}
-            }
-        })
+            })
+        } else {
+            ui
+        }
     }
 
     /// The text area for the edit in progress (none when not editing). A new one is made when the

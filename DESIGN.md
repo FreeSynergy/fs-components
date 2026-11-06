@@ -13,9 +13,10 @@ Version 0.1.0 (untagged until reviewed). Built for one consumer: the wiki app (`
 | `tree-view` (widget): adapter over `blinc_cn` tree (keys of the Blinc tree: arrows, Home, End, Enter) | done |
 | `reader` (workbench): `DocumentSource` trait, `Labels` (all texts come from the caller), state machine `Reader` (open, follow, back, search, edit, export) | done |
 | Embedding: `ReaderWidget::new(source, labels, export_target)` and `.build(w, h)` place the reader in a program's own window and layout; `.reader()` gives the state to menus and commands; `launch` is a convenience window; `snapshot` is a picture without a window | done |
-| Editing: `DocumentSource::{can_edit(path), source_text -> EditableText{text, revision}, save(path, text, revision)}`. A save with an old revision is a `Conflict`: nothing is written, the draft stays and the reason is shown. Save without changes writes nothing. The text area's changes of line ends and final newline are undone before comparing and saving. Unsaved changes block leaving the document and refuse `follow` (`Outcome::Blocked`). Cancel with unsaved changes asks first (second Cancel discards); Esc is not handled at all, so it can never throw a draft away. After a save the list, the title and the search results are read again | done |
-| Export: `can_export(path)`, `export(path, target, overwrite)`; the target is chosen by the caller; a taken target is a `Conflict` and the reader asks (press Export again to replace) | done |
+| Editing: `DocumentSource::{can_edit(path), source_text -> EditableText{text, revision}, save(path, text, revision)}`. A save with an old revision is a `Conflict`: nothing is written, the draft stays and the reason is shown. Save without changes writes nothing. The text area cannot hold some text exactly (it drops a final newline, turns CRLF into LF): the draft is compared and saved in the form of the original (an untouched text is saved as the original, exactly), and what saving would change anyway (mixed line ends become one kind, blank lines at the end are dropped) is announced above the editor before the person saves. A final newline cannot be edited: Enter at the very end of a text that ends in a newline counts as no change. Unsaved changes block leaving the document and refuse `follow` (`Outcome::Blocked`). Cancel with unsaved changes asks first (second Cancel discards); Esc is not handled at all, so it can never throw a draft away. After a conflict the draft stays in view and the next Save replaces the other version knowingly. After a save the list, the title and the search results are read again; a failed list stays visible | done |
+| Export: `can_export(path)`, `export(path, target, overwrite)`; the target is chosen by the caller; a taken target is a `Conflict` and the reader asks (press Export again to replace; the confirmation belongs to that document and that target and is cleared by editing) | done |
 | Scrolling: every column on the way down has `min_h(0)`; a long document is clipped and scrolls (3000 paragraphs draw). Tested offscreen with a scroll offset | done |
+| Embedding keys: Alt+Left and Ctrl+S act on every reader in the window (keys are broadcast); `ReaderWidget::keys(false)` switches them off, the program then calls `with_reader` itself (state access is a closure: no lock can be held across calls) | done |
 | Keyboard: tree keys (Blinc), Alt+Left back, Ctrl+S save, Tab to search field and buttons. Search results, links and the tree rows are **not** reachable by Tab (the Blinc tree is no Tab stop; links are click targets) | partly |
 | Pointer cursor over links; scrolling to a `#fragment`; table column alignment; selecting text; images; accessibility | not built |
 
@@ -39,7 +40,7 @@ Version 0.1.0 (untagged until reviewed). Built for one consumer: the wiki app (`
 
 ## Decisions
 
-* **Layers.** `search-field` is a primitive (one value). `text-view` and `tree-view` are widgets: they know their data model when built (blocks and marks, labels). The `reader` is a workbench (ADR 0049: a subset of component): it gets its content at run time through `DataSource` and does not know what it means. Provisional: the crate split per layer and the name `reader` (see Open points).
+* **Layers.** `search-field` is a primitive (one value). `text-view` and `tree-view` are widgets: they know their data model when built (blocks and marks, labels). The `reader` is a workbench (ADR 0049: a subset of component): it gets its content at run time through `DocumentSource` and does not know what it means. Provisional: the crate split per layer and the name `reader` (see Open points).
 * **The theme decides.** No colour or font is written in code. Sizes and colours are read from `ThemeState`; stylesheets only use `var(--...)` of the theme. The shell builds the theme bundle from `blinc_cn::cn_bundle()` plus our sheets.
 * **Links.** The text view only reports `href` as written. Resolving it (relative path, external) is the data source's `resolve`, so the workbench does not know what a link means.
 * **Gestures** are not here (ADR 0037); clicks and keys are the plain events of the framework.
@@ -73,9 +74,11 @@ Blinc notes (0.6.0; to be passed upstream by the owner, reproductions in the rep
 
 Limits:
 
-* `DataSource` is synchronous; a slow source blocks the interface thread.
+* `DocumentSource` is synchronous; a slow source blocks the interface thread.
 * The tree is built completely (all nodes) once, because the Blinc tree is not lazy.
 * Table columns share the width by the length of their longest text (no automatic table layout in Blinc).
+* The tree is rebuilt with every sidebar redraw and Blinc keys tree state by call site and counter, so folders that were opened by hand may close again; a blocked `open` can leave the tree highlight on the clicked row. Not fixed; needs a stable tree instance from Blinc.
+* No test sends key events (Esc, Ctrl+S): Blinc offers no offscreen event dispatch we use; the handlers are two lines and Esc is not handled.
 * Table column alignment is not applied; a table with many wide columns may be wider than its box (Blinc has no minimum content width, so words are kept whole instead of broken); the editor text area is not monospace.
 
 ## Dependencies

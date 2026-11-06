@@ -160,3 +160,21 @@ impl DocumentSource for Editable {
         Ok(format!("Exported {path} to {target}."))
     }
 }
+
+/// A source whose list fails.
+pub struct Failing;
+
+impl DocumentSource for Failing {
+    fn entries(&self, _prefix: &str) -> Result<Vec<Entry>, SourceError> {
+        Err(SourceError::failed("the list is unreachable"))
+    }
+    fn read(&self, _path: &str) -> Result<Document, SourceError> {
+        Err(SourceError::not_found("none"))
+    }
+    fn resolve(&self, _from: &str, href: &str) -> LinkTarget {
+        LinkTarget::Missing(href.into())
+    }
+    fn find(&self, _term: &str) -> Result<Vec<Hit>, SourceError> {
+        Ok(vec![])
+    }
+}

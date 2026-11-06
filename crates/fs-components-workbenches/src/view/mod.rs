@@ -14,7 +14,7 @@ mod tree_build;
 
 pub(crate) use actions::Actions;
 pub(crate) use content::content;
-pub(crate) use editor::new_area;
+pub(crate) use editor::{editor_rows, new_area};
 pub(crate) use frame::frame;
 pub(crate) use sidebar::{search_box, side_body};
 pub(crate) use styles::styles;

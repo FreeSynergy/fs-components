@@ -18,7 +18,7 @@ use super::error::ShellError;
 use super::picture::{Picture, ScrollInfo, Snapshot, Step};
 use super::setup::{bundle, register_fonts};
 use crate::reader::Reader;
-use crate::view::{Actions, content, frame, search_box, side_body, tree_nodes};
+use crate::view::{Actions, content, editor_rows, frame, search_box, side_body, tree_nodes};
 
 /// Apply the steps to a reader and write a PNG to `path`.
 ///
@@ -68,7 +68,7 @@ pub fn snapshot(
     let ui = frame(
         search_box(&field),
         side_body(&reader, &tree, &actions),
-        content(&reader, &actions, Some(&physics), None),
+        content(&reader, &actions, Some(&physics), None, editor_rows(h)),
         w,
         h,
     );
