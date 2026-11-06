@@ -20,6 +20,7 @@ pub mod people;
 pub mod reader;
 pub mod shell;
 mod source;
+pub mod tasks;
 mod view;
 
 pub use error::{ErrorKind, SourceError};

@@ -26,6 +26,7 @@ mod picture;
 pub mod share_dialog;
 pub mod sortable_list;
 mod styles;
+pub mod task_card;
 pub mod text;
 pub mod text_view;
 pub mod tool_call;
