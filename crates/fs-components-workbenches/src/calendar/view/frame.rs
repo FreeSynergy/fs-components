@@ -8,15 +8,14 @@ use std::sync::Arc;
 
 use blinc_layout::div::{Div, div};
 use blinc_layout::text;
-use fs_components_widgets::list_view::fit_cell;
-use fs_components_widgets::{CalendarPosition, CalendarView, Picked};
+use fs_components_widgets::{CalendarPosition, CalendarView};
 
 use super::actions::CalendarActions;
 use super::detail::detail;
 use super::form::InputSlots;
 use super::page_scroll::PageScroll;
+use super::problems::with_problems;
 use super::toolbar::toolbar;
-use crate::calendar::model::ItemProblem;
 use crate::calendar::shown::Shown;
 use crate::calendar::state::CalendarState;
 
@@ -28,10 +27,6 @@ const WIDE_BAR: f32 = 960.0;
 const WIDE_FOR_BOTH: f32 = 860.0;
 /// Width of the item beside the calendar.
 const DETAIL_WIDTH: f32 = 380.0;
-/// Height of a line about something that could not be shown.
-const PROBLEM_HEIGHT: f32 = 28.0;
-/// The most such lines; beyond that they are counted, so the calendar keeps its room.
-const MOST_PROBLEMS: usize = 3;
 /// The hour at the top of the axis at first.
 const START_HOUR: u16 = 7;
 
@@ -125,28 +120,8 @@ fn calendar(
     if let Some(problem) = state.problem() {
         return holder.child(div().class("fs-calendar-failed").child(text(problem)));
     }
-    let (shown, left) = problems_shown(state.problems().len());
-    let mut holder = holder;
-    for (index, problem) in state.problems().iter().take(shown).enumerate() {
-        holder = holder.child(problem_row(problem, index, places, actions, width));
-    }
-    if left > 0 {
-        let count = state
-            .labels()
-            .names
-            .more
-            .replacen("{}", &left.to_string(), 1);
-        holder = holder.child(
-            div()
-                .class("fs-calendar-problem")
-                .w(width)
-                .h(PROBLEM_HEIGHT)
-                .child(text(count).no_wrap().no_cursor()),
-        );
-    }
-    let rows = shown + usize::from(left > 0);
-    #[allow(clippy::cast_precision_loss)]
-    let height = (height - rows as f32 * PROBLEM_HEIGHT).max(0.0);
+    let (holder, used) = with_problems(holder, state, places, actions, width);
+    let height = (height - used).max(0.0);
     let view = CalendarView::new(
         state.view(),
         state.anchor(),
@@ -162,40 +137,4 @@ fn calendar(
     .start_hour(START_HOUR)
     .on_pick(Arc::clone(&actions.pick));
     holder.child(view.build(width, height))
-}
-
-/// How many problems get a line, and how many are only counted.
-fn problems_shown(count: usize) -> (usize, usize) {
-    if count <= MOST_PROBLEMS {
-        (count, 0)
-    } else {
-        (MOST_PROBLEMS - 1, count - (MOST_PROBLEMS - 1))
-    }
-}
-
-/// One thing that could not be shown; a click opens it, so that it can be read or deleted.
-fn problem_row(
-    problem: &ItemProblem,
-    index: usize,
-    places: &Places,
-    actions: &CalendarActions,
-    width: f32,
-) -> Div {
-    let line = div()
-        .id(format!("{}-problem-{index}", places.name))
-        .class("fs-calendar-problem")
-        .flex_row()
-        .items_center()
-        .overflow_clip()
-        .w(width)
-        .h(PROBLEM_HEIGHT)
-        .child(text(fit_cell(&problem.text, width)).no_wrap().no_cursor());
-    match problem.key.clone() {
-        Some(key) => {
-            let pick = Arc::clone(&actions.pick);
-            line.class("fs-calendar-problem-open")
-                .on_click(move |_| pick(Picked::Item(key.clone())))
-        }
-        None => line,
-    }
 }

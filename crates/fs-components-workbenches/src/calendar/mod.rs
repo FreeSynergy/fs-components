@@ -13,6 +13,7 @@ mod model;
 mod navigate;
 mod save;
 mod shown;
+mod shown_read;
 mod source;
 mod state;
 mod view;

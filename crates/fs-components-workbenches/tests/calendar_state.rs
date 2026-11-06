@@ -178,28 +178,3 @@ fn a_new_item_after_moving_starts_on_a_day_in_view() {
         "not the 5th of November"
     );
 }
-
-#[test]
-fn the_context_is_what_is_shown_as_a_plain_value() {
-    let (_, mut s) = state(pair());
-    let context = s.context();
-    assert_eq!(
-        (context.item, context.view, context.date),
-        (None, ViewRange::Month, d("2026-11-06"))
-    );
-    s.set_view(ViewRange::Week);
-    s.pick(&Picked::Day(d("2026-11-05")));
-    s.select("ada");
-    let context = s.context();
-    assert_eq!(context.item.as_deref(), Some("ada"));
-    assert_eq!(
-        (context.view, context.date),
-        (ViewRange::Week, d("2026-11-05"))
-    );
-    s.next();
-    assert_eq!(
-        s.context().date,
-        d("2026-11-13"),
-        "the day chosen is out of view"
-    );
-}

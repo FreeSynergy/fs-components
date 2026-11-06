@@ -6,9 +6,11 @@
 
 mod actions;
 mod detail;
+mod detail_bar;
 mod form;
 mod frame;
 mod page_scroll;
+mod problems;
 mod styles;
 mod toolbar;
 
