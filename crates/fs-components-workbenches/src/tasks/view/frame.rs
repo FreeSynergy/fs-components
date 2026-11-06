@@ -28,7 +28,7 @@ fn stacked(width: f32) -> bool {
 
 /// How high the toolbar is: its parts wrap, and what wraps must still fit.
 fn toolbar_height(width: f32) -> f32 {
-    if width >= 560.0 {
+    if width >= 400.0 {
         60.0
     } else if width >= 300.0 {
         104.0
