@@ -42,7 +42,10 @@ fn the_board_is_drawn_with_cursor_and_held_row() {
     let _g = serial();
     let list = board("b1");
     let img = draw(list.build(), 600, 260, "sortable-board-idle.png");
-    assert!(ink(&img, (0, 0, 600, 260), background(&img)) > 5000);
+    let idle = layout(list.build(), 600.0, 260.0);
+    for id in ["b1-todo-a", "b1-todo-b", "b1-todo-c", "b1-doing-x"] {
+        assert!(idle.query_by_id(id).is_some(), "row {id} is not drawn");
+    }
     list.command(Command::Toggle); // pick up "a"
     list.command(Command::Down);
     list.command(Command::Right);
@@ -238,4 +241,18 @@ fn every_default_key_does_its_job_through_the_element() {
     assert_eq!(list.grabbed(), None);
     input.key(&mut tree, 65); // an unbound key does nothing
     assert_eq!(list.lanes()[0].items.len(), 3);
+}
+
+#[test]
+fn a_mouse_click_is_not_taken_for_enter_or_space() {
+    let _g = serial();
+    let list = board("mc").keys(Bindings::default());
+    let mut tree = layout(list.build(), 600.0, 260.0);
+    let mut input = Input::new();
+    input.focus(&tree, "mc"); // keyboard mode
+    input.click(&mut tree, "mc-todo-c"); // a mouse press clears keyboard mode; the click bubbles to the root
+    assert_eq!(list.grabbed(), None, "a click must not pick anything up");
+    assert_eq!(list.cursor_key().as_deref(), Some("c"));
+    input.key(&mut tree, 32); // now Space does pick up
+    assert_eq!(list.grabbed().as_deref(), Some("c"));
 }

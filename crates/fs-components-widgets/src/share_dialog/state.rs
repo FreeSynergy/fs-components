@@ -14,6 +14,7 @@ pub struct Sharing {
     pub(super) filter: String,
     pub(super) cursor: Option<String>,
     pub(super) require_choice: bool,
+    pub(super) default_permission: Option<String>,
 }
 
 impl Sharing {
@@ -26,13 +27,14 @@ impl Sharing {
         }
     }
 
-    /// Start with these pairs chosen (a permission the caller does not offer becomes the first).
+    /// Start with these pairs chosen. A permission is kept exactly as given, also one that is not
+    /// offered (it stays visibly unknown and is returned unchanged unless the person picks
+    /// another): the dialog never turns a grant into a different one by itself.
     pub fn choose(&mut self, grants: Vec<Grant>) {
         for g in grants {
-            let permission = self.valid_permission(g.permission);
             match self.chosen.iter_mut().find(|c| c.choice == g.choice) {
-                Some(c) => c.permission = permission,
-                None => self.chosen.push(Grant::new(g.choice, permission)),
+                Some(c) => c.permission = g.permission,
+                None => self.chosen.push(g),
             }
         }
     }
@@ -42,11 +44,31 @@ impl Sharing {
         self.require_choice = require;
     }
 
-    fn valid_permission(&self, wanted: Option<String>) -> Option<String> {
-        let known = |k: &String| self.permissions.iter().any(|p| &p.key == k);
-        wanted
-            .filter(known)
-            .or_else(|| self.permissions.first().map(|p| p.key.clone()))
+    /// The permission a newly chosen pair gets: the least-privilege one, named by the caller.
+    /// Without one (or if it is not offered) a new pair has no permission until the person picks
+    /// one, and confirming is refused until then.
+    pub fn set_default_permission(&mut self, key: Option<String>) {
+        self.default_permission = key;
+    }
+
+    fn default_for_new(&self) -> Option<String> {
+        self.default_permission
+            .clone()
+            .filter(|k| self.permissions.iter().any(|p| &p.key == k))
+    }
+
+    /// Is this permission one of those offered?
+    pub fn offers(&self, permission: &str) -> bool {
+        self.permissions.iter().any(|p| p.key == permission)
+    }
+
+    /// Chosen pairs whose choice is not offered (given as already chosen). They are shown, can be
+    /// removed, and are returned on confirm unless removed.
+    pub fn unlisted(&self) -> Vec<&Grant> {
+        self.chosen
+            .iter()
+            .filter(|g| !self.choices.iter().any(|c| c.key == g.choice))
+            .collect()
     }
 
     /// The pairs chosen, in order.
@@ -90,18 +112,23 @@ impl Sharing {
         Outcome::Changed
     }
 
-    /// Choose or unchoose; a new pair gets the first permission.
+    /// Choose or unchoose; a new pair gets the caller's default permission, or none yet.
     pub fn toggle(&mut self, key: &str) -> Outcome {
-        if !self.choices.iter().any(|c| c.key == key) {
-            return Outcome::Refused(Refusal::NoSuchChoice);
+        let known = self.choices.iter().any(|c| c.key == key);
+        let held = self.chosen.iter().position(|g| g.choice == key);
+        match (held, known) {
+            (Some(i), _) => {
+                self.chosen.remove(i);
+            }
+            (None, true) => {
+                let permission = self.default_for_new();
+                self.chosen.push(Grant::new(key, permission));
+            }
+            (None, false) => return Outcome::Refused(Refusal::NoSuchChoice),
         }
-        if let Some(i) = self.chosen.iter().position(|g| g.choice == key) {
-            self.chosen.remove(i);
-        } else {
-            let permission = self.valid_permission(None);
-            self.chosen.push(Grant::new(key, permission));
+        if known {
+            self.cursor = Some(key.to_string());
         }
-        self.cursor = Some(key.to_string());
         Outcome::Changed
     }
 
@@ -122,7 +149,8 @@ impl Sharing {
         }
     }
 
-    /// The next or previous permission of a chosen row (stops at the ends).
+    /// The next or previous permission of a chosen row (stops at the ends). A row without a
+    /// known permission goes to the first (forward) or last (back) one offered: the person asked.
     pub fn step_permission(&mut self, key: &str, forward: bool) -> Outcome {
         let Some(g) = self.chosen.iter().find(|g| g.choice == key) else {
             return Outcome::Refused(Refusal::NotChosen);
@@ -130,10 +158,17 @@ impl Sharing {
         let at = self
             .permissions
             .iter()
-            .position(|p| Some(&p.key) == g.permission.as_ref())
-            .unwrap_or(0);
-        let to = if forward { at + 1 } else { at.wrapping_sub(1) };
-        match self.permissions.get(to).map(|p| p.key.clone()) {
+            .position(|p| Some(&p.key) == g.permission.as_ref());
+        let to = match (at, forward) {
+            (None, true) => Some(0),
+            (None, false) => self.permissions.len().checked_sub(1),
+            (Some(at), true) => Some(at + 1),
+            (Some(at), false) => at.checked_sub(1),
+        };
+        match to
+            .and_then(|i| self.permissions.get(i))
+            .map(|p| p.key.clone())
+        {
             Some(next) => self.set_permission(key, &next),
             None => Outcome::Refused(Refusal::Empty),
         }
@@ -158,6 +193,9 @@ impl Sharing {
     pub fn confirm(&self) -> Outcome {
         if self.require_choice && self.chosen.is_empty() {
             return Outcome::Refused(Refusal::NothingChosen);
+        }
+        if !self.permissions.is_empty() && self.chosen.iter().any(|g| g.permission.is_none()) {
+            return Outcome::Refused(Refusal::PermissionMissing);
         }
         Outcome::Confirmed(self.chosen.clone())
     }

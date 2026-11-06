@@ -30,8 +30,9 @@ fn keys_of(g: &[Grant]) -> Vec<(&str, Option<&str>)> {
 }
 
 #[test]
-fn choosing_gives_the_first_permission_and_can_be_changed() {
+fn choosing_gives_the_named_default_and_it_can_be_changed() {
     let mut s = Sharing::new(people(), perms());
+    s.set_default_permission(Some("view".into()));
     assert_eq!(s.toggle("ada"), Outcome::Changed);
     assert_eq!(s.toggle("bob"), Outcome::Changed);
     assert_eq!(
@@ -66,6 +67,7 @@ fn choosing_gives_the_first_permission_and_can_be_changed() {
 #[test]
 fn the_filter_hides_rows_but_never_drops_a_choice() {
     let mut s = Sharing::new(people(), perms());
+    s.set_default_permission(Some("view".into()));
     s.toggle("ada");
     s.set_filter("ärzt");
     assert_eq!(s.visible(), [1]);
@@ -98,9 +100,10 @@ fn earlier_choices_are_kept_even_if_not_offered_and_a_choice_can_be_required() {
         Grant::new("ada", Some("edit".into())),
         Grant::new("ada", Some("own".into())),
     ]);
+    // nothing is turned into something else: the unknown stays unknown, the later one wins
     assert_eq!(
         keys_of(s.chosen()),
-        [("gone", Some("view")), ("ada", Some("own"))]
+        [("gone", Some("bogus")), ("ada", Some("own"))]
     );
     let mut r = Sharing::new(people(), perms());
     r.require_choice(true);
@@ -130,4 +133,65 @@ fn a_huge_offer_is_filtered_and_moved_through() {
     assert_eq!(s.cursor_key(), Some("k99999"));
     s.move_cursor(isize::MIN);
     assert_eq!(s.cursor_key(), Some("k0"));
+}
+
+#[test]
+fn a_held_permission_is_never_raised() {
+    // the caller's grant is "legacy-readonly"; the dialog offers owner first, then view
+    let offered = vec![
+        Permission::new("owner", "Owner"),
+        Permission::new("view", "Can view"),
+    ];
+    let mut s = Sharing::new(people(), offered.clone());
+    s.choose(vec![Grant::new("ada", Some("legacy-readonly".into()))]);
+    assert_eq!(
+        s.confirm(),
+        Outcome::Confirmed(vec![Grant::new("ada", Some("legacy-readonly".into()))])
+    );
+    // also when someone else is added without a named default: that pair has no permission yet
+    s.toggle("bob");
+    assert_eq!(s.chosen()[1], Grant::new("bob", None));
+    assert_eq!(
+        s.confirm(),
+        Outcome::Refused(Refusal::PermissionMissing),
+        "no pair may leave without a permission"
+    );
+    // a grant given without a permission stays without one
+    let mut n = Sharing::new(people(), offered.clone());
+    n.choose(vec![Grant::new("ada", None)]);
+    assert_eq!(n.confirm(), Outcome::Refused(Refusal::PermissionMissing));
+    // the named default must be offered, else it counts as none
+    let mut d = Sharing::new(people(), offered);
+    d.set_default_permission(Some("root".into()));
+    d.toggle("bob");
+    assert_eq!(d.chosen()[0].permission, None);
+    d.set_default_permission(Some("view".into()));
+    d.toggle("eve");
+    assert_eq!(d.chosen()[1].permission.as_deref(), Some("view"));
+    // stepping from an unknown permission is the person's own act and lands on an offered one
+    let mut u = Sharing::new(
+        people(),
+        vec![Permission::new("a", "A"), Permission::new("b", "B")],
+    );
+    u.choose(vec![Grant::new("ada", Some("zzz".into()))]);
+    assert_eq!(u.step_permission("ada", true), Outcome::Changed);
+    assert_eq!(u.chosen()[0].permission.as_deref(), Some("a"));
+}
+
+#[test]
+fn a_pair_that_is_not_offered_can_be_removed() {
+    let mut s = Sharing::new(people(), perms());
+    s.choose(vec![
+        Grant::new("gone", Some("view".into())),
+        Grant::new("ada", Some("edit".into())),
+    ]);
+    assert_eq!(s.unlisted().len(), 1);
+    assert_eq!(s.toggle("gone"), Outcome::Changed);
+    assert!(s.unlisted().is_empty());
+    assert_eq!(keys_of(s.chosen()), [("ada", Some("edit"))]);
+    assert_eq!(
+        s.toggle("gone"),
+        Outcome::Refused(Refusal::NoSuchChoice),
+        "it cannot be added back"
+    );
 }

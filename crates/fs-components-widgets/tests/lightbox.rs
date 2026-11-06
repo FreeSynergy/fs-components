@@ -179,13 +179,20 @@ fn keys_are_optional_and_only_the_focused_box_takes_them() {
 #[test]
 fn what_cannot_be_shown_is_said() {
     let _g = serial();
-    let bg_of = |img: &image::RgbaImage| ink(img, (150, 100, 400, 250), background(img));
-    let missing = LightBox::new(vec![Media::picture("a", "/no/such/file.png", "")]);
-    let other = LightBox::new(vec![Media::other("v", "A video")]);
-    let none = LightBox::new(vec![]);
-    for (name, lb) in [("missing", missing), ("other", other), ("none", none)] {
-        let img = draw(lb.build(), 700, 400, &format!("lightbox-{name}.png"));
-        assert!(bg_of(&img) > 300, "{name}: no note on the stage");
+    let missing = LightBox::new(vec![Media::picture("a", "/no/such/file.png", "")]).id("n1");
+    let other = LightBox::new(vec![Media::other("v", "A video")]).id("n2");
+    let none = LightBox::new(vec![]).id("n3");
+    for (name, id, lb) in [
+        ("missing", "n1", missing),
+        ("other", "n2", other),
+        ("none", "n3", none),
+    ] {
+        let tree = layout(lb.build(), 700.0, 400.0);
+        assert!(
+            tree.query_by_id(&format!("{id}-note")).is_some(),
+            "{name}: no note on the stage"
+        );
+        let _ = common::draw_tree(&tree, 700, 400, &format!("lightbox-{name}.png"));
     }
 }
 
@@ -228,9 +235,12 @@ fn a_file_that_is_no_picture_is_announced_and_long_captions_wrap() {
     let dir = Scratch::new("lb-text");
     let path = dir.path("x.png");
     std::fs::write(&path, "not a picture").unwrap();
-    let note = LightBox::new(vec![Media::picture("a", path.to_string_lossy(), "")]);
-    let img = draw(note.build(), 700, 400, "lightbox-fake-png.png");
-    assert!(ink(&img, (150, 100, 400, 250), background(&img)) > 300);
+    let note = LightBox::new(vec![Media::picture("a", path.to_string_lossy(), "")]).id("fk");
+    let tree = layout(note.build(), 700.0, 400.0);
+    assert!(
+        tree.query_by_id("fk-note").is_some(),
+        "a fake picture file must be announced"
+    );
     let long = "A caption that is much longer than the box is wide and must not be cut off at the end: THE END ".repeat(3);
     let tall = |c: &str| {
         let t = layout(
@@ -238,17 +248,16 @@ fn a_file_that_is_no_picture_is_announced_and_long_captions_wrap() {
             400.0,
             500.0,
         );
-        t.get_absolute_bounds(t.query_by_id("cap").unwrap())
-            .unwrap()
-            .height
+        common::size_of(&t, "cap-caption").1
     };
-    let _ = tall(&long);
-    let img = draw(
-        LightBox::new(vec![Media::other("a", long)]).build(),
-        400,
-        500,
-        "lightbox-long-caption.png",
+    assert!(
+        tall(&long) >= tall("short"),
+        "a caption never gets smaller than a short one"
     );
-    // ink right at the lower edge: the wrapped caption continues over several lines
-    assert!(ink(&img, (0, 400, 400, 100), background(&img)) > 600);
+    if common::has_fonts() {
+        assert!(
+            tall(&long) > tall("short") + 30.0,
+            "a long caption must wrap onto more lines"
+        );
+    }
 }

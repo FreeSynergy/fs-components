@@ -5,6 +5,11 @@
 //! [`bind_keys`], which lets an event through only when this element is the one that has the
 //! keyboard: Blinc may hand a key press to every handler in the window (broadcast), and two
 //! widgets must never both act on one press.
+//!
+//! Real key order of a Blinc window: Tab, Enter and Space go to the window's navigation first;
+//! Enter and Space become a click on the focused element (no key event follows). Everything else
+//! is broadcast as a key event. So `bind_keys` also listens for that click, but only when it comes
+//! from the keyboard (a mouse press clears the keyboard mode), and reports it as [`Key::Activate`].
 
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -38,6 +43,12 @@ pub enum Key {
     Space,
     /// Escape.
     Escape,
+    /// Enter or Space on an element that has the keyboard. **This is how Enter and Space reach a
+    /// widget in a Blinc window:** the window gives these two keys to its navigation first, which
+    /// turns them into a click on the focused element and does not pass them on as keys; the two
+    /// cannot be told apart. [`Key::Enter`] and [`Key::Space`] stay for frontends that deliver
+    /// the raw keys themselves.
+    Activate,
     /// Any other key, by the platform's code (a widget ignores it).
     Other(u32),
 }
@@ -97,9 +108,16 @@ pub type Handled = bool;
 pub(crate) fn bind_keys(div: Div, handler: Arc<dyn Fn(KeyEvent) -> Handled + Send + Sync>) -> Div {
     let focused = Arc::new(AtomicBool::new(false));
     let (on, off) = (Arc::clone(&focused), Arc::clone(&focused));
+    let activate = Arc::clone(&handler);
     div.attr("tabindex", "0")
         .on_focus(move |_| on.store(true, Ordering::Relaxed))
         .on_blur(move |_| off.store(false, Ordering::Relaxed))
+        .on_click(move |ctx| {
+            // Enter or Space, turned into a click by the window; a mouse click clears this mode.
+            if keyboard_focused_node() == Some(ctx.node_id) {
+                activate(KeyEvent::new(Key::Activate));
+            }
+        })
         .on_key_down(move |ctx| {
             let mine = match keyboard_focused_node() {
                 Some(node) => node == ctx.node_id,

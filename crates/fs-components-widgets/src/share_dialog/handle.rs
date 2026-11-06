@@ -34,6 +34,12 @@ pub struct Labels {
     /// Chosen pairs that are not among the rows drawn (filtered out, beyond the cap, or not
     /// offered any more); `{}` = how many.
     pub chosen_hidden: String,
+    /// A chosen pair holds a permission that is not offered; `{}` = its key as the caller gave it.
+    pub unknown_permission: String,
+    /// A chosen pair has no permission yet.
+    pub no_permission: String,
+    /// A chosen pair whose choice is not offered (shown so it can be removed); `{}` = its key.
+    pub unlisted: String,
     /// No choice fits the filter.
     pub none_found: String,
     /// Nothing is offered at all.
@@ -52,6 +58,9 @@ impl Default for Labels {
             cancel: s("Cancel"),
             chosen: s("{} chosen"),
             chosen_hidden: s("{} chosen not shown here."),
+            unknown_permission: s("Unknown: {}"),
+            no_permission: s("Choose a permission"),
+            unlisted: s("{} (not in the list)"),
             none_found: s("Nobody found."),
             nothing_offered: s("Nobody to choose from."),
             more: s("{} more not shown, narrow the search."),
@@ -166,6 +175,17 @@ impl ShareDialog {
     #[must_use]
     pub fn choose(self, grants: Vec<Grant>) -> Self {
         self.core.lock().state.choose(grants);
+        self
+    }
+
+    /// The permission a newly chosen pair gets (the least-privilege one). Without it a new pair
+    /// has none until the person picks one, and Done is refused until every pair has one.
+    #[must_use]
+    pub fn default_permission(self, key: impl Into<String>) -> Self {
+        self.core
+            .lock()
+            .state
+            .set_default_permission(Some(key.into()));
         self
     }
 

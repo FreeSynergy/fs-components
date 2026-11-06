@@ -160,13 +160,8 @@ fn odd_data_draws_without_a_crash() {
     let bg = background(&img);
     assert!(ink(&img, (0, 0, 400, 200), bg) > 500);
     // empty list shows the empty text
-    let img = draw(
-        TransferList::new(vec![]).build(),
-        300,
-        60,
-        "transfer-list-empty.png",
-    );
-    assert!(ink(&img, (0, 0, 300, 60), background(&img)) > 50);
+    let tree = layout(TransferList::new(vec![]).build(), 300.0, 60.0);
+    assert!(tree.query_by_id("fs-tl-empty").is_some());
     // huge list: bounded drawing
     let many: Vec<Transfer> = (0..20_000)
         .map(|i| Transfer::new(format!("k{i}"), format!("f{i}"), Direction::Upload))

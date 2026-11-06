@@ -31,7 +31,8 @@ pub const STYLES: &str = r"
 .fs-sd-who { display: flex; flex-direction: column; flex-grow: 1; min-width: 0; overflow: hidden; }
 .fs-sd-name { color: var(--text-primary); }
 .fs-sd-meta { color: var(--text-secondary); font-size: var(--text-xs); }
-.fs-sd-perms { display: flex; flex-direction: row; gap: var(--space-1); flex-shrink: 0; max-width: 60%; overflow: hidden; }
+.fs-sd-perms { display: flex; flex-direction: row; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: var(--space-1); flex-shrink: 1; max-width: 65%; }
+.fs-sd-unknown { color: var(--error); font-size: var(--text-xs); }
 .fs-sd-note { color: var(--text-secondary); font-size: var(--text-sm); padding: var(--space-1) var(--space-2); }
 .fs-sd-foot { display: flex; flex-direction: row; align-items: center; justify-content: space-between; gap: var(--space-3); }
 .fs-sd-buttons { display: flex; flex-direction: row; gap: var(--space-2); }

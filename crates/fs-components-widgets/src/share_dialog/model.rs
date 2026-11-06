@@ -90,6 +90,9 @@ pub enum Refusal {
     NotChosen,
     /// Nothing to act on (no choices fit).
     Empty,
+    /// Confirm while a chosen pair has no permission yet (permissions are offered, and the
+    /// caller named no default for new pairs).
+    PermissionMissing,
 }
 
 /// What a step did.

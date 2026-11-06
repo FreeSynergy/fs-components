@@ -16,6 +16,10 @@ use blinc_layout::css_parser::Stylesheet;
 use blinc_layout::prelude::{ElementBuilder, RenderTree};
 use image::RgbaImage;
 
+mod input;
+#[allow(unused_imports)]
+pub use input::Input;
+
 static ONE_AT_A_TIME: Mutex<()> = Mutex::new(());
 
 /// Hold this while a test touches Blinc's singletons.
@@ -24,6 +28,9 @@ pub fn serial() -> std::sync::MutexGuard<'static, ()> {
         .lock()
         .unwrap_or_else(std::sync::PoisonError::into_inner);
     init_runtime();
+    // Focus of a text input outlives its test (it is process-wide); a widget ignores keys while
+    // one has the keyboard, so every test starts without.
+    blinc_layout::widgets::text_input::blur_all_text_inputs();
     guard
 }
 
@@ -196,84 +203,23 @@ pub fn write_png(scratch: &Scratch, name: &str, w: u32, h: u32, rgb: [u8; 3]) ->
     path.to_string_lossy().into_owned()
 }
 
-/// An in-process mouse and keyboard: the same router and hit test a window uses, fed by the test.
-/// No window opens and nothing reaches the real desktop.
-pub struct Input {
-    router: blinc_layout::event_router::EventRouter,
+/// Does this machine draw text? Pictures of text need system fonts; a test may add pixel checks
+/// of text when it does, but must reach the same verdict about structure either way.
+pub fn has_fonts() -> bool {
+    static FONTS: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+    *FONTS.get_or_init(|| {
+        init_runtime();
+        let ui = blinc_layout::div::div().child(blinc_layout::prelude::text("MMMMMMMM").size(30.0));
+        let img = draw(ui, 200, 60, "fonts-probe.png");
+        ink(&img, (0, 0, 200, 60), background(&img)) > 100
+    })
 }
 
-impl Input {
-    /// A fresh input state.
-    pub fn new() -> Self {
-        Self {
-            router: blinc_layout::event_router::EventRouter::new(),
-        }
-    }
-
-    /// The centre of the element with this id.
-    pub fn centre(tree: &RenderTree, id: &str) -> (f32, f32) {
-        let node = tree
-            .query_by_id(id)
-            .unwrap_or_else(|| panic!("no element {id}"));
-        let b = tree.get_absolute_bounds(node).expect("bounds");
-        (b.x + b.width / 2.0, b.y + b.height / 2.0)
-    }
-
-    fn send(
-        &mut self,
-        tree: &mut RenderTree,
-        events: Vec<(blinc_layout::tree::LayoutNodeId, u32)>,
-        x: f32,
-        y: f32,
-    ) {
-        for (node, event) in events {
-            tree.dispatch_event(node, event, x, y);
-        }
-    }
-
-    /// Press and release the left button at a point.
-    pub fn click_at(&mut self, tree: &mut RenderTree, x: f32, y: f32) {
-        use blinc_layout::event_router::MouseButton::Left;
-        let ev = self.router.on_mouse_move(tree, x, y);
-        self.send(tree, ev, x, y);
-        let ev = self.router.on_mouse_down(tree, x, y, Left);
-        self.send(tree, ev, x, y);
-        let ev = self.router.on_mouse_up(tree, x, y, Left);
-        self.send(tree, ev, x, y);
-    }
-
-    /// Click the centre of the element with this id.
-    pub fn click(&mut self, tree: &mut RenderTree, id: &str) {
-        let (x, y) = Self::centre(tree, id);
-        self.click_at(tree, x, y);
-    }
-
-    /// Press a key the way a window does: to the focused element.
-    pub fn key(&mut self, tree: &mut RenderTree, code: u32) {
-        if let Some((node, ev)) = self.router.on_key_down(code) {
-            tree.dispatch_key_event_bubbling(&[node], ev, code, false, false, false, false);
-        }
-    }
-
-    /// Press a key the way a window does when it cannot tell who has focus: to every handler.
-    pub fn key_broadcast(&mut self, tree: &mut RenderTree, code: u32) {
-        self.router.note_keyboard(code);
-        tree.broadcast_key_event(
-            blinc_core::events::event_types::KEY_DOWN,
-            code,
-            false,
-            false,
-            false,
-            false,
-        );
-    }
-
-    /// Give the keyboard to the element with this id.
-    pub fn focus(&mut self, tree: &RenderTree, id: &str) {
-        let node = tree
-            .query_by_id(id)
-            .unwrap_or_else(|| panic!("no element {id}"));
-        self.router.set_focus(Some(node));
-        self.router.note_keyboard(16 + 100);
-    }
+/// Size of the element with this id after layout.
+pub fn size_of(tree: &RenderTree, id: &str) -> (f32, f32) {
+    let node = tree
+        .query_by_id(id)
+        .unwrap_or_else(|| panic!("no element {id}"));
+    let b = tree.get_absolute_bounds(node).expect("bounds");
+    (b.width, b.height)
 }

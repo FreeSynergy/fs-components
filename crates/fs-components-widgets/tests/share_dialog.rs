@@ -35,10 +35,13 @@ fn keys_of(g: &[Grant]) -> Vec<(&str, Option<&str>)> {
 }
 
 fn dialog(id: &str) -> ShareDialog {
-    ShareDialog::new(people(), perms()).id(id).choose(vec![
-        Grant::new("ada", Some("edit".into())),
-        Grant::new("grp", None),
-    ])
+    ShareDialog::new(people(), perms())
+        .default_permission("view")
+        .id(id)
+        .choose(vec![
+            Grant::new("ada", Some("edit".into())),
+            Grant::new("grp", Some("view".into())),
+        ])
 }
 
 #[test]
@@ -104,6 +107,7 @@ fn keys_only_reach_the_focused_dialog_and_only_when_bound() {
     let got: Arc<Mutex<Vec<Outcome>>> = Arc::default();
     let sink = Arc::clone(&got);
     let a = ShareDialog::new(people(), perms())
+        .default_permission("view")
         .id("ka")
         .keys(Bindings::default())
         .on_outcome(Arc::new(move |o| sink.lock().unwrap().push(o.clone())));
@@ -245,6 +249,7 @@ fn every_default_key_does_its_job_through_the_element() {
     let got: Arc<Mutex<Vec<Outcome>>> = Arc::default();
     let sink = Arc::clone(&got);
     let d = ShareDialog::new(people(), perms())
+        .default_permission("view")
         .id("ek")
         .keys(Bindings::default())
         .on_outcome(Arc::new(move |o| sink.lock().unwrap().push(o.clone())));
@@ -260,11 +265,25 @@ fn every_default_key_does_its_job_through_the_element() {
     input.key(&mut tree, 40); // Down
     input.key(&mut tree, 38); // Up
     assert_eq!(d.cursor_key().as_deref(), Some("ada"));
-    input.key(&mut tree, 13); // Enter
+    // Enter and Space choose the row (the window turns them into a click on the focused root)
+    input.key(&mut tree, 13);
+    assert!(
+        d.chosen().is_empty(),
+        "Enter toggles the row under the cursor"
+    );
+    input.key(&mut tree, 32);
+    assert_eq!(keys_of(&d.chosen()).len(), 1);
+    // confirming by keyboard: Tab to the Done button, Enter there is Blinc's own button activation
+    assert!(
+        input.tab_to(&mut tree, "ek-confirm"),
+        "the Done button is not reachable by Tab"
+    );
+    input.key(&mut tree, 13);
     assert_eq!(
         got.lock().unwrap().last(),
         Some(&Outcome::Confirmed(d.chosen()))
     );
+    input.focus(&tree, "ek");
     input.key(&mut tree, 27);
     assert_eq!(got.lock().unwrap().last(), Some(&Outcome::Cancelled));
     assert!(

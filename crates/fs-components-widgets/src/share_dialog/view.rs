@@ -10,7 +10,7 @@ use blinc_layout::div::{Div, div};
 use blinc_layout::prelude::text;
 
 use super::handle::ShareDialog;
-use super::model::Outcome;
+use super::model::{Choice, Grant, Outcome};
 use super::state::Sharing;
 use crate::Element;
 use crate::keys::bind_keys;
@@ -45,8 +45,20 @@ impl ShareDialog {
                 .and_then(|k| visible.iter().position(|&i| state.choices[i].key == k));
             let rows = window(visible.len(), focus, self.max_rows);
             let mut list = div().class("fs-sd-list");
+            let mut drawn: Vec<&str> = Vec::new();
             for &i in &visible[rows.clone()] {
-                list = list.child(self.row(state, i));
+                let choice = &state.choices[i];
+                let grant = state.chosen.iter().find(|g| g.choice == choice.key);
+                let cursor = state.cursor_key() == Some(choice.key.as_str());
+                list = list.child(self.row_of(state, choice, grant, cursor));
+                drawn.push(choice.key.as_str());
+            }
+            // Pairs given as chosen whose choice is not offered: shown so they can be removed.
+            for g in state.unlisted() {
+                let name = l.unlisted.replacen("{}", &g.choice, 1);
+                let shown = Choice::new(g.choice.clone(), name);
+                list = list.child(self.row_of(state, &shown, Some(g), false));
+                drawn.push(g.choice.as_str());
             }
             if state.choices.is_empty() {
                 list = list.child(text(l.nothing_offered.clone()).class("fs-sd-note"));
@@ -59,16 +71,11 @@ impl ShareDialog {
                 list = list.child(text(note).class("fs-sd-note"));
             }
             // Chosen rows the window or the filter keeps out of sight are said, not forgotten.
-            let drawn = visible[rows.clone()]
+            let unseen = state
+                .chosen
                 .iter()
-                .filter(|&&i| {
-                    state
-                        .chosen
-                        .iter()
-                        .any(|g| g.choice == state.choices[i].key)
-                })
+                .filter(|g| !drawn.contains(&g.choice.as_str()))
                 .count();
-            let unseen = state.chosen.len() - drawn;
             if unseen > 0 {
                 let note = l.chosen_hidden.replacen("{}", &unseen.to_string(), 1);
                 list = list.child(text(note).class("fs-sd-note"));
@@ -87,16 +94,14 @@ impl ShareDialog {
         })
     }
 
-    fn row(&self, state: &Sharing, index: usize) -> Div {
-        let choice = &state.choices[index];
-        let grant = state.chosen.iter().find(|g| g.choice == choice.key);
+    fn row_of(&self, state: &Sharing, choice: &Choice, grant: Option<&Grant>, cursor: bool) -> Div {
         let mut row = div()
             .class("fs-sd-row")
             .id(format!("{}-row-{}", self.id, choice.key));
         if grant.is_some() {
             row = row.class("fs-sd-row-on");
         }
-        if state.cursor_key() == Some(choice.key.as_str()) {
+        if cursor {
             row = row.class("fs-sd-row-cursor");
         }
         let mark = if grant.is_some() {
@@ -134,7 +139,27 @@ impl ShareDialog {
     }
 
     fn permissions(&self, key: &str, current: Option<&str>, state: &Sharing) -> Div {
+        let l = &self.labels;
         let mut perms = div().class("fs-sd-perms");
+        // What the pair holds now, when none of the buttons shows it: said, never hidden.
+        match current {
+            Some(k) if !state.offers(k) => {
+                let note = l.unknown_permission.replacen("{}", k, 1);
+                perms = perms.child(
+                    text(note)
+                        .class("fs-sd-unknown")
+                        .id(format!("{}-unknown-{key}", self.id)),
+                );
+            }
+            None if !state.permissions.is_empty() => {
+                perms = perms.child(
+                    text(l.no_permission.clone())
+                        .class("fs-sd-unknown")
+                        .id(format!("{}-unknown-{key}", self.id)),
+                );
+            }
+            _ => {}
+        }
         for p in &state.permissions {
             let id = format!("{}-perm-{key}-{}", self.id, p.key);
             let variant = if Some(p.key.as_str()) == current {

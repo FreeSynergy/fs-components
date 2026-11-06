@@ -58,21 +58,34 @@ impl LightBox {
             let caption = viewer
                 .current()
                 .map_or(String::new(), |m| m.caption.clone());
-            div()
-                .class("fs-lb")
-                .child(bar)
-                .child(body)
-                .child(text(caption).class("fs-lb-caption"))
+            div().class("fs-lb").child(bar).child(body).child(
+                text(caption)
+                    .class("fs-lb-caption")
+                    .id(format!("{}-caption", self.id)),
+            )
         })
     }
 
     fn stage(&self, viewer: &Viewer) -> Div {
         let stage = div().class("fs-lb-stage");
         let l = &self.labels;
+        let note_id = format!("{}-note", self.id);
         match viewer.current() {
-            None => stage.child(text(l.empty.clone()).class("fs-lb-note")),
-            Some(m) if !m.picture => stage.child(text(l.not_a_picture.clone()).class("fs-lb-note")),
-            Some(m) if !loadable(m) => stage.child(text(l.unavailable.clone()).class("fs-lb-note")),
+            None => stage.child(
+                text(l.empty.clone())
+                    .class("fs-lb-note")
+                    .id(note_id.clone()),
+            ),
+            Some(m) if !m.picture => stage.child(
+                text(l.not_a_picture.clone())
+                    .class("fs-lb-note")
+                    .id(note_id.clone()),
+            ),
+            Some(m) if !loadable(m) => stage.child(
+                text(l.unavailable.clone())
+                    .class("fs-lb-note")
+                    .id(note_id.clone()),
+            ),
             Some(m) => stage.child(img(m.source.clone()).w_full().h_full().contain()),
         }
     }

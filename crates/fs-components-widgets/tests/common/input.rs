@@ -1,0 +1,110 @@
+//! In-process input for tests: the window's own router and hit test, fed by the test.
+#![allow(dead_code)]
+
+use blinc_layout::prelude::RenderTree;
+
+/// An in-process mouse and keyboard: the same router and hit test a window uses, fed by the test.
+/// No window opens and nothing reaches the real desktop.
+pub struct Input {
+    router: blinc_layout::event_router::EventRouter,
+}
+
+impl Input {
+    /// A fresh input state.
+    pub fn new() -> Self {
+        Self {
+            router: blinc_layout::event_router::EventRouter::new(),
+        }
+    }
+
+    /// The centre of the element with this id.
+    pub fn centre(tree: &RenderTree, id: &str) -> (f32, f32) {
+        let node = tree
+            .query_by_id(id)
+            .unwrap_or_else(|| panic!("no element {id}"));
+        let b = tree.get_absolute_bounds(node).expect("bounds");
+        (b.x + b.width / 2.0, b.y + b.height / 2.0)
+    }
+
+    fn send(
+        &mut self,
+        tree: &mut RenderTree,
+        events: Vec<(blinc_layout::tree::LayoutNodeId, u32)>,
+        x: f32,
+        y: f32,
+    ) {
+        for (node, event) in events {
+            tree.dispatch_event(node, event, x, y);
+        }
+    }
+
+    /// Press and release the left button at a point.
+    pub fn click_at(&mut self, tree: &mut RenderTree, x: f32, y: f32) {
+        use blinc_layout::event_router::MouseButton::Left;
+        let ev = self.router.on_mouse_move(tree, x, y);
+        self.send(tree, ev, x, y);
+        let ev = self.router.on_mouse_down(tree, x, y, Left);
+        self.send(tree, ev, x, y);
+        let ev = self.router.on_mouse_up(tree, x, y, Left);
+        self.send(tree, ev, x, y);
+    }
+
+    /// Click the centre of the element with this id.
+    pub fn click(&mut self, tree: &mut RenderTree, id: &str) {
+        let (x, y) = Self::centre(tree, id);
+        self.click_at(tree, x, y);
+    }
+
+    /// Press a key in the order a Blinc window uses (`blinc_app` `windowed/event_loop/input`):
+    /// first the navigation (Tab, and Enter and Space as a click on the focused element); only if
+    /// that does not take the key, the router's focused dispatch (without a key code) and then
+    /// the broadcast of the key to every key handler.
+    pub fn press(&mut self, tree: &mut RenderTree, code: u32, mods: (bool, bool, bool)) {
+        use blinc_core::events::event_types::KEY_DOWN;
+        let (shift, ctrl, alt) = mods;
+        if tree.handle_navigation_key(&mut self.router, code, shift) {
+            return;
+        }
+        if let Some((node, event)) = self.router.on_key_down(code) {
+            tree.dispatch_event(node, event, 0.0, 0.0);
+        }
+        tree.broadcast_key_event(KEY_DOWN, code, shift, ctrl, alt, false);
+    }
+
+    /// A key without modifiers, as a window delivers it.
+    pub fn key(&mut self, tree: &mut RenderTree, code: u32) {
+        self.press(tree, code, (false, false, false));
+    }
+
+    /// Same as [`Input::key`]: a window always broadcasts, so there is no separate path.
+    pub fn key_broadcast(&mut self, tree: &mut RenderTree, code: u32) {
+        self.key(tree, code);
+    }
+
+    /// Tab to the next tab stop.
+    pub fn tab(&mut self, tree: &mut RenderTree) {
+        self.key(tree, 9);
+    }
+
+    /// Tab until the element with this id has the keyboard (at most 40 presses); false if it never does.
+    pub fn tab_to(&mut self, tree: &mut RenderTree, id: &str) -> bool {
+        let want = tree
+            .query_by_id(id)
+            .unwrap_or_else(|| panic!("no element {id}"));
+        for _ in 0..40 {
+            if self.router.focused() == Some(want) {
+                return true;
+            }
+            self.tab(tree);
+        }
+        self.router.focused() == Some(want)
+    }
+
+    /// Give the keyboard to the element with this id.
+    pub fn focus(&mut self, tree: &RenderTree, id: &str) {
+        let node = tree
+            .query_by_id(id)
+            .unwrap_or_else(|| panic!("no element {id}"));
+        self.router.focus_via_keyboard(node);
+    }
+}

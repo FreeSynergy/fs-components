@@ -38,7 +38,8 @@ pub struct Bindings {
 }
 
 impl Default for Bindings {
-    /// Arrows, Home, End, Page keys; Space or Enter pick up and drop; Escape gives up.
+    /// Arrows, Home, End, Page keys; Space or Enter (arriving as `Activate`) pick up and drop;
+    /// Escape gives up.
     fn default() -> Self {
         Self {
             map: vec![
@@ -50,6 +51,7 @@ impl Default for Bindings {
                 (Key::End, Command::Last),
                 (Key::PageUp, Command::PageUp),
                 (Key::PageDown, Command::PageDown),
+                (Key::Activate, Command::Toggle),
                 (Key::Space, Command::Toggle),
                 (Key::Enter, Command::Toggle),
                 (Key::Escape, Command::Cancel),

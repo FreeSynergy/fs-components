@@ -19,7 +19,11 @@ impl TransferList {
     pub fn build(&self) -> impl Element + use<> {
         let mut list = div().class("fs-tl");
         if self.transfers.is_empty() {
-            return list.child(text(self.labels.empty.clone()).class("fs-tl-empty"));
+            return list.child(
+                text(self.labels.empty.clone())
+                    .class("fs-tl-empty")
+                    .id("fs-tl-empty"),
+            );
         }
         for i in self.shown() {
             list = list.child(self.row(&self.transfers[i]));
