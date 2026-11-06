@@ -13,6 +13,7 @@ use fs_components_widgets::{Column, ColumnWidth, ListPosition, ListView, Row, Ve
 use super::actions::TaskActions;
 use crate::tasks::context::TaskView;
 use crate::tasks::labels::TaskLabels;
+use crate::tasks::shown::Variant;
 use crate::tasks::state::TasksState;
 
 /// Height of a row of the list in pixels.
@@ -92,11 +93,18 @@ pub(in crate::tasks) fn list(
         }
         return area.child(footer(state, name, actions, width));
     }
+    // The compact variant shows what fits: the two columns that say what and when.
+    let shown = if state.variant() == Variant::Compact {
+        2
+    } else {
+        usize::MAX
+    };
     let rows: Vec<Row> = state
         .rows()
         .iter()
         .map(|r| {
-            let row = Row::new(r.key.clone(), r.cells.clone());
+            let cells = r.cells.iter().take(shown).cloned().collect();
+            let row = Row::new(r.key.clone(), cells);
             if r.marks.is_empty() {
                 row
             } else {
@@ -108,9 +116,14 @@ pub(in crate::tasks) fn list(
         .labels()
         .columns
         .iter()
+        .take(shown)
         .enumerate()
         .map(|(i, title)| {
-            let share = if i == 0 { 3.0 } else { 1.0 };
+            let share = match i {
+                0 => 3.0,
+                1 => 2.0,
+                _ => 1.0,
+            };
             Column::new(title.clone(), ColumnWidth::Share(share))
         })
         .collect();

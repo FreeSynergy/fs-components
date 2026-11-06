@@ -15,7 +15,7 @@ use crate::tasks::board::Board;
 use crate::tasks::state::TasksState;
 
 /// A column is not drawn narrower than this, in pixels; the box scrolls instead.
-const COLUMN_WIDTH: f32 = 190.0;
+const COLUMN_WIDTH: f32 = 160.0;
 
 /// The status view, with `after` below the columns.
 pub(in crate::tasks) fn board_area(
@@ -56,11 +56,13 @@ pub(in crate::tasks) fn board_area(
         .child(bar)
         .child(
             div().flex_1().min_h(0.0).w(width).child(
-                scroll()
-                    .both_directions()
-                    .w_full()
-                    .h_full()
-                    .content(div().w(inner).child(board.list.build())),
+                scroll().both_directions().w_full().h_full().content(
+                    div()
+                        .w(inner)
+                        .min_w(inner)
+                        .flex_shrink_0()
+                        .child(board.list.build()),
+                ),
             ),
         )
         .child(after)

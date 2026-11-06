@@ -14,6 +14,7 @@ use blinc_layout::widgets::scroll::scroll;
 use super::actions::{Act, TaskActions, button};
 use super::form::form;
 use super::slots::InputSlots;
+use crate::tasks::context::TaskView;
 use crate::tasks::model::{TaskSection, TaskSheet};
 use crate::tasks::shown::Shown;
 use crate::tasks::state::TasksState;
@@ -25,12 +26,11 @@ pub(in crate::tasks) fn detail(
     actions: &TaskActions,
     slots: &InputSlots,
 ) -> Div {
-    let mut column = div()
-        .flex_col()
-        .w_full()
-        .flex_1()
-        .min_h(0.0)
-        .child(bar(state, name, actions));
+    let mut column = div().flex_col().w_full().flex_1().min_h(0.0);
+    // The compact variant offers nothing to press: no empty band.
+    if state.editing().is_some() || state.can_edit() || state.can_delete() {
+        column = column.child(bar(state, name, actions));
+    }
     if let Some(notice) = state.notice() {
         column = column.child(
             div()
@@ -153,7 +153,8 @@ fn move_row(state: &TasksState, sheet: &TaskSheet, name: &str, actions: &TaskAct
     if let Some(refusal) = &sheet.move_refusal {
         return block.child(div().class("fs-tasks-note").child(text(refusal)));
     }
-    if !state.moved_once() {
+    // The status view says it above the columns.
+    if !state.moved_once() && state.view() == TaskView::List {
         block = block.child(
             div()
                 .class("fs-tasks-note")

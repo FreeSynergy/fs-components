@@ -69,7 +69,7 @@ pub const STYLES: &str = r"
 .fs-task-card-title { color: var(--text-primary); font-size: var(--text-sm); font-weight: 600; }
 .fs-task-card-open .fs-task-card-title { color: var(--primary); }
 .fs-task-card-line { color: var(--text-secondary); font-size: var(--text-xs); }
-.fs-task-card-tags { gap: var(--space-1); }
-.fs-task-card-tag { padding: 0 var(--space-1); border-radius: var(--radius-default); background: var(--surface); color: var(--text-secondary); font-size: var(--text-xs); }
+.fs-task-card-tags { display: flex; flex-direction: row; flex-wrap: wrap; gap: var(--space-1); }
+.fs-task-card-tag { padding: 0 var(--space-1); border-radius: var(--radius-default); background: var(--accent-subtle); color: var(--text-secondary); font-size: var(--text-xs); }
 .fs-task-card-mark { padding: 0 var(--space-1); border-radius: var(--radius-default); background: var(--warning-bg); color: var(--text-primary); font-size: var(--text-xs); }
 ";
