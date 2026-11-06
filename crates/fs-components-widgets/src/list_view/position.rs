@@ -15,8 +15,8 @@ const NONE: usize = usize::MAX;
 /// The scroll position of one list. Cheap to clone; clones share the position.
 #[derive(Clone)]
 pub struct ListPosition {
-    pub(super) scroll: ScrollRef,
-    pub(super) physics: SharedScrollPhysics,
+    pub(crate) scroll: ScrollRef,
+    pub(crate) physics: SharedScrollPhysics,
     wanted: Arc<AtomicUsize>,
     cursor: Arc<AtomicUsize>,
 }
@@ -77,7 +77,7 @@ impl ListPosition {
     }
 
     /// Put the list at `offset` pixels from the top, also in the element already on screen.
-    pub(super) fn apply_offset(&self, offset: f32) {
+    pub(crate) fn apply_offset(&self, offset: f32) {
         self.physics
             .lock()
             .unwrap_or_else(PoisonError::into_inner)

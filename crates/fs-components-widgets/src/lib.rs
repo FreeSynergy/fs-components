@@ -17,6 +17,8 @@ pub mod keys;
 pub mod lightbox;
 pub mod list_view;
 mod live;
+pub mod message_list;
+pub mod participant;
 mod picture;
 pub mod share_dialog;
 pub mod sortable_list;
@@ -34,6 +36,7 @@ pub use avatar_group::{
 pub use keys::{Handled, Key, KeyEvent};
 pub use lightbox::{LightBox, Media};
 pub use list_view::{Column, ColumnWidth, ListPosition, ListView, Row, RowSource, VecRows};
+pub use participant::{KindLabels, Sender, SenderKind};
 pub use share_dialog::{Choice, Permission, ShareDialog};
 pub use sortable_list::{Item, Lane, SortableList};
 pub use styles::styles;

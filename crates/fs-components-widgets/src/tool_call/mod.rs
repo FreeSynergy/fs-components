@@ -11,6 +11,8 @@ mod labels;
 mod model;
 mod store;
 
+pub(crate) use card::{Sinks, card};
+
 pub use handle::{OnOutcome, Outcome, ToolCallView};
 pub use labels::Labels;
 pub use model::{ToolCall, ToolChoice, ToolEnd, ToolKind, ToolOption, ToolRisk, ToolState};
