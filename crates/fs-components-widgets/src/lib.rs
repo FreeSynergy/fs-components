@@ -13,6 +13,9 @@
 #![allow(clippy::must_use_candidate, clippy::module_name_repetitions)]
 
 pub mod avatar_group;
+pub mod keys;
+mod live;
+pub mod sortable_list;
 mod styles;
 pub mod text;
 pub mod text_view;
@@ -23,6 +26,8 @@ pub use avatar_group::{AvatarGroup, Person, Presence};
 pub use avatar_group::{
     MAX_SHOWN as AVATAR_GROUP_MAX_SHOWN, Size, initials as avatar_group_initials,
 };
+pub use keys::{Handled, Key, KeyEvent};
+pub use sortable_list::{Item, Lane, SortableList};
 pub use styles::styles;
 pub use text::{Align, Block, Document, Inline, ListItem, Mark, MarkKind};
 pub use text_view::{LinkHandler, TextView, open_external};
