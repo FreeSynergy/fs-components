@@ -120,12 +120,11 @@ fn element(
     actions: &CalendarActions,
     slots: &InputSlots,
 ) -> Div {
-    let holder = div()
-        .id(format!("{name}-field-{}", field.key))
-        .class("fs-calendar-input")
-        .w_full();
+    let id = format!("{name}-field-{}", field.key);
+    let holder = div().class("fs-calendar-input").w_full();
     if field.read_only {
         return holder
+            .id(id)
             .flex_row()
             .class("fs-calendar-field")
             .child(div().class("fs-calendar-label").child(text(&field.label)))
@@ -151,6 +150,7 @@ fn element(
                 .child(div().class("fs-calendar-label").child(text(&field.label)))
                 .child(
                     div()
+                        .id(id)
                         .class("fs-calendar-flag")
                         .class(if field.value == "true" {
                             "fs-calendar-flag-on"
@@ -163,7 +163,7 @@ fn element(
         }
         FieldKind::LongText => {
             let state = slots.area(edit, &field.key, &field.value);
-            holder.child(
+            holder.id(id).child(
                 textarea(&state)
                     .size(TextareaSize::Small)
                     .label(field.label.clone())
@@ -174,7 +174,7 @@ fn element(
         }
         _ => {
             let data = slots.line(edit, &field.key, &field.value);
-            holder.child(
+            holder.id(id).child(
                 input(&data)
                     .size(InputSize::Small)
                     .label(field.label.clone())
