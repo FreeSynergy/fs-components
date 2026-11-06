@@ -21,17 +21,36 @@ pub(in crate::people) struct Areas<S, L, D> {
     pub detail: D,
 }
 
-/// Width and height of the area of the list inside `width` x `height`.
-pub(in crate::people) fn list_size(width: f32, height: f32) -> (f32, f32) {
-    (
-        (width * LIST_SHARE).max(0.0),
-        (height - SEARCH_HEIGHT).max(0.0),
-    )
+/// Below this width the list stands above the person, each with the whole width.
+const STACK_BELOW: f32 = 560.0;
+
+/// Do the two areas stand one above the other?
+fn stacked(width: f32) -> bool {
+    width < STACK_BELOW
 }
 
-/// Width of the person's area.
-pub(in crate::people) fn detail_width(width: f32) -> f32 {
-    (width * (1.0 - LIST_SHARE)).max(0.0)
+/// Width of the column of the list, and its height.
+fn side_size(width: f32, height: f32) -> (f32, f32) {
+    if stacked(width) {
+        (width.max(0.0), (height / 2.0).max(0.0))
+    } else {
+        ((width * LIST_SHARE).max(0.0), height.max(0.0))
+    }
+}
+
+/// Width and height of the area of the list inside `width` x `height`.
+pub(in crate::people) fn list_size(width: f32, height: f32) -> (f32, f32) {
+    let (side_w, side_h) = side_size(width, height);
+    (side_w, (side_h - SEARCH_HEIGHT).max(0.0))
+}
+
+/// Width and height of the person's area.
+fn detail_size(width: f32, height: f32) -> (f32, f32) {
+    if stacked(width) {
+        (width.max(0.0), (height / 2.0).max(0.0))
+    } else {
+        ((width * (1.0 - LIST_SHARE)).max(0.0), height.max(0.0))
+    }
 }
 
 /// Everything, filling `width` x `height`.
@@ -42,11 +61,13 @@ where
     D: ElementBuilder + 'static,
 {
     let (list_width, list_height) = list_size(width, height);
+    let (_, side_height) = side_size(width, height);
+    let (main_width, main_height) = detail_size(width, height);
     let side = div()
         .class("fs-people-side")
         .flex_col()
         .w(list_width)
-        .h(height)
+        .h(side_height)
         .min_h(0.0)
         .child(
             div()
@@ -64,19 +85,19 @@ where
                 .min_h(0.0)
                 .child(areas.list),
         );
-    div()
-        .class("fs-people-root")
-        .flex_row()
-        .w(width)
-        .h(height)
-        .child(side)
-        .child(
-            div()
-                .class("fs-people-main")
-                .flex_col()
-                .w(detail_width(width))
-                .h(height)
-                .min_h(0.0)
-                .child(areas.detail),
-        )
+    let root = div().class("fs-people-root");
+    let root = if stacked(width) {
+        root.flex_col()
+    } else {
+        root.flex_row()
+    };
+    root.w(width).h(height).child(side).child(
+        div()
+            .class("fs-people-main")
+            .flex_col()
+            .w(main_width)
+            .h(main_height)
+            .min_h(0.0)
+            .child(areas.detail),
+    )
 }

@@ -118,6 +118,7 @@ pub struct ListView {
     pub(super) columns: Vec<Column>,
     pub(super) source: Arc<dyn RowSource>,
     pub(super) selected: Option<String>,
+    pub(super) caller_selects: bool,
     pub(super) on_select: Option<OnSelect>,
     pub(super) row_height: f32,
     pub(super) position: Option<ListPosition>,
@@ -133,6 +134,7 @@ impl ListView {
             columns,
             source,
             selected: None,
+            caller_selects: false,
             on_select: None,
             row_height: DEFAULT_ROW_HEIGHT,
             position: None,
@@ -144,9 +146,11 @@ impl ListView {
 
     /// The row with this key stands out. The list does not remember a choice by itself: the
     /// caller answers `on_select` by building the list again with the new key, or refuses by not
-    /// doing so; then neither the keys nor the scroll position move on.
+    /// doing so; then neither the keys nor the scroll position move on. Without `on_select` nobody
+    /// can answer, so the keys only move the list, starting from this row.
     pub fn selected(mut self, key: Option<&str>) -> Self {
         self.selected = key.map(str::to_owned);
+        self.caller_selects = true;
         self
     }
 

@@ -24,6 +24,10 @@ pub struct Book {
     pub writes: Mutex<u32>,
     /// Keys of people to be marked and opened only when chosen.
     pub guarded: Mutex<Vec<String>>,
+    /// Said with a delete that went through.
+    pub delete_remark: Mutex<Option<String>>,
+    /// Lists fail from this offset on.
+    pub broken_from: Mutex<Option<usize>>,
 }
 
 impl Book {
@@ -44,6 +48,8 @@ impl Book {
             broken_list: Mutex::new(None),
             writes: Mutex::new(0),
             guarded: Mutex::new(Vec::new()),
+            delete_remark: Mutex::new(None),
+            broken_from: Mutex::new(None),
         }
     }
 
@@ -98,6 +104,14 @@ impl PeopleSource for Book {
     fn rows(&self, term: &str, offset: usize, limit: usize) -> Result<Vec<PersonRow>, SourceError> {
         if let Some(why) = self.broken_list.lock().unwrap().clone() {
             return Err(SourceError::failed(why));
+        }
+        if self
+            .broken_from
+            .lock()
+            .unwrap()
+            .is_some_and(|from| offset >= from)
+        {
+            return Err(SourceError::failed("the next page failed"));
         }
         Ok(self
             .people
@@ -197,13 +211,13 @@ impl PeopleSource for Book {
         Ok(name)
     }
 
-    fn delete(&self, key: &str) -> Result<(), SourceError> {
+    fn delete(&self, key: &str) -> Result<Option<String>, SourceError> {
         self.refused()?;
         if self.people.lock().unwrap().remove(key).is_none() {
             return Err(SourceError::not_found("gone"));
         }
         *self.writes.lock().unwrap() += 1;
-        Ok(())
+        Ok(self.delete_remark.lock().unwrap().clone())
     }
 }
 

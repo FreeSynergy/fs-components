@@ -43,21 +43,28 @@ impl PeopleState {
         };
         self.delete_asked = None;
         let title = self.title();
-        if let Err(e) = self.source.delete(&key) {
-            if e.kind == ErrorKind::NotFound {
-                self.person_gone();
-            } else {
-                self.notice = Some(PeopleLabels::fill(&self.labels.not_deleted, &e.message));
+        let remark = match self.source.delete(&key) {
+            Ok(remark) => remark,
+            Err(e) => {
+                if e.kind == ErrorKind::NotFound {
+                    self.person_gone();
+                } else {
+                    self.notice = Some(PeopleLabels::fill(&self.labels.not_deleted, &e.message));
+                }
+                return;
             }
-            return;
-        }
+        };
         let place = self.rows().iter().position(|r| r.key == key).unwrap_or(0);
         self.reload(self.loaded());
         match self.first_to_open(place) {
             Some(next) => self.show(&next),
             None => self.shown = Shown::Nothing,
         }
-        self.notice = Some(PeopleLabels::fill(&self.labels.deleted, &title));
+        let deleted = PeopleLabels::fill(&self.labels.deleted, &title);
+        self.notice = Some(match remark {
+            Some(remark) => format!("{deleted} {remark}"),
+            None => deleted,
+        });
     }
 
     /// Answer the question of [`PeopleState::ask_delete`] with no.

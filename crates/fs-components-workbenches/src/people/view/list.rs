@@ -19,6 +19,9 @@ const ROW_HEIGHT: f32 = 36.0;
 /// Height of the bar below the list, when there are more rows, in pixels.
 const MORE_HEIGHT: f32 = 52.0;
 
+/// Height of the line saying a further page failed, in pixels.
+const PROBLEM_HEIGHT: f32 = 64.0;
+
 /// The list and the More button, or why there is none. The button is a plain element, not a `cn`
 /// one, because this is drawn in a live area (see the Blinc notes in `DESIGN.md`).
 pub(in crate::people) fn list(
@@ -31,14 +34,25 @@ pub(in crate::people) fn list(
 ) -> Div {
     let labels = state.labels();
     let area = div().flex_col().w(width).h(height).min_h(0.0);
-    let height = if state.has_more() {
-        (height - MORE_HEIGHT).max(0.0)
-    } else {
-        height
-    };
-    if let Some(problem) = state.list_problem() {
+    if let (Some(problem), true) = (state.list_problem(), state.rows().is_empty()) {
         return area.child(div().class("fs-people-failed").child(text(problem)));
     }
+    // A failed Show more leaves the rows that are there, says why, and can be tried again.
+    let problem = state.list_problem().map(|problem| {
+        div()
+            .class("fs-people-failed")
+            .flex_shrink_0()
+            .w(width)
+            .h(PROBLEM_HEIGHT)
+            .overflow_clip()
+            .child(text(problem))
+    });
+    let taken = if problem.is_some() {
+        PROBLEM_HEIGHT
+    } else {
+        0.0
+    } + if state.has_more() { MORE_HEIGHT } else { 0.0 };
+    let height = (height - taken).max(0.0);
     let rows: Vec<Row> = state
         .rows()
         .iter()
@@ -76,6 +90,10 @@ pub(in crate::people) fn list(
             .on_select(select)
             .build(width, height),
     );
+    let area = match problem {
+        Some(problem) => area.child(problem),
+        None => area,
+    };
     if !state.has_more() {
         return area;
     }
@@ -90,6 +108,8 @@ pub(in crate::people) fn list(
                 div()
                     .id(format!("{name}-more"))
                     .class("fs-people-more-button")
+                    // A tab stop: the window turns Enter and Space on it into this click.
+                    .attr("tabindex", "0")
                     .on_click(move |_| more())
                     .child(text(&labels.more).no_cursor()),
             ),

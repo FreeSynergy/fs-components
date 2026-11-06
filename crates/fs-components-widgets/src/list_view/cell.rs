@@ -17,6 +17,9 @@ const ELLIPSIS: char = '\u{2026}';
 
 /// `text` as it fits a cell `width` pixels wide: as it is, or cut with an ellipsis.
 pub fn fit_cell(text: &str, width: f32) -> String {
+    if text.is_empty() {
+        return String::new();
+    }
     let room = width - CELL_PADDING;
     if measure_text(text, FONT_SIZE).width <= room {
         return text.to_string();

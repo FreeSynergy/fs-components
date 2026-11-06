@@ -110,8 +110,8 @@ fn a_double_click_on_delete_deletes_nothing_with_or_without_a_redraw_between() {
     h.rebuild();
     assert!(h.has("keep"), "still only asking");
     assert!(
-        h.centre("really").0 > point.0 + 100.0,
-        "the deed is far from the pointer"
+        h.edges("really").1 > point.1,
+        "the deed is below the pointer"
     );
     // A window that has: what is under the pointer now keeps the person.
     h.press_at(point);

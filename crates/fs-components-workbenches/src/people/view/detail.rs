@@ -52,6 +52,14 @@ pub(in crate::people) fn detail(
     if let Some(notice) = state.notice() {
         column = column.child(div().class("fs-people-notice").child(text(notice)));
     }
+    if state.can_delete() && state.delete_asked() {
+        column = column.child(div().class("fs-people-really").flex_row().child(button(
+            format!("{name}-really"),
+            &state.labels().delete_really,
+            ButtonVariant::Destructive,
+            &actions.confirm_delete,
+        )));
+    }
     let page = div().class("fs-people-page").flex_col().w_full();
     let page = if let Some(edit) = state.editing() {
         form(edit, state.labels(), name, actions, slots, page)
@@ -77,7 +85,7 @@ pub(in crate::people) fn detail(
 fn bar(state: &PeopleState, name: &str, actions: &PeopleActions) -> Div {
     let labels = state.labels();
     let id = |what: &str| format!("{name}-{what}");
-    let mut bar = div().class("fs-people-bar").flex_row();
+    let mut bar = div().class("fs-people-bar").flex_row().flex_wrap();
     if state.editing().is_some() {
         return bar
             .child(button(
@@ -103,22 +111,14 @@ fn bar(state: &PeopleState, name: &str, actions: &PeopleActions) -> Div {
     }
     if state.can_delete() {
         if state.delete_asked() {
-            // What lies where Delete was keeps the person; the deed is across the bar, so a second
-            // press at the same point can never be it.
-            bar = bar
-                .child(button(
-                    id("keep"),
-                    &labels.delete_keep,
-                    ButtonVariant::Secondary,
-                    &actions.keep,
-                ))
-                .child(div().flex_1())
-                .child(button(
-                    id("really"),
-                    &labels.delete_really,
-                    ButtonVariant::Destructive,
-                    &actions.confirm_delete,
-                ));
+            // What lies where Delete was keeps the person; the deed is on a line of its own below
+            // the bar, so a second press at the same point can never be it, at any width.
+            bar = bar.child(button(
+                id("keep"),
+                &labels.delete_keep,
+                ButtonVariant::Secondary,
+                &actions.keep,
+            ));
         } else {
             bar = bar.child(button(
                 id("delete"),

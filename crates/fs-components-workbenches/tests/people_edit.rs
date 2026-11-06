@@ -256,3 +256,25 @@ fn a_person_someone_else_deleted_leaves_on_cancel_and_on_delete() {
     assert_eq!(s.notice(), Some("This person no longer exists."));
     assert_eq!(s.shown(), &Shown::Nothing);
 }
+
+#[test]
+fn save_with_no_changes_reads_the_person_and_the_row_again() {
+    let (book, mut s) = state(&["ada"]);
+    s.begin_edit();
+    book.other_changes("ada", "theirs");
+    s.save();
+    assert_eq!(s.notice(), Some("Nothing was changed."));
+    assert!(matches!(s.shown(), Shown::Person { sheet, .. } if sheet.title == "theirs"));
+    assert_eq!(s.rows()[0].cells[0], "theirs");
+    assert_eq!(book.writes(), 0);
+}
+
+#[test]
+fn a_delete_that_went_through_with_a_remark_says_both() {
+    let (book, mut s) = state(&["ada", "bob"]);
+    *book.delete_remark.lock().unwrap() = Some("Their links remain.".into());
+    s.ask_delete();
+    s.confirm_delete();
+    assert_eq!(s.notice(), Some("ada was deleted. Their links remain."));
+    assert_eq!(s.rows().len(), 1);
+}

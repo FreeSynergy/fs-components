@@ -25,6 +25,8 @@ pub struct ListPosition {
     pub(crate) physics: SharedScrollPhysics,
     wanted: Arc<AtomicUsize>,
     cursor: Arc<AtomicUsize>,
+    /// The key of the row under the keyboard, so a stale index can be told from a right one.
+    cursor_key: Arc<Mutex<Option<String>>>,
     /// The key and row the keys went to, until the next build says whether the caller took it.
     going_to: Arc<Mutex<Option<(String, usize)>>>,
     window: Arc<Mutex<Option<WindowNode>>>,
@@ -56,6 +58,7 @@ impl Default for ListPosition {
             physics: Arc::new(Mutex::new(ScrollPhysics::default())),
             wanted: Arc::new(AtomicUsize::new(NONE)),
             cursor: Arc::new(AtomicUsize::new(NONE)),
+            cursor_key: Arc::new(Mutex::new(None)),
             going_to: Arc::new(Mutex::new(None)),
             window: Arc::new(Mutex::new(None)),
         }
@@ -97,6 +100,27 @@ impl ListPosition {
     /// Set the row under the keyboard.
     pub fn set_cursor(&self, row: Option<usize>) {
         self.cursor.store(row.unwrap_or(NONE), Ordering::Relaxed);
+        *self
+            .cursor_key
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner) = None;
+    }
+
+    /// Set the row under the keyboard, with its key.
+    pub(super) fn set_cursor_on(&self, row: usize, key: &str) {
+        self.cursor.store(row, Ordering::Relaxed);
+        *self
+            .cursor_key
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner) = Some(key.to_string());
+    }
+
+    /// The key of the row under the keyboard, if it is known.
+    pub(super) fn cursor_key(&self) -> Option<String> {
+        self.cursor_key
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .clone()
     }
 
     fn lock_offset(&self) -> f32 {

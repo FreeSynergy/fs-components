@@ -9,7 +9,7 @@ pub fn styles() -> String {
 }
 
 const LAYOUT: &str = r"
-.fs-people-root { display: flex; flex-direction: row; background: var(--background); color: var(--text-primary); font-family: var(--font-sans); }
+.fs-people-root { display: flex; background: var(--background); color: var(--text-primary); font-family: var(--font-sans); }
 .fs-people-side { flex-shrink: 0; border-right-width: 1px; border-right-color: var(--border); background: var(--surface); }
 .fs-people-search { flex-shrink: 0; align-items: center; gap: var(--space-2); padding-left: var(--space-3); padding-right: var(--space-3); }
 .fs-people-search-row { gap: var(--space-2); }
@@ -19,6 +19,7 @@ const LAYOUT: &str = r"
 .fs-people-more-button:hover { background: var(--accent-subtle); }
 .fs-people-main { min-width: 0; }
 .fs-people-bar { flex-shrink: 0; align-items: center; gap: var(--space-3); padding: var(--space-3); min-height: 60px; border-bottom-width: 1px; border-bottom-color: var(--border); }
+.fs-people-really { flex-shrink: 0; padding: var(--space-3); }
 .fs-people-page { padding: var(--space-6); gap: var(--space-4); }
 .fs-people-head { align-items: center; gap: var(--space-3); flex-wrap: wrap; }
 .fs-people-title-text { font-size: var(--text-2xl); font-weight: 600; }

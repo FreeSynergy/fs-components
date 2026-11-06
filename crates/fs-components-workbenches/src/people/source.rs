@@ -59,11 +59,12 @@ pub trait PeopleSource: Send + Sync {
         Err(SourceError::unsupported("this source cannot create"))
     }
 
-    /// Delete a person.
+    /// Delete a person. `Some` text: the person is gone, but this must still be said (something that
+    /// belonged to them could not be removed).
     ///
     /// # Errors
-    /// [`SourceError`] with the reason.
-    fn delete(&self, _key: &str) -> Result<(), SourceError> {
+    /// [`SourceError`] with the reason; the person is still there.
+    fn delete(&self, _key: &str) -> Result<Option<String>, SourceError> {
         Err(SourceError::unsupported("this source cannot delete"))
     }
 }

@@ -160,4 +160,29 @@ impl Harness {
         }
         true
     }
+
+    /// Press a key as a window does: Tab and Enter go to the navigation first.
+    pub fn press_key(&mut self, code: u32) {
+        self.tree
+            .handle_navigation_key(&mut self.router, code, false);
+    }
+
+    /// Press Tab until the element `<name>-<what>` has the keyboard; `false` if it never does.
+    pub fn tab_to(&mut self, what: &str) -> bool {
+        let wanted = self.tree.query_by_id(&self.id(what));
+        for _ in 0..30 {
+            self.press_key(9);
+            if self.router.focused() == wanted && wanted.is_some() {
+                return true;
+            }
+        }
+        false
+    }
+
+    /// The bounds of the element `<name>-<what>`: left, top, right, bottom.
+    pub fn edges(&self, what: &str) -> (f32, f32, f32, f32) {
+        let node = self.tree.query_by_id(&self.id(what)).expect("the element");
+        let b = self.tree.get_absolute_bounds(node).expect("bounds");
+        (b.x, b.y, b.x + b.width, b.y + b.height)
+    }
 }

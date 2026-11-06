@@ -54,7 +54,9 @@ impl ListView {
         let row_height = self.row_height;
         let total = count as f32 * row_height;
         if let Some(row) = position.arrived(self.selected.as_deref()) {
-            position.set_cursor(Some(row));
+            if let Some(key) = &self.selected {
+                position.set_cursor_on(row, key);
+            }
             bring_into_view(&position, row, row_height, view);
         }
         let offset = settle(&position, total, view, row_height);
@@ -105,6 +107,7 @@ fn rows(
         on_select: list.on_select.clone(),
         position: position.clone(),
         name: list.name.clone(),
+        caller_answers: list.caller_selects && list.on_select.is_some(),
     };
     div()
         .relative()
@@ -137,6 +140,7 @@ struct Shared {
     on_select: Option<OnSelect>,
     position: ListPosition,
     name: Option<String>,
+    caller_answers: bool,
 }
 
 impl Shared {
@@ -176,8 +180,14 @@ impl Shared {
             self.on_select.clone(),
             self.position.clone(),
         );
+        let caller_answers = self.caller_answers;
         element.on_click(move |_| {
-            position.set_cursor(Some(index));
+            // A caller may refuse: only a build with this row selected moves the cursor then.
+            if caller_answers {
+                position.going_to(&key, index);
+            } else {
+                position.set_cursor_on(index, &key);
+            }
             if let Some(on_select) = &on_select {
                 on_select(&key);
             }
@@ -198,8 +208,8 @@ fn head(list: &ListView, widths: &[f32]) -> Div {
     element
 }
 
-/// Keys report the row they lead to. With a selection the caller decides: only a build with that
-/// row selected moves anything, so a refusal moves nothing. Without one they move on their own.
+/// Keys report the row they lead to. A caller that selects decides: only a build with that row
+/// selected moves anything, so a refusal moves nothing. Otherwise they move the list themselves.
 #[allow(
     clippy::cast_possible_truncation,
     clippy::cast_sign_loss,
@@ -208,13 +218,26 @@ fn head(list: &ListView, widths: &[f32]) -> Div {
 fn with_keys(root: Div, list: &ListView, position: ListPosition, count: usize, view: f32) -> Div {
     let row_height = list.row_height;
     let page = (view / row_height) as usize;
+    let caller_answers = list.caller_selects && list.on_select.is_some();
     let (source, on_select, selected) = (
         Arc::clone(&list.source),
         list.on_select.clone(),
         list.selected.clone(),
     );
     let handler = Arc::new(move |event: KeyEvent| {
-        let start = start_row(source.as_ref(), selected.as_deref(), position.cursor());
+        // A caller that selects has the say; without one the keys go on from where they were, and
+        // a selection nobody can change is only where they begin.
+        let base = if caller_answers {
+            selected.clone()
+        } else {
+            position.cursor_key().or_else(|| selected.clone())
+        };
+        let cursor = if caller_answers && selected.is_none() {
+            None
+        } else {
+            position.cursor()
+        };
+        let start = start_row(source.as_ref(), base, cursor);
         let Some(row) = key_target(event.key, start, count, page) else {
             return false;
         };
@@ -224,10 +247,10 @@ fn with_keys(root: Div, list: &ListView, position: ListPosition, count: usize, v
         let Some(found) = rows.first() else {
             return true;
         };
-        if selected.is_some() {
+        if caller_answers {
             position.going_to(&found.key, row);
         } else {
-            position.set_cursor(Some(row));
+            position.set_cursor_on(row, &found.key);
             bring_into_view(&position, row, row_height, view);
         }
         if let Some(on_select) = &on_select {
@@ -238,23 +261,19 @@ fn with_keys(root: Div, list: &ListView, position: ListPosition, count: usize, v
     bind_keys(root, handler)
 }
 
-/// The row the keys start from: the selected one, wherever it is by now; else the last they reached.
-fn start_row(
-    source: &dyn RowSource,
-    selected: Option<&str>,
-    cursor: Option<usize>,
-) -> Option<usize> {
-    let Some(selected) = selected else {
+/// The row the keys start from: `base` is the key to find, the selected row if the caller selects
+/// and else the last row they reached. A row that is no longer there (hidden by a search, deleted)
+/// gives no start, so they begin at the first row. Without a key the cursor is taken as it is.
+fn start_row(source: &dyn RowSource, base: Option<String>, cursor: Option<usize>) -> Option<usize> {
+    let Some(key) = base else {
         return cursor;
     };
     let still_there = cursor.filter(|row| {
         source
             .rows(*row, 1)
-            .is_ok_and(|rows| rows.first().is_some_and(|r| r.key == selected))
+            .is_ok_and(|rows| rows.first().is_some_and(|r| r.key == key))
     });
-    still_there
-        .or_else(|| source.position_of(selected))
-        .or(cursor)
+    still_there.or_else(|| source.position_of(&key))
 }
 
 #[allow(clippy::cast_precision_loss)]

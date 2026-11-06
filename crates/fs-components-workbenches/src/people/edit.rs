@@ -140,8 +140,17 @@ impl PeopleState {
             return;
         };
         if !edit.draft.changed() {
+            let key = edit.key.clone();
             self.editing = None;
-            self.notice = Some(self.labels.no_changes.clone());
+            self.notice = None;
+            // Nothing of ours to write, but what is shown may be out of date by now.
+            if let Some(key) = key {
+                self.reload(self.loaded());
+                self.show(&key);
+            }
+            if self.notice.is_none() {
+                self.notice = Some(self.labels.no_changes.clone());
+            }
             return;
         }
         let (key, draft) = (edit.key.clone(), edit.draft.clone());
