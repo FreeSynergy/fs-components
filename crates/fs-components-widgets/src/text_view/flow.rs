@@ -28,7 +28,7 @@ struct Style {
 
 /// The flow of runs of `inline`.
 pub(super) fn flow(inline: &Inline, face: Face, look: &Look, on_link: Option<&LinkHandler>) -> Div {
-    let mut row = div().flex_row().flex_wrap().w_full();
+    let mut row = div().flex_row().flex_wrap().items_baseline().w_full();
     for (piece, style) in runs(inline, face) {
         row = row.child(run(&piece, &style, face, look, on_link));
     }
