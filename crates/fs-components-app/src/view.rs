@@ -24,9 +24,22 @@ pub(crate) fn has_nav(shell: &Shell) -> bool {
     shell.screens().len() > 1
 }
 
+/// The title bar: the title, and the menus if the program has any. A long title gives way to them.
+pub(crate) fn title_bar(title: &str, menus: Option<Div>) -> Div {
+    let mut bar = div().class("fs-app-bar").h(BAR_HEIGHT).child(
+        div()
+            .class("fs-app-title-box")
+            .child(text(title).no_wrap().class("fs-app-title")),
+    );
+    if let Some(menus) = menus {
+        bar = bar.child(menus);
+    }
+    bar
+}
+
 /// Bar above, navigation (if given) left of the main area, status line below.
 pub(crate) fn frame(
-    title: &str,
+    bar: Div,
     nav: Option<impl ElementBuilder + 'static>,
     main: impl ElementBuilder + 'static,
     status: impl ElementBuilder + 'static,
@@ -42,12 +55,7 @@ pub(crate) fn frame(
         .class("fs-app-root")
         .w(width)
         .h(height)
-        .child(
-            div()
-                .class("fs-app-bar")
-                .h(BAR_HEIGHT)
-                .child(text(title).no_wrap().class("fs-app-title")),
-        )
+        .child(bar)
         .child(row.child(main))
         .child(status)
 }

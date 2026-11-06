@@ -4,23 +4,27 @@
 //! Changing the screen asks the window for a full rebuild: a surface built outside a build pass
 //! would get new element keys on every change, and its old callbacks would keep running (see the
 //! Blinc notes in `DESIGN.md`). The status line is a live area of its own, so a message rebuilds
-//! nothing else. No lock is held while a surface runs, so a surface may use its `AppWidget`.
+//! nothing else. No lock is held while a surface or the menu handler runs, so both may use their
+//! `AppWidget`.
 
 use std::path::Path;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 
 use blinc_core::{BlincContextState, Signal};
+use blinc_layout::div::Div;
 use blinc_layout::prelude::NoState;
 use blinc_layout::stateful::stateful;
 use fs_components_render::{Canvas, draw_to_png};
 
 use crate::Element;
 use crate::error::AppError;
+use crate::menu_overlay;
+use crate::menu_view::{OnTrigger, menu_bar};
 use crate::shell::{Shell, Status};
 use crate::styles::STYLES;
 use crate::surface::{Screen, Surface};
-use crate::view::{OnSelect, frame, has_nav, main_area, nav, status_line};
+use crate::view::{OnSelect, frame, has_nav, main_area, nav, status_line, title_bar};
 
 static NEXT_ID: AtomicU64 = AtomicU64::new(1);
 
@@ -28,7 +32,7 @@ static NEXT_ID: AtomicU64 = AtomicU64::new(1);
 #[derive(Clone)]
 pub struct AppWidget {
     id: u64,
-    shell: Arc<Mutex<Shell>>,
+    pub(crate) shell: Arc<Mutex<Shell>>,
 }
 
 impl AppWidget {
@@ -89,7 +93,10 @@ impl AppWidget {
     /// The shell filling `width` x `height`, with a live status line. Call it inside the window's
     /// build function.
     pub fn build(&self, width: f32, height: f32) -> impl Element + use<> {
-        let (title, side, surface, with_nav) = self.parts(&self.on_select());
+        let (bar, side, surface, with_nav) = self.parts(&self.on_select(), &self.on_trigger());
+        if self.with_shell(Shell::open_menu).is_some() {
+            menu_overlay::watch_outside(&self.shell);
+        }
         let status = {
             let shell = Arc::clone(&self.shell);
             stateful::<NoState>()
@@ -97,11 +104,11 @@ impl AppWidget {
                 .on_state(move |_| status_line(&locked(&shell), width))
         };
         let main = main_area(surface.as_ref(), with_nav, width, height);
-        frame(&title, side, main, status, width, height)
+        frame(bar, side, main, status, width, height)
     }
 
     /// Draw the shell as it is now to a PNG, without a window. The same view functions as in the
-    /// window draw the same state, on the light theme; no click is simulated. Not while a window of
+    /// window draw the same state, on the light theme, with no menu open; no click is simulated. Not while a window of
     /// this process is open: it would reset that window's theme.
     ///
     /// # Errors
@@ -109,33 +116,35 @@ impl AppWidget {
     pub fn picture(&self, width: u32, height: u32, path: &Path) -> Result<(), AppError> {
         let canvas = Canvas::new(width, height, self.styles());
         let on_select: OnSelect = Arc::new(|_| {});
+        let on_trigger: OnTrigger = Arc::new(|_, _, _| {});
         let build = |w: f32, h: f32| {
-            let (title, side, surface, with_nav) = self.parts(&on_select);
+            let (bar, side, surface, with_nav) = self.parts(&on_select, &on_trigger);
             let main = main_area(surface.as_ref(), with_nav, w, h);
             let status = status_line(&locked(&self.shell), w);
-            frame(&title, side, main, status, w, h)
+            frame(bar, side, main, status, w, h)
         };
         draw_to_png(&canvas, build, || {}, path).map_err(AppError::Picture)
     }
 
-    /// What is read under the lock: nothing here runs a surface.
+    /// What is read under the lock is only copied; nothing built here runs a surface or a closure.
     fn parts(
         &self,
         on_select: &OnSelect,
-    ) -> (
-        String,
-        Option<blinc_layout::div::Div>,
-        Option<Arc<dyn Surface>>,
-        bool,
-    ) {
-        let shell = locked(&self.shell);
-        let with_nav = has_nav(&shell);
-        (
-            shell.title().to_owned(),
-            with_nav.then(|| nav(&shell, on_select)),
-            shell.current().map(|s| Arc::clone(&s.surface)),
-            with_nav,
-        )
+        on_trigger: &OnTrigger,
+    ) -> (Div, Option<Div>, Option<Arc<dyn Surface>>, bool) {
+        let (title, menus, side, surface, with_nav) = {
+            let shell = locked(&self.shell);
+            let with_nav = has_nav(&shell);
+            (
+                shell.title().to_owned(),
+                shell.menus().to_vec(),
+                with_nav.then(|| nav(&shell, on_select)),
+                shell.current().map(|s| Arc::clone(&s.surface)),
+                with_nav,
+            )
+        };
+        let bar = title_bar(&title, menu_bar(&menus, on_trigger));
+        (bar, side, surface, with_nav)
     }
 
     fn on_select(&self) -> OnSelect {
@@ -146,7 +155,7 @@ impl AppWidget {
     }
 }
 
-fn locked(shell: &Mutex<Shell>) -> MutexGuard<'_, Shell> {
+pub(crate) fn locked(shell: &Mutex<Shell>) -> MutexGuard<'_, Shell> {
     shell.lock().unwrap_or_else(PoisonError::into_inner)
 }
 

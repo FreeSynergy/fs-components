@@ -12,6 +12,8 @@ use fs_components_render::RenderError;
 pub enum AppError {
     /// Two screens have this id.
     DuplicateScreen(String),
+    /// Two menu entries have this id.
+    DuplicateMenuEntry(String),
     /// The window or its graphics could not be started.
     Window(String),
     /// The picture could not be drawn.
@@ -22,6 +24,7 @@ impl fmt::Display for AppError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::DuplicateScreen(id) => write!(f, "two screens have the id {id:?}"),
+            Self::DuplicateMenuEntry(id) => write!(f, "two menu entries have the id {id:?}"),
             Self::Window(why) => write!(f, "window: {why}"),
             Self::Picture(why) => write!(f, "picture: {why}"),
         }
