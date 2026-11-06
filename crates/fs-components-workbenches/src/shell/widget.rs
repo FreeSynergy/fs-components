@@ -3,8 +3,9 @@
 //! Pattern: Facade + Observer — `ReaderWidget` holds the shared state and builds the element; two
 //! counters (signals) tell the two live areas, sidebar body and content, to draw again after a
 //! change. A program owns the window, menus and gestures (ADR 0005, 0037) and calls
-//! [`ReaderWidget::build`] from its own build function; [`launch`](super::launch) is only the
-//! convenience of a window with nothing else in it.
+//! [`ReaderWidget::build`] from its own build function; [`launch`](super::launch) makes a bare app, the reader over the whole
+//! screen with no menu and no other parts (ADR 0056). A workbench always returns a context to
+//! its host and does not run alone; the host is the app.
 
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
