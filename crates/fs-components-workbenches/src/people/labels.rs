@@ -38,6 +38,8 @@ pub struct PeopleLabels {
     pub nobody_found: String,
     /// The first press of Delete; `{}` = the person.
     pub delete_confirm: String,
+    /// The person shown is no longer there.
+    pub gone: String,
     /// Going elsewhere while there are unsaved changes.
     pub unsaved: String,
     /// First cancel with unsaved changes.
@@ -83,6 +85,7 @@ impl Default for PeopleLabels {
             nobody: s("Nobody here yet."),
             nobody_found: s("Nobody found for \"{}\"."),
             delete_confirm: s("Delete {}? This cannot be taken back here."),
+            gone: s("This person no longer exists."),
             unsaved: s("Save or cancel your changes first."),
             discard_confirm: s("You have unsaved changes. Press Cancel again to discard them."),
             saved: s("Saved."),

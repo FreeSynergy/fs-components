@@ -22,6 +22,8 @@ pub struct Book {
     /// The list fails with this reason.
     pub broken_list: Mutex<Option<String>>,
     pub writes: Mutex<u32>,
+    /// Keys of people to be marked and opened only when chosen.
+    pub guarded: Mutex<Vec<String>>,
 }
 
 impl Book {
@@ -41,6 +43,7 @@ impl Book {
             refuse: Mutex::new(None),
             broken_list: Mutex::new(None),
             writes: Mutex::new(0),
+            guarded: Mutex::new(Vec::new()),
         }
     }
 
@@ -56,6 +59,11 @@ impl Book {
         let entry = people.get_mut(key).unwrap();
         entry.0 = name.into();
         entry.2 += 1;
+    }
+
+    /// Another person deletes `key` behind the workbench's back.
+    pub fn other_deletes(&self, key: &str) {
+        self.people.lock().unwrap().remove(key);
     }
 
     pub fn name(&self, key: &str) -> Option<String> {
@@ -99,11 +107,21 @@ impl PeopleSource for Book {
             .filter(|(_, p)| p.0.contains(term))
             .skip(offset)
             .take(limit)
-            .map(|(k, p)| PersonRow::new(k.clone(), vec![p.0.clone(), p.1.clone()]))
+            .map(|(k, p)| {
+                let row = PersonRow::new(k.clone(), vec![p.0.clone(), p.1.clone()]);
+                if self.guarded.lock().unwrap().contains(k) {
+                    row.guarded("Sensitive")
+                } else {
+                    row
+                }
+            })
             .collect())
     }
 
     fn read(&self, key: &str) -> Result<PersonSheet, SourceError> {
+        if key == "broken" {
+            return Err(SourceError::failed("the record is damaged"));
+        }
         let people = self.people.lock().unwrap();
         let (name, mail, _) = people
             .get(key)
@@ -181,7 +199,9 @@ impl PeopleSource for Book {
 
     fn delete(&self, key: &str) -> Result<(), SourceError> {
         self.refused()?;
-        self.people.lock().unwrap().remove(key);
+        if self.people.lock().unwrap().remove(key).is_none() {
+            return Err(SourceError::not_found("gone"));
+        }
         *self.writes.lock().unwrap() += 1;
         Ok(())
     }

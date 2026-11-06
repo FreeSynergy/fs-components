@@ -39,6 +39,10 @@ pub struct PersonRow {
     pub key: String,
     /// One text per column of [`PeopleLabels::columns`](super::PeopleLabels::columns).
     pub cells: Vec<String>,
+    /// Short markings that must be seen in the list, in the source's words.
+    pub marks: Vec<String>,
+    /// Shown only when the person chooses this row, never opened by the workbench on its own.
+    pub only_when_chosen: bool,
 }
 
 impl PersonRow {
@@ -47,7 +51,17 @@ impl PersonRow {
         Self {
             key: key.into(),
             cells,
+            marks: Vec::new(),
+            only_when_chosen: false,
         }
+    }
+
+    /// The row of someone to be marked in the list and opened only when chosen (ADR 0029).
+    #[must_use]
+    pub fn guarded(mut self, mark: impl Into<String>) -> Self {
+        self.marks.push(mark.into());
+        self.only_when_chosen = true;
+        self
     }
 }
 
@@ -187,6 +201,8 @@ impl DraftGroup {
 pub struct PersonDraft {
     /// Opaque marker of the state the draft was made from; a save from an old one is a conflict.
     pub revision: Option<String>,
+    /// Short markings that must stay in view while editing, in the source's words.
+    pub marks: Vec<String>,
     /// The fields, by group.
     pub groups: Vec<DraftGroup>,
 }
@@ -194,7 +210,11 @@ pub struct PersonDraft {
 impl PersonDraft {
     /// A draft.
     pub fn new(revision: Option<String>, groups: Vec<DraftGroup>) -> Self {
-        Self { revision, groups }
+        Self {
+            revision,
+            marks: Vec::new(),
+            groups,
+        }
     }
 
     /// Every field, in order.

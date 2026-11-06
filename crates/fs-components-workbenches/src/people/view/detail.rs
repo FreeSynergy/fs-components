@@ -103,25 +103,28 @@ fn bar(state: &PeopleState, name: &str, actions: &PeopleActions) -> Div {
     }
     if state.can_delete() {
         if state.delete_asked() {
+            // What lies where Delete was keeps the person; the deed is across the bar, so a second
+            // press at the same point can never be it.
             bar = bar
-                .child(button(
-                    id("delete"),
-                    &labels.delete_really,
-                    ButtonVariant::Destructive,
-                    &actions.delete,
-                ))
                 .child(button(
                     id("keep"),
                     &labels.delete_keep,
                     ButtonVariant::Secondary,
                     &actions.keep,
+                ))
+                .child(div().flex_1())
+                .child(button(
+                    id("really"),
+                    &labels.delete_really,
+                    ButtonVariant::Destructive,
+                    &actions.confirm_delete,
                 ));
         } else {
             bar = bar.child(button(
                 id("delete"),
                 &labels.delete,
                 ButtonVariant::Ghost,
-                &actions.delete,
+                &actions.ask_delete,
             ));
         }
     }
@@ -129,19 +132,24 @@ fn bar(state: &PeopleState, name: &str, actions: &PeopleActions) -> Div {
 }
 
 fn person(sheet: &PersonSheet, page: Div) -> Div {
-    let mut head = div().class("fs-people-head").flex_row().child(
+    let head = div().class("fs-people-head").flex_row().child(
         div()
             .class("fs-people-title")
             .child(text(&sheet.title).class("fs-people-title-text")),
     );
-    for mark in &sheet.marks {
-        head = head.child(div().class("fs-people-mark").child(text(mark)));
-    }
-    let mut page = page.child(head);
+    let mut page = page.child(with_marks(head, &sheet.marks));
     for section in &sheet.sections {
         page = page.child(section_element(section));
     }
     page
+}
+
+/// `row` with the markings added.
+pub(super) fn with_marks(mut row: Div, marks: &[String]) -> Div {
+    for mark in marks {
+        row = row.child(div().class("fs-people-mark").child(text(mark)));
+    }
+    row
 }
 
 fn section_element(section: &PersonSection) -> Div {

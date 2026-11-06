@@ -16,7 +16,11 @@ use crate::people::state::PeopleState;
 /// Height of a row of the list in pixels.
 const ROW_HEIGHT: f32 = 36.0;
 
-/// The list, or why there is none.
+/// Height of the bar below the list, when there are more rows, in pixels.
+const MORE_HEIGHT: f32 = 52.0;
+
+/// The list and the More button, or why there is none. The button is a plain element, not a `cn`
+/// one, because this is drawn in a live area (see the Blinc notes in `DESIGN.md`).
 pub(in crate::people) fn list(
     state: &PeopleState,
     name: &str,
@@ -27,13 +31,25 @@ pub(in crate::people) fn list(
 ) -> Div {
     let labels = state.labels();
     let area = div().flex_col().w(width).h(height).min_h(0.0);
+    let height = if state.has_more() {
+        (height - MORE_HEIGHT).max(0.0)
+    } else {
+        height
+    };
     if let Some(problem) = state.list_problem() {
         return area.child(div().class("fs-people-failed").child(text(problem)));
     }
     let rows: Vec<Row> = state
         .rows()
         .iter()
-        .map(|r| Row::new(r.key.clone(), r.cells.clone()))
+        .map(|r| {
+            let row = Row::new(r.key.clone(), r.cells.clone());
+            if r.marks.is_empty() {
+                row
+            } else {
+                row.with_mark(r.marks.join(" "))
+            }
+        })
         .collect();
     let empty = if state.term().is_empty() {
         labels.nobody.clone()
@@ -50,7 +66,7 @@ pub(in crate::people) fn list(
         })
         .collect();
     let select = Arc::clone(&actions.select);
-    area.child(
+    let area = area.child(
         ListView::new(columns, Arc::new(VecRows::new(rows)))
             .row_height(ROW_HEIGHT)
             .named(name)
@@ -59,5 +75,23 @@ pub(in crate::people) fn list(
             .when_empty(empty)
             .on_select(select)
             .build(width, height),
+    );
+    if !state.has_more() {
+        return area;
+    }
+    let more = Arc::clone(&actions.more);
+    area.child(
+        div()
+            .class("fs-people-more")
+            .flex_row()
+            .h(MORE_HEIGHT)
+            .w(width)
+            .child(
+                div()
+                    .id(format!("{name}-more"))
+                    .class("fs-people-more-button")
+                    .on_click(move |_| more())
+                    .child(text(&labels.more).no_cursor()),
+            ),
     )
 }

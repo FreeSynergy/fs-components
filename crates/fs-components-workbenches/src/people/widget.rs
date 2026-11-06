@@ -1,7 +1,8 @@
 //! The people workbench as a thing a program can place in its own window.
 //!
 //! Pattern: Facade + Observer — `PeopleWidget` holds the shared state and builds the element. A
-//! search draws the list area again through a signal, so the search field keeps the keyboard;
+//! search draws the list area (the list and its More button) again through a signal, so the search
+//! field keeps the keyboard;
 //! every other change asks the window for a full rebuild, because `cn` elements built inside a live
 //! area get new keys and their old callbacks keep running (see the Blinc notes in `DESIGN.md`).
 //!
@@ -93,7 +94,6 @@ impl PeopleWidget {
         let snapshot = locked(&self.state).clone();
         let actions = self.actions();
         let name = format!("fs-people-{}", self.id);
-        let with_more = snapshot.has_more();
         let search = {
             let mut bar = div()
                 .class("fs-people-search-row")
@@ -118,16 +118,7 @@ impl PeopleWidget {
             }
             bar
         };
-        let more = with_more.then(|| {
-            div().class("fs-people-more").flex_row().child(button_for(
-                &name,
-                "more",
-                &snapshot.labels().more,
-                ButtonVariant::Secondary,
-                &actions.more,
-            ))
-        });
-        let (list_w, list_h) = list_size(width, height, with_more);
+        let (list_w, list_h) = list_size(width, height);
         let live = {
             let (state, position, generation, actions, name) = (
                 Arc::clone(&self.state),
@@ -154,7 +145,6 @@ impl PeopleWidget {
             Areas {
                 search,
                 list: live,
-                more,
                 detail: person,
             },
             width,

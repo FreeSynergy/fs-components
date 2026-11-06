@@ -26,6 +26,10 @@ fn widget(book: Book) -> (Arc<Book>, PeopleWidget) {
     (book.clone(), PeopleWidget::new(book, labels()))
 }
 
+fn selected_of(widget: &PeopleWidget) -> Option<String> {
+    widget.with_state(|s| s.selected().map(str::to_string))
+}
+
 fn selected(harness: &Harness) -> Option<String> {
     harness
         .widget
@@ -88,10 +92,82 @@ fn delete_takes_two_clicks_and_the_button_says_so() {
     h.click("delete");
     assert!(h.has("keep"));
     assert!(book.name("ada").is_some());
-    h.click("delete");
+    h.click("really");
     assert!(book.name("ada").is_none());
     assert_eq!(selected(&h).as_deref(), Some("bob"));
     assert!(!h.has("keep"));
+}
+
+#[test]
+fn a_double_click_on_delete_deletes_nothing_with_or_without_a_redraw_between() {
+    let (book, w) = widget(Book::with(&["ada", "bob"]));
+    let mut h = Harness::new(w, 900.0, 600.0);
+    let point = h.centre("delete");
+    // A window that has not drawn again: the same button is pressed twice.
+    h.press_at(point);
+    h.press_at(point);
+    assert!(book.name("ada").is_some());
+    h.rebuild();
+    assert!(h.has("keep"), "still only asking");
+    assert!(
+        h.centre("really").0 > point.0 + 100.0,
+        "the deed is far from the pointer"
+    );
+    // A window that has: what is under the pointer now keeps the person.
+    h.press_at(point);
+    h.rebuild();
+    assert!(book.name("ada").is_some());
+    assert!(
+        h.has("delete") && !h.has("keep"),
+        "the second press said no"
+    );
+    assert_eq!(selected(&h).as_deref(), Some("ada"));
+}
+
+#[test]
+fn someone_marked_is_marked_in_the_list_and_not_opened_by_the_workbench() {
+    let book = Book::with(&["ada", "bob"]);
+    book.guarded.lock().unwrap().push("ada".into());
+    let (book, w) = widget(book);
+    assert_eq!(selected_of(&w), None, "ada is first and is not opened");
+    w.with_state(|s| s.select("bob"));
+    assert_eq!(selected_of(&w).as_deref(), Some("bob"));
+    assert!(w.with_state(|s| s.rows()[0].marks == ["Sensitive"]));
+    w.with_state(|s| s.select("ada"));
+    assert_eq!(selected_of(&w).as_deref(), Some("ada"), "chosen, so shown");
+    book.guarded.lock().unwrap().push("cid".into());
+    let compact = PeopleWidget::compact(book, labels());
+    assert_eq!(selected_of(&compact), None, "the compact variant too");
+}
+
+#[test]
+fn after_a_delete_the_next_person_is_not_opened_if_marked() {
+    let book = Book::with(&["ada", "bob", "cid"]);
+    book.guarded.lock().unwrap().push("bob".into());
+    let (_, w) = widget(book);
+    assert_eq!(selected_of(&w).as_deref(), Some("ada"));
+    w.with_state(|s| {
+        s.ask_delete();
+        s.confirm_delete();
+    });
+    assert_eq!(selected_of(&w), None, "bob moved up and stays closed");
+    assert!(w.with_state(|s| s.notice().unwrap().contains("ada")));
+}
+
+#[test]
+fn show_more_and_the_height_of_the_list_follow_a_search() {
+    let (_, w) = widget(Book::numbered(450));
+    let mut h = Harness::new(w, 900.0, 600.0);
+    assert!(h.has("more"));
+    let before = h.height_of_list();
+    h.press("search");
+    assert!(h.type_text("p00001"));
+    h.frame();
+    assert!(!h.has("more"), "one person found, nothing more to show");
+    assert!(
+        h.height_of_list() > before,
+        "the room of the button goes to the list"
+    );
 }
 
 #[test]
@@ -150,7 +226,11 @@ fn draw(widget: &PeopleWidget, name: &str) -> Option<image::RgbaImage> {
         }
         other => {
             other.unwrap();
-            Some(image::open(&path).unwrap().to_rgba8())
+            let picture = image::open(&path).unwrap().to_rgba8();
+            if std::env::var_os("FS_COMP_SHOTS").is_none() {
+                std::fs::remove_file(&path).unwrap();
+            }
+            Some(picture)
         }
     }
 }
@@ -170,4 +250,48 @@ fn pictures_of_reading_editing_and_a_failure_differ() {
     w.with_state(|s| s.save());
     let failed = draw(&w, "people-failed.png").unwrap();
     assert_ne!(form, failed);
+}
+
+#[test]
+fn rebuilding_the_workbench_as_a_window_does_keeps_the_reactive_graph_bounded() {
+    let (_, w) = widget(Book::numbered(50));
+    let mut h = Harness::new(w, 900.0, 600.0);
+    let stats = || blinc_core::reactive::global_graph().lock().unwrap().stats();
+    for state in ["read", "form"] {
+        h.rebuild();
+        let before = stats();
+        for _ in 0..30 {
+            h.rebuild();
+        }
+        let after = stats();
+        eprintln!("{state}: {before:?} -> {after:?}");
+        assert!(
+            after.derived_count <= before.derived_count + 5,
+            "{state}: {before:?} {after:?}"
+        );
+        assert!(
+            after.signal_count <= before.signal_count + 5,
+            "{state}: {before:?} {after:?}"
+        );
+        if state == "read" {
+            h.click("edit");
+        }
+    }
+    h.click("cancel");
+    h.press("search");
+    let before = stats();
+    for _ in 0..30 {
+        assert!(h.type_text("p"));
+        h.frame();
+    }
+    let after = stats();
+    eprintln!("live area: {before:?} -> {after:?}");
+    assert!(
+        after.derived_count <= before.derived_count + 5,
+        "{before:?} {after:?}"
+    );
+    assert!(
+        after.signal_count <= before.signal_count + 5,
+        "{before:?} {after:?}"
+    );
 }

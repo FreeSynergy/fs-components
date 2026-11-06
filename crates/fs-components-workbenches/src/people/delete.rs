@@ -1,11 +1,14 @@
 //! Deleting a person.
 //!
-//! Pattern: State — deleting needs a second press, tied to that person; anything that shows another
-//! person drops the question. A failure is kept and shown, and the person stays.
+//! Pattern: State — two different actions: asking and confirming. Pressing the first again only
+//! asks again, so a double-click can never delete, whatever is drawn under the pointer by then. The
+//! question is tied to that person; anything that shows another person drops it. A failure is kept
+//! and shown, and the person stays; a person someone else deleted just leaves the list.
 
 use super::labels::PeopleLabels;
 use super::shown::Shown;
 use super::state::PeopleState;
+use crate::error::ErrorKind;
 
 impl PeopleState {
     /// Is a person shown who can be deleted (show a Delete button)?
@@ -13,49 +16,51 @@ impl PeopleState {
         self.capabilities.delete && self.editing.is_none() && self.selected().is_some()
     }
 
-    /// Has the person pressed Delete once, for the one selected?
+    /// Has the person pressed Delete, for the one selected?
     pub fn delete_asked(&self) -> bool {
         self.delete_asked.is_some() && self.delete_asked.as_deref() == self.selected()
     }
 
-    /// The first call only asks; the second, for the same person, deletes. A failure is kept and
-    /// shown, and the person stays.
-    pub fn delete(&mut self) {
+    /// The first press: asks whether the person selected should really go.
+    pub fn ask_delete(&mut self) {
         if !self.can_delete() {
+            return;
+        }
+        self.delete_asked = self.selected().map(str::to_string);
+        self.notice = Some(PeopleLabels::fill(
+            &self.labels.delete_confirm,
+            &self.title(),
+        ));
+    }
+
+    /// The second action: deletes the one asked about. Does nothing unless asked.
+    pub fn confirm_delete(&mut self) {
+        if !self.can_delete() || !self.delete_asked() {
             return;
         }
         let Some(key) = self.selected().map(str::to_string) else {
             return;
         };
-        if self.delete_asked.as_deref() != Some(key.as_str()) {
-            self.delete_asked = Some(key);
-            self.notice = Some(PeopleLabels::fill(
-                &self.labels.delete_confirm,
-                &self.title(),
-            ));
-            return;
-        }
         self.delete_asked = None;
         let title = self.title();
         if let Err(e) = self.source.delete(&key) {
-            self.notice = Some(PeopleLabels::fill(&self.labels.not_deleted, &e.message));
+            if e.kind == ErrorKind::NotFound {
+                self.person_gone();
+            } else {
+                self.notice = Some(PeopleLabels::fill(&self.labels.not_deleted, &e.message));
+            }
             return;
         }
         let place = self.rows().iter().position(|r| r.key == key).unwrap_or(0);
         self.reload(self.loaded());
-        let next = self
-            .rows()
-            .get(place)
-            .or_else(|| self.rows().last())
-            .map(|r| r.key.clone());
-        match next {
+        match self.first_to_open(place) {
             Some(next) => self.show(&next),
             None => self.shown = Shown::Nothing,
         }
         self.notice = Some(PeopleLabels::fill(&self.labels.deleted, &title));
     }
 
-    /// Answer the question of [`PeopleState::delete`] with no.
+    /// Answer the question of [`PeopleState::ask_delete`] with no.
     pub fn keep(&mut self) {
         if self.delete_asked.take().is_some() {
             self.notice = None;

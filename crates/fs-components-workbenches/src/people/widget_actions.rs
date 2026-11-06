@@ -37,7 +37,8 @@ impl PeopleWidget {
             edit: simple(PeopleState::begin_edit),
             save: simple(PeopleState::save),
             cancel: simple(PeopleState::cancel_edit),
-            delete: simple(PeopleState::delete),
+            ask_delete: simple(PeopleState::ask_delete),
+            confirm_delete: simple(PeopleState::confirm_delete),
             keep: simple(PeopleState::keep),
             add_field: Arc::new(move |group| {
                 locked(&add_s).add_field(group);

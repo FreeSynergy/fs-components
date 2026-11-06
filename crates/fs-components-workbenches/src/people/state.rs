@@ -11,7 +11,7 @@ use super::labels::PeopleLabels;
 use super::model::{PeopleCapabilities, PersonRow};
 use super::shown::{Outcome, Shown, Variant};
 use super::source::PeopleSource;
-use crate::error::SourceError;
+use crate::error::{ErrorKind, SourceError};
 
 /// Rows read at a time.
 pub const PAGE: usize = 200;
@@ -36,7 +36,8 @@ pub struct PeopleState {
 }
 
 impl PeopleState {
-    /// The workbench over `source`; lists the first page and shows the first person.
+    /// The workbench over `source`; lists the first page and shows the first person, unless that
+    /// row is only to be opened when chosen.
     pub fn new(source: Arc<dyn PeopleSource>, labels: PeopleLabels, variant: Variant) -> Self {
         let capabilities = match variant {
             Variant::Compact => PeopleCapabilities::read_only(),
@@ -59,7 +60,7 @@ impl PeopleState {
             delete_asked: None,
         };
         state.reload(PAGE);
-        if let Some(key) = state.rows.first().map(|r| r.key.clone()) {
+        if let Some(key) = state.first_to_open(0) {
             state.show(&key);
         }
         state
@@ -205,10 +206,32 @@ impl PeopleState {
                 key: key.to_string(),
                 sheet,
             },
+            Err(e) if e.kind == ErrorKind::NotFound => {
+                self.person_gone();
+                return;
+            }
             Err(e) => Shown::Failed {
                 key: key.to_string(),
                 reason: PeopleLabels::fill(&self.labels.unreadable, &e.message),
             },
         };
+    }
+
+    /// The person shown no longer exists: they leave the list and the detail area says so.
+    pub(super) fn person_gone(&mut self) {
+        self.editing = None;
+        self.delete_asked = None;
+        self.reload(self.loaded());
+        self.shown = Shown::Nothing;
+        self.notice = Some(self.labels.gone.clone());
+    }
+
+    /// The row at `place`, or the last one, if the workbench may open it by itself.
+    pub(super) fn first_to_open(&self, place: usize) -> Option<String> {
+        self.rows
+            .get(place)
+            .or_else(|| self.rows.last())
+            .filter(|row| !row.only_when_chosen)
+            .map(|row| row.key.clone())
     }
 }

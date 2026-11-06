@@ -167,21 +167,23 @@ fn fields_can_be_added_where_the_group_allows_it() {
 }
 
 #[test]
-fn deleting_takes_a_second_press_for_the_same_person() {
+fn deleting_takes_a_second_action_for_the_same_person() {
     let (book, mut s) = state(&["ada", "bob", "cid"]);
-    s.delete();
+    s.ask_delete();
     assert!(s.delete_asked());
     assert!(s.notice().unwrap().contains("ada"));
-    assert!(book.name("ada").is_some());
+    s.ask_delete();
+    assert!(book.name("ada").is_some(), "asking twice is not confirming");
 
     s.select("bob");
     assert!(!s.delete_asked(), "another person drops the question");
-    s.delete();
-    assert!(book.name("bob").is_some(), "asked again, for bob");
+    s.confirm_delete();
+    assert!(book.name("bob").is_some(), "not asked for bob yet");
+    s.ask_delete();
     s.keep();
     assert!(!s.delete_asked());
-    s.delete();
-    s.delete();
+    s.ask_delete();
+    s.confirm_delete();
     assert!(book.name("bob").is_none());
     assert_eq!(book.name("ada").as_deref(), Some("ada"));
     assert_eq!(s.selected(), Some("cid"), "the next person moves up");
@@ -191,8 +193,8 @@ fn deleting_takes_a_second_press_for_the_same_person() {
 #[test]
 fn deleting_the_last_person_leaves_nothing_shown() {
     let (_, mut s) = state(&["ada"]);
-    s.delete();
-    s.delete();
+    s.ask_delete();
+    s.confirm_delete();
     assert_eq!(s.shown(), &Shown::Nothing);
     assert!(s.rows().is_empty());
 }
@@ -201,8 +203,8 @@ fn deleting_the_last_person_leaves_nothing_shown() {
 fn a_refused_delete_keeps_the_person_and_shows_why() {
     let (book, mut s) = state(&["ada"]);
     *book.refuse.lock().unwrap() = Some("it is locked".into());
-    s.delete();
-    s.delete();
+    s.ask_delete();
+    s.confirm_delete();
     assert!(s.notice().unwrap().contains("it is locked"));
     assert_eq!(s.selected(), Some("ada"));
     assert!(!s.delete_asked());
@@ -213,7 +215,44 @@ fn nothing_can_be_deleted_during_an_edit() {
     let (book, mut s) = state(&["ada"]);
     s.begin_edit();
     assert!(!s.can_delete());
-    s.delete();
-    s.delete();
+    s.ask_delete();
+    s.confirm_delete();
     assert!(book.name("ada").is_some());
+}
+
+#[test]
+fn after_a_refused_save_cancel_reads_the_person_again() {
+    let (book, mut s) = state(&["ada"]);
+    s.begin_edit();
+    s.set_field("name", "mine");
+    book.other_changes("ada", "theirs");
+    *book.refuse.lock().unwrap() = Some("no".into());
+    s.save();
+    s.cancel_edit();
+    s.cancel_edit();
+    assert!(matches!(s.shown(), Shown::Person { sheet, .. } if sheet.title == "theirs"));
+    assert_eq!(s.rows()[0].cells[0], "theirs", "the row too");
+}
+
+#[test]
+fn a_person_someone_else_deleted_leaves_on_cancel_and_on_delete() {
+    let (book, mut s) = state(&["ada", "bob"]);
+    s.begin_edit();
+    book.other_deletes("ada");
+    s.set_field("name", "mine");
+    s.save();
+    assert!(s.editing().is_some(), "the draft stays while they read why");
+    s.cancel_edit();
+    s.cancel_edit();
+    assert_eq!(s.shown(), &Shown::Nothing);
+    assert_eq!(s.notice(), Some("This person no longer exists."));
+    assert_eq!(s.rows().len(), 1);
+
+    let (book, mut s) = state(&["ada", "bob"]);
+    s.ask_delete();
+    book.other_deletes("ada");
+    s.confirm_delete();
+    assert_eq!(s.rows().len(), 1, "gone from the list, no error for ever");
+    assert_eq!(s.notice(), Some("This person no longer exists."));
+    assert_eq!(s.shown(), &Shown::Nothing);
 }

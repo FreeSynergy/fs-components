@@ -84,8 +84,8 @@ fn a_failing_list_is_kept_and_shown_until_it_works() {
 #[test]
 fn a_person_who_cannot_be_read_says_why_and_offers_no_edit() {
     let (_, mut s) = state(Book::with(&["ada"]));
-    assert_eq!(s.select("nobody"), Outcome::Done);
-    assert!(matches!(s.shown(), Shown::Failed { reason, .. } if reason.contains("nobody")));
+    assert_eq!(s.select("broken"), Outcome::Done);
+    assert!(matches!(s.shown(), Shown::Failed { reason, .. } if reason.contains("damaged")));
     assert!(!s.can_edit());
 }
 
@@ -99,8 +99,8 @@ fn what_the_source_cannot_do_is_not_offered_and_not_done() {
     assert!(s.editing().is_none());
     assert_eq!(s.begin_create(), Outcome::Done);
     assert!(s.editing().is_none());
-    s.delete();
-    s.delete();
+    s.ask_delete();
+    s.confirm_delete();
     assert_eq!(book.name("ada").as_deref(), Some("ada"));
 }
 

@@ -195,8 +195,14 @@ impl PeopleState {
             self.notice = Some(self.labels.discard_confirm.clone());
             return;
         }
+        let key = edit.key.clone();
         self.editing = None;
         self.notice = None;
+        // What is shown may be out of date by now, and the person may be gone.
+        if let Some(key) = key {
+            self.reload(self.loaded());
+            self.show(&key);
+        }
     }
 
     /// While there are unsaved changes, going elsewhere is refused with a notice.

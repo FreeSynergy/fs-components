@@ -8,13 +8,13 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex, PoisonError};
 
 use blinc_cn::components::button::ButtonVariant;
-use blinc_cn::components::input::input;
+use blinc_cn::components::input::{InputSize, input};
 use blinc_layout::div::{Div, div};
 use blinc_layout::text;
 use blinc_layout::widgets::text_input::{SharedTextInputData, text_input_data};
 
 use super::actions::PeopleActions;
-use super::detail::button;
+use super::detail::{button, with_marks};
 use crate::people::edit::PersonEdit;
 use crate::people::labels::PeopleLabels;
 
@@ -59,6 +59,12 @@ pub(super) fn form(
     slots: &InputSlots,
     mut page: Div,
 ) -> Div {
+    if !edit.draft.marks.is_empty() {
+        page = page.child(with_marks(
+            div().class("fs-people-head").flex_row(),
+            &edit.draft.marks,
+        ));
+    }
     if let Some(error) = &edit.error {
         page = page.child(div().class("fs-people-failed").child(text(error)));
     }
@@ -70,6 +76,7 @@ pub(super) fn form(
             section = section.child(
                 div().class("fs-people-input").w_full().child(
                     input(&data)
+                        .size(InputSize::Small)
                         .label(field.label.clone())
                         .w_full()
                         .on_change(move |value| typed(&key, value)),

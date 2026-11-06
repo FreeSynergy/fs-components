@@ -5,6 +5,7 @@
 
 use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 
+use blinc_core::owner::BuildScope;
 use blinc_core::reactive::global_graph;
 use blinc_core::{BlincContextState, HookState};
 use blinc_layout::css_parser::Stylesheet;
@@ -26,12 +27,13 @@ pub fn serial() -> MutexGuard<'static, ()> {
 pub struct Harness {
     pub widget: PeopleWidget,
     pub tree: RenderTree,
+    scope: BuildScope,
     router: EventRouter,
     size: (f32, f32),
     _serial: MutexGuard<'static, ()>,
 }
 
-fn tree_of(widget: &PeopleWidget, (w, h): (f32, f32)) -> RenderTree {
+fn tree_of(widget: &PeopleWidget, scope: &mut BuildScope, (w, h): (f32, f32)) -> RenderTree {
     let bundle = fs_components_render::bundle(&widget.styles());
     blinc_theme::ThemeState::init(bundle.clone(), blinc_theme::ColorScheme::Light);
     if !BlincContextState::is_initialized() {
@@ -45,6 +47,9 @@ fn tree_of(widget: &PeopleWidget, (w, h): (f32, f32)) -> RenderTree {
         blinc_layout::check_stateful_deps(ids);
     });
     blinc_layout::init_text_measurer();
+    // What a window does around a rebuild: fresh keys, and a scope that owns what the build makes.
+    let pass = scope.begin();
+    blinc_layout::key::reset_call_counters();
     let mut tree = RenderTree::from_element(&widget.build(w, h));
     let vars = blinc_theme::ThemeState::get().to_css_variable_map();
     let css = bundle.css_sources.join("\n");
@@ -52,6 +57,7 @@ fn tree_of(widget: &PeopleWidget, (w, h): (f32, f32)) -> RenderTree {
     tree.apply_stylesheet_layout_overrides();
     tree.apply_stylesheet_base_styles();
     tree.compute_layout(w, h);
+    scope.finish(pass);
     tree
 }
 
@@ -59,10 +65,12 @@ impl Harness {
     /// `widget` laid out at `w` x `h`.
     pub fn new(widget: PeopleWidget, w: f32, h: f32) -> Self {
         let serial = serial();
-        let tree = tree_of(&widget, (w, h));
+        let mut scope = BuildScope::new();
+        let tree = tree_of(&widget, &mut scope, (w, h));
         Self {
             widget,
             tree,
+            scope,
             router: EventRouter::new(),
             size: (w, h),
             _serial: serial,
@@ -71,7 +79,7 @@ impl Harness {
 
     /// The window builds everything again, as after `request_rebuild`.
     pub fn rebuild(&mut self) {
-        self.tree = tree_of(&self.widget, self.size);
+        self.tree = tree_of(&self.widget, &mut self.scope, self.size);
     }
 
     /// The window runs a frame: live areas that changed draw again.
@@ -99,16 +107,32 @@ impl Harness {
 
     /// Click without the rebuild.
     pub fn press(&mut self, what: &str) {
+        self.press_at(self.centre(what));
+    }
+
+    /// The middle of the element `<name>-<what>`.
+    pub fn centre(&self, what: &str) -> (f32, f32) {
         let id = self.id(what);
         let node = self
             .tree
             .query_by_id(&id)
             .unwrap_or_else(|| panic!("no element {id}"));
         let bounds = self.tree.get_absolute_bounds(node).expect("bounds");
-        let (x, y) = (
+        (
             bounds.x + bounds.width / 2.0,
             bounds.y + bounds.height / 2.0,
-        );
+        )
+    }
+
+    /// How high the list is now.
+    pub fn height_of_list(&self) -> f32 {
+        let name = self.widget.element_name();
+        let node = self.tree.query_by_id(&name).expect("the list");
+        self.tree.get_absolute_bounds(node).expect("bounds").height
+    }
+
+    /// Press and release at a point, with nothing in between.
+    pub fn press_at(&mut self, (x, y): (f32, f32)) {
         let moved = self.router.on_mouse_move(&self.tree, x, y);
         self.send(moved, x, y);
         let down = self

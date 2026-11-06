@@ -15,6 +15,8 @@ const LAYOUT: &str = r"
 .fs-people-search-row { gap: var(--space-2); }
 .fs-people-search-field { flex-grow: 1; min-width: 0; }
 .fs-people-more { flex-shrink: 0; display: flex; flex-direction: row; align-items: center; justify-content: center; border-top-width: 1px; border-top-color: var(--border); }
+.fs-people-more-button { padding: var(--space-2) var(--space-3); border-radius: var(--radius-default); background: var(--surface-elevated); cursor: pointer; }
+.fs-people-more-button:hover { background: var(--accent-subtle); }
 .fs-people-main { min-width: 0; }
 .fs-people-bar { flex-shrink: 0; align-items: center; gap: var(--space-3); padding: var(--space-3); min-height: 60px; border-bottom-width: 1px; border-bottom-color: var(--border); }
 .fs-people-page { padding: var(--space-6); gap: var(--space-4); }
