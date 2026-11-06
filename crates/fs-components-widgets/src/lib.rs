@@ -14,6 +14,7 @@
 
 pub mod agent_tree;
 pub mod avatar_group;
+pub mod calendar_view;
 pub mod keys;
 pub mod lightbox;
 pub mod list_view;
@@ -34,6 +35,9 @@ pub mod tree_view;
 pub use avatar_group::{AvatarGroup, Person, Presence};
 pub use avatar_group::{
     MAX_SHOWN as AVATAR_GROUP_MAX_SHOWN, Size, initials as avatar_group_initials,
+};
+pub use calendar_view::{
+    CalendarItem, CalendarNames, CalendarPosition, CalendarView, Day, Moment, Picked, ViewRange,
 };
 pub use keys::{Handled, Key, KeyEvent};
 pub use lightbox::{LightBox, Media};
