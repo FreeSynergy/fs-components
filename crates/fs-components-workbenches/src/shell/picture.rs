@@ -72,6 +72,17 @@ pub struct Picture {
     pub height: u32,
 }
 
+impl ScrollInfo {
+    /// Scroll bounds as read from the area.
+    pub fn new(content_height: f32, viewport_height: f32, offset: f32) -> Self {
+        Self {
+            content_height,
+            viewport_height,
+            offset,
+        }
+    }
+}
+
 impl Picture {
     /// A picture of `source` with default words, no steps, `width` x `height`.
     pub fn new(source: Arc<dyn DocumentSource>, width: u32, height: u32) -> Self {
