@@ -14,7 +14,10 @@
 
 pub mod agent_tree;
 pub mod avatar_group;
+pub mod breadcrumb;
 pub mod calendar_view;
+pub mod file_preview;
+pub mod file_tile;
 pub mod keys;
 pub mod lightbox;
 pub mod list_view;
@@ -38,9 +41,12 @@ pub use avatar_group::{AvatarGroup, Person, Presence};
 pub use avatar_group::{
     MAX_SHOWN as AVATAR_GROUP_MAX_SHOWN, Size, initials as avatar_group_initials,
 };
+pub use breadcrumb::{Breadcrumb, Crumb};
 pub use calendar_view::{
     CalendarItem, CalendarNames, CalendarPosition, CalendarView, Day, Moment, Picked, ViewRange,
 };
+pub use file_preview::{Fact, FilePreview, PreviewContent, SafeText, picture_fits, safe_text};
+pub use file_tile::{FileTile, TileGrid};
 pub use keys::{Handled, Key, KeyEvent};
 pub use lightbox::{LightBox, Media};
 pub use list_view::{Column, ColumnWidth, ListPosition, ListView, Row, RowSource, VecRows};
