@@ -175,6 +175,12 @@ impl SortableList {
         self.act(|s| s.move_item(key, to))
     }
 
+    /// A click on an item (the view calls this for a row): reports `Outcome::Chosen` with
+    /// `Source::Pointer`.
+    pub fn click(&self, key: &str) -> Outcome {
+        self.act(|s| s.click(key))
+    }
+
     /// Put the cursor on an item.
     pub fn set_cursor(&self, key: &str) -> Outcome {
         self.act(|s| s.set_cursor(key))

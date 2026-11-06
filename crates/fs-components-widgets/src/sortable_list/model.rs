@@ -140,12 +140,45 @@ pub enum Refusal {
     Empty,
 }
 
+/// Where a choice came from: lets a consumer treat a click and a key differently.
+#[non_exhaustive]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Source {
+    /// A click (or tap) on the row.
+    Pointer,
+    /// A key, through [`Command::Open`](super::Command::Open).
+    Keyboard,
+}
+
+/// An item the person chose to open (as opposed to picking it up).
+#[non_exhaustive]
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Chosen {
+    /// Key of the item.
+    pub item: String,
+    /// How it was chosen.
+    pub source: Source,
+}
+
+impl Chosen {
+    /// An item chosen from a source.
+    pub fn new(item: impl Into<String>, source: Source) -> Self {
+        Self {
+            item: item.into(),
+            source,
+        }
+    }
+}
+
 /// What a step did. Nothing happens without one of these.
 #[non_exhaustive]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Outcome {
     /// The cursor moved (nothing changed in the data).
     Cursor,
+    /// An item was chosen to be opened: by a click (the cursor is there now too) or by
+    /// [`Command::Open`](super::Command::Open). The list does nothing more with it.
+    Chosen(Chosen),
     /// An item is now held (key).
     Grabbed(String),
     /// The held item moved by one step; not final until dropped.

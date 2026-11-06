@@ -3,7 +3,7 @@
 //! Pattern: Command — one `match` from [`Command`] to the same methods a pointer uses.
 
 use super::bindings::Command;
-use super::model::{Outcome, Pos, Refusal};
+use super::model::{Chosen, Outcome, Pos, Refusal, Source};
 use super::state::Sorter;
 
 /// How far a page key goes.
@@ -16,6 +16,7 @@ impl Sorter {
             (true, Command::Toggle) => self.drop_grabbed(),
             (true, Command::Cancel) => self.cancel(),
             (false, Command::Cancel) => Outcome::Ignored,
+            (_, Command::Open) => self.open(),
             (false, Command::Toggle) => match self.cursor.or_else(|| self.first_item()) {
                 Some(pos) => self.grab_at(pos),
                 None => Outcome::Refused(Refusal::Empty),
@@ -23,6 +24,22 @@ impl Sorter {
             (_, Command::Left) => self.sideways(false),
             (_, Command::Right) => self.sideways(true),
             (_, c) => self.along(c),
+        }
+    }
+
+    /// Choose the item under the cursor to be opened.
+    pub fn open(&mut self) -> Outcome {
+        match self.cursor_key() {
+            Some(key) => Outcome::Chosen(Chosen::new(key, Source::Keyboard)),
+            None => Outcome::Refused(Refusal::Empty),
+        }
+    }
+
+    /// A click on the item with this key: the cursor goes there and the item is chosen.
+    pub fn click(&mut self, key: &str) -> Outcome {
+        match self.set_cursor(key) {
+            Outcome::Cursor => Outcome::Chosen(Chosen::new(key, Source::Pointer)),
+            other => other,
         }
     }
 

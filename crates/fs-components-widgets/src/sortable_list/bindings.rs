@@ -29,6 +29,10 @@ pub enum Command {
     Toggle,
     /// Give up the hold.
     Cancel,
+    /// Choose the item under the cursor to be opened ([`Outcome::Chosen`](super::Outcome::Chosen),
+    /// source keyboard). Not bound by default; bind it to `Key::Activate` to get "Enter opens"
+    /// instead of "Enter picks up".
+    Open,
 }
 
 /// Which key does what.

@@ -100,7 +100,7 @@ impl SortableList {
         };
         let (this, key) = (self.clone(), item.key.clone());
         row.on_click(move |_| {
-            this.set_cursor(&key);
+            this.click(&key);
         })
     }
 }

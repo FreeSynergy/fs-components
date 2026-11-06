@@ -46,7 +46,7 @@ pub use lightbox::{LightBox, Media};
 pub use list_view::{Column, ColumnWidth, ListPosition, ListView, Row, RowSource, VecRows};
 pub use participant::{KindLabels, Sender, SenderKind};
 pub use share_dialog::{Choice, Permission, ShareDialog};
-pub use sortable_list::{Item, Lane, SortableList};
+pub use sortable_list::{Content as SortableContent, Item, Lane, SortableList};
 pub use styles::styles;
 pub use text::{Align, Block, Document, Inline, ListItem, Mark, MarkKind};
 pub use text_view::{LinkHandler, TextView, fallback_family, missing_glyphs, open_external};

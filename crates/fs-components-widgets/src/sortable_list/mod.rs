@@ -18,8 +18,9 @@ mod window;
 
 pub use bindings::{Bindings, Command};
 pub use handle::{Labels, SortableList};
-pub use model::{Item, Lane, Moved, Outcome, Place, Pos, Refusal};
+pub use model::{Chosen, Item, Lane, Moved, Outcome, Place, Pos, Refusal, Source};
 pub use state::Sorter;
+pub use view::Content;
 pub use window::window;
 
 /// CSS of the sortable list: only theme variables.
