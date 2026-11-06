@@ -30,7 +30,14 @@ pub struct ReaderWidget {
     id: u64,
     reader: Arc<Mutex<Reader>>,
     field: SearchField,
-    area: Arc<Mutex<Option<SharedTextAreaState>>>,
+    area: Arc<Mutex<Option<AreaSlot>>>,
+}
+
+/// The text area of the edit in progress: tied to that edit (its id), so an edit of another
+/// document never shows this one's text.
+struct AreaSlot {
+    edit: u64,
+    state: SharedTextAreaState,
 }
 
 impl ReaderWidget {
@@ -90,19 +97,13 @@ impl ReaderWidget {
                 })
         };
         let main = {
-            let (reader, actions, slot) =
-                (Arc::clone(reader), actions.clone(), Arc::clone(&self.area));
+            let (reader, actions, this) = (Arc::clone(reader), actions.clone(), self.clone());
             stateful::<NoState>()
                 .deps([page_v.signal_id()])
                 .on_state(move |_| {
                     let reader = locked(&reader);
-                    let mut slot = slot.lock().unwrap_or_else(PoisonError::into_inner);
-                    match reader.editing() {
-                        None => *slot = None,
-                        Some(editing) if slot.is_none() => *slot = Some(new_area(&editing.draft)),
-                        Some(_) => {}
-                    }
-                    content(&reader, &actions, None, slot.as_ref())
+                    let area = this.sync_area(&reader);
+                    content(&reader, &actions, None, area.as_ref())
                 })
         };
         let (back, save) = (Arc::clone(&actions.back), Arc::clone(&actions.save));
@@ -115,6 +116,40 @@ impl ReaderWidget {
                 _ => {}
             }
         })
+    }
+
+    /// The text area for the edit in progress (none when not editing). A new one is made when the
+    /// edit is another one, or when the draft was changed from outside (through
+    /// [`ReaderWidget::reader`]) and the area no longer holds it.
+    fn sync_area(&self, reader: &Reader) -> Option<SharedTextAreaState> {
+        let mut slot = self.area.lock().unwrap_or_else(PoisonError::into_inner);
+        let Some(editing) = reader.editing() else {
+            *slot = None;
+            return None;
+        };
+        let current = slot.as_ref().filter(|a| a.edit == editing.id).filter(|a| {
+            let shown = a
+                .state
+                .lock()
+                .unwrap_or_else(PoisonError::into_inner)
+                .value();
+            editing.restore_form(&shown) == editing.draft
+        });
+        if current.is_none() {
+            *slot = Some(AreaSlot {
+                edit: editing.id,
+                state: new_area(&editing.draft),
+            });
+        }
+        slot.as_ref().map(|a| a.state.clone())
+    }
+
+    /// What the text area of the edit in progress holds now (none when not editing); makes the
+    /// area match the state first, as a redraw does.
+    pub fn editor_text(&self) -> Option<String> {
+        let area = self.sync_area(&locked(&self.reader))?;
+        let text = area.lock().unwrap_or_else(PoisonError::into_inner).value();
+        Some(text)
     }
 
     /// The callbacks that change the shared reader and ask the areas to draw again.

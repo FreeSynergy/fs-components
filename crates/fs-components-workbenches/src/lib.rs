@@ -23,7 +23,8 @@ pub use error::{ErrorKind, SourceError};
 pub use labels::Labels;
 pub use reader::{Editing, Outcome, Reader, Shown};
 pub use shell::{
-    Options, Picture, ReaderWidget, ScrollInfo, ShellError, Snapshot, Step, launch, snapshot,
+    Options, Picture, ReaderWidget, ScrollInfo, ShellError, Snapshot, Step, launch, register_fonts,
+    snapshot, styles,
 };
 pub use source::{DocumentSource, EditableText, Entry, Hit, LinkTarget};
 

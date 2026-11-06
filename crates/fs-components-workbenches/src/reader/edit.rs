@@ -13,6 +13,8 @@ use crate::labels::Labels;
 #[non_exhaustive]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Editing {
+    /// Which edit this is (counts up with every edit begun; a shell ties its text area to it).
+    pub id: u64,
     /// The text when the edit began.
     pub original: String,
     /// The text now, as it will be saved (line ends and final newline of the original kept).
@@ -34,7 +36,7 @@ impl Editing {
     /// `typed` as the text area gives it (it drops a final newline and turns `\r\n` into `\n`),
     /// put back into the form of the original, so that saving does not rewrite what was not
     /// touched.
-    pub(super) fn restore_form(&self, typed: &str) -> String {
+    pub(crate) fn restore_form(&self, typed: &str) -> String {
         let mut text = typed.to_string();
         if self.original.ends_with('\n') && !text.ends_with('\n') {
             text.push('\n');
@@ -76,7 +78,9 @@ impl Reader {
         match self.source.source_text(&path) {
             Ok(editable) => {
                 self.notice = None;
+                self.edit_counter += 1;
                 self.editing = Some(Editing {
+                    id: self.edit_counter,
                     original: editable.text.clone(),
                     draft: editable.text,
                     revision: editable.revision,

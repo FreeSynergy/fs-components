@@ -12,6 +12,7 @@ mod windowed;
 
 pub use error::ShellError;
 pub use picture::{Picture, ScrollInfo, Snapshot, Step};
+pub use setup::{register_fonts, styles};
 pub use snapshot::snapshot;
 pub use widget::ReaderWidget;
 pub use windowed::{Options, launch};
