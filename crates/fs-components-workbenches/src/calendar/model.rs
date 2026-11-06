@@ -129,6 +129,14 @@ impl ItemProblem {
             text: text.into(),
         }
     }
+
+    /// A problem with nothing to open.
+    pub fn note(text: impl Into<String>) -> Self {
+        Self {
+            key: None,
+            text: text.into(),
+        }
+    }
 }
 
 /// What is on some days: what could be read, and what could not. One bad item costs itself only.
