@@ -1,0 +1,1 @@
+- 2026-11-06: fs-components reader (embeddable ReaderWidget, DocumentSource with revisions, Labels) on main, untagged until reviewed. See DESIGN.md.
