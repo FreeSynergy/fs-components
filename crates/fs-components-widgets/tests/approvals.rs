@@ -144,6 +144,17 @@ fn an_answer_that_no_longer_fits_the_current_call_is_dropped() {
     let r = rig("a4");
     r.view.apply(q("q1", 1, "rm ./cache"));
     let drawn = Decision::for_test("", "q1", "once", 1, b"rm ./cache");
+    // the same revision with another digest is another question; another revision likewise
+    assert_eq!(
+        r.view
+            .answer(Decision::for_test("", "q1", "once", 1, b"something else")),
+        Outcome::NotAsked
+    );
+    assert_eq!(
+        r.view
+            .answer(Decision::for_test("", "q1", "once", 7, b"rm ./cache")),
+        Outcome::NotAsked
+    );
     assert!(matches!(r.view.answer(drawn.clone()), Outcome::Chose(_)));
     r.view.apply(q("q1", 2, "rm -rf ~"));
     assert_eq!(

@@ -1,6 +1,6 @@
 //! What the composer is given and what it reports.
 //!
-//! Pattern: Value objects + Strategy (`ComposerDrafts`, supplied by the host, optional). The
+//! Pattern: Value objects (the optional draft store is the shared `DraftStore`). The
 //! composer knows no messenger: sending is an outcome, attachments are a list the host hands in.
 
 /// One attachment shown beside the text. The host owns the file; the composer only lists it.
@@ -58,25 +58,4 @@ pub enum Outcome {
     },
     /// The person asked to attach something (the host opens its own picker).
     AttachRequested,
-}
-
-/// Where the unsent text is kept so a crash loses nothing. Optional; supplied by the host.
-/// Implementations write atomically. (The reader's `DraftStore` is shaped for documents with an
-/// original and a revision, so this is a smaller trait of the same idea.)
-pub trait ComposerDrafts: Send + Sync {
-    /// Keep `text` as the draft of conversation `key`.
-    ///
-    /// # Errors
-    /// A reason a person can read.
-    fn save(&self, key: &str, text: &str) -> Result<(), String>;
-    /// The draft of conversation `key`, if there is one.
-    ///
-    /// # Errors
-    /// A reason a person can read.
-    fn load(&self, key: &str) -> Result<Option<String>, String>;
-    /// Remove the draft of conversation `key`.
-    ///
-    /// # Errors
-    /// A reason a person can read.
-    fn clear(&self, key: &str) -> Result<(), String>;
 }

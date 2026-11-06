@@ -12,7 +12,7 @@ use blinc_layout::div::div;
 use super::card::{Ctx, Sinks, card};
 use super::guard::Approvals;
 use super::labels::Labels;
-use super::model::{Decision, ToolCall, ToolState};
+use super::model::{Decision, ToolCall, ToolChoice, ToolState};
 use super::store::{Applied, ToolCalls};
 use crate::Element;
 use crate::live::Live;
@@ -43,6 +43,7 @@ struct Inner {
     expanded: HashSet<String>,
     on_outcome: Option<OnOutcome>,
     verify: Option<Verify>,
+    body_h: Option<f32>,
 }
 
 /// The calls of one place, drawn as cards. Cheap to clone; clones share the state.
@@ -70,6 +71,7 @@ impl ToolCallView {
                 expanded: HashSet::new(),
                 on_outcome: None,
                 verify: None,
+                body_h: None,
             })),
             live: Live::new(),
             labels: Labels::default(),
@@ -96,6 +98,18 @@ impl ToolCallView {
         self
     }
 
+    /// The height of the window on the text of a question (the default fits the text, 100 to 150 px).
+    #[must_use]
+    pub fn question_height(self, px: f32) -> Self {
+        self.lock().body_h = Some(px);
+        self
+    }
+
+    /// Set the question window's height on a view that is already shared.
+    pub fn set_question_height(&self, px: f32) {
+        self.lock().body_h = Some(px);
+    }
+
     /// Share the guard with other places that can answer the same questions (the first answer wins).
     #[must_use]
     pub fn approvals(mut self, approvals: Approvals) -> Self {
@@ -106,13 +120,15 @@ impl ToolCallView {
     /// The engine refused a decision for this call: shown on its card.
     pub fn refused(&self, call: &str, reason: &str) {
         self.approvals.refused("", call, reason);
-        self.live.refresh();
+        super::refresh_later(self.live, self.approvals.delay());
+        self.live.refresh_now();
     }
 
     /// The engine refused a decision for this call in this message: shown on its card.
     pub fn refused_in(&self, message: &str, call: &str, reason: &str) {
         self.approvals.refused(message, call, reason);
-        self.live.refresh();
+        super::refresh_later(self.live, self.approvals.delay());
+        self.live.refresh_now();
     }
 
     /// Ask the host at answer time whether the decision still fits what it holds now; an answer
@@ -142,6 +158,9 @@ impl ToolCallView {
     pub fn replace(&self, calls: Vec<(String, ToolCall)>) {
         {
             let mut inner = self.lock();
+            if inner.calls.entries() == calls.as_slice() {
+                return; // nothing changed: nothing to draw
+            }
             inner.calls.replace(calls);
             let Inner {
                 calls, expanded, ..
@@ -211,6 +230,7 @@ impl ToolCallView {
                     c.state == ToolState::Question
                         && c.revision == decision.revision
                         && c.digest == decision.digest
+                        && (!c.digest.is_empty() || decision.choice == ToolChoice::Refuse)
                         && c.options.iter().any(|o| o.id == decision.option)
                 });
             let fits = fits && inner.verify.as_ref().is_none_or(|v| v(&decision));
@@ -222,7 +242,7 @@ impl ToolCallView {
             (outcome, inner.on_outcome.clone())
         };
         if let Outcome::Chose(d) = &outcome {
-            self.approvals.commit(&d.message, &d.call);
+            self.approvals.commit(&d.message, &d.call, d.revision);
             if let Some(handler) = handler {
                 handler(&outcome);
             }
@@ -247,12 +267,20 @@ impl ToolCallView {
         };
         let inner = self.lock();
         let mut list = div().class("fs-tcl");
+        self.approvals.begin_place(&self.id);
+        let mut slot = 0;
         for (message, call) in inner.calls.entries() {
             let open = inner.expanded.contains(&tag_of(message, &call.id));
             let ctx = Ctx {
                 approvals: self.approvals.clone(),
                 message: message.clone(),
+                place: self.id.clone(),
+                slot,
+                body_h: inner.body_h,
             };
+            if call.state == ToolState::Question {
+                slot += 1;
+            }
             let prefix = if message.is_empty() {
                 self.id.clone()
             } else {
@@ -260,6 +288,7 @@ impl ToolCallView {
             };
             list = list.child(card(call, open, &self.labels, &prefix, &sinks, &ctx));
         }
+        self.approvals.end_place(&self.id);
         list
     }
 }

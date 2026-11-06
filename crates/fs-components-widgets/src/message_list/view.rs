@@ -124,6 +124,8 @@ impl MessageList {
                 total - inner.heights.top(end),
             )
         };
+        self.approvals.begin_place(&self.id);
+        self.slots.store(0, std::sync::atomic::Ordering::Relaxed);
         let mut col = div().class("fs-ml-col").child(spacer(top));
         for m in &messages {
             let row = self.message_row(m);
@@ -135,6 +137,7 @@ impl MessageList {
             }
             col = col.child(row);
         }
+        self.approvals.end_place(&self.id);
         col.child(spacer(bottom))
     }
 

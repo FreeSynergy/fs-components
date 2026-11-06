@@ -126,30 +126,51 @@ fn a_refused_decision_is_shown_with_the_fresh_question() {
 }
 
 #[test]
-fn more_questions_make_a_taller_dock_and_the_first_buttons_stay_in_view() {
-    let c = busy_chat();
-    let (chat, _, _) = rig(&c);
-    let mut d = Driven::new(&chat, 1000.0, 700.0);
-    let (_, _, _, one) = d.bounds("llm-dockbox");
-    let mut many = Vec::new();
-    for i in 0..3 {
-        let mut call = q(&format!("q{i}"), 1, "rm -rf ./target");
-        call.summary = "A long explanation. ".repeat(60);
-        many.push(Pending::new("2", call));
+fn the_docked_buttons_are_wholly_visible_at_every_size_and_a_long_command_says_so() {
+    let command = (1..=41)
+        .map(|i| format!("rm -rf /data/step-{i}"))
+        .collect::<Vec<_>>()
+        .join("\n");
+    for (w, h) in [
+        (320.0, 480.0),
+        (1100.0, 360.0),
+        (1100.0, 720.0),
+        (640.0, 480.0),
+        (300.0, 360.0),
+    ] {
+        for long in [false, true] {
+            let c = busy_chat();
+            let call = q("q1", 1, if long { &command } else { "rm -rf ./target" });
+            *c.questions.lock().unwrap() = vec![
+                Pending::new("2", call.clone()),
+                Pending::new("2", q("q2", 1, "rm b")),
+            ];
+            let (chat, got, clock) = rig(&c);
+            let mut d = Driven::new(&chat, w, h);
+            for id in ["llm-dock-2-opt-q1-no", "llm-dock-2-opt-q1-once"] {
+                let (x, y, bw, bh) = d.bounds(id);
+                assert!(
+                    x >= 0.0 && y >= 0.0 && x + bw <= w && y + bh <= h,
+                    "{id} not wholly visible at {w}x{h} (long={long}): {x},{y},{bw},{bh}"
+                );
+            }
+            let cue = d.has("llm-dock-2-more-q1");
+            assert!(cue || !long, "a long command without the cue at {w}x{h}");
+            clock.advance(701);
+            d.rebuild();
+            d.click("llm-dock-2-opt-q1-once");
+            assert_eq!(
+                got.lock().unwrap().len(),
+                usize::from(!cue),
+                "Allow at {w}x{h} (long={long}, cue={cue})"
+            );
+            d.click("llm-dock-2-opt-q1-no");
+            assert!(
+                !got.lock().unwrap().is_empty(),
+                "Refuse was held back at {w}x{h} (long={long})"
+            );
+        }
     }
-    *c.questions.lock().unwrap() = many;
-    chat.refresh();
-    d.frame();
-    let (_, _, _, three) = d.bounds("llm-dockbox");
-    assert!(
-        three > one,
-        "the dock stays as it was for one question ({one} -> {three})"
-    );
-    let (_, y, _, h) = d.bounds("llm-dock-2-opt-q0-once");
-    assert!(
-        y + h <= 700.0,
-        "the first question's buttons are out of the window"
-    );
 }
 
 #[test]

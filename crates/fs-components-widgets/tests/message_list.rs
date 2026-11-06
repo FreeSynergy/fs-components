@@ -108,6 +108,7 @@ fn a_tool_question_in_a_message_is_an_outcome_only() {
         .kind(ToolKind::RunsCommand)
         .risk(ToolRisk::Destroys)
         .summary("Delete the folder")
+        .digest(b"rm -rf ./cache".to_vec())
         .asking(vec![ToolOption::new(
             "ok",
             "Allow once",

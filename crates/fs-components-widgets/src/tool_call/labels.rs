@@ -58,6 +58,8 @@ pub struct Labels {
     pub by_agent: String,
     /// Caption above what the engine says it will do.
     pub engine_detail: String,
+    /// The command is longer than its window; `{}` = how many lines are out of sight.
+    pub more_lines: String,
     /// The engine refused an answer; `{}` = its reason. The question is asked again.
     pub refused: String,
 }
@@ -91,6 +93,9 @@ impl Default for Labels {
             result: s("Result"),
             by_agent: s("Written by the agent:"),
             engine_detail: s("The engine will do:"),
+            more_lines: s(
+                "{} more lines. Scroll to the end to read them: Allow stays off until you have.",
+            ),
             refused: s("The engine refused your answer: {}. Decide again."),
         }
     }

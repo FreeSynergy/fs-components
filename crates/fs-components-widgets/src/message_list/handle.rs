@@ -65,6 +65,7 @@ pub struct MessageList {
     pub(super) id: String,
     pub(super) watch: Arc<Mutex<Option<blinc_core::reactive::Effect>>>,
     pub(super) approvals: Approvals,
+    pub(super) slots: Arc<std::sync::atomic::AtomicUsize>,
 }
 
 fn default_probe(id: &str) -> Option<f32> {
@@ -93,12 +94,14 @@ impl MessageList {
         };
         Self {
             shared: Arc::new(Mutex::new(inner)),
-            live: Live::new(),
+            // the rows are a costly draw: at most four a second however fast the feed
+            live: Live::new().gap(250),
             position: ListPosition::new(),
             labels: Labels::default(),
             id: "fs-ml".into(),
             watch: Arc::default(),
             approvals: Approvals::new(),
+            slots: Arc::default(),
         }
     }
 
@@ -130,7 +133,8 @@ impl MessageList {
     /// The engine refused a decision for this call: shown on its card with the fresh question.
     pub fn decision_refused(&self, message: &str, call: &str, reason: &str) {
         self.approvals.refused(message, call, reason);
-        self.live.refresh();
+        crate::tool_call::refresh_later(self.live, self.approvals.delay());
+        self.live.refresh_now();
     }
 
     /// The call as the source has it now (not as it was drawn).
@@ -161,10 +165,13 @@ impl MessageList {
                 c.state == ToolState::Question
                     && c.revision == decision.revision
                     && c.digest == decision.digest
+                    && (!c.digest.is_empty()
+                        || decision.choice == crate::tool_call::ToolChoice::Refuse)
                     && c.options.iter().any(|o| o.id == decision.option)
             });
         if fits {
-            self.approvals.commit(&decision.message, &decision.call);
+            self.approvals
+                .commit(&decision.message, &decision.call, decision.revision);
             self.emit(&Outcome::ToolChose(decision));
         }
         fits

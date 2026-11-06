@@ -10,10 +10,12 @@ use std::sync::{Arc, Mutex};
 
 use blinc_layout::widgets::text_area::text_area_state;
 use common::{Input, draw, layout, serial};
+use fs_components_widgets::drafts::{Draft, DraftStore};
 use fs_components_widgets::keys::{Key, KeyEvent};
 use fs_components_widgets::message_composer::{
-    Attachment, ComposerDrafts, Composing, MessageComposer, Outcome, Refusal,
+    Attachment, Composing, MessageComposer, Outcome, Refusal,
 };
+use fs_components_widgets::source_error::{ErrorKind, SourceError};
 
 fn sent_text(o: &Outcome) -> &str {
     match o {
@@ -180,21 +182,29 @@ struct Store {
     fail: Mutex<bool>,
 }
 
-impl ComposerDrafts for Store {
-    fn save(&self, key: &str, text: &str) -> Result<(), String> {
+impl DraftStore for Store {
+    fn save(&self, draft: &Draft) -> Result<(), SourceError> {
         if *self.fail.lock().unwrap() {
-            return Err("disk full".into());
+            return Err(SourceError::new(ErrorKind::Failed, "disk full"));
         }
-        self.drafts.lock().unwrap().insert(key.into(), text.into());
+        self.drafts
+            .lock()
+            .unwrap()
+            .insert(draft.path.clone(), draft.text.clone());
         Ok(())
     }
 
-    fn load(&self, key: &str) -> Result<Option<String>, String> {
-        Ok(self.drafts.lock().unwrap().get(key).cloned())
+    fn load(&self, path: &str) -> Result<Option<Draft>, SourceError> {
+        Ok(self
+            .drafts
+            .lock()
+            .unwrap()
+            .get(path)
+            .map(|t| Draft::new(path, t.as_str(), "", None)))
     }
 
-    fn clear(&self, key: &str) -> Result<(), String> {
-        self.drafts.lock().unwrap().remove(key);
+    fn clear(&self, path: &str) -> Result<(), SourceError> {
+        self.drafts.lock().unwrap().remove(path);
         Ok(())
     }
 }

@@ -96,6 +96,9 @@ impl AgentTree {
     pub fn set_nodes(&self, nodes: Vec<AgentNode>) {
         {
             let mut inner = self.lock();
+            if inner.forest.nodes() == nodes.as_slice() {
+                return; // nothing changed: nothing to draw
+            }
             inner.rows = None;
             inner.forest = Forest::new();
             for n in nodes {

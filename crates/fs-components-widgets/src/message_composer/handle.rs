@@ -11,8 +11,9 @@ use blinc_layout::widgets::text_area::{SharedTextAreaState, text_area_state};
 
 use super::drafts::Job;
 use super::labels::Labels;
-use super::model::{Attachment, ComposerDrafts, Outcome};
+use super::model::{Attachment, Outcome};
 use super::state::Composing;
+use crate::drafts::DraftStore;
 use crate::keys::{Key, KeyEvent};
 use crate::live::Live;
 
@@ -112,15 +113,15 @@ impl MessageComposer {
     /// Keep the draft in `store` and put back a saved one (only when nothing is typed yet).
     #[must_use]
     #[allow(clippy::needless_pass_by_value)] // an Arc is handed over, the job keeps a clone
-    pub fn drafts(self, store: Arc<dyn ComposerDrafts>) -> Self {
+    pub fn drafts(self, store: Arc<dyn DraftStore>) -> Self {
         let job = Job::new(store.clone(), self.key.clone());
         match store.load(&self.key) {
-            Ok(Some(text)) if !text.is_empty() && self.text().is_empty() => {
-                self.set_text(&text);
+            Ok(Some(draft)) if !draft.text.is_empty() && self.text().is_empty() => {
+                self.set_text(&draft.text);
                 self.lock().note = Some(self.labels.restored.clone());
             }
             Err(why) => {
-                self.lock().note = Some(self.labels.draft_failed.replacen("{}", &why, 1));
+                self.lock().note = Some(self.labels.draft_failed.replacen("{}", &why.message, 1));
             }
             _ => {}
         }

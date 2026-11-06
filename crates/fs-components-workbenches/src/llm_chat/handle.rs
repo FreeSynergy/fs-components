@@ -54,6 +54,7 @@ pub struct LlmChat {
     sink: Sink,
     had_questions: Arc<Mutex<usize>>,
     approvals: Approvals,
+    pub(super) waiting: Arc<std::sync::atomic::AtomicUsize>,
 }
 
 impl LlmChat {
@@ -147,6 +148,7 @@ impl LlmChat {
             sink,
             had_questions: Arc::default(),
             approvals,
+            waiting: Arc::default(),
         };
         chat.sync();
         chat
@@ -188,7 +190,11 @@ impl LlmChat {
             .map(|p| (p.message, p.call))
             .collect();
         let now = pending.len();
-        self.dock.replace(pending);
+        self.waiting
+            .store(now, std::sync::atomic::Ordering::Relaxed);
+        // only the first waiting question is the dock's; it has fixed room and its buttons never
+        // scroll away, the others wait in their messages (and are counted in the heading)
+        self.dock.replace(pending.into_iter().take(1).collect());
         let mut had = self
             .had_questions
             .lock()
@@ -210,7 +216,7 @@ impl LlmChat {
     pub fn decision_refused(&self, message: &str, call: &str, reason: &str) {
         self.list.decision_refused(message, call, reason);
         self.dock.refused_in(message, call, reason);
-        self.refresh();
+        self.layout.refresh_now();
     }
 
     /// The host's source changed (new text, agents, questions, stop state): draw what changed.
@@ -218,7 +224,7 @@ impl LlmChat {
     pub fn refresh(&self) {
         self.list.refresh();
         if self.sync() {
-            self.layout.refresh();
+            self.layout.refresh_now(); // a question appearing must not wait for a frame budget
         } else {
             self.parts.refresh();
         }
@@ -258,5 +264,21 @@ impl LlmChat {
         if let Some(handler) = handler {
             handler(outcome);
         }
+    }
+}
+
+impl LlmChat {
+    /// The engine's refusal shown on the docked question, if any.
+    pub(super) fn dock_refusal(&self) -> bool {
+        self.dock.calls().first().is_some_and(|c| {
+            self.approvals.refusal("", &c.id).is_some() || self.dock_message_refusal(&c.id)
+        })
+    }
+
+    fn dock_message_refusal(&self, call: &str) -> bool {
+        self.source
+            .questions()
+            .iter()
+            .any(|p| p.call.id == call && self.approvals.refusal(&p.message, call).is_some())
     }
 }

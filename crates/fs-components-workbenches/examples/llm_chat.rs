@@ -3,7 +3,7 @@
 //! button) can be tried by hand.
 //!
 //! Pattern: Strategy (a `ChatSource` implementation). `cargo run -p fs-components-workbenches
-//! --example llm_chat` opens a window; `-- --compact` shows the compact form; `-- --seconds N`
+//! --example llm_chat` opens a window; `-- --compact` shows the compact form; `-- --seconds N`; `--feed-ms N` sets the pace of the feed (default 250); a question appears after about 6 s
 //! closes it after N seconds (default: stays open).
 
 use std::sync::{Arc, Mutex};
@@ -13,12 +13,15 @@ use blinc_app::prelude::*;
 use blinc_app::windowed::WindowedApp;
 use fs_components_widgets::agent_tree::{AgentNode, AgentState};
 use fs_components_widgets::message_list::{ChatMessage, MessageSource, SourceError};
+use fs_components_widgets::tool_call::{ToolCall, ToolChoice, ToolKind, ToolOption, ToolRisk};
 use fs_components_widgets::{Block, Inline, Sender, SenderKind};
-use fs_components_workbenches::llm_chat::{ChatSource, LlmChat, StopControl, StopState, styles};
+use fs_components_workbenches::llm_chat::{
+    ChatSource, LlmChat, Pending, StopControl, StopState, styles,
+};
 use fs_components_workbenches::register_fonts;
 
 #[derive(Default)]
-struct Demo(Mutex<Vec<ChatMessage>>);
+struct Demo(Mutex<Vec<ChatMessage>>, Mutex<Vec<Pending>>);
 
 fn message(key: usize, who: &str, kind: SenderKind, text: &str) -> ChatMessage {
     let s = Sender::new(who, who).of_kind(kind);
@@ -68,6 +71,10 @@ impl ChatSource for Demo {
         ]
     }
 
+    fn questions(&self) -> Vec<Pending> {
+        self.1.lock().unwrap().clone()
+    }
+
     fn stop_control(&self) -> Option<StopControl> {
         Some(StopControl::new("Stop all agents", StopState::Ready))
     }
@@ -80,6 +87,11 @@ fn main() {
         .iter()
         .position(|a| a == "--seconds")
         .and_then(|i| args.get(i + 1)?.parse::<u64>().ok());
+    let feed = args
+        .iter()
+        .position(|a| a == "--feed-ms")
+        .and_then(|i| args.get(i + 1)?.parse::<u64>().ok())
+        .unwrap_or(250);
     let demo = Arc::new(Demo::default());
     for i in 0..60 {
         let (who, kind) = if i % 2 == 0 {
@@ -99,7 +111,21 @@ fn main() {
             .push(message(key, "Helper", SenderKind::Ai, ""));
         let mut text = String::new();
         for i in 0..u64::MAX {
-            std::thread::sleep(Duration::from_millis(250));
+            std::thread::sleep(Duration::from_millis(feed));
+            if i == 6000 / feed {
+                let call = ToolCall::new("q1", "shell")
+                    .kind(ToolKind::RunsCommand)
+                    .risk(ToolRisk::Destroys)
+                    .summary("Clean up")
+                    .detail("rm -rf ./target")
+                    .asking(vec![
+                        ToolOption::new("no", "Refuse", ToolChoice::Refuse),
+                        ToolOption::new("once", "Allow once", ToolChoice::AllowOnce),
+                    ])
+                    .revision(1)
+                    .digest(b"x".to_vec());
+                *demo.1.lock().unwrap() = vec![Pending::new("1000", call)];
+            }
             text.push_str(&format!("word{i} "));
             let mut m = demo.0.lock().unwrap();
             let last = m.last_mut().unwrap();

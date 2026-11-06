@@ -8,7 +8,7 @@
 use std::sync::{Arc, Mutex, PoisonError, Weak};
 use std::time::{Duration, Instant};
 
-use super::model::ComposerDrafts;
+use crate::drafts::{Draft, DraftStore};
 
 struct Pending {
     text: String,
@@ -19,14 +19,14 @@ struct Pending {
 
 /// The shared part: what is waiting to be written, and the last failure.
 pub(super) struct Job {
-    store: Arc<dyn ComposerDrafts>,
+    store: Arc<dyn DraftStore>,
     key: String,
     pending: Mutex<Option<Pending>>,
     pub error: Mutex<Option<String>>,
 }
 
 impl Job {
-    pub fn new(store: Arc<dyn ComposerDrafts>, key: String) -> Arc<Self> {
+    pub fn new(store: Arc<dyn DraftStore>, key: String) -> Arc<Self> {
         Arc::new(Self {
             store,
             key,
@@ -75,13 +75,17 @@ impl Job {
             .unwrap_or_else(PoisonError::into_inner)
             .take();
         let result = self.store.clear(&self.key);
-        *self.error.lock().unwrap_or_else(PoisonError::into_inner) = result.err();
+        *self.error.lock().unwrap_or_else(PoisonError::into_inner) =
+            result.err().map(|e| e.message);
     }
 
     fn write(&self, text: &str) -> bool {
-        let result = self.store.save(&self.key, text);
+        let result = self
+            .store
+            .save(&Draft::new(self.key.clone(), text, "", None));
         let ok = result.is_ok();
-        *self.error.lock().unwrap_or_else(PoisonError::into_inner) = result.err();
+        *self.error.lock().unwrap_or_else(PoisonError::into_inner) =
+            result.err().map(|e| e.message);
         ok
     }
 

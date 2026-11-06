@@ -105,6 +105,7 @@ pub struct Driven {
 }
 
 fn tree_of(chat: &LlmChat, (w, h): (f32, f32)) -> RenderTree {
+    fs_components_widgets::live::set_min_gap_ms(0);
     let bundle = fs_components_render::bundle(&fs_components_workbenches::llm_chat::styles());
     blinc_theme::ThemeState::init(bundle.clone(), blinc_theme::ColorScheme::Light);
     if !BlincContextState::is_initialized() {
@@ -163,6 +164,24 @@ impl Driven {
         (b.x, b.y, b.width, b.height)
     }
 
+    fn dispatch(&mut self, n: blinc_layout::tree::LayoutNodeId, e: u32, x: f32, y: f32) {
+        match self.tree.get_absolute_bounds(n) {
+            Some(b) => self.tree.dispatch_event_with_local(
+                n,
+                e,
+                x,
+                y,
+                x - b.x,
+                y - b.y,
+                b.x,
+                b.y,
+                b.width,
+                b.height,
+            ),
+            None => self.tree.dispatch_event(n, e, x, y),
+        }
+    }
+
     pub fn has(&self, id: &str) -> bool {
         self.tree.query_by_id(id).is_some()
     }
@@ -175,22 +194,25 @@ impl Driven {
         let b = self.tree.get_absolute_bounds(node).expect("bounds");
         let (x, y) = (b.x + b.width / 2.0, b.y + b.height / 2.0);
         for (n, e) in self.router.on_mouse_move(&self.tree, x, y) {
-            self.tree.dispatch_event(n, e, x, y);
+            self.dispatch(n, e, x, y);
         }
         for (n, e) in self
             .router
             .on_mouse_down(&self.tree, x, y, MouseButton::Left)
         {
-            self.tree.dispatch_event(n, e, x, y);
+            self.dispatch(n, e, x, y);
         }
         for (n, e) in self.router.on_mouse_up(&self.tree, x, y, MouseButton::Left) {
-            self.tree.dispatch_event(n, e, x, y);
+            self.dispatch(n, e, x, y);
         }
     }
 }
 
 /// Draw the chat to a picture (kept in `FS_COMP_SHOTS` when set).
 pub fn shot(chat: &LlmChat, w: u32, h: u32, name: &str) -> image::RgbaImage {
+    // the same lock as `Driven`: Blinc's singletons must not be touched by two tests at once (the
+    // cause of a panic inside blinc_core in 6 of 15 runs); drop any `Driven` before calling this
+    let _one = ONE.lock().unwrap_or_else(PoisonError::into_inner);
     static N: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
     let n = N.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
     let dir = std::env::temp_dir().join(format!("fs-llm-{}-{n}", std::process::id()));
@@ -208,86 +230,5 @@ pub fn shot(chat: &LlmChat, w: u32, h: u32, name: &str) -> image::RgbaImage {
     img
 }
 
-/// A clock the test moves by hand.
-#[derive(Default)]
-pub struct Manual(pub std::sync::atomic::AtomicU64);
-
-impl Manual {
-    pub fn advance(&self, ms: u64) {
-        self.0.fetch_add(ms, std::sync::atomic::Ordering::SeqCst);
-    }
-}
-
-impl fs_components_widgets::tool_call::Clock for Manual {
-    fn now_ms(&self) -> u64 {
-        self.0.load(std::sync::atomic::Ordering::SeqCst)
-    }
-}
-
-/// A conversation with four senders of every kind, agents, a question and a stop control.
-pub fn busy_chat() -> Arc<Chat> {
-    use fs_components_widgets::agent_tree::{AgentEnd, AgentNode, AgentState};
-    use fs_components_widgets::tool_call::{ToolCall, ToolChoice, ToolKind, ToolOption, ToolRisk};
-    let c = Arc::new(Chat::default());
-    {
-        let mut m = c.messages.lock().unwrap();
-        m.push(
-            say(
-                "1",
-                "Ana",
-                SenderKind::Person,
-                "Can you prepare the release notes?",
-            )
-            .at("10:02"),
-        );
-        m.push(
-            say(
-                "2",
-                "Helper",
-                SenderKind::Ai,
-                "Yes. I started two helpers: one collects the changes, one writes the text.",
-            )
-            .at("10:02"),
-        );
-        m.push(
-            say(
-                "3",
-                "indexer",
-                SenderKind::Software,
-                "Index updated: 212 pages.",
-            )
-            .at("10:03"),
-        );
-        m.push(say("4", "Stranger", SenderKind::Unknown, "Who allowed this?").at("10:04"));
-    }
-    *c.agents.lock().unwrap() = vec![
-        AgentNode::new("h", "Helper")
-            .of_kind(SenderKind::Ai)
-            .state(AgentState::Working)
-            .summary("Plan the release"),
-        AgentNode::new("h1", "Collector")
-            .of_kind(SenderKind::Ai)
-            .under("h")
-            .settled(AgentEnd::Failed)
-            .summary("tests broke"),
-        AgentNode::new("h2", "Writer")
-            .of_kind(SenderKind::Ai)
-            .under("h")
-            .state(AgentState::Question)
-            .summary("May I delete the build?"),
-    ];
-    let call = ToolCall::new("q1", "shell")
-        .kind(ToolKind::RunsCommand)
-        .risk(ToolRisk::Destroys)
-        .summary("Delete the old build folder")
-        .detail("rm -rf ./target")
-        .asking(vec![
-            ToolOption::new("no", "Refuse", ToolChoice::Refuse),
-            ToolOption::new("once", "Allow once", ToolChoice::AllowOnce),
-        ])
-        .revision(1)
-        .digest(b"rm -rf ./target".to_vec());
-    *c.questions.lock().unwrap() = vec![Pending::new("2", call)];
-    *c.stop.lock().unwrap() = stop(StopState::Ready);
-    c
-}
+mod scene;
+pub use scene::{Manual, busy_chat};

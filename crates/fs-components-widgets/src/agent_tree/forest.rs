@@ -65,6 +65,11 @@ impl Forest {
         self.index.get(key).map(|&i| &self.nodes[i])
     }
 
+    /// The agents in the order they first appeared.
+    pub fn nodes(&self) -> &[AgentNode] {
+        &self.nodes
+    }
+
     /// How many agents are working.
     pub fn working(&self) -> usize {
         self.nodes

@@ -14,11 +14,10 @@ use blinc_layout::div::{Div, div};
 use blinc_layout::prelude::text;
 use blinc_layout::widgets::scroll::Scroll;
 
+use super::buttons::options;
 use super::guard::Approvals;
 use super::labels::Labels;
-use super::model::{
-    Decision, ToolCall, ToolChoice, ToolEnd, ToolKind, ToolOption, ToolRisk, ToolState,
-};
+use super::model::{Decision, ToolCall, ToolEnd, ToolKind, ToolRisk, ToolState};
 use crate::softwrap::soft_wrap;
 
 /// Called with a message and a call id.
@@ -43,6 +42,12 @@ pub(crate) struct Sinks {
 pub(crate) struct Ctx {
     pub approvals: Approvals,
     pub message: String,
+    /// The place that draws the card (a list, the dock).
+    pub place: String,
+    /// Its position among the questions of that place.
+    pub slot: usize,
+    /// The height of the window on the text of a question, if the place decides it.
+    pub body_h: Option<f32>,
 }
 
 fn kind_class(k: ToolKind) -> &'static str {
@@ -82,9 +87,18 @@ pub(crate) fn card(
     ctx: &Ctx,
 ) -> Div {
     let question = call.state == ToolState::Question;
+    let mut body_state = None;
     if question {
-        ctx.approvals.show(&ctx.message, call);
-        if !ctx.approvals.armed(&ctx.message, &call.id) {
+        let (lines, window) = text_lines(call, ctx.body_h);
+        let more = lines.saturating_sub(window);
+        let body = ctx
+            .approvals
+            .show(&ctx.place, &ctx.message, call, ctx.slot, more > 0);
+        body_state = Some((body, more));
+        if !ctx
+            .approvals
+            .armed(&ctx.place, &ctx.message, &call.id, false)
+        {
             (sinks.rearm)(ctx.approvals.delay());
         }
     } else if call.state == ToolState::Settled {
@@ -119,7 +133,17 @@ pub(crate) fn card(
             )),
     );
     if question {
-        root = root.child(question_body(call, labels, prefix));
+        if let Some((body, more)) = body_state {
+            root = root.child(question_body(call, labels, prefix, &body, ctx.body_h));
+            if more > 0 {
+                let note = labels.more_lines.replacen("{}", &more.to_string(), 1);
+                root = root.child(
+                    text(note)
+                        .class("fs-tc-caption")
+                        .id(format!("{prefix}-more-{}", call.id)),
+                );
+            }
+        }
         if let Some(why) = ctx.approvals.refusal(&ctx.message, &call.id) {
             let line = labels.refused.replacen("{}", &soft_wrap(&why), 1);
             root = root.child(
@@ -143,6 +167,26 @@ pub(crate) fn card(
     root
 }
 
+/// How many lines the text of a question takes (an estimate) and how many its window shows.
+fn text_lines(call: &ToolCall, height: Option<f32>) -> (usize, usize) {
+    const PER_LINE: usize = 56;
+    let count = |t: &str| {
+        t.split('\n')
+            .map(|l| l.chars().count().div_ceil(PER_LINE).max(1))
+            .sum::<usize>()
+    };
+    let lines = 2
+        + count(&call.detail)
+        + if call.summary.is_empty() {
+            0
+        } else {
+            1 + count(&call.summary)
+        };
+    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+    let window = (height.unwrap_or_else(|| body_height(call)) / 18.0) as usize;
+    (lines, window)
+}
+
 /// A window on the agent's words and the engine's text, about this many pixels high.
 fn body_height(call: &ToolCall) -> f32 {
     #[allow(clippy::cast_precision_loss)]
@@ -150,11 +194,17 @@ fn body_height(call: &ToolCall) -> f32 {
     (lines * 18.0).clamp(100.0, 150.0)
 }
 
-fn question_body(call: &ToolCall, labels: &Labels, prefix: &str) -> Scroll {
-    let mut body = div().class("fs-tc-details").w_full();
+fn question_body(
+    call: &ToolCall,
+    labels: &Labels,
+    prefix: &str,
+    state: &super::entry::Body,
+    height: Option<f32>,
+) -> Scroll {
+    let mut inner = div().class("fs-tc-details").w_full();
     // what the engine says it will do comes first: that is what is being allowed
     if !call.detail.is_empty() {
-        body = body
+        inner = inner
             .child(text(labels.engine_detail.clone()).class("fs-tc-caption"))
             .child(
                 text(soft_wrap(&call.detail))
@@ -163,11 +213,15 @@ fn question_body(call: &ToolCall, labels: &Labels, prefix: &str) -> Scroll {
             );
     }
     if !call.summary.is_empty() {
-        body = body
+        inner = inner
             .child(text(labels.by_agent.clone()).class("fs-tc-caption"))
             .child(text(soft_wrap(&call.summary)).class("fs-tc-summary"));
     }
-    Scroll::new().w_full().h(body_height(call)).content(body)
+    Scroll::with_physics(Arc::clone(&state.physics))
+        .bind(&state.scroll)
+        .w_full()
+        .h(height.unwrap_or_else(|| body_height(call)))
+        .content(inner)
 }
 
 fn toggle(
@@ -211,77 +265,4 @@ fn details(call: &ToolCall, labels: &Labels) -> Div {
             .child(text(soft_wrap(&call.result)).class("fs-tc-code"));
     }
     d
-}
-
-fn options(call: &ToolCall, prefix: &str, sinks: &Sinks, ctx: &Ctx) -> Div {
-    let mut row = div().class("fs-tc-options");
-    for o in &call.options {
-        row = row.child(answer_button(call, o, prefix, sinks, ctx));
-    }
-    row
-}
-
-/// An answer button: it answers on a release that follows a press that began on it while armed.
-fn answer_button(call: &ToolCall, o: &ToolOption, prefix: &str, sinks: &Sinks, ctx: &Ctx) -> Div {
-    let armed = ctx.approvals.armed(&ctx.message, &call.id);
-    let id = format!("{prefix}-opt-{}-{}", call.id, o.id);
-    let class = if o.choice == ToolChoice::Refuse {
-        "fs-tc-btn-no"
-    } else {
-        "fs-tc-btn-yes"
-    };
-    let mut b = div()
-        .class("fs-tc-btn")
-        .class(class)
-        .id(&id)
-        .attr("tabindex", "0");
-    if !armed {
-        b = b.class("fs-tc-btn-off");
-    }
-    let drawn = (
-        ctx.message.clone(),
-        call.id.clone(),
-        call.revision,
-        call.digest.clone(),
-    );
-    let decision = Decision {
-        message: ctx.message.clone(),
-        call: call.id.clone(),
-        option: o.id.clone(),
-        choice: o.choice,
-        revision: call.revision,
-        digest: call.digest.clone(),
-    };
-    let (a1, a2, a3, a4, a5) = (
-        ctx.approvals.clone(),
-        ctx.approvals.clone(),
-        ctx.approvals.clone(),
-        ctx.approvals.clone(),
-        ctx.approvals.clone(),
-    );
-    let (d1, d2, d3, d4) = (drawn.clone(), drawn.clone(), drawn.clone(), drawn);
-    let (i1, i2, i3, i4) = (id.clone(), id.clone(), id.clone(), id);
-    let (choose, choose_key) = (Arc::clone(&sinks.choose), Arc::clone(&sinks.choose));
-    let (dec, dec_key) = (decision.clone(), decision);
-    b.child(text(soft_wrap(&o.label)).class("fs-tc-btn-text"))
-        .on_mouse_down(move |_| {
-            a1.press(&d1.0, &d1.1, &i1, d1.2, &d1.3);
-        })
-        .on_hover_leave(move |_| a2.cancel_press())
-        .on_mouse_up(move |_| {
-            if a3.release(&d2.0, &d2.1, &i2, d2.2, &d2.3) {
-                choose(dec.clone());
-            }
-        })
-        // the keyboard answers on the key's release, and a held key (which repeats the press) never does
-        .on_key_down(move |ctx| {
-            if matches!(ctx.key_code, 13 | 32) && !a4.has_press() {
-                a4.press(&d3.0, &d3.1, &i3, d3.2, &d3.3);
-            }
-        })
-        .on_key_up(move |ctx| {
-            if matches!(ctx.key_code, 13 | 32) && a5.release(&d4.0, &d4.1, &i4, d4.2, &d4.3) {
-                choose_key(dec_key.clone());
-            }
-        })
 }

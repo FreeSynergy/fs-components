@@ -36,6 +36,7 @@ fn the_full_chat_shows_messages_agents_dock_composer_and_stop() {
     ] {
         assert!(d.has(id), "missing {id}");
     }
+    drop(d);
     shot(&chat, 1100, 720, "llm-chat-full.png");
 }
 
@@ -59,6 +60,7 @@ fn every_sender_is_marked_in_the_full_and_in_the_compact_form() {
             !compact,
             "side panel (compact={compact})"
         );
+        drop(d);
         shot(
             &chat,
             if compact { 520 } else { 1100 },

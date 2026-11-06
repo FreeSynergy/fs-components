@@ -5,7 +5,10 @@
 //! detail. A question shows its options; a click is reported as an [`Outcome`] and decides
 //! nothing. Stopping an agent is not here: that is the engine's job, the host shows its control.
 
+mod buttons;
 mod card;
+mod clock;
+mod entry;
 mod guard;
 mod handle;
 mod labels;
@@ -13,8 +16,9 @@ mod model;
 mod store;
 
 pub(crate) use card::{Ctx, Sinks, card};
+pub use clock::{ARM_DELAY_MS, Clock, MIN_DELAY_MS, SystemClock};
+pub use guard::Approvals;
 pub(crate) use guard::refresh_later;
-pub use guard::{ARM_DELAY_MS, Approvals, Clock, SystemClock};
 
 pub use handle::{OnOutcome, Outcome, ToolCallView, Verify};
 pub use labels::Labels;
@@ -49,6 +53,7 @@ pub const STYLES: &str = r"
 .fs-tc-btn { display: flex; flex-direction: row; align-items: center; padding: var(--space-1) var(--space-3); border-radius: var(--radius-default); border-width: 1px; border-color: var(--border); min-height: 28px; }
 .fs-tc-btn-yes { background: var(--primary); border-color: var(--primary); }
 .fs-tc-btn-no { background: var(--surface); }
+.fs-tc-btn-cursor { border-color: var(--border-focus); border-width: 2px; }
 .fs-tc-btn-off { background: var(--surface-elevated); border-color: var(--border); opacity: 0.45; }
 .fs-tc-btn-text { color: var(--text-primary); font-size: var(--text-sm); }
 .fs-tc-refused { padding: var(--space-2); border-radius: var(--radius-default); background: var(--error-bg); border-width: 1px; border-color: var(--border-error); }

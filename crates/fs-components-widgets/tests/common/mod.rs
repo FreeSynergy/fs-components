@@ -40,6 +40,7 @@ fn bundle() -> blinc_theme::ThemeBundle {
 
 /// Theme and reactive state, as a window would set them up.
 pub fn init_runtime() {
+    fs_components_widgets::live::set_min_gap_ms(0); // every refresh draws: tests look at the result at once
     blinc_theme::ThemeState::init(bundle(), blinc_theme::ColorScheme::Light);
     if !BlincContextState::is_initialized() {
         BlincContextState::init(

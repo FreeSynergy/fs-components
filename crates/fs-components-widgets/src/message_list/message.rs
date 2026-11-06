@@ -152,14 +152,23 @@ impl MessageList {
             }),
             rearm: Arc::new(move |ms| crate::tool_call::refresh_later(live, ms)),
         };
-        let ctx = Ctx {
-            approvals: self.approvals.clone(),
-            message: m.key.clone(),
-        };
         let mut col = div().class("fs-ml-tools");
         let prefix = format!("{}-{}", self.id, m.key);
         for c in &m.tool_calls {
             let open = self.is_open(&format!("t:{}:{}", m.key, c.id));
+            let slot = if c.state == crate::tool_call::ToolState::Question {
+                self.slots
+                    .fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+            } else {
+                0
+            };
+            let ctx = Ctx {
+                approvals: self.approvals.clone(),
+                message: m.key.clone(),
+                place: self.id.clone(),
+                slot,
+                body_h: None,
+            };
             col = col.child(card(c, open, &self.labels.tools, &prefix, &sinks, &ctx));
         }
         col

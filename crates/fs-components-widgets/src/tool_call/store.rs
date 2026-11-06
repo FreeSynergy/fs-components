@@ -4,7 +4,7 @@
 //! Pattern: Repository (in memory) + State. The rules mirror what a host promises: a lower
 //! revision than held is stale; a settled call is final (not even a whole new list revives it).
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use super::model::{ToolCall, ToolState};
 
@@ -27,6 +27,10 @@ pub enum Applied {
 pub struct ToolCalls {
     calls: Vec<(String, ToolCall)>,
     index: HashMap<(String, String), usize>,
+    /// The highest revision seen per call: a lower one is never taken, not even after the call left.
+    floor: HashMap<(String, String), u64>,
+    /// Calls that settled: final for good, even if a list leaves them out for a while.
+    done: HashSet<(String, String)>,
 }
 
 impl ToolCalls {
@@ -43,6 +47,16 @@ impl ToolCalls {
     /// Add or replace by (message, id).
     pub fn apply_in(&mut self, message: &str, call: ToolCall) -> Applied {
         let k = (message.to_owned(), call.id.clone());
+        if self.done.contains(&k) {
+            return Applied::AlreadySettled;
+        }
+        if self.floor.get(&k).is_some_and(|&f| call.revision < f) {
+            return Applied::Stale;
+        }
+        self.floor.insert(k.clone(), call.revision);
+        if call.state == ToolState::Settled {
+            self.done.insert(k.clone());
+        }
         let Some(&at) = self.index.get(&k) else {
             self.index.insert(k, self.calls.len());
             self.calls.push((message.to_owned(), call));
@@ -59,23 +73,35 @@ impl ToolCalls {
         Applied::Updated
     }
 
-    /// Replace everything by the host's list as it is now. Settled calls stay as they are.
+    /// Replace everything by the host's list as it is now. Settled calls stay settled and a lower
+    /// revision than one seen before is refused, also for a call the list left out for a while.
     pub fn replace(&mut self, calls: Vec<(String, ToolCall)>) {
-        let settled: Vec<(String, ToolCall)> = self
-            .calls
-            .iter()
-            .filter(|(_, c)| c.state == ToolState::Settled)
-            .cloned()
-            .collect();
-        let mut fresh = Self::new();
+        let held: Vec<(String, ToolCall)> = self.calls.clone();
+        let mut fresh = Self {
+            floor: self.floor.clone(),
+            done: self.done.clone(),
+            ..Self::new()
+        };
         for (message, call) in calls {
-            match settled
+            let k = (message.clone(), call.id.clone());
+            // keep what is held for a settled call; the list cannot revive it
+            let kept = held
                 .iter()
-                .find(|(m, c)| *m == message && c.id == call.id)
-            {
-                Some((_, done)) => fresh.apply_in(&message, done.clone()),
-                None => fresh.apply_in(&message, call),
-            };
+                .find(|(m, c)| *m == message && c.id == call.id && c.state == ToolState::Settled);
+            if let Some((_, done)) = kept {
+                fresh.index.insert(k, fresh.calls.len());
+                fresh.calls.push((message, done.clone()));
+                continue;
+            }
+            let id = call.id.clone();
+            let applied = fresh.apply_in(&message, call);
+            if matches!(applied, Applied::Stale | Applied::AlreadySettled) {
+                // a stale copy: what is held stays
+                if let Some((_, old)) = held.iter().find(|(m, c)| *m == message && c.id == id) {
+                    fresh.index.insert((message.clone(), id), fresh.calls.len());
+                    fresh.calls.push((message, old.clone()));
+                }
+            }
         }
         *self = fresh;
     }

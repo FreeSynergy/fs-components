@@ -7,7 +7,6 @@
 use blinc_cn::components::button::{ButtonBuilder, ButtonSize, ButtonVariant};
 use blinc_layout::div::{Div, div};
 use blinc_layout::prelude::text;
-use blinc_layout::widgets::scroll::Scroll;
 
 use super::handle::LlmChat;
 use super::outcome::Outcome;
@@ -20,8 +19,12 @@ const SIDE: f32 = 300.0;
 const SIDE_MIN_WIDTH: f32 = 760.0;
 const COMPOSER: f32 = 214.0;
 const COMPOSER_COMPACT: f32 = 160.0;
-const QUESTION: f32 = 270.0;
-const MIN_QUESTION: f32 = 130.0;
+const LIST_MIN: f32 = 40.0;
+/// Heading, padding, the card's header, its buttons and the note about more lines.
+const DOCK_CHROME: f32 = 205.0;
+const DOCK_REFUSAL: f32 = 48.0;
+const BODY_MIN: f32 = 54.0;
+const BODY_MAX: f32 = 150.0;
 /// The smallest layout the chat makes; a window smaller than this clips it.
 pub const MIN_SIZE: (f32, f32) = (300.0, 360.0);
 /// The width of the place of the stop control.
@@ -42,15 +45,24 @@ impl LlmChat {
         let compact = self.compact || width < SIDE_MIN_WIDTH;
         let side = if compact { 0.0 } else { SIDE };
         let main = width - side;
-        let composer = if compact { COMPOSER_COMPACT } else { COMPOSER };
-        let questions = self.dock.calls().len();
-        let dock = if questions == 0 {
-            0.0
-        } else {
-            let room = height - HEAD - composer - 60.0;
-            (questions as f32 * QUESTION).min(room).max(MIN_QUESTION)
-        };
-        let list = (height - HEAD - composer - dock).max(40.0);
+        let mut composer = if compact { COMPOSER_COMPACT } else { COMPOSER };
+        let waiting = self.waiting.load(std::sync::atomic::Ordering::Relaxed);
+        let (mut dock, mut body) = (0.0, 0.0);
+        if waiting > 0 {
+            // the question has first claim on the room: its buttons are wholly visible, always
+            let extra = if self.dock_refusal() {
+                DOCK_REFUSAL
+            } else {
+                0.0
+            };
+            let room = |composer: f32| height - HEAD - LIST_MIN - composer - DOCK_CHROME - extra;
+            if room(composer) < BODY_MIN {
+                composer = 0.0; // no room for both: the question stays, the text field waits
+            }
+            body = room(composer).clamp(BODY_MIN, BODY_MAX);
+            dock = DOCK_CHROME + extra + body;
+        }
+        let list = (height - HEAD - composer - dock).max(LIST_MIN);
         let this = self.clone();
         let mut column = div()
             .class("fs-llm-main")
@@ -64,10 +76,12 @@ impl LlmChat {
                 ),
             )
             .child(self.list.build(main, list));
-        if questions > 0 {
-            column = column.child(self.question_dock(main, dock, questions));
+        if waiting > 0 {
+            column = column.child(self.question_dock(main, dock, waiting, body));
         }
-        column = column.child(self.composer.build());
+        if composer > 0.0 {
+            column = column.child(self.composer.build());
+        }
         // last, so that nothing is drawn over it and nothing can take its clicks
         column = column.child(self.stop_place());
         let mut row = div()
@@ -91,8 +105,9 @@ impl LlmChat {
         row
     }
 
-    fn question_dock(&self, width: f32, height: f32, waiting: usize) -> Div {
+    fn question_dock(&self, width: f32, height: f32, waiting: usize, body: f32) -> Div {
         let heading = self.labels.waiting.replacen("{}", &waiting.to_string(), 1);
+        self.dock.set_question_height(body);
         div()
             .class("fs-llm-dock")
             .id(format!("{}-dockbox", self.id))
@@ -100,12 +115,7 @@ impl LlmChat {
             .h(height)
             .flex_shrink_0()
             .child(text(heading).class("fs-llm-title"))
-            .child(
-                Scroll::new()
-                    .w(width)
-                    .h((height - 48.0).max(40.0))
-                    .content(self.dock.build()),
-            )
+            .child(self.dock.build())
     }
 
     /// Title, use, and what needs attention, clipped to the room left of the stop.

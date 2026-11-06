@@ -26,6 +26,8 @@ impl Input {
         (b.x + b.width / 2.0, b.y + b.height / 2.0)
     }
 
+    /// What a window does: the event carries the pointer, the pointer relative to the element and
+    /// the element's rectangle (the pressed element gets the release wherever the pointer is).
     fn send(
         &mut self,
         tree: &mut RenderTree,
@@ -34,7 +36,21 @@ impl Input {
         y: f32,
     ) {
         for (node, event) in events {
-            tree.dispatch_event(node, event, x, y);
+            match tree.get_absolute_bounds(node) {
+                Some(b) => tree.dispatch_event_with_local(
+                    node,
+                    event,
+                    x,
+                    y,
+                    x - b.x,
+                    y - b.y,
+                    b.x,
+                    b.y,
+                    b.width,
+                    b.height,
+                ),
+                None => tree.dispatch_event(node, event, x, y),
+            }
         }
     }
 
@@ -120,6 +136,34 @@ impl Input {
             self.tab(tree);
         }
         self.router.focused() == Some(want)
+    }
+
+    /// Release a key the way a window does: to the focused element.
+    pub fn key_release(&mut self, tree: &mut RenderTree, code: u32) {
+        if let Some((node, ev)) = self.router.on_key_up(code) {
+            tree.dispatch_key_event_bubbling(&[node], ev, code, false, false, false, false);
+        }
+    }
+
+    /// Release a key to every handler (a window that cannot tell who has focus).
+    pub fn key_release_broadcast(&mut self, tree: &mut RenderTree, code: u32) {
+        tree.broadcast_key_event(
+            blinc_core::events::event_types::KEY_UP,
+            code,
+            false,
+            false,
+            false,
+            false,
+        );
+    }
+
+    /// Send one key event of `event_type` (`KEY_DOWN` or `KEY_UP`) to the element with this id, as a
+    /// window does to the focused element.
+    pub fn key_event_to(&mut self, tree: &mut RenderTree, id: &str, event_type: u32, code: u32) {
+        let node = tree
+            .query_by_id(id)
+            .unwrap_or_else(|| panic!("no element {id}"));
+        tree.dispatch_key_event_bubbling(&[node], event_type, code, false, false, false, false);
     }
 
     /// Give the keyboard to the element with this id.
