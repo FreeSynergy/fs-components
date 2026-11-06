@@ -11,10 +11,15 @@ use blinc_cn::components::button::ButtonVariant;
 use blinc_layout::div::{Div, div};
 use blinc_layout::prelude::ElementBuilder;
 use blinc_layout::text;
+use fs_components_widgets::list_view::fit_cell;
 
 use crate::shell::{Shell, Status};
+use crate::status_panel::STATUS_ID;
 use crate::styles::{BAR_HEIGHT, NAV_WIDTH, STATUS_HEIGHT};
 use crate::surface::Surface;
+
+/// The padding of the status text together, in pixels (`.fs-app-status`), with some room to spare.
+const STATUS_PADDING: f32 = 32.0;
 
 /// What a click on a navigation entry does.
 pub(crate) type OnSelect = Arc<dyn Fn(&str) + Send + Sync>;
@@ -100,17 +105,42 @@ pub(crate) fn main_area(
     }
 }
 
+/// What a press on a cut status line does: the left and the top of the line.
+pub(crate) type OnStatus = Arc<dyn Fn(f32, f32) + Send + Sync>;
+
 /// The status line; empty but present when there is nothing to say. The kind of message sits on an
-/// inner element: a live area's own node keeps the classes of its first drawing (`DESIGN.md`).
-pub(crate) fn status_line(shell: &Shell, width: f32) -> Div {
-    let inner = div().class("fs-app-status").h_full().w_full();
-    let inner = match shell.status() {
-        Some(Status::Info(message)) => inner.child(text(message.clone()).no_wrap()),
-        Some(Status::Problem(message)) => inner
-            .class("fs-app-status-problem")
-            .child(text(message.clone()).no_wrap()),
-        None => inner,
+/// inner element: a live area's own node keeps the classes of its first drawing (`DESIGN.md`). A text
+/// that does not fit ends in an ellipsis, and a press or Enter shows it whole. The press handler is always
+/// there: a child without one could keep the handler of the one it replaces (`DESIGN.md`).
+pub(crate) fn status_line(status: Option<&Status>, width: f32, on_status: &OnStatus) -> Div {
+    let room = (width - STATUS_PADDING).max(0.0);
+    let (message, problem) = match status {
+        Some(Status::Info(message)) => (message.as_str(), false),
+        Some(Status::Problem(message)) => (message.as_str(), true),
+        None => ("", false),
     };
+    let fitted = fit_cell(message, room);
+    let cut = fitted != message;
+    let on_status = Arc::clone(on_status);
+    let mut inner = div()
+        .id(STATUS_ID)
+        .class("fs-app-status")
+        .h_full()
+        .w_full()
+        .on_click(move |ctx| {
+            if cut {
+                on_status(ctx.bounds_x, ctx.bounds_y);
+            }
+        });
+    if problem {
+        inner = inner.class("fs-app-status-problem");
+    }
+    if cut {
+        inner = inner.class("fs-app-status-more").attr("tabindex", "0");
+    }
+    if !fitted.is_empty() {
+        inner = inner.child(text(fitted).no_wrap().no_cursor());
+    }
     div()
         .class("fs-app-status-line")
         .w(width)

@@ -22,9 +22,10 @@ use crate::error::AppError;
 use crate::menu_overlay;
 use crate::menu_view::{OnTrigger, menu_bar};
 use crate::shell::{Shell, Status};
+use crate::status_panel;
 use crate::styles::STYLES;
 use crate::surface::{Screen, Surface};
-use crate::view::{OnSelect, frame, has_nav, main_area, nav, status_line, title_bar};
+use crate::view::{OnSelect, OnStatus, frame, has_nav, main_area, nav, status_line, title_bar};
 
 static NEXT_ID: AtomicU64 = AtomicU64::new(1);
 
@@ -71,6 +72,8 @@ impl AppWidget {
     /// Replace what the status line says; `None` empties it. Call it on the interface thread: there
     /// is no way yet to post from a worker thread (`DESIGN.md`).
     pub fn set_status(&self, status: Option<Status>) {
+        // A panel with the whole text must not go on showing the text that was replaced.
+        status_panel::close(&self.shell);
         locked(&self.shell).set_status(status);
         if BlincContextState::is_initialized() {
             status_signal(self.id).update(|v| v + 1);
@@ -97,11 +100,18 @@ impl AppWidget {
         if self.with_shell(Shell::open_menu).is_some() {
             menu_overlay::watch_outside(&self.shell);
         }
+        if self.with_shell(Shell::status_overlay).is_some() {
+            status_panel::watch_outside(&self.shell);
+        }
         let status = {
             let shell = Arc::clone(&self.shell);
+            let on_status = status_panel::on_status(&self.shell, width);
             stateful::<NoState>()
                 .deps([status_signal(self.id).id()])
-                .on_state(move |_| status_line(&locked(&shell), width))
+                .on_state(move |_| {
+                    let message = locked(&shell).status().cloned();
+                    status_line(message.as_ref(), width, &on_status)
+                })
         };
         let main = main_area(surface.as_ref(), with_nav, width, height);
         frame(bar, side, main, status, width, height)
@@ -117,10 +127,12 @@ impl AppWidget {
         let canvas = Canvas::new(width, height, self.styles());
         let on_select: OnSelect = Arc::new(|_| {});
         let on_trigger: OnTrigger = Arc::new(|_, _, _| {});
+        let on_status: OnStatus = Arc::new(|_, _| {});
         let build = |w: f32, h: f32| {
             let (bar, side, surface, with_nav) = self.parts(&on_select, &on_trigger);
             let main = main_area(surface.as_ref(), with_nav, w, h);
-            let status = status_line(&locked(&self.shell), w);
+            let message = self.with_shell(|shell| shell.status().cloned());
+            let status = status_line(message.as_ref(), w, &on_status);
             frame(bar, side, main, status, w, h)
         };
         draw_to_png(&canvas, build, || {}, path).map_err(AppError::Picture)

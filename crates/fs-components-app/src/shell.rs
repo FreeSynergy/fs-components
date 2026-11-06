@@ -30,6 +30,7 @@ pub struct Shell {
     handler: Option<MenuHandler>,
     open_menu: Option<usize>,
     overlay: Option<u64>,
+    status_overlay: Option<u64>,
 }
 
 impl Shell {
@@ -52,6 +53,7 @@ impl Shell {
             handler: None,
             open_menu: None,
             overlay: None,
+            status_overlay: None,
         })
     }
 
@@ -146,6 +148,15 @@ impl Shell {
             .any(|entry| entry.id == id && !entry.disabled)
             .then(|| self.handler.clone())
             .flatten()
+    }
+
+    /// The overlay with the whole status text, as Blinc's raw handle.
+    pub(crate) fn status_overlay(&self) -> Option<u64> {
+        self.status_overlay
+    }
+
+    pub(crate) fn set_status_overlay(&mut self, raw: Option<u64>) {
+        self.status_overlay = raw;
     }
 
     /// The overlay that draws the open menu, as Blinc's raw handle.

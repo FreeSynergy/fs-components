@@ -17,6 +17,21 @@ pub const RIGHT: u32 = 39;
 pub const DOWN: u32 = 40;
 
 impl Harness {
+    /// Turn the wheel over a point, as a window does; returns how far it was asked to go.
+    pub fn wheel_at(&mut self, (x, y): (f32, f32), down: f32) -> f32 {
+        let moved = self.router.on_mouse_move(&self.tree, x, y);
+        self.send(moved, x, y);
+        let hit = self
+            .router
+            .hit_test(&self.tree, x, y)
+            .expect("something is there");
+        self.tree
+            .dispatch_scroll_chain(hit.node, &hit.ancestors, x, y, 0.0, -down);
+        self.tree.tick_scroll_physics(1_000);
+        self.frame();
+        down
+    }
+
     /// Press and release the middle of an element, then run a frame.
     pub fn click(&mut self, id: &str) {
         self.press_at(self.centre(id));
