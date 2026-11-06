@@ -14,6 +14,8 @@ use crate::list_view::fit_cell;
 
 /// The room `fit_cell` takes away for its padding, given back: a chip's padding is smaller.
 const FIT_ALLOWANCE: f32 = 24.0;
+/// `fit_cell` measures at its own, larger size; a chip's text is smaller than that.
+const FIT_SCALE: f32 = 1.15;
 /// Size and padding of a mark in pixels, about.
 const MARK_FONT: f32 = 11.0;
 const MARK_PADDING: f32 = 12.0;
@@ -83,7 +85,7 @@ impl Drawing {
             );
         }
         element = element.child(
-            text(fit_cell(label, room + FIT_ALLOWANCE))
+            text(fit_cell(label, room * FIT_SCALE + FIT_ALLOWANCE))
                 .no_wrap()
                 .no_cursor(),
         );

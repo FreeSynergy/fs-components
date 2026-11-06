@@ -124,7 +124,12 @@ fn cell(
     let (shown, left) = fitting(items.len(), height);
     let mut top = NUMBER_HEIGHT;
     for item in items.iter().take(shown) {
-        let label = if item.all_day || item.start.day != day || chip_width < WIDE_FOR_TIME {
+        // Where a mark takes room, or there is little, the title is what must be read.
+        let plain = item.all_day
+            || item.start.day != day
+            || chip_width < WIDE_FOR_TIME
+            || !item.marks.is_empty();
+        let label = if plain {
             item.title.clone()
         } else {
             format!("{} {}", item.start.clock(), item.title)

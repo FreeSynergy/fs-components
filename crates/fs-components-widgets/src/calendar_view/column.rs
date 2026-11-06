@@ -20,6 +20,8 @@ const ITEM_GAP: f32 = ALL_DAY_ROW_GAP;
 const SHORTEST_ITEM: f32 = 22.0;
 /// A lane narrower than this is not drawn; the count on top says what is missing.
 const NARROWEST_LANE: f32 = 56.0;
+/// Width of the count of what is not drawn; it lies over the corner of the last lane.
+const COUNT_WIDTH: f32 = 30.0;
 
 /// Where a minute of the day lies on the axis.
 pub(super) fn y_of(minute: u16) -> f32 {
@@ -87,9 +89,9 @@ pub(super) fn day_column(
             drawing
                 .more(hidden.len(), day)
                 .absolute()
-                .left((width - NARROWEST_LANE).max(0.0))
+                .left((width - COUNT_WIDTH).max(0.0))
                 .top(top)
-                .w(NARROWEST_LANE.min(width))
+                .w(COUNT_WIDTH.min(width))
                 .h(SHORTEST_ITEM),
         );
     }

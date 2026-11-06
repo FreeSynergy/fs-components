@@ -122,28 +122,28 @@ fn element(
 ) -> Div {
     let id = format!("{name}-field-{}", field.key);
     let holder = div().class("fs-calendar-input").w_full();
+    let word = if field.value == "true" {
+        &labels.yes
+    } else {
+        &labels.no
+    };
     if field.read_only {
+        let shown = if field.kind == FieldKind::Flag {
+            word
+        } else {
+            &field.value
+        };
         return holder
             .id(id)
             .flex_row()
             .class("fs-calendar-field")
             .child(div().class("fs-calendar-label").child(text(&field.label)))
-            .child(
-                div()
-                    .class("fs-calendar-value")
-                    .flex_1()
-                    .child(text(&field.value)),
-            );
+            .child(div().class("fs-calendar-value").flex_1().child(text(shown)));
     }
     let (typed, key) = (Arc::clone(&actions.typed), field.key.clone());
     match field.kind {
         FieldKind::Flag => {
             let (toggle, key) = (Arc::clone(&actions.toggle), field.key.clone());
-            let word = if field.value == "true" {
-                &labels.yes
-            } else {
-                &labels.no
-            };
             holder
                 .flex_row()
                 .class("fs-calendar-field")

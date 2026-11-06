@@ -24,7 +24,7 @@ pub const STYLES: &str = r"
 .fs-calendar-item-c4 { background: var(--error-bg); border-left-color: var(--error); }
 .fs-calendar-item-c5 { background: var(--accent-subtle); border-left-color: var(--accent); }
 .fs-calendar-mark { padding-left: 3px; padding-right: 3px; border-radius: var(--radius-sm); background: var(--warning); color: var(--text-primary); font-size: var(--text-xs); }
-.fs-calendar-more { padding-left: var(--space-1); border-radius: var(--radius-sm); color: var(--text-secondary); font-size: var(--text-xs); cursor: pointer; }
+.fs-calendar-more { padding-left: var(--space-1); border-radius: var(--radius-sm); background: var(--surface-elevated); color: var(--text-secondary); font-size: var(--text-xs); cursor: pointer; }
 .fs-calendar-more:hover { background: var(--accent-subtle); }
 .fs-calendar-all-day { flex-shrink: 0; border-bottom-width: 1px; border-bottom-color: var(--border); }
 .fs-calendar-gutter { flex-shrink: 0; color: var(--text-tertiary); font-size: var(--text-xs); padding-right: var(--space-1); padding-top: 2px; }
