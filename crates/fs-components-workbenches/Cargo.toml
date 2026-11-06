@@ -1,0 +1,18 @@
+[package]
+name = "fs-components-workbenches"
+description = "FreeSynergy workbenches (layer 3): the document reader, open work surface over a data source it knows nothing about; Blinc stays behind this API"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+fs-components-widgets = { path = "../fs-components-widgets" }
+fs-components-primitives = { path = "../fs-components-primitives" }
+blinc_app = "0.6"
+blinc_cn = "0.6"
+blinc_core = "0.6"
+blinc_layout = "0.6"
+blinc_theme = "0.6"
+wgpu = "26"
+image = { version = "0.25", default-features = false, features = ["png"] }
