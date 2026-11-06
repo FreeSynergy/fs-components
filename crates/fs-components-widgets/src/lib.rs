@@ -14,6 +14,7 @@
 
 pub mod avatar_group;
 pub mod keys;
+pub mod lightbox;
 mod live;
 pub mod sortable_list;
 mod styles;
@@ -27,6 +28,7 @@ pub use avatar_group::{
     MAX_SHOWN as AVATAR_GROUP_MAX_SHOWN, Size, initials as avatar_group_initials,
 };
 pub use keys::{Handled, Key, KeyEvent};
+pub use lightbox::{LightBox, Media};
 pub use sortable_list::{Item, Lane, SortableList};
 pub use styles::styles;
 pub use text::{Align, Block, Document, Inline, ListItem, Mark, MarkKind};
