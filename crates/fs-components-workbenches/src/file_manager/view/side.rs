@@ -10,8 +10,9 @@ use blinc_layout::text;
 
 use super::actions::{FileActions, button};
 use super::frame::ONE_PANE_BELOW;
+use super::item_bar::item_presses;
 use super::side_more::{filter_panel, report_panel, transfers_panel};
-use super::toolbar::{buttons_height, item_presses};
+use super::toolbar::buttons_height;
 use crate::file_manager::context::Variant;
 use crate::file_manager::side::Side;
 use crate::file_manager::state::FilesState;

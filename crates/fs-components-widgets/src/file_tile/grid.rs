@@ -10,7 +10,7 @@ use blinc_layout::div::{Div, div};
 use blinc_layout::text;
 use blinc_layout::widgets::scroll::Scroll;
 
-use super::FileTile;
+use super::tile::FileTile;
 use crate::Element;
 use crate::keys::{Key, KeyEvent, bind_keys};
 use crate::list_view::{ListPosition, OnSelect};

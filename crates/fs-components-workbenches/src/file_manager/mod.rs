@@ -18,6 +18,7 @@ mod labels_default;
 mod model;
 mod navigate;
 mod picker;
+mod reading;
 mod reports;
 mod select;
 mod side;
