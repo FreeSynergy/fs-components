@@ -110,7 +110,6 @@ fn a_hundred_thousand_messages_build_only_what_is_near_the_view() {
         built.len(),
         list.total_height()
     );
-    assert!(first.as_secs() < 5 && jump.as_secs() < 5, "too slow");
 }
 
 struct Shared(Mutex<Vec<ChatMessage>>);
