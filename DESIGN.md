@@ -27,7 +27,7 @@ Version 0.2.0 (untagged until reviewed; breaking against 0.1.0: `DataSource` is 
 | Scrolling: every column on the way down has `min_h(0)`; a long document is clipped and scrolls (3000 paragraphs draw). Tested offscreen with a scroll offset | done |
 | Embedding keys: Alt+Left and Ctrl+S act on every reader in the window (keys are broadcast); `ReaderWidget::keys(false)` switches them off, the program then calls `with_reader` itself (state access is a closure: no lock can be held across calls) | done |
 | Keyboard: tree keys (Blinc), Alt+Left back, Ctrl+S save, Tab to search field and buttons. Search results, links and the tree rows are **not** reachable by Tab (the Blinc tree is no Tab stop; links are click targets) | partly |
-| `charts` (widget, crate `fs-components-charts`): a Vega-Lite subset (see below), parsed, laid out and drawn; bar, line, area, point, arc | in progress, provisional |
+| `charts` (widget, crate `fs-components-charts`): a Vega-Lite subset (see below), parsed, laid out and drawn; bar, line, area, point, arc; text alternative; theme colours checked for colour-blind readers | done, provisional (subset, numbers 3 / 15 / 8 / 10000 open) |
 | Pointer cursor over links; scrolling to a `#fragment`; table column alignment; selecting text; images; accessibility | not built |
 
 ## Structure and pattern map (ADR 0043)
@@ -183,7 +183,7 @@ Departures that are deliberate: a literal colour is refused (colours come from t
 
 **Words.** Every sentence, number mark, month name and time pattern comes from `Labels` (caller), English by `Default`. The chart's own words are the spec's (title, axis titles, field names).
 
-**Keys and focus.** The chart has no keys of its own yet: nothing to focus, nothing handled (so nothing can clash with other widgets in the window). A keyboard way through the data (arrows to step through points, reading each as text) is planned with tooltips and optional per widget (`.keys(bool)`).
+**Tooltips, keys, focus: not built.** Blinc could do hover (`on_mouse_move` on the element), but a tooltip needs redraw state and a decision on where it floats; nothing is shown on hover. The pure part exists: `Scene::hit_at(x, y, slack)` returns the datum under a point as text (`field: value` per line), so a program can show it its own way. The chart has no keys and takes no focus, so it cannot clash with keys of other widgets; a keyboard way through the data (arrows step through the hits, each read as text) is planned and will be optional per widget (`.keys(bool)`, no shared state, no lock guard in any API).
 
 **Blinc notes (0.6.0):** the GPU primitive buffer (`max_primitives`, default 20000) truncates without error: draw 30000 `fill_circle` in a canvas and everything past the 20000th, including later axes, vanishes (only a `tracing` warning); `fill_path` of a self-overlapping polygon of 200000 points does not finish in minutes; `canvas` draws text unrotated: the transform moves the origin of a text but not its glyphs (reproduce: `push_transform(rotate)` then `draw_text`); rotated labels are therefore text elements rotated by the layout engine. A canvas asks for a frame every vsync unless `redraw_while` says no (done). Blinc has no text alternative or ARIA for any element.
 

@@ -1,5 +1,7 @@
 //! Helpers shared by the layout tests.
 
+#![allow(dead_code)] // each test file uses a part of these helpers
+
 use fs_components_charts::layout::{Fixed, Metrics};
 use fs_components_charts::scene::{Item, Scene};
 use fs_components_charts::{Chart, Labels};

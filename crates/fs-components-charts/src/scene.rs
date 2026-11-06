@@ -219,3 +219,24 @@ pub struct Scene {
     /// that fall on the same pixel); the chart says so under the plot.
     pub omitted: usize,
 }
+
+impl Scene {
+    /// The datum under a point, nearest centre first when marks overlap; for tooltips and for
+    /// reading a chart by pointing. `slack` widens every mark's box by that many pixels.
+    pub fn hit_at(&self, x: f32, y: f32, slack: f32) -> Option<&Hit> {
+        self.hits
+            .iter()
+            .filter(|h| {
+                x >= h.area[0] - slack
+                    && x <= h.area[0] + h.area[2] + slack
+                    && y >= h.area[1] - slack
+                    && y <= h.area[1] + h.area[3] + slack
+            })
+            .min_by(|a, b| {
+                let d = |h: &Hit| {
+                    (x - h.area[0] - h.area[2] / 2.0).hypot(y - h.area[1] - h.area[3] / 2.0)
+                };
+                d(a).total_cmp(&d(b))
+            })
+    }
+}

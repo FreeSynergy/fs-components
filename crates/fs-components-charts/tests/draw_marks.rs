@@ -239,6 +239,8 @@ fn stacked_and_normalised_bars_with_a_legend() {
     let total = q1.iter().map(|r| r.1[3]).sum::<f32>();
     let a = q1.iter().find(|r| r.0 == 0).unwrap().1[3];
     assert!((a / total - 0.75).abs() < 1e-3, "{a} of {total}");
+    let y_of = |series: usize| q1.iter().find(|r| r.0 == series).unwrap().1[1];
+    assert!(y_of(0) < y_of(1), "series 0 is on top of the stack");
     assert!(
         (total - scene.plot[3]).abs() < 0.01,
         "a normalised stack fills the plot height"
