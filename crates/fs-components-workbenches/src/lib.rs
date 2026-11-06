@@ -14,6 +14,7 @@
 
 mod error;
 mod labels;
+pub mod people;
 pub mod reader;
 pub mod shell;
 mod source;

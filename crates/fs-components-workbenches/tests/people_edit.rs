@@ -1,0 +1,219 @@
+//! Editing, creating and deleting: the same rules as the reader's editing.
+//!
+//! Pattern: State machine tests, no window.
+
+#[path = "people_common/mod.rs"]
+mod people_common;
+
+use std::sync::Arc;
+
+use fs_components_workbenches::people::{Outcome, PeopleLabels, PeopleState, Shown, Variant};
+use people_common::Book;
+
+fn state(names: &[&str]) -> (Arc<Book>, PeopleState) {
+    let book = Arc::new(Book::with(names));
+    let state = PeopleState::new(book.clone(), PeopleLabels::default(), Variant::Full);
+    (book, state)
+}
+
+#[test]
+fn a_save_writes_and_shows_the_person_again() {
+    let (book, mut s) = state(&["ada", "bob"]);
+    s.begin_edit();
+    s.set_field("name", "Ada L.");
+    s.save();
+    assert_eq!(book.name("ada").as_deref(), Some("Ada L."));
+    assert!(s.editing().is_none());
+    assert!(matches!(s.shown(), Shown::Person { sheet, .. } if sheet.title == "Ada L."));
+    assert_eq!(s.notice(), Some("Saved."));
+    assert_eq!(s.rows()[0].cells[0], "Ada L.", "the list follows");
+}
+
+#[test]
+fn a_save_without_changes_writes_nothing() {
+    let (book, mut s) = state(&["ada"]);
+    s.begin_edit();
+    s.set_field("name", "other");
+    s.set_field("name", "ada");
+    s.save();
+    assert_eq!(book.writes(), 0);
+    assert_eq!(s.notice(), Some("Nothing was changed."));
+    assert!(s.editing().is_none());
+}
+
+#[test]
+fn unsaved_changes_block_leaving_and_new_but_not_the_search() {
+    let (_, mut s) = state(&["ada", "bob"]);
+    s.begin_edit();
+    s.set_field("name", "changed");
+    assert_eq!(s.select("bob"), Outcome::Blocked);
+    assert_eq!(s.begin_create(), Outcome::Blocked);
+    assert_eq!(s.notice(), Some("Save or cancel your changes first."));
+    assert_eq!(s.selected(), Some("ada"));
+    assert_eq!(
+        s.editing().unwrap().draft.fields().next().unwrap().value,
+        "changed"
+    );
+    s.search("b");
+    assert_eq!(s.rows().len(), 1);
+    assert_eq!(
+        s.editing().unwrap().draft.fields().next().unwrap().value,
+        "changed"
+    );
+}
+
+#[test]
+fn an_untouched_edit_does_not_block() {
+    let (_, mut s) = state(&["ada", "bob"]);
+    s.begin_edit();
+    assert_eq!(s.select("bob"), Outcome::Done);
+    assert!(s.editing().is_none());
+    assert_eq!(s.selected(), Some("bob"));
+}
+
+#[test]
+fn cancel_with_changes_asks_once_and_typing_takes_the_answer_back() {
+    let (book, mut s) = state(&["ada"]);
+    s.begin_edit();
+    s.set_field("name", "changed");
+    s.cancel_edit();
+    assert!(s.editing().is_some(), "only asked");
+    assert_eq!(
+        s.notice(),
+        Some("You have unsaved changes. Press Cancel again to discard them.")
+    );
+    s.set_field("name", "changed more");
+    s.cancel_edit();
+    assert!(s.editing().is_some(), "typing took the answer back");
+    s.cancel_edit();
+    assert!(s.editing().is_none());
+    assert_eq!(book.name("ada").as_deref(), Some("ada"));
+}
+
+#[test]
+fn a_refused_save_keeps_the_draft_and_shows_why() {
+    let (book, mut s) = state(&["ada"]);
+    s.begin_edit();
+    s.set_field("name", "changed");
+    *book.refuse.lock().unwrap() = Some("needs an encrypted store".into());
+    s.save();
+    let edit = s.editing().unwrap();
+    assert!(
+        edit.error
+            .as_deref()
+            .unwrap()
+            .contains("needs an encrypted store")
+    );
+    assert_eq!(edit.draft.fields().next().unwrap().value, "changed");
+    *book.refuse.lock().unwrap() = None;
+    s.save();
+    assert_eq!(book.name("ada").as_deref(), Some("changed"));
+}
+
+#[test]
+fn a_conflict_changes_nothing_says_so_and_the_second_save_writes_knowingly() {
+    let (book, mut s) = state(&["ada"]);
+    s.begin_edit();
+    s.set_field("name", "mine");
+    book.other_changes("ada", "theirs");
+    s.save();
+    assert_eq!(
+        book.name("ada").as_deref(),
+        Some("theirs"),
+        "nothing written"
+    );
+    let edit = s.editing().unwrap();
+    assert!(edit.error.as_deref().unwrap().contains("Someone else"));
+    assert_eq!(edit.draft.fields().next().unwrap().value, "mine");
+    s.save();
+    assert_eq!(book.name("ada").as_deref(), Some("mine"));
+}
+
+#[test]
+fn a_new_person_is_made_listed_and_selected() {
+    let (book, mut s) = state(&["ada"]);
+    assert_eq!(s.begin_create(), Outcome::Done);
+    assert!(s.editing().unwrap().key.is_none());
+    s.set_field("name", "zoe");
+    s.save();
+    assert_eq!(book.name("zoe").as_deref(), Some("zoe"));
+    assert_eq!(s.selected(), Some("zoe"));
+    assert_eq!(s.rows().len(), 2);
+    assert_eq!(s.notice(), Some("Created."));
+}
+
+#[test]
+fn a_new_person_left_empty_writes_nothing_and_the_old_one_stays_shown() {
+    let (book, mut s) = state(&["ada"]);
+    s.begin_create();
+    s.save();
+    assert_eq!(book.writes(), 0);
+    assert_eq!(s.selected(), Some("ada"));
+}
+
+#[test]
+fn fields_can_be_added_where_the_group_allows_it() {
+    let (_, mut s) = state(&["ada"]);
+    s.begin_edit();
+    s.add_field("mail");
+    s.add_field("name");
+    let edit = s.editing().unwrap();
+    let keys: Vec<_> = edit.draft.fields().map(|f| f.key.as_str()).collect();
+    assert_eq!(keys, ["name", "mail/1", "mail/+2"]);
+    assert!(!edit.draft.changed(), "an empty new field is no change");
+    let added = edit.draft.fields().last().unwrap().key.clone();
+    s.set_field(&added, "second@x.org");
+    assert!(s.editing().unwrap().draft.changed());
+}
+
+#[test]
+fn deleting_takes_a_second_press_for_the_same_person() {
+    let (book, mut s) = state(&["ada", "bob", "cid"]);
+    s.delete();
+    assert!(s.delete_asked());
+    assert!(s.notice().unwrap().contains("ada"));
+    assert!(book.name("ada").is_some());
+
+    s.select("bob");
+    assert!(!s.delete_asked(), "another person drops the question");
+    s.delete();
+    assert!(book.name("bob").is_some(), "asked again, for bob");
+    s.keep();
+    assert!(!s.delete_asked());
+    s.delete();
+    s.delete();
+    assert!(book.name("bob").is_none());
+    assert_eq!(book.name("ada").as_deref(), Some("ada"));
+    assert_eq!(s.selected(), Some("cid"), "the next person moves up");
+    assert_eq!(s.notice(), Some("bob was deleted."));
+}
+
+#[test]
+fn deleting_the_last_person_leaves_nothing_shown() {
+    let (_, mut s) = state(&["ada"]);
+    s.delete();
+    s.delete();
+    assert_eq!(s.shown(), &Shown::Nothing);
+    assert!(s.rows().is_empty());
+}
+
+#[test]
+fn a_refused_delete_keeps_the_person_and_shows_why() {
+    let (book, mut s) = state(&["ada"]);
+    *book.refuse.lock().unwrap() = Some("it is locked".into());
+    s.delete();
+    s.delete();
+    assert!(s.notice().unwrap().contains("it is locked"));
+    assert_eq!(s.selected(), Some("ada"));
+    assert!(!s.delete_asked());
+}
+
+#[test]
+fn nothing_can_be_deleted_during_an_edit() {
+    let (book, mut s) = state(&["ada"]);
+    s.begin_edit();
+    assert!(!s.can_delete());
+    s.delete();
+    s.delete();
+    assert!(book.name("ada").is_some());
+}

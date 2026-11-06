@@ -1,0 +1,211 @@
+//! Editing, creating and deleting.
+//!
+//! Pattern: State — `PeopleState::editing` is `Some` while the person edits, the same rules as the
+//! reader's editing: unsaved changes block leaving, the first Cancel with changes only asks, a failed
+//! save keeps the draft and shows why, after a conflict the next Save writes knowingly. Deleting
+//! is in `delete.rs`.
+
+use super::labels::PeopleLabels;
+use super::model::{DraftField, PersonDraft};
+use super::shown::{Outcome, Shown};
+use super::state::PeopleState;
+use crate::error::ErrorKind;
+
+/// An edit in progress.
+#[non_exhaustive]
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PersonEdit {
+    /// Which edit this is (counts up with every edit begun; a shell ties its text fields to it).
+    pub id: u64,
+    /// The person edited; `None` for a new one.
+    pub key: Option<String>,
+    /// The form as it is now.
+    pub draft: PersonDraft,
+    /// Why the last save failed, if it did.
+    pub error: Option<String>,
+    /// The person pressed Cancel once with unsaved changes.
+    pub discard_asked: bool,
+}
+
+impl PeopleState {
+    /// The edit in progress, if any.
+    pub fn editing(&self) -> Option<&PersonEdit> {
+        self.editing.as_ref()
+    }
+
+    /// Is a person shown who can be changed (show an Edit button)?
+    pub fn can_edit(&self) -> bool {
+        self.capabilities.edit
+            && self.editing.is_none()
+            && matches!(self.shown, Shown::Person { .. })
+    }
+
+    /// Can a new person be made now (show a New button)?
+    pub fn can_create(&self) -> bool {
+        self.capabilities.create && self.editing.is_none()
+    }
+
+    /// Start editing the person shown.
+    pub fn begin_edit(&mut self) {
+        if !self.can_edit() {
+            return;
+        }
+        let Some(key) = self.selected().map(str::to_string) else {
+            return;
+        };
+        self.delete_asked = None;
+        let draft = self.source.draft(&key);
+        self.start(Some(key), draft);
+    }
+
+    /// Start a new person. With unsaved changes this is refused and says why.
+    pub fn begin_create(&mut self) -> Outcome {
+        if !self.capabilities.create {
+            return Outcome::Done;
+        }
+        if self.blocked_by_edit() {
+            return Outcome::Blocked;
+        }
+        self.delete_asked = None;
+        let draft = self.source.blank();
+        self.start(None, draft);
+        Outcome::Done
+    }
+
+    fn start(
+        &mut self,
+        key: Option<String>,
+        draft: Result<PersonDraft, crate::error::SourceError>,
+    ) {
+        match draft {
+            Ok(draft) => {
+                self.notice = None;
+                self.edit_counter += 1;
+                self.editing = Some(PersonEdit {
+                    id: self.edit_counter,
+                    key,
+                    draft,
+                    error: None,
+                    discard_asked: false,
+                });
+            }
+            Err(e) => {
+                self.notice = Some(PeopleLabels::fill(&self.labels.cannot_edit, &e.message));
+            }
+        }
+    }
+
+    /// The person typed in this field.
+    pub fn set_field(&mut self, field: &str, text: &str) {
+        let Some(edit) = &mut self.editing else {
+            return;
+        };
+        let found = edit
+            .draft
+            .groups
+            .iter_mut()
+            .flat_map(|g| g.fields.iter_mut())
+            .find(|f| f.key == field);
+        if let Some(found) = found
+            && found.value != text
+        {
+            found.value = text.to_string();
+            edit.discard_asked = false;
+        }
+    }
+
+    /// Add an empty field to this group, if it may grow.
+    pub fn add_field(&mut self, group: &str) {
+        let Some(edit) = &mut self.editing else {
+            return;
+        };
+        let id = edit.draft.fields().count();
+        if let Some(group) = edit
+            .draft
+            .groups
+            .iter_mut()
+            .find(|g| g.key == group && g.can_add)
+        {
+            let mut field =
+                DraftField::new(format!("{}/+{id}", group.key), group.label.clone(), "");
+            field.added = true;
+            group.fields.push(field);
+        }
+    }
+
+    /// Save. Without changes nothing is written. On success the person is read again and the list
+    /// follows; on failure, also a conflict, the draft stays and the reason is shown.
+    pub fn save(&mut self) {
+        let Some(edit) = &self.editing else {
+            return;
+        };
+        if !edit.draft.changed() {
+            self.editing = None;
+            self.notice = Some(self.labels.no_changes.clone());
+            return;
+        }
+        let (key, draft) = (edit.key.clone(), edit.draft.clone());
+        let done = match &key {
+            Some(key) => self.source.save(key, &draft).map(|()| key.clone()),
+            None => self.source.create(&draft),
+        };
+        match done {
+            Ok(saved) => {
+                let message = if key.is_some() {
+                    &self.labels.saved
+                } else {
+                    &self.labels.created
+                };
+                let message = message.clone();
+                self.reload(self.loaded());
+                self.show(&saved);
+                self.notice = Some(message);
+            }
+            Err(e) => {
+                let conflict = e.kind == ErrorKind::Conflict;
+                let reason = if conflict {
+                    PeopleLabels::fill(&self.labels.conflict_confirm, &e.message)
+                } else {
+                    PeopleLabels::fill(&self.labels.not_saved, &e.message)
+                };
+                // After a conflict the next Save, with the revision found now, writes over the
+                // other change: the person has been told and has the draft in view.
+                let latest = key
+                    .as_deref()
+                    .filter(|_| conflict)
+                    .and_then(|k| self.source.draft(k).ok())
+                    .map(|d| d.revision);
+                if let Some(edit) = &mut self.editing {
+                    edit.error = Some(reason);
+                    if let Some(revision) = latest {
+                        edit.draft.revision = revision;
+                    }
+                }
+            }
+        }
+    }
+
+    /// Stop editing. With unsaved changes the first call only asks; the second discards.
+    pub fn cancel_edit(&mut self) {
+        let Some(edit) = &mut self.editing else {
+            return;
+        };
+        if edit.draft.changed() && !edit.discard_asked {
+            edit.discard_asked = true;
+            self.notice = Some(self.labels.discard_confirm.clone());
+            return;
+        }
+        self.editing = None;
+        self.notice = None;
+    }
+
+    /// While there are unsaved changes, going elsewhere is refused with a notice.
+    pub(super) fn blocked_by_edit(&mut self) -> bool {
+        if self.editing.as_ref().is_some_and(|e| e.draft.changed()) {
+            self.notice = Some(self.labels.unsaved.clone());
+            return true;
+        }
+        self.editing = None;
+        false
+    }
+}
