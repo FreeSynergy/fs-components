@@ -11,6 +11,7 @@ use super::time::Zone;
 use crate::spec::{Channel, ChannelDef, Spec, SpecError, lookup};
 
 /// One mark's worth of values, indexed by [`Channel`] (`x, y, color, theta`).
+#[non_exhaustive]
 #[derive(Clone, Debug, PartialEq)]
 pub struct Datum {
     /// The cells; `Null` for a channel the spec does not use.
@@ -20,6 +21,7 @@ pub struct Datum {
 }
 
 /// The data of a chart, ready for scales.
+#[non_exhaustive]
 #[derive(Clone, Debug)]
 pub struct Prepared {
     /// What is drawn, in order.
@@ -108,8 +110,8 @@ fn note(
 ) {
     let example = || raw.map(|v| shorten(&v.to_string()));
     match cell {
-        Cell::Null if def.ftype.is_discrete() => {}
-        Cell::Null => report.note(field, IssueKind::Null, None),
+        Cell::Null | Cell::Absent if def.ftype.is_discrete() => {}
+        Cell::Null | Cell::Absent => report.note(field, IssueKind::Null, None),
         Cell::Invalid(i) => report.note(field, IssueKind::Invalid(*i), example()),
         _ => {}
     }

@@ -4,125 +4,127 @@
 //! drawing API. Colours come from the `Look`, text widths from `Measure`.
 
 use blinc_core::{
-    Brush, Color, CornerRadius, DrawContext, FontWeight, Point, Rect, Stroke, TextAlign,
+    Brush, ClipShape, Color, CornerRadius, DrawContext, FontWeight, Point, Rect, Stroke, TextAlign,
     TextBaseline, TextStyle, Transform,
 };
 
 use super::look::Look;
 use super::shapes::{closed, open, polygon, sector};
 use crate::layout::Measure;
-use crate::scene::{Anchor, Baseline, Dash, Item, Paint, Scene, Shape, TextSize};
+use crate::scene::{Anchor, Baseline, Item, Paint, Scene, Shape, TextSize};
 
 /// Draw every item of `scene`.
 pub fn draw(ctx: &mut dyn DrawContext, scene: &Scene, look: &Look, m: &dyn Measure) {
-    for item in &scene.items {
-        match item {
-            Item::Rect {
-                x,
-                y,
-                w,
-                h,
-                paint,
-                opacity,
-            } => {
-                let c = alpha(look.colour(*paint), *opacity);
-                ctx.fill_rect(
-                    Rect::new(*x, *y, *w, *h),
-                    CornerRadius::default(),
-                    Brush::Solid(c),
-                );
-            }
-            Item::Line {
-                from,
-                to,
-                paint,
-                width,
-            } => {
-                let p = open(&[*from, *to]);
-                ctx.stroke_path(&p, &Stroke::new(*width), Brush::Solid(look.colour(*paint)));
-            }
-            Item::Path {
-                points,
-                paint,
-                width,
-                dash,
-            } => {
-                let s = dashed(Stroke::new(*width), *dash);
-                ctx.stroke_path(&open(points), &s, Brush::Solid(look.colour(*paint)));
-            }
-            Item::Polygon {
-                points,
-                paint,
-                opacity,
-            } => {
-                let c = alpha(look.colour(*paint), *opacity);
-                ctx.fill_path(&closed(points), Brush::Solid(c));
-            }
-            Item::Marker {
-                at,
-                shape,
-                radius,
-                paint,
-                filled,
-                opacity,
-            } => {
-                marker(
-                    ctx,
-                    *at,
-                    *shape,
-                    *radius,
-                    alpha(look.colour(*paint), *opacity),
-                    *filled,
-                );
-            }
-            Item::Sector {
-                centre,
-                inner,
-                outer,
-                start,
-                end,
-                paint,
-            } => {
-                let p = sector(*centre, *inner, *outer, *start, *end);
-                ctx.fill_path(&p, Brush::Solid(look.colour(*paint)));
-                let gap = Stroke::new(1.5);
-                ctx.stroke_path(&p, &gap, Brush::Solid(look.colour(Paint::Background)));
-            }
-            Item::Text { angle, .. } if *angle != 0.0 => {} // a text element, see `rotated`
-            Item::Text {
-                at,
-                text,
-                size,
-                bold,
-                paint,
-                anchor,
-                baseline,
-                angle,
-            } => {
-                label(
-                    ctx,
-                    look,
-                    m,
-                    (*at, text, *size, *bold, *paint),
-                    (*anchor, *baseline, *angle),
-                );
-            }
+    let clip = scene.clip_marks && scene.marks_from < scene.items.len();
+    for (n, item) in scene.items.iter().enumerate() {
+        if clip && n == scene.marks_from {
+            let p = scene.plot;
+            ctx.push_clip(ClipShape::Rect(Rect::new(p[0], p[1], p[2], p[3])));
+        }
+        one(ctx, item, look, m);
+    }
+    if clip {
+        ctx.pop_clip();
+    }
+}
+
+/// Draw one item.
+fn one(ctx: &mut dyn DrawContext, item: &Item, look: &Look, m: &dyn Measure) {
+    match item {
+        Item::Rect {
+            x,
+            y,
+            w,
+            h,
+            paint,
+            opacity,
+        } => {
+            let c = alpha(look.colour(*paint), *opacity);
+            ctx.fill_rect(
+                Rect::new(*x, *y, *w, *h),
+                CornerRadius::default(),
+                Brush::Solid(c),
+            );
+        }
+        Item::Line {
+            from,
+            to,
+            paint,
+            width,
+        } => {
+            let p = open(&[*from, *to]);
+            ctx.stroke_path(&p, &Stroke::new(*width), Brush::Solid(look.colour(*paint)));
+        }
+        Item::Path {
+            points,
+            paint,
+            width,
+        } => {
+            let s = Stroke::new(*width);
+            ctx.stroke_path(&open(points), &s, Brush::Solid(look.colour(*paint)));
+        }
+        Item::Polygon {
+            points,
+            paint,
+            opacity,
+        } => {
+            let c = alpha(look.colour(*paint), *opacity);
+            ctx.fill_path(&closed(points), Brush::Solid(c));
+        }
+        Item::Marker {
+            at,
+            shape,
+            radius,
+            paint,
+            filled,
+            opacity,
+        } => {
+            marker(
+                ctx,
+                *at,
+                *shape,
+                *radius,
+                alpha(look.colour(*paint), *opacity),
+                *filled,
+            );
+        }
+        Item::Sector {
+            centre,
+            inner,
+            outer,
+            start,
+            end,
+            paint,
+        } => {
+            let p = sector(*centre, *inner, *outer, *start, *end);
+            ctx.fill_path(&p, Brush::Solid(look.colour(*paint)));
+            let gap = Stroke::new(1.5);
+            ctx.stroke_path(&p, &gap, Brush::Solid(look.colour(Paint::Background)));
+        }
+        Item::Text { angle, .. } if *angle != 0.0 => {} // a text element, see `rotated`
+        Item::Text {
+            at,
+            text,
+            size,
+            bold,
+            paint,
+            anchor,
+            baseline,
+            angle,
+        } => {
+            label(
+                ctx,
+                look,
+                m,
+                (*at, text, *size, *bold, *paint),
+                (*anchor, *baseline, *angle),
+            );
         }
     }
 }
 
 fn alpha(c: Color, a: f32) -> Color {
     Color::rgba(c.r, c.g, c.b, c.a * a)
-}
-
-fn dashed(mut s: Stroke, d: Dash) -> Stroke {
-    s.dash = match d {
-        Dash::Solid => Vec::new(),
-        Dash::Dashed => vec![6.0, 3.0],
-        Dash::Dotted => vec![1.5, 3.0],
-        _ => vec![8.0, 3.0, 1.5, 3.0],
-    };
-    s
 }
 
 fn marker(ctx: &mut dyn DrawContext, at: [f32; 2], shape: Shape, r: f32, c: Color, filled: bool) {

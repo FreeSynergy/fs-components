@@ -216,8 +216,8 @@ pub struct ChannelDef {
     pub scale: ScaleDef,
     /// Category order.
     pub sort: Sort,
-    /// Stacking (on the quantitative position or theta).
-    pub stack: StackMode,
+    /// Stacking as written (`None` when the spec does not say).
+    pub stack: Option<StackMode>,
     /// Legend visible (colour).
     pub legend: bool,
 }
@@ -252,6 +252,8 @@ impl Encoding {
 #[non_exhaustive]
 #[derive(Clone, Debug, PartialEq)]
 pub struct Spec {
+    /// Major version of the schema named by `$schema` (5 or 6; 6 when there is none).
+    pub schema_major: u8,
     /// Title of the chart.
     pub title: Option<String>,
     /// Description: the text alternative written by the spec's author.

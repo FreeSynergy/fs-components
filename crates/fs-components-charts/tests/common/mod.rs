@@ -50,6 +50,8 @@ pub fn out_dir(tag: &str) -> (PathBuf, Option<TempDir>) {
 
 /// The pixels of a picture.
 pub struct Picture {
+    /// The series colours of the theme the picture was drawn in.
+    pub series: Vec<[u8; 3]>,
     /// The surface colour of the theme the picture was drawn in.
     pub bg: [u8; 3],
     pub width: u32,
@@ -94,11 +96,6 @@ pub fn near(a: [u8; 3], b: [u8; 3], tol: u8) -> bool {
     (0..3).all(|k| a[k].abs_diff(b[k]) <= tol)
 }
 
-/// The surface colour of the current theme, as pixels.
-pub fn background() -> [u8; 3] {
-    to_u8(ThemeState::get().color(ColorToken::Background))
-}
-
 /// Draw `view` at `width` x `height` on the given colour scheme, write `name.png` into `dir`.
 pub fn render(
     view: &ChartView,
@@ -130,6 +127,14 @@ pub fn render(
         );
     }
     let bg = ThemeState::get().color(ColorToken::Background);
+    // read under the lock: another test may switch the theme as soon as this one is done
+    let look = fs_components_charts::view::Look::current();
+    let series: Vec<[u8; 3]> = (0..8)
+        .map(|i| {
+            look.rgb(fs_components_charts::scene::Paint::Series(i))
+                .map(|c| (c * 255.0).round() as u8)
+        })
+        .collect();
     let mut app = BlincApp::with_config(BlincConfig {
         sample_count: 1,
         ..Default::default()
@@ -184,6 +189,7 @@ pub fn render(
     .expect("png");
     Picture {
         bg: to_u8(bg),
+        series,
         width,
         height,
         rgba,

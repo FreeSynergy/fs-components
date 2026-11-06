@@ -61,7 +61,7 @@ fn reduce<'a>(a: Aggregate, cells: impl Iterator<Item = &'a Cell>, n: usize) -> 
     }
     let v: Vec<f64> = cells.filter_map(Cell::num).collect();
     let out = match a {
-        Aggregate::Sum => Some(v.iter().sum()),
+        Aggregate::Sum if !v.is_empty() => Some(v.iter().sum::<f64>() + 0.0),
         #[allow(clippy::cast_precision_loss)]
         Aggregate::Mean if !v.is_empty() => Some(mean(&v)),
         Aggregate::Min => v.iter().copied().reduce(f64::min),

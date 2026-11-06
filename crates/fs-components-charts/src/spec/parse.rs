@@ -29,16 +29,14 @@ pub fn parse(text: &str) -> Result<Spec> {
 /// As [`parse`], without the JSON error.
 pub fn from_value(value: &Value) -> Result<Spec> {
     let mut o = Obj::new(value, "")?;
+    let mut major = 6;
     if let Some(s) = o.string("$schema")? {
-        let ok = ["v5", "v6"]
-            .iter()
-            .any(|v| s.starts_with(&format!("https://vega.github.io/schema/vega-lite/{v}")));
-        if !ok {
-            return Err(SpecError::outside(
+        major = schema_major(&s).ok_or_else(|| {
+            SpecError::outside(
                 "/$schema",
-                format!("schema \"{s}\" is not Vega-Lite 5 or 6"),
-            ));
-        }
+                format!("schema \"{s}\" is not a Vega-Lite 5 or 6 schema address"),
+            )
+        })?;
     }
     let title = title(&mut o)?;
     let description = o.string("description")?;
@@ -56,6 +54,7 @@ pub fn from_value(value: &Value) -> Result<Spec> {
     let _ = o.string("name")?;
     o.finish()?;
     let spec = Spec {
+        schema_major: major,
         title,
         description,
         width,
@@ -86,8 +85,11 @@ fn size(o: &mut Obj<'_>, key: &'static str) -> Result<Option<f64>> {
     match o.take(key) {
         None => Ok(None),
         Some(Value::Number(n)) => match n.as_f64() {
-            Some(x) if x.is_finite() && x > 0.0 => Ok(Some(x)),
-            _ => Err(SpecError::invalid(&o.at(key), "must be a positive number")),
+            Some(x) if x.is_finite() && x > 0.0 && x <= 1e6 => Ok(Some(x)),
+            _ => Err(SpecError::invalid(
+                &o.at(key),
+                "must be a number of pixels above 0 and up to 1000000",
+            )),
         },
         Some(v) => Err(SpecError::outside(
             &o.at(key),
@@ -152,4 +154,19 @@ fn encoding(v: &Value, path: &str) -> Result<Encoding> {
         }
     }
     Ok(out)
+}
+
+/// The major version of an address like `https://vega.github.io/schema/vega-lite/v5.17.0.json`
+/// (only 5 and 6, with up to two more numbers, and the `.json`).
+fn schema_major(s: &str) -> Option<u8> {
+    let rest = s.strip_prefix("https://vega.github.io/schema/vega-lite/v")?;
+    let name = rest.strip_suffix(".json")?;
+    let mut parts = name.split('.');
+    let major: u8 = parts.next()?.parse().ok()?;
+    let more = parts.collect::<Vec<_>>();
+    let numeric = more.len() <= 2
+        && more
+            .iter()
+            .all(|p| !p.is_empty() && p.bytes().all(|b| b.is_ascii_digit()));
+    (matches!(major, 5 | 6) && numeric).then_some(major)
 }

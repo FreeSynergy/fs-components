@@ -8,42 +8,46 @@ use crate::data::calendar::{civil_from_days, weekday};
 use crate::data::time::{DAY, HOUR, MIN};
 use crate::labels::Labels;
 
-/// A number with `decimals` places, grouped and with the caller's marks.
+/// A number with `decimals` places, grouped and with the caller's marks. Like JavaScript's
+/// `toFixed`, all digits are written below 1e21; from there on (and when more than 20 decimals
+/// would be needed) the exponent form `1.5e+21` is used.
 pub fn number(v: f64, decimals: usize, l: &Labels) -> String {
-    if v == 0.0 || (v.abs() < 1e15 && (v.abs() >= 1e-6 || decimals > 6)) {
-        let text = format!("{:.*}", decimals, v.abs());
-        let (int, frac) = text
-            .split_once('.')
-            .map_or((text.as_str(), ""), |(a, b)| (a, b));
-        let mut grouped = String::new();
-        for (i, c) in int.chars().enumerate() {
-            if i > 0 && (int.len() - i) % 3 == 0 {
-                grouped.push_str(&l.group);
-            }
-            grouped.push(c);
-        }
-        if !frac.is_empty() {
-            grouped.push_str(&l.decimal);
-            grouped.push_str(frac);
-        }
-        let negative = v < 0.0 && text.chars().any(|c| c.is_ascii_digit() && c != '0');
-        return if negative {
-            format!("{}{grouped}", l.minus)
+    if v.abs() >= 1e21 || decimals > 20 || !v.is_finite() {
+        let text = exponent(v.abs(), &l.decimal);
+        return if v < 0.0 {
+            format!("{}{text}", l.minus)
         } else {
-            grouped
+            text
         };
     }
-    let text = exponent(v.abs(), &l.decimal);
-    if v < 0.0 {
-        format!("{}{text}", l.minus)
+    let text = format!("{:.*}", decimals, v.abs());
+    let (int, frac) = text.split_once('.').unwrap_or((text.as_str(), ""));
+    let mut grouped = String::new();
+    for (i, c) in int.chars().enumerate() {
+        if i > 0 && (int.len() - i) % 3 == 0 {
+            grouped.push_str(&l.group);
+        }
+        grouped.push(c);
+    }
+    if !frac.is_empty() {
+        grouped.push_str(&l.decimal);
+        grouped.push_str(frac);
+    }
+    // a value that rounds to zero has no sign
+    let negative = v < 0.0 && text.chars().any(|c| c.is_ascii_digit() && c != '0');
+    if negative {
+        format!("{}{grouped}", l.minus)
     } else {
-        text
+        grouped
     }
 }
 
-/// `1.5e308`: at most six significant digits, trailing zeros removed (float noise such as
+/// `1.5e+308`: at most six significant digits, trailing zeros removed (float noise such as
 /// 1.5000000000000008e308 is not shown).
 fn exponent(v: f64, decimal: &str) -> String {
+    if !v.is_finite() {
+        return "NaN".to_string();
+    }
     let text = format!("{v:.5e}");
     let (mantissa, power) = text.split_once('e').unwrap_or((&text, "0"));
     let mantissa = if mantissa.contains('.') {
@@ -51,7 +55,8 @@ fn exponent(v: f64, decimal: &str) -> String {
     } else {
         mantissa
     };
-    format!("{}e{power}", mantissa.replace('.', decimal))
+    let sign = if power.starts_with('-') { "" } else { "+" };
+    format!("{}e{sign}{power}", mantissa.replace('.', decimal))
 }
 
 /// Shortest text of a number without fixed decimals (for categories that are numbers, tooltips

@@ -1,5 +1,7 @@
 //! Shared helpers for the tests that refuse specs.
 
+#![allow(dead_code)] // each test file uses a part of these helpers
+
 use fs_components_charts::spec::{ErrorKind, parse};
 
 pub const XY: &str =

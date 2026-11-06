@@ -99,10 +99,23 @@ fn position(kind: MarkKind, x: &ChannelDef, y: &ChannelDef) -> Result<()> {
         _ => {}
     }
     for (name, c) in [("x", x), ("y", y)] {
-        if c.stack == StackMode::Normalize && !matches!(kind, MarkKind::Bar | MarkKind::Area) {
-            return Err(SpecError::invalid(
+        // an explicit stack means what Vega-Lite says only on the value axis of a bar or an area
+        let value_axis = match kind {
+            MarkKind::Bar => c.ftype == Quantitative,
+            MarkKind::Area => name == "y",
+            _ => false,
+        };
+        if let Some(mode) = c.stack
+            && !value_axis
+            && !(mode == StackMode::Off && matches!(kind, MarkKind::Line | MarkKind::Point))
+        {
+            return Err(SpecError::outside(
                 &format!("/encoding/{name}/stack"),
-                "normalized stacking is for bar and area",
+                format!(
+                    "stack on {} of a {} is not supported (only the quantitative axis of a bar, the y of an area; stack: null is fine on a line or point)",
+                    name,
+                    kind.name()
+                ),
             ));
         }
         if c.scale.zero == Some(true) && c.ftype == Temporal {

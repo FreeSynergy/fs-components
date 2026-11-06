@@ -54,6 +54,8 @@ pub struct Labels {
     pub minus: String,
     /// Name of the category `null`.
     pub null_category: String,
+    /// Name of the category of rows that do not have the field at all.
+    pub absent_category: String,
     /// Month names.
     pub months: [String; 12],
     /// Short month names.
@@ -106,6 +108,8 @@ pub struct Labels {
     pub alt_range: String,
     /// Names of the mark kinds: bar, line, area, point, arc.
     pub kinds: [String; 5],
+    /// Text alternative: `{count}` rows exist that the table does not list.
+    pub alt_more: String,
     /// Header of the count column of an aggregated table.
     pub alt_series: String,
 }
@@ -133,6 +137,7 @@ impl Default for Labels {
             group: s(","),
             minus: s("\u{2212}"),
             null_category: s("null"),
+            absent_category: s("undefined"),
             months_short: months.clone().map(|m| m.chars().take(3).collect()),
             months,
             weekdays_short: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(s),
@@ -159,6 +164,7 @@ impl Default for Labels {
             alt_summary: s("{kind} chart with {rows} rows."),
             alt_range: s("{field} from {min} to {max}."),
             kinds: ["Bar", "Line", "Area", "Point", "Pie or donut"].map(s),
+            alt_more: s("{count} more rows are not listed."),
             alt_series: s("Series"),
         }
     }

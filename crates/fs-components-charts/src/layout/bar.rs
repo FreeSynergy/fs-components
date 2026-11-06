@@ -2,8 +2,9 @@
 //!
 //! Pattern: Strategy (one mark layout). The category axis has a band scale; the value axis a
 //! linear scale that includes zero. A negative value hangs below the zero line. Values of one
-//! category pile up (positive up, negative down) with series 0 on top, as in Vega-Lite; with
-//! `stack: null` they overlap, drawn at 0.7 opacity as Vega-Lite does for layered bars.
+//! category pile up (positive up, negative down); in a vertical bar the first series is on top, in
+//! a horizontal bar it is at the zero end, as in Vega-Lite 6.5.0; with
+//! `stack: null` they overlap, fully opaque (Vega-Lite 6.5.0 draws them without opacity).
 
 use super::axis::{Axis, Scale};
 use super::cats::Cats;
@@ -23,7 +24,6 @@ struct Seg {
 pub struct Bars {
     vertical: bool,
     segs: Vec<Seg>,
-    overlay: bool,
 }
 
 impl Bars {
@@ -36,7 +36,10 @@ impl Bars {
         } else {
             (Channel::Y, Channel::X)
         };
-        let mode = enc.get(val_ch).map_or(StackMode::Zero, |d| d.stack);
+        let mode = enc
+            .get(val_ch)
+            .and_then(|d| d.stack)
+            .unwrap_or(StackMode::Zero);
         let mut entries = Vec::new();
         let mut keep = Vec::new();
         for (i, d) in c.data.data.iter().enumerate() {
@@ -46,30 +49,22 @@ impl Bars {
             ) else {
                 continue;
             };
-            entries.push(Entry {
-                group: cat,
-                series: c.series_of(d),
-                value,
-            });
-            keep.push(i);
+            entries.push(Entry::new(cat, c.rank_of(d), value));
+            keep.push((i, c.series_of(d)));
         }
-        let spans = stack(&entries, mode);
+        let spans = stack(&entries, mode, !vertical);
         let segs = entries
             .iter()
             .zip(&spans)
             .zip(&keep)
-            .map(|((e, s), &datum)| Seg {
+            .map(|((e, s), &(datum, series))| Seg {
                 cat: e.group,
-                series: e.series,
+                series,
                 span: *s,
                 datum,
             })
             .collect();
-        Self {
-            vertical,
-            segs,
-            overlay: mode == StackMode::Off && c.multi(),
-        }
+        Self { vertical, segs }
     }
 
     /// The range of the value axis, zero included.
@@ -85,9 +80,12 @@ impl Bars {
         let (Scale::Band(band), Scale::Linear(lin)) = (&cat.scale, &val.scale) else {
             return;
         };
-        let opacity = if self.overlay { 0.7 } else { 1.0 };
-        out.omitted += self.segs.len().saturating_sub(c.max_marks);
-        for s in self.segs.iter().take(c.max_marks) {
+        // part of a bar chart on a full axis would mislead: too many bars are all left out
+        if self.segs.len() > c.max_marks {
+            out.omitted += self.segs.len();
+            return;
+        }
+        for s in &self.segs {
             let start = band.start(s.cat) as f32;
             let width = band.bandwidth() as f32;
             let (a, b) = (lin.map(s.span[0]) as f32, lin.map(s.span[1]) as f32);
@@ -106,7 +104,7 @@ impl Bars {
                 w: rw,
                 h: rh,
                 paint: Paint::Series(s.series),
-                opacity,
+                opacity: 1.0,
             });
             out.hits
                 .push(c.hit(&c.data.data[s.datum], [rx, ry, rw, rh]));

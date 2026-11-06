@@ -31,6 +31,15 @@ impl Ctx<'_> {
             .unwrap_or(0)
     }
 
+    /// The natural rank of the series of a datum (see `Cats::rank`): the order of a stack.
+    pub fn rank_of(&self, d: &Datum) -> usize {
+        self.series
+            .rank
+            .get(self.series_of(d))
+            .copied()
+            .unwrap_or(0)
+    }
+
     /// Several series are drawn.
     pub fn multi(&self) -> bool {
         self.series.len() > 1

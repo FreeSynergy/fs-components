@@ -11,12 +11,14 @@ mod build;
 mod cartesian;
 mod cats;
 mod ctx;
+pub mod dash;
 pub mod describe;
 mod legend;
 mod line;
 mod measure;
 mod notes;
 mod point;
+mod sanitize;
 mod stack;
 
 pub use axis::{Axis, Scale, Source, Tick, Use};

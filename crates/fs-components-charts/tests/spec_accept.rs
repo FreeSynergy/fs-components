@@ -1,6 +1,6 @@
 //! Specs inside the subset are read, with the values Vega-Lite gives them.
 
-use fs_components_charts::spec::{Aggregate, FieldType, MarkKind, Sort, StackMode, Title, parse};
+use fs_components_charts::spec::{Aggregate, FieldType, MarkKind, Sort, Title, parse};
 
 const BAR: &str = r#"{
   "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
@@ -38,7 +38,7 @@ fn a_bar_chart_is_read_completely() {
     assert_eq!(y.aggregate, Some(Aggregate::Sum));
     assert_eq!(y.scale.domain, Some([0.0, 10.0]));
     assert_eq!(y.scale.nice, Some(false));
-    assert_eq!(y.stack, StackMode::Zero);
+    assert_eq!(y.stack, None, "no stack written: the default applies");
 }
 
 #[test]

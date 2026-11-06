@@ -22,7 +22,8 @@ pub enum Paint {
     Background,
 }
 
-/// Line pattern; series differ by pattern as well as by colour.
+/// Line pattern; series differ by pattern as well as by colour. The layout cuts a dashed line
+/// into its dashes (see `layout::dash`), so a scene holds only solid paths.
 #[non_exhaustive]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Dash {
@@ -128,8 +129,6 @@ pub enum Item {
         paint: Paint,
         /// Width.
         width: f32,
-        /// Pattern.
-        dash: Dash,
     },
     /// A filled polygon.
     Polygon {
@@ -215,6 +214,10 @@ pub struct Scene {
     pub hits: Vec<Hit>,
     /// The plot area `[x, y, w, h]`.
     pub plot: [f32; 4],
+    /// Index of the first mark in `items` (before it: grid, axes, legend, texts).
+    pub marks_from: usize,
+    /// Marks are cut off at the plot area (the spec fixed a scale domain, as in Vega-Lite).
+    pub clip_marks: bool,
     /// Marks left out because there were more than `Metrics::max_marks` (after merging marks
     /// that fall on the same pixel); the chart says so under the plot.
     pub omitted: usize,

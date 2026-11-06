@@ -39,8 +39,11 @@ pub enum Cell {
     },
     /// A category written as text.
     Text(String),
-    /// `null` or absent. On a discrete channel this is a category of its own.
+    /// `null`. On a discrete channel this is a category of its own.
     Null,
+    /// The field is not in the row at all. On a discrete channel a category of its own, after
+    /// `null` (Vega-Lite keeps `null` and `undefined` apart).
+    Absent,
     /// Cannot be drawn, and why.
     Invalid(Invalid),
 }
@@ -60,24 +63,22 @@ impl Cell {
     }
 }
 
+/// The latest and earliest instant of a JavaScript date, in milliseconds.
+const MAX_MS: f64 = 8.64e15;
+
 /// Read `value` as a field of type `ft`; `zone` collects the zones of temporal texts.
 pub fn read(value: Option<&Value>, ft: FieldType, zone: &mut Zones) -> Cell {
     let Some(value) = value else {
-        return Cell::Null;
+        return Cell::Absent;
     };
     if value.is_null() {
         return Cell::Null;
     }
     match ft {
-        FieldType::Quantitative => match value {
-            Value::Number(n) => n
-                .as_f64()
-                .map_or(Cell::Invalid(Invalid::NotANumber), Cell::Num),
-            Value::String(s) => match s.trim().parse::<f64>() {
-                Ok(x) if x.is_finite() => Cell::Num(x),
-                _ => Cell::Invalid(Invalid::NotANumber),
-            },
-            _ => Cell::Invalid(Invalid::WrongKind),
+        FieldType::Quantitative => match (super::jsnum::number(value), value) {
+            (Some(x), _) => Cell::Num(x),
+            (None, Value::String(_) | Value::Number(_)) => Cell::Invalid(Invalid::NotANumber),
+            (None, _) => Cell::Invalid(Invalid::WrongKind),
         },
         FieldType::Nominal | FieldType::Ordinal => match value {
             Value::String(s) => Cell::Text(s.clone()),
@@ -95,13 +96,17 @@ pub fn read(value: Option<&Value>, ft: FieldType, zone: &mut Zones) -> Cell {
                     zone: p.zone,
                 }
             }),
-            Value::Number(n) => n.as_f64().map_or(Cell::Invalid(Invalid::NotADate), |ms| {
-                zone.see(Zone::Offset(0));
-                Cell::Time {
-                    ms,
-                    zone: Zone::Offset(0),
+            // JavaScript dates reach 8.64e15 ms either side of 1970; beyond that is no date
+            Value::Number(n) => match n.as_f64() {
+                Some(ms) if ms.abs() <= MAX_MS => {
+                    zone.see(Zone::Offset(0));
+                    Cell::Time {
+                        ms,
+                        zone: Zone::Offset(0),
+                    }
                 }
-            }),
+                _ => Cell::Invalid(Invalid::NotADate),
+            },
             _ => Cell::Invalid(Invalid::WrongKind),
         },
     }

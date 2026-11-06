@@ -29,6 +29,8 @@ pub struct TextAlternative {
     pub summary: String,
     /// The drawn data.
     pub table: Table,
+    /// A sentence saying how many rows the table does not list (empty if it lists all).
+    pub more: String,
 }
 
 impl TextAlternative {
@@ -40,6 +42,10 @@ impl TextAlternative {
         for row in &self.table.rows {
             out.push('\n');
             out.push_str(&row.join("\t"));
+        }
+        if !self.more.is_empty() {
+            out.push('\n');
+            out.push_str(&self.more);
         }
         out
     }
@@ -82,9 +88,15 @@ pub fn text_alternative(
         omitted: data.data.len().saturating_sub(rows.len()),
         rows,
     };
+    let more = if table.omitted > 0 {
+        Labels::fill(&l.alt_more, &[("count", &table.omitted.to_string())])
+    } else {
+        String::new()
+    };
     TextAlternative {
         summary: summary(spec, data, l),
         table,
+        more,
     }
 }
 

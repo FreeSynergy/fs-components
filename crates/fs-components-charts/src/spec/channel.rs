@@ -19,9 +19,14 @@ pub(super) fn channel(value: &Value, channel: Channel, path: &str) -> Result<Cha
         super::field::check_path(f, &o.at("field"))?;
     }
     let aggregate = aggregate(&mut o)?;
-    let ftype = match (o.string("type")?, aggregate) {
+    let given = o.string("type")?;
+    if let Some(t) = &given {
+        field_type(t, &o.at("type"))?; // a type that is no type is refused whatever else is said
+    }
+    let ftype = match (given, aggregate) {
+        // a count is a number whatever type is written (Vega-Lite uses quantitative, with a warning)
+        (_, Some(Aggregate::Count)) => FieldType::Quantitative,
         (Some(t), _) => field_type(&t, &o.at("type"))?,
-        (None, Some(Aggregate::Count)) => FieldType::Quantitative,
         (None, _) => {
             return Err(SpecError::invalid(
                 path,
@@ -178,6 +183,12 @@ fn scale(o: &mut Obj<'_>, ch: Channel, ft: FieldType) -> Result<ScaleDef> {
         nice: s.boolean("nice")?,
         domain,
     };
+    if out.nice == Some(true) && ft == FieldType::Temporal {
+        return Err(SpecError::outside(
+            &s.at("nice"),
+            "nice on a time scale rounds to local calendar days in Vega-Lite, which depends on the viewer's zone; not supported",
+        ));
+    }
     s.finish()?;
     Ok(out)
 }
@@ -204,10 +215,12 @@ fn sort(o: &mut Obj<'_>, ch: Channel, ft: FieldType) -> Result<Sort> {
         Value::String(s) if s == "ascending" => Ok(Sort::Ascending),
         Value::String(s) if s == "descending" => Ok(Sort::Descending),
         Value::String(s) => match by(s) {
-            Some((channel, descending)) if channel != ch => Ok(Sort::ByChannel {
-                descending,
-                channel,
-            }),
+            Some((channel, descending)) if channel != ch && ch != Channel::Color => {
+                Ok(Sort::ByChannel {
+                    descending,
+                    channel,
+                })
+            }
             _ => Err(SpecError::outside(
                 &path,
                 format!(
@@ -222,19 +235,22 @@ fn sort(o: &mut Obj<'_>, ch: Channel, ft: FieldType) -> Result<Sort> {
     }
 }
 
-fn stack(o: &mut Obj<'_>, ch: Channel) -> Result<StackMode> {
+fn stack(o: &mut Obj<'_>, ch: Channel) -> Result<Option<StackMode>> {
     let Some(v) = o.take("stack") else {
-        return Ok(StackMode::Zero);
+        return Ok(None);
     };
     let path = o.at("stack");
-    if !matches!(ch, Channel::X | Channel::Y | Channel::Theta) {
-        return Err(SpecError::invalid(&path, "only x, y and theta can stack"));
+    if !matches!(ch, Channel::X | Channel::Y) {
+        return Err(SpecError::outside(
+            &path,
+            "stack on this channel is not supported (only on the quantitative x or y of a bar or area)",
+        ));
     }
     match v {
-        Value::Null | Value::Bool(false) => Ok(StackMode::Off),
-        Value::Bool(true) => Ok(StackMode::Zero),
-        Value::String(s) if s == "zero" => Ok(StackMode::Zero),
-        Value::String(s) if s == "normalize" => Ok(StackMode::Normalize),
+        Value::Null | Value::Bool(false) => Ok(Some(StackMode::Off)),
+        Value::Bool(true) => Ok(Some(StackMode::Zero)),
+        Value::String(s) if s == "zero" => Ok(Some(StackMode::Zero)),
+        Value::String(s) if s == "normalize" => Ok(Some(StackMode::Normalize)),
         other => Err(SpecError::outside(
             &path,
             format!("stack {other} is not supported (zero, normalize, null)"),

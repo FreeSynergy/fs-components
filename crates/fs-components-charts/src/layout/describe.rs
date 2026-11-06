@@ -32,6 +32,7 @@ pub fn value(cell: &Cell, def: &ChannelDef, zone: Zone, l: &Labels) -> String {
         Cell::Num(n) => plain(*n, l),
         Cell::Text(t) => t.clone(),
         Cell::Null if def.ftype.is_discrete() => l.null_category.clone(),
+        Cell::Absent if def.ftype.is_discrete() => l.absent_category.clone(),
         _ => String::new(),
     }
 }

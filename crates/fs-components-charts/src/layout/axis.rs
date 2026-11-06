@@ -28,6 +28,7 @@ pub enum Scale {
 }
 
 /// A tick with its label; `pos` is pixels from the start of the axis.
+#[non_exhaustive]
 #[derive(Clone, Debug, PartialEq)]
 pub struct Tick {
     /// Position along the axis.
@@ -37,6 +38,7 @@ pub struct Tick {
 }
 
 /// An axis ready to draw.
+#[non_exhaustive]
 #[allow(clippy::struct_excessive_bools)] // plain switches of one axis: grid, labels, visible, percent
 #[derive(Clone, Debug)]
 pub struct Axis {
@@ -68,6 +70,7 @@ pub struct Axis {
 pub const LABEL_LIMIT: f32 = 180.0;
 
 /// What the data says about an axis.
+#[non_exhaustive]
 pub enum Source {
     /// Smallest and largest valid value; `None` when there is none.
     Range(Option<(f64, f64)>),
@@ -76,6 +79,7 @@ pub enum Source {
 }
 
 /// How the axis is used.
+#[non_exhaustive]
 pub struct Use {
     /// The mark: bars get band scales.
     pub mark: MarkKind,
@@ -187,11 +191,17 @@ fn continuous(
             .collect();
         return (Scale::Time(s, u.offset), ticks, None);
     }
-    let rule = DomainRule {
-        zero: def.scale.zero.unwrap_or(def.scale.domain.is_none()) || u.force_zero,
-        nice: def.scale.nice.unwrap_or(true),
-        fixed: def.scale.domain,
-    };
+    // Vega-Lite: zero for x and y unless there is a domain, and never on the x of a line or
+    // area (its independent axis); nice unless there is a domain
+    let independent = channel == Channel::X && matches!(u.mark, MarkKind::Line | MarkKind::Area);
+    let rule = DomainRule::new(
+        def.scale
+            .zero
+            .unwrap_or(def.scale.domain.is_none() && !independent)
+            || (u.force_zero && def.scale.domain.is_none()),
+        def.scale.nice.unwrap_or(def.scale.domain.is_none()),
+        def.scale.domain,
+    );
     let s = Linear::from_data(min, max, rule, r);
     let t = s.ticks(n);
     let decimals = crate::scale::ticks::step_for(s.d0.min(s.d1), s.d1.max(s.d0), n)

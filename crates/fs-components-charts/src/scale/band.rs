@@ -5,6 +5,7 @@
 //! scale with no width, as Vega-Lite uses for categories on a line or a point mark.
 
 /// A scale of `n` categories over `[r0, r1]`.
+#[non_exhaustive]
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Band {
     /// Number of categories.

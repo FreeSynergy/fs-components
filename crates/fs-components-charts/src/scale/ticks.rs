@@ -1,5 +1,13 @@
 //! Round tick values for a number axis: steps of 1, 2 or 5 times a power of ten.
 //!
+//! Where the thresholds come from, plainly: choosing a step of 1, 2, 5 or 10 times a power of ten
+//! with the cut points sqrt(2), sqrt(10) and sqrt(50) (the geometric means between 1, 2, 5, 10) is
+//! how d3's tick function does it. The author of this code, an AI model, wrote it from memory of
+//! that rule, not by reading or pasting the library's source in this session; it may reflect the
+//! source it learned from. Whether that is a copy in the sense of ADR 0013 is for the owner to
+//! judge. The results are checked against Vega-Lite 6.5.0 in `tests/golden`, and the step could be
+//! replaced by any other way of choosing round steps.
+//!
 //! Pattern: Value object (`Step`) + pure functions. A step is kept as `mult` and `pow` so that
 //! ticks like 0.3 are computed as 3 / 10, the closest double to the decimal, not 0.1 + 0.1 + 0.1.
 
@@ -54,6 +62,9 @@ pub fn step_for(start: f64, stop: f64, count: usize) -> Option<Step> {
     }
     #[allow(clippy::cast_possible_truncation)]
     let pow = raw.log10().floor() as i32;
+    if pow < -300 {
+        return None; // steps this small are below what a double can tell apart
+    }
     let err = raw / 10f64.powi(pow);
     let mult = if err >= 50f64.sqrt() {
         10.0

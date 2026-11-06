@@ -1,7 +1,9 @@
 //! Arcs: a pie or donut, angles proportional to the values, from 12 o'clock, clockwise.
 //!
 //! Pattern: Strategy (one mark layout). Values of one series are added up; the series are placed
-//! in Vega-Lite's stack order (series 0 last, so it ends at 12 o'clock). A total of zero draws no
+//! in the natural order of their values (ascending, the first one starts at 12 o'clock and the
+//! pile runs clockwise), whatever `color.sort` says: that only moves colours and legend (checked
+//! against Vega-Lite 6.5.0, `tests/golden/g02`, `g04*`). A total of zero draws no
 //! sector. A thin gap in the surface colour separates sectors so they also differ without colour.
 
 use super::ctx::Ctx;
@@ -14,23 +16,24 @@ const TAU: f64 = std::f64::consts::TAU;
 /// Draw the sectors into `out`; `plot` is `[x, y, w, h]`.
 pub fn draw(c: &Ctx<'_>, plot: [f32; 4], out: &mut Scene) {
     let mut entries = Vec::new();
-    let mut at = Vec::new();
+    let (mut at, mut series) = (Vec::new(), Vec::new());
     for (i, d) in c.data.data.iter().enumerate() {
         if let Some(value) = d.cells[Channel::Theta.index()].num() {
-            entries.push(Entry {
-                group: 0,
-                series: c.series_of(d),
-                value,
-            });
+            entries.push(Entry::new(0, c.rank_of(d), value));
             at.push(i);
+            series.push(c.series_of(d));
         }
     }
-    let spans = stack(&entries, StackMode::Normalize);
+    let spans = stack(&entries, StackMode::Normalize, true);
     let outer = (plot[2].min(plot[3]) / 2.0).max(0.0);
     let inner = (c.spec.mark.inner_radius as f32).min(outer);
     let centre = [plot[0] + plot[2] / 2.0, plot[1] + plot[3] / 2.0];
-    out.omitted += spans.len().saturating_sub(c.max_marks);
-    for (span, (&i, e)) in spans.iter().zip(at.iter().zip(&entries)).take(c.max_marks) {
+    // a partial pie would mislead: too many sectors are all left out, and the note says so
+    if spans.len() > c.max_marks {
+        out.omitted += spans.len();
+        return;
+    }
+    for (span, (&i, &s)) in spans.iter().zip(at.iter().zip(&series)) {
         let (start, end) = (span[0] * TAU, span[1] * TAU);
         if end <= start {
             continue;
@@ -41,7 +44,7 @@ pub fn draw(c: &Ctx<'_>, plot: [f32; 4], out: &mut Scene) {
             outer,
             start: start as f32,
             end: end as f32,
-            paint: Paint::Series(e.series),
+            paint: Paint::Series(s),
         });
         let mid = f64::midpoint(start, end) as f32;
         let r = f32::midpoint(inner, outer);

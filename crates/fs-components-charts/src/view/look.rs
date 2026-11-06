@@ -23,6 +23,7 @@ const ACCENTS: [ColorToken; 7] = [
 ];
 
 /// Colours and sizes of the current theme.
+#[non_exhaustive]
 #[derive(Clone, Debug)]
 pub struct Look {
     pub(super) text: Color,
@@ -66,8 +67,14 @@ impl Look {
         }
     }
 
+    /// The colour of a role as sRGB, 0..=1 (no Blinc type in the public API).
+    pub fn rgb(&self, p: Paint) -> [f32; 3] {
+        let c = self.colour(p);
+        [c.r, c.g, c.b]
+    }
+
     /// The colour of a role.
-    pub fn colour(&self, p: Paint) -> Color {
+    pub(crate) fn colour(&self, p: Paint) -> Color {
         match p {
             Paint::Series(i) if !self.series.is_empty() => self.series[i % self.series.len()],
             Paint::Series(_) | Paint::Text => self.text,

@@ -9,6 +9,7 @@ use std::collections::HashMap;
 
 use super::axis::{Axis, Scale};
 use super::ctx::{Ctx, dash_of, shape_of};
+use super::dash;
 use super::stack::{Entry, stack};
 use crate::scene::{Dash, Item, Paint, Scene, Shape};
 use crate::spec::{Channel, MarkKind, StackMode};
@@ -45,7 +46,8 @@ impl Lines {
             .encoding
             .y
             .as_ref()
-            .map_or(StackMode::Zero, |d| d.stack);
+            .and_then(|d| d.stack)
+            .unwrap_or(StackMode::Zero);
         let mut groups: HashMap<String, usize> = HashMap::new();
         let (mut entries, mut at) = (Vec::new(), Vec::new());
         for (i, d) in c.data.data.iter().enumerate() {
@@ -56,16 +58,12 @@ impl Lines {
             let group = *groups
                 .entry(format!("{:?}", d.cells[Channel::X.index()]))
                 .or_insert(n);
-            entries.push(Entry {
-                group,
-                series: c.series_of(d),
-                value,
-            });
+            entries.push(Entry::new(group, c.rank_of(d), value));
             at.push(i);
         }
         let mut edges = vec![None; c.data.data.len()];
         if kind == MarkKind::Area {
-            for (span, &i) in stack(&entries, mode).iter().zip(&at) {
+            for (span, &i) in stack(&entries, mode, false).iter().zip(&at) {
                 let up = span[1] > 0.0 || span[0] == 0.0;
                 edges[i] = Some(if up {
                     Edges {
@@ -150,12 +148,13 @@ impl Lines {
             area(run, paint, out);
         } else if top.len() > 1 {
             let dash = if c.multi() { dash_of(s) } else { Dash::Solid };
-            out.items.push(Item::Path {
-                points: top.clone(),
-                paint,
-                width: LINE_WIDTH,
-                dash,
-            });
+            for points in dash::pieces(&top, dash) {
+                out.items.push(Item::Path {
+                    points,
+                    paint,
+                    width: LINE_WIDTH,
+                });
+            }
         }
         if c.spec.mark.point || (top.len() == 1 && self.kind == MarkKind::Line) {
             let shape = if c.multi() {
@@ -200,14 +199,13 @@ fn area(run: &[Pt], paint: Paint, out: &mut Scene) {
             out.items.push(Item::Polygon {
                 points,
                 paint,
-                opacity: 0.7,
+                opacity: 1.0,
             });
             let edge = run.iter().map(|p| p.top).collect();
             out.items.push(Item::Path {
                 points: edge,
                 paint,
                 width: 1.0,
-                dash: Dash::Solid,
             });
         }
     }
@@ -286,7 +284,7 @@ fn strips(run: &[Pt], paint: Paint, out: &mut Scene) {
                 w: 1.0,
                 h,
                 paint,
-                opacity: 0.7,
+                opacity: 1.0,
             });
         }
         i = j;

@@ -2,7 +2,7 @@
 
 mod common;
 
-use common::{background, near, out_dir, render, to_u8, view};
+use common::{near, out_dir, render, view};
 
 const BARS: &str = r#"{
   "title": "Sales by region",
@@ -17,11 +17,8 @@ fn bars_are_drawn_at_the_layout_positions_in_the_series_colour() {
     let v = view(BARS);
     let pic = render(&v, 480, 320, false, &dir, "bars");
     let scene = v.scene(480.0, 320.0);
-    let colour = to_u8(
-        fs_components_charts::view::Look::current()
-            .colour(fs_components_charts::scene::Paint::Series(0)),
-    );
-    let bg = background();
+    let colour = pic.series[0];
+    let bg = pic.bg;
     let mut bars = 0;
     for item in &scene.items {
         if let fs_components_charts::scene::Item::Rect { x, y, w, h, .. } = item {

@@ -7,11 +7,9 @@ use fs_components_charts::scale::ticks::{nice, ticks};
 use fs_components_charts::scale::timeticks::{Interval, Unit, pick, ticks as time_ticks};
 use fs_components_charts::scale::{Band, DomainRule, Linear, domain};
 
-const RULE: DomainRule = DomainRule {
-    zero: true,
-    nice: true,
-    fixed: None,
-};
+fn rule(zero: bool, nice: bool, fixed: Option<[f64; 2]>) -> DomainRule {
+    DomainRule::new(zero, nice, fixed)
+}
 
 #[test]
 fn ticks_are_round_and_exact_decimals() {
@@ -42,49 +40,47 @@ fn nice_is_the_documented_example_of_vega_lite() {
 #[test]
 fn domain_rules() {
     assert_eq!(
-        domain(2.0, 8.0, RULE),
+        domain(2.0, 8.0, rule(true, true, None)),
         (0.0, 8.0),
         "zero included, then nice"
     );
     assert_eq!(
-        domain(-5.0, -2.0, RULE),
+        domain(-5.0, -2.0, rule(true, true, None)),
         (-5.0, 0.0),
         "all negative: zero is the top"
     );
-    let no_zero = DomainRule {
-        zero: false,
-        ..RULE
-    };
+    let no_zero = rule(false, true, None);
     assert_eq!(domain(1000.0, 1010.0, no_zero), (1000.0, 1010.0));
-    let fixed = DomainRule {
-        fixed: Some([0.0, 7.0]),
-        ..RULE
-    };
+    let fixed = rule(false, false, Some([0.0, 7.0]));
     assert_eq!(domain(2.0, 100.0, fixed), (0.0, 7.0));
+    // zero and nice still apply to an explicit domain when asked for (Vega-Lite 6.5.0)
+    assert_eq!(
+        domain(0.0, 0.0, rule(false, true, Some([1.3, 8.7]))),
+        (1.0, 9.0)
+    );
+    assert_eq!(
+        domain(0.0, 0.0, rule(true, false, Some([1.3, 8.7]))),
+        (0.0, 8.7)
+    );
     // all values equal: zero keeps a real domain; without zero it is widened around the value
-    assert_eq!(domain(5.0, 5.0, RULE), (0.0, 5.0));
+    assert_eq!(domain(5.0, 5.0, rule(true, true, None)), (0.0, 5.0));
     assert_eq!(domain(5.0, 5.0, no_zero), (2.5, 7.5));
-    assert_eq!(domain(0.0, 0.0, RULE), (-1.0, 1.0));
+    assert_eq!(domain(0.0, 0.0, rule(true, true, None)), (-1.0, 1.0));
 }
 
 #[test]
 fn linear_maps_and_survives_huge_domains() {
-    let s = Linear::from_data(0.0, 100.0, RULE, (200.0, 0.0));
+    let s = Linear::from_data(0.0, 100.0, rule(true, true, None), (200.0, 0.0));
     assert_eq!((s.d0, s.d1), (0.0, 100.0));
     assert_eq!(s.map(0.0), 200.0);
     assert_eq!(s.map(50.0), 100.0);
     assert_eq!(s.map(100.0), 0.0);
-    let huge = Linear::from_data(-1.7e308, 1.7e308, RULE, (0.0, 100.0));
+    let huge = Linear::from_data(-1.7e308, 1.7e308, rule(true, true, None), (0.0, 100.0));
     assert!(huge.d0.is_finite() && huge.d1.is_finite(), "{huge:?}");
     assert!((huge.map(0.0) - 50.0).abs() < 1e-9);
     assert!(huge.map(1.7e308).is_finite());
     assert!(!huge.ticks(5).is_empty());
-    let flat = Linear {
-        d0: 3.0,
-        d1: 3.0,
-        r0: 0.0,
-        r1: 10.0,
-    };
+    let flat = Linear::new(3.0, 3.0, 0.0, 10.0);
     assert_eq!(flat.map(3.0), 5.0, "a one-point domain sits in the middle");
 }
 
@@ -111,7 +107,16 @@ fn numbers_use_the_callers_marks() {
     assert_eq!(number(-0.5, 1, &l), "\u{2212}0.5");
     assert_eq!(number(-0.0, 1, &l), "0.0");
     assert_eq!(number(-0.04, 1, &l), "0.0", "rounds to zero: no minus");
-    assert_eq!(number(1e300, 0, &l), "1e300");
+    assert_eq!(
+        number(1e300, 0, &l),
+        "1e+300",
+        "JavaScript form, as Vega-Lite writes it"
+    );
+    assert_eq!(
+        number(1e15, 0, &l),
+        "1,000,000,000,000,000",
+        "all digits below 1e21"
+    );
     let mut de = Labels::default();
     (de.decimal, de.group, de.minus) = (",".into(), ".".into(), "-".into());
     assert_eq!(number(-1234.5, 2, &de), "-1.234,50");

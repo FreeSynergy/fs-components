@@ -6,6 +6,7 @@
 mod aggregate;
 pub mod calendar;
 mod cell;
+mod jsnum;
 mod prepare;
 mod report;
 pub mod time;

@@ -11,6 +11,7 @@ use super::ctx::Ctx;
 use super::legend;
 use super::measure::{Measure, Metrics};
 use super::notes::notes;
+use super::sanitize;
 use crate::data::Prepared;
 use crate::labels::Labels;
 use crate::scene::{Anchor, Baseline, Item, Paint, Scene, TextSize};
@@ -25,11 +26,12 @@ pub fn series(spec: &Spec, data: &Prepared, labels: &Labels) -> Cats {
         .color
         .as_ref()
         .map_or_else(Cats::default, |d| {
-            categories(d, Channel::Color, &data.data, labels)
+            categories(d, Channel::Color, &data.data, labels, None)
         })
 }
 
-/// Lay out the chart in a `w` x `h` box.
+/// Lay out the chart in a `w` x `h` box. A size that is not a number is read as 1 pixel and one
+/// above a million pixels as a million.
 pub fn build(
     spec: &Spec,
     data: &Prepared,
@@ -39,6 +41,26 @@ pub fn build(
     w: f32,
     h: f32,
 ) -> Scene {
+    let size = |v: f32| if v.is_nan() { 1.0 } else { v.clamp(1.0, 1e6) };
+    let (w, h) = (size(w), size(h));
+    let scene = build_in(spec, data, labels, m, k, (w, h), false);
+    if scene.omitted > 0 && data.data.len() <= k.max_marks {
+        // something was left out that nobody expected: lay out again with a line for the note
+        return build_in(spec, data, labels, m, k, (w, h), true);
+    }
+    scene
+}
+
+fn build_in(
+    spec: &Spec,
+    data: &Prepared,
+    labels: &Labels,
+    m: &dyn Measure,
+    k: &Metrics,
+    size: (f32, f32),
+    reserve_note: bool,
+) -> Scene {
+    let (w, h) = size;
     let mut scene = Scene {
         width: w,
         height: h,
@@ -69,7 +91,7 @@ pub fn build(
         top += k.line(TextSize::Title) + k.title_gap * 2.0;
     }
     let lines = notes(&data.report, labels, m, k, w - 2.0 * pad);
-    let reserve = usize::from(data.data.len() > k.max_marks);
+    let reserve = usize::from(reserve_note || data.data.len() > k.max_marks);
     let note_h = (lines.len() + reserve) as f32 * k.line(TextSize::Label);
     let bottom_room = pad + note_h;
     for (i, text) in lines.iter().enumerate() {
@@ -85,7 +107,7 @@ pub fn build(
             angle: 0.0,
         });
     }
-    if data.data.is_empty() {
+    if data.data.is_empty() || no_positions(spec, data) {
         let at = [w / 2.0, (top + h - bottom_room) / 2.0];
         scene.items.push(Item::Text {
             at,
@@ -111,10 +133,12 @@ pub fn build(
         scene.plot = plot;
         legend_at(&c, plot, w, m, k, &mut scene);
         arc::draw(&c, plot, &mut scene);
+        sanitize::clean(&mut scene);
         omitted_note(&mut scene, labels, k);
         return scene;
     }
     super::cartesian::layout(&c, m, k, [pad, top, bottom_room, legend_w], &mut scene);
+    sanitize::clean(&mut scene);
     omitted_note(&mut scene, labels, k);
     scene
 }
@@ -154,4 +178,15 @@ fn omitted_note(scene: &mut Scene, labels: &Labels, k: &Metrics) {
         baseline: Baseline::Top,
         angle: 0.0,
     });
+}
+
+/// A line or area whose rows all lack a usable position (every date unreadable, say): there is
+/// nothing to put on a scale, and an axis made up from nothing would mislead.
+fn no_positions(spec: &Spec, data: &Prepared) -> bool {
+    [Channel::X, Channel::Y].iter().any(|&ch| {
+        spec.encoding
+            .get(ch)
+            .is_some_and(|d| !d.ftype.is_discrete())
+            && data.data.iter().all(|r| r.cells[ch.index()].is_missing())
+    })
 }

@@ -9,13 +9,9 @@ use super::measure::Metrics;
 use crate::data::{Invalid, IssueKind, Report};
 use crate::labels::Labels;
 
-/// How many sentences at most; more are summed up by the first.
-const MAX_LINES: usize = 4;
-
 /// The sentences for a report, each at most `limit` pixels wide.
 pub fn notes(r: &Report, l: &Labels, m: &dyn Measure, k: &Metrics, limit: f32) -> Vec<String> {
-    let mut lines = report_lines(r, l);
-    lines.truncate(MAX_LINES);
+    let lines = report_lines(r, l);
     lines
         .iter()
         .map(|s| fit(s, limit, k.label, false, m))

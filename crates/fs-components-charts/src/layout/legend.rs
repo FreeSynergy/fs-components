@@ -6,11 +6,14 @@
 
 use super::axis_items::fit;
 use super::ctx::{Ctx, dash_of, shape_of};
+use super::dash;
 use super::measure::{Measure, Metrics};
 use crate::scene::{Anchor, Baseline, Item, Paint, Scene, TextSize};
 use crate::spec::{MarkKind, Title};
 
 const SYMBOL: f32 = 12.0;
+/// Length of the line sample of a line chart: long enough to show the pattern.
+const LINE_SAMPLE: f32 = 30.0;
 const GAP: f32 = 6.0;
 const ROW: f32 = 4.0;
 const LIMIT: f32 = 160.0;
@@ -23,6 +26,14 @@ fn title(c: &Ctx<'_>) -> Option<String> {
         Title::Hidden => None,
         Title::Text(t) => Some(t.clone()),
         Title::Auto => def.field.clone(),
+    }
+}
+
+fn symbol(c: &Ctx<'_>) -> f32 {
+    if c.spec.mark.kind == MarkKind::Line {
+        LINE_SAMPLE
+    } else {
+        SYMBOL
     }
 }
 
@@ -43,7 +54,7 @@ pub fn width(c: &Ctx<'_>, m: &dyn Measure, k: &Metrics) -> f32 {
     let head = title(c).map_or(0.0, |t| {
         m.width(&fit(&t, LIMIT, k.axis_title, true, m), k.axis_title, true)
     });
-    MARGIN + (SYMBOL + GAP + entries).max(head)
+    MARGIN + (symbol(c) + GAP + entries).max(head)
 }
 
 /// Draw the legend with its left edge at `x`, top at `y`.
@@ -74,12 +85,15 @@ pub fn draw(c: &Ctx<'_>, x: f32, y: f32, m: &dyn Measure, k: &Metrics, out: &mut
         let mid = top + row / 2.0 - ROW / 2.0;
         let paint = Paint::Series(i);
         match c.spec.mark.kind {
-            MarkKind::Line => out.items.push(Item::Path {
-                points: vec![[x, mid], [x + SYMBOL, mid]],
-                paint,
-                width: 2.0,
-                dash: dash_of(i),
-            }),
+            MarkKind::Line => {
+                for points in dash::pieces(&[[x, mid], [x + LINE_SAMPLE, mid]], dash_of(i)) {
+                    out.items.push(Item::Path {
+                        points,
+                        paint,
+                        width: 2.0,
+                    });
+                }
+            }
             MarkKind::Point => out.items.push(Item::Marker {
                 at: [x + SYMBOL / 2.0, mid],
                 shape: shape_of(i),
@@ -99,7 +113,7 @@ pub fn draw(c: &Ctx<'_>, x: f32, y: f32, m: &dyn Measure, k: &Metrics, out: &mut
         }
         let text = fit(name, LIMIT, k.label, false, m);
         out.items.push(Item::Text {
-            at: [x + SYMBOL + GAP, mid],
+            at: [x + symbol(c) + GAP, mid],
             text,
             size: TextSize::Label,
             bold: false,

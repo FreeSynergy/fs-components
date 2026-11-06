@@ -7,6 +7,7 @@
 use super::ticks;
 
 /// A linear scale.
+#[non_exhaustive]
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Linear {
     /// Domain start.
@@ -20,17 +21,34 @@ pub struct Linear {
 }
 
 /// How to derive a domain from data.
+#[non_exhaustive]
 #[derive(Clone, Copy, Debug)]
 pub struct DomainRule {
     /// Include zero.
     pub zero: bool,
     /// Extend to round values.
     pub nice: bool,
-    /// Fixed domain; nothing else applies.
+    /// Fixed domain; `zero` and `nice` still apply to it when asked for (as in Vega-Lite).
     pub fixed: Option<[f64; 2]>,
 }
 
+impl DomainRule {
+    /// A rule.
+    pub fn new(zero: bool, nice: bool, fixed: Option<[f64; 2]>) -> Self {
+        Self { zero, nice, fixed }
+    }
+}
+
+/// Pixel positions are kept within this many pixels of the plot: farther is off screen anyway,
+/// and a coordinate of 1e300 would break the drawing.
+const FAR: f64 = 1e6;
+
 impl Linear {
+    /// A scale over the given domain and range.
+    pub fn new(d0: f64, d1: f64, r0: f64, r1: f64) -> Self {
+        Self { d0, d1, r0, r1 }
+    }
+
     /// A scale for a domain found with `rule` from the data's `min` and `max`.
     pub fn from_data(min: f64, max: f64, rule: DomainRule, range: (f64, f64)) -> Self {
         let (d0, d1) = domain(min, max, rule);
@@ -42,14 +60,21 @@ impl Linear {
         }
     }
 
-    /// Pixel position of a value. A one-point domain maps to the middle of the range.
+    /// Pixel position of a value. A one-point domain (or one too narrow to divide by) maps to
+    /// the middle of the range; the result is always finite and within a million pixels.
     pub fn map(&self, v: f64) -> f64 {
+        let middle = self.r0 / 2.0 + self.r1 / 2.0;
         let span = self.d1 / 2.0 - self.d0 / 2.0;
-        if span == 0.0 {
-            return self.r0 / 2.0 + self.r1 / 2.0;
+        if span.is_nan() || span.abs() < f64::MIN_POSITIVE {
+            return middle;
         }
         let t = (v / 2.0 - self.d0 / 2.0) / span;
-        self.r0 + (self.r1 - self.r0) * t
+        let r = self.r0 + (self.r1 - self.r0) * t;
+        if r.is_finite() {
+            r.clamp(-FAR, FAR)
+        } else {
+            middle
+        }
     }
 
     /// Tick values for about `count` ticks.
@@ -58,18 +83,18 @@ impl Linear {
     }
 }
 
-/// The domain Vega-Lite would use: data extent, then zero, then padding of a one-value domain,
-/// then nice.
+/// The domain Vega-Lite would use: the explicit domain or the data extent, then zero, then
+/// padding of a one-value data domain, then nice.
 pub fn domain(min: f64, max: f64, rule: DomainRule) -> (f64, f64) {
-    if let Some([a, b]) = rule.fixed {
-        return (a, b);
-    }
-    let (mut lo, mut hi) = (min.min(max), max.max(min));
+    let (mut lo, mut hi) = match rule.fixed {
+        Some([a, b]) => (a, b),
+        None => (min.min(max), max.max(min)),
+    };
     if rule.zero {
         lo = lo.min(0.0);
         hi = hi.max(0.0);
     }
-    if lo == hi {
+    if lo == hi && rule.fixed.is_none() {
         let pad = if lo == 0.0 { 1.0 } else { lo.abs() / 2.0 };
         lo -= pad;
         hi += pad;

@@ -12,6 +12,8 @@ use crate::spec::{Spec, SpecError, parse};
 
 /// Default size of a plot when the spec gives none (Vega-Lite: 300 for continuous axes).
 const CONTINUOUS: f32 = 300.0;
+/// The same for Vega-Lite 5 (`$schema` v5), where it was 200.
+const CONTINUOUS_V5: f32 = 200.0;
 /// Default width of one category (Vega-Lite's `step`).
 const STEP: f32 = 20.0;
 
@@ -102,11 +104,16 @@ impl Chart {
         let cats = |d: &Option<crate::spec::ChannelDef>, ch| {
             d.as_ref()
                 .filter(|d| d.ftype.is_discrete())
-                .map(|d| crate::layout::categories(d, ch, &self.data.data, labels).len())
+                .map(|d| crate::layout::categories(d, ch, &self.data.data, labels, None).len())
+        };
+        let continuous = if self.spec.schema_major == 5 {
+            CONTINUOUS_V5
+        } else {
+            CONTINUOUS
         };
         let step = |n: Option<usize>, asked: Option<f64>| {
             asked.map_or_else(
-                || n.map_or(CONTINUOUS, |n| n.max(1) as f32 * STEP),
+                || n.map_or(continuous, |n| n.max(1) as f32 * STEP),
                 |v| v as f32,
             )
         };
@@ -114,11 +121,13 @@ impl Chart {
             step(cats(&enc.x, crate::spec::Channel::X), self.spec.width),
             step(cats(&enc.y, crate::spec::Channel::Y), self.spec.height),
         );
-        let probe = self.scene(pw + 300.0, ph + 200.0, labels, measure, metrics);
-        (
-            pw + probe.width - probe.plot[2],
-            ph + probe.height - probe.plot[3],
-        )
+        // the margins depend on the labels, which depend on the plot size: two rounds settle it
+        let mut extra = (300.0, 200.0);
+        for _ in 0..2 {
+            let probe = self.scene(pw + extra.0, ph + extra.1, labels, measure, metrics);
+            extra = (probe.width - probe.plot[2], probe.height - probe.plot[3]);
+        }
+        (pw + extra.0, ph + extra.1)
     }
 
     /// The text alternative: a summary and the drawn data as a table of at most `max_rows` rows.

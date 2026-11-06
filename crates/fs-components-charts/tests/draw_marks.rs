@@ -2,13 +2,8 @@
 
 mod common;
 
-use common::{background, near, out_dir, render, to_u8, view};
+use common::{near, out_dir, render, view};
 use fs_components_charts::scene::{Item, Paint};
-use fs_components_charts::view::Look;
-
-fn series_colour(i: usize) -> [u8; 3] {
-    to_u8(Look::current().colour(Paint::Series(i)))
-}
 
 const LINE: &str = r#"{
   "title": "Visitors per day",
@@ -45,7 +40,7 @@ fn a_line_over_dates_passes_through_its_points() {
     assert_eq!(path.len(), 7);
     // every vertex lies on drawn line colour
     for p in &path[1..path.len() - 1] {
-        let hit = (-2..=2).any(|dy| near(pic.pixel(p[0], p[1] + dy as f32), series_colour(0), 40));
+        let hit = (-2..=2).any(|dy| near(pic.pixel(p[0], p[1] + dy as f32), pic.series[0], 40));
         assert!(hit, "no line pixel near vertex {p:?}");
     }
     // x grows with the date: seven days over the plot width with equal steps
@@ -96,7 +91,7 @@ fn stacked_areas_put_series_zero_on_top_and_fill_between() {
         (p[0][1] + p[p.len() - 1][1]) / 2.0 + 2.0,
     );
     assert!(
-        !near(pic.pixel(mx, my), background(), 20),
+        !near(pic.pixel(mx, my), pic.bg, 20),
         "area interior must be filled"
     );
 }
@@ -136,13 +131,13 @@ fn points_have_a_symbol_per_series_and_a_legend() {
     assert_eq!(shapes.len(), 3, "three series, three shapes: {shapes:?}");
     // the first point is an open circle: ink on the ring, the surface in the middle
     let (at, _, _) = markers[0];
-    let bg = background();
+    let bg = pic.bg;
     assert!(
         pic.ink([at[0] - 4.0, at[1] - 4.0, 8.0, 8.0], bg) >= 8,
         "outline of the first point"
     );
     assert!(
-        !near(pic.pixel(at[0], at[1]), series_colour(0), 60),
+        !near(pic.pixel(at[0], at[1]), pic.series[0], 60),
         "an open circle is not filled in the middle"
     );
 }
@@ -192,11 +187,11 @@ fn a_donut_has_proportional_sectors_and_a_hole() {
     }
     let (c, inner) = (secs[0].2, secs[0].3);
     assert!(
-        near(pic.pixel(c[0], c[1]), background(), 8),
+        near(pic.pixel(c[0], c[1]), pic.bg, 8),
         "the hole shows the surface"
     );
     assert!(
-        !near(pic.pixel(c[0] + inner + 8.0, c[1]), background(), 20),
+        !near(pic.pixel(c[0] + inner + 8.0, c[1]), pic.bg, 20),
         "the ring is filled"
     );
 }
@@ -245,5 +240,5 @@ fn stacked_and_normalised_bars_with_a_legend() {
         (total - scene.plot[3]).abs() < 0.01,
         "a normalised stack fills the plot height"
     );
-    assert!(pic.ink(scene.plot, background()) > 2000);
+    assert!(pic.ink(scene.plot, pic.bg) > 2000);
 }

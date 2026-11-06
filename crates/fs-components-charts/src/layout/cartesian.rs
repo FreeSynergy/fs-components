@@ -8,7 +8,7 @@ use super::axis::{Axis, Source, Use};
 use super::axis_items as ai;
 use super::bar::Bars;
 use super::build::legend_at;
-use super::cats::{Cats, categories};
+use super::cats::{Cats, Other, categories};
 use super::ctx::Ctx;
 use super::line::Lines;
 use super::measure::{Measure, Metrics};
@@ -69,9 +69,8 @@ impl Cart<'_, '_> {
             let u = Use {
                 mark: kind,
                 offset: offset(self.c.data, ch),
-                percent: d.stack == StackMode::Normalize
-                    && matches!(kind, MarkKind::Bar | MarkKind::Area)
-                    && self.c.multi(),
+                percent: d.stack == Some(StackMode::Normalize)
+                    && matches!(kind, MarkKind::Bar | MarkKind::Area),
                 force_zero: kind == MarkKind::Bar,
             };
             let mut axis = Axis::new(ch, d, self.source(i), len, &u, self.c.labels);
@@ -101,10 +100,15 @@ pub(super) fn layout(
     let (Some(xd), Some(yd)) = (&c.spec.encoding.x, &c.spec.encoding.y) else {
         return;
     };
+    let stacked = matches!(c.spec.mark.kind, MarkKind::Bar | MarkKind::Area);
     let cats = |ch: Channel, d: &ChannelDef| {
+        let other = Other {
+            def: if ch == Channel::X { yd } else { xd },
+            stacked,
+        };
         d.ftype
             .is_discrete()
-            .then(|| categories(d, ch, &c.data.data, c.labels))
+            .then(|| categories(d, ch, &c.data.data, c.labels, Some(other)))
     };
     let cats = [cats(Channel::X, xd), cats(Channel::Y, yd)];
     let marks = match c.spec.mark.kind {
@@ -163,6 +167,8 @@ pub(super) fn layout(
         Marks::Lines(l) => l.draw(c, &x, &y, plot, &mut drawn),
         Marks::Points => point::draw(c, &x, &y, plot, &mut drawn),
     }
+    scene.marks_from = scene.items.len();
+    scene.clip_marks = xd.scale.domain.is_some() || yd.scale.domain.is_some();
     scene.items.append(&mut drawn.items);
     scene.hits.append(&mut drawn.hits);
     scene.omitted += drawn.omitted;
