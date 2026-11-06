@@ -21,12 +21,19 @@ impl TransferList {
         if self.transfers.is_empty() {
             return list.child(text(self.labels.empty.clone()).class("fs-tl-empty"));
         }
-        for t in self.transfers.iter().take(self.max_rows) {
-            list = list.child(self.row(t));
+        for i in self.shown() {
+            list = list.child(self.row(&self.transfers[i]));
         }
         let more = self.not_shown();
         if more > 0 {
-            let line = Labels::fill(&self.labels.more, &more.to_string());
+            let mut line = Labels::fill(&self.labels.more, &more.to_string());
+            let failed = self.failed_not_shown();
+            if failed > 0 {
+                line = format!(
+                    "{line} {}",
+                    Labels::fill(&self.labels.more_failed, &failed.to_string())
+                );
+            }
             list = list.child(text(line).class("fs-tl-more"));
         }
         list
@@ -53,21 +60,27 @@ impl TransferList {
             Some(f) => progress(f * 100.0).w(BAR),
             None => progress(0.0).w(BAR),
         };
-        let main = div()
+        // Names and failure reasons wrap: they must stay readable to the end.
+        let failed = matches!(t.state, State::Failed(_));
+        let meta = if failed {
+            format!("{way} - {size}")
+        } else {
+            format!("{way} - {status} - {size}")
+        };
+        let mut main = div()
             .class("fs-tl-main")
-            .child(text(t.name.clone()).class("fs-tl-name").no_wrap())
+            .child(text(t.name.clone()).class("fs-tl-name"))
             .child(bar)
-            .child(
-                text(format!("{way} - {status} - {size}"))
-                    .class("fs-tl-meta")
-                    .no_wrap(),
-            );
+            .child(text(meta).class("fs-tl-meta").no_wrap());
+        if failed {
+            main = main.child(text(status).class("fs-tl-reason"));
+        }
         let mut actions = div().class("fs-tl-actions");
         for action in t.actions() {
             actions = actions.child(self.button(t, action));
         }
         let mut row = div().class("fs-tl-row").child(main).child(actions);
-        if matches!(t.state, State::Failed(_)) {
+        if failed {
             row = row.class("fs-tl-row-failed");
         }
         row

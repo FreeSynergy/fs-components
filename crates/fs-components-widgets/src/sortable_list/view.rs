@@ -96,7 +96,7 @@ impl SortableList {
         }
         row = match &self.content {
             Some(draw) => row.child_box(draw(item)),
-            None => row.child(text(item.label.clone()).no_wrap()),
+            None => row.child(text(item.label.clone())),
         };
         let (this, key) = (self.clone(), item.key.clone());
         row.on_click(move |_| {

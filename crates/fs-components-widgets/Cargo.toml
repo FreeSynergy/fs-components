@@ -15,8 +15,8 @@ blinc_noto_emoji = "0.6"
 fontdb = "0.22"
 ttf-parser = "0.24"
 fs-components-primitives = { path = "../fs-components-primitives" }
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "gif", "webp"] }
 
 [dev-dependencies]
 blinc_app = "0.6"
 wgpu = "26"
-image = { version = "0.25", default-features = false, features = ["png"] }

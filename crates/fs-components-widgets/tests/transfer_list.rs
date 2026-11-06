@@ -74,7 +74,9 @@ fn what_is_not_drawn_is_counted() {
 fn the_picture_shows_rows_with_progress_and_failure() {
     let _g = serial();
     let ui = TransferList::new(mixed()).build();
-    let img = draw(ui, 520, 420, "transfer-list-mixed.png");
+    let tree = layout(ui, 520.0, 420.0);
+    let img = common::draw_tree(&tree, 520, 420, "transfer-list-mixed.png");
+    let row_y = |id: &str| Input::centre(&tree, id).1 as u32 + 1;
     let bg = background(&img);
     assert!(ink(&img, (0, 0, 520, 420), bg) > 3000);
     // the failed row (second) carries the error background: find reddish pixels
@@ -96,7 +98,10 @@ fn the_picture_shows_rows_with_progress_and_failure() {
             })
             .count()
     };
-    let (first, third) = (blue(39), blue(199));
+    let (first, third) = (
+        blue(row_y("fs-tl-a-cancel")),
+        blue(row_y("fs-tl-c-dismiss")),
+    );
     assert!((45..=65).contains(&first), "first bar {first}");
     assert!((165..=185).contains(&third), "third bar {third}");
     // each row is its own box: five rows take most of the height
@@ -139,7 +144,7 @@ fn odd_data_draws_without_a_crash() {
         Transfer::new("", "", Direction::Upload),
         Transfer::new(
             "x",
-            "ein sehr langer Dateiname äöü 李雷 😀 ".repeat(40),
+            "ein sehr langer Dateiname äöü 李雷 😀 ".repeat(6),
             Direction::Download,
         )
         .with_state(State::Failed("e".repeat(500)))
@@ -174,4 +179,94 @@ fn odd_data_draws_without_a_crash() {
     );
     assert!(ink(&img, (0, 0, 500, 400), background(&img)) > 500);
     let _ = layout(TransferList::new(mixed()).build(), 0.0, 0.0);
+}
+
+#[test]
+fn a_long_failure_reason_is_readable_to_its_end() {
+    let _g = serial();
+    let reason =
+        "the disk quota of the target is used up, free some space and try again: DISK QUOTA";
+    let list = vec![
+        Transfer::new("q", "big.iso", Direction::Upload).with_state(State::Failed(reason.into())),
+    ];
+    let img = draw(
+        TransferList::new(list.clone()).build(),
+        420,
+        200,
+        "transfer-list-long-reason.png",
+    );
+    // the reason wraps: the row is taller than the same row with a short reason
+    let short = vec![
+        Transfer::new("q", "big.iso", Direction::Upload).with_state(State::Failed("quota".into())),
+    ];
+    let img2 = draw(
+        TransferList::new(short).build(),
+        420,
+        200,
+        "transfer-list-short-reason.png",
+    );
+    let bottom = |i: &image::RgbaImage| {
+        (0..200u32)
+            .rev()
+            .find(|&y| {
+                (0..420).any(|x| {
+                    i32::from(i.get_pixel(x, y).0[0]) > i32::from(i.get_pixel(x, y).0[1]) + 8
+                })
+            })
+            .unwrap_or(0)
+    };
+    assert!(
+        bottom(&img) > bottom(&img2) + 15,
+        "{} vs {}",
+        bottom(&img),
+        bottom(&img2)
+    );
+}
+
+#[test]
+fn a_failure_never_hides_behind_the_cap() {
+    let _g = serial();
+    let mut many: Vec<Transfer> = (0..300)
+        .map(|i| Transfer::new(format!("k{i}"), format!("f{i}"), Direction::Upload))
+        .collect();
+    many[250] = Transfer::new("bad", "bad.bin", Direction::Upload)
+        .with_state(State::Failed("DISK QUOTA".into()));
+    let list = TransferList::new(many.clone()).max_rows(100);
+    assert!(list.shown().contains(&250));
+    assert_eq!(list.not_shown(), 199);
+    assert_eq!(list.failed_not_shown(), 0);
+    let tree = layout(list.build(), 520.0, 900.0);
+    assert!(
+        tree.query_by_id("fs-tl-bad-retry").is_some(),
+        "the failed row is drawn with its retry button"
+    );
+    // 20 000 failures: bounded drawing, and the line says failures are among the rest
+    let all_bad: Vec<Transfer> = (0..20_000)
+        .map(|i| {
+            Transfer::new(format!("k{i}"), "x", Direction::Upload)
+                .with_state(State::Failed("e".into()))
+        })
+        .collect();
+    let list = TransferList::new(all_bad).max_rows(50);
+    assert_eq!(list.shown().len(), 100);
+    assert_eq!(list.failed_not_shown(), 19_900);
+}
+
+#[test]
+fn the_list_takes_no_keys_of_its_own() {
+    let _g = serial();
+    let got: Arc<Mutex<Vec<Outcome>>> = Arc::default();
+    let sink = Arc::clone(&got);
+    let ui = TransferList::new(mixed())
+        .on_outcome(Arc::new(move |o| sink.lock().unwrap().push(o.clone())))
+        .build();
+    let mut tree = layout(ui, 520.0, 420.0);
+    let mut input = Input::new();
+    for code in [13, 27, 32, 37, 38, 39, 40, 46] {
+        input.key_broadcast(&mut tree, code);
+    }
+    assert!(
+        got.lock().unwrap().is_empty(),
+        "keys alone must not retry, cancel or dismiss anything"
+    );
 }

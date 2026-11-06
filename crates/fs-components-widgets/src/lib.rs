@@ -17,6 +17,8 @@ pub mod keys;
 pub mod lightbox;
 pub mod list_view;
 mod live;
+mod picture;
+pub mod share_dialog;
 pub mod sortable_list;
 mod styles;
 pub mod text;
@@ -31,6 +33,7 @@ pub use avatar_group::{
 pub use keys::{Handled, Key, KeyEvent};
 pub use lightbox::{LightBox, Media};
 pub use list_view::{Column, ColumnWidth, ListPosition, ListView, Row, RowSource, VecRows};
+pub use share_dialog::{Choice, Permission, ShareDialog};
 pub use sortable_list::{Item, Lane, SortableList};
 pub use styles::styles;
 pub use text::{Align, Block, Document, Inline, ListItem, Mark, MarkKind};

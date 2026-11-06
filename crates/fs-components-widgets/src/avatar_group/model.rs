@@ -20,7 +20,7 @@ pub enum Presence {
 #[non_exhaustive]
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Person {
-    /// Identity given back to the caller; never shown.
+    /// Identity for the caller (it finds the person again in `shown()` and `hidden()`); never shown.
     pub key: String,
     /// The name; its initials are shown when there is no picture (or it cannot be loaded).
     pub name: String,
@@ -123,13 +123,14 @@ impl AvatarGroup {
     }
 }
 
-/// The letters shown for `name`: the first letter of the first and of the last word, in capitals;
-/// one letter for one word; `?` for no letters at all. A letter keeps the marks that belong to it
-/// (accents, emoji modifiers).
+/// The letters shown for `name`: the first letter of the first and of the last word that has a
+/// letter or digit, in capitals; one letter for one word; `?` when there is none. Invisible
+/// characters (zero width, direction marks), symbols and emoji are skipped, because they draw as
+/// nothing or as half a sign; a letter keeps the marks that belong to it (accents).
 pub fn initials(name: &str) -> String {
-    let mut words = name.split_whitespace();
-    let first = words.next().map(first_letter);
-    let last = words.next_back().map(first_letter);
+    let mut words = name.split_whitespace().filter_map(first_letter);
+    let first = words.next();
+    let last = words.next_back();
     match (first, last) {
         (Some(a), Some(b)) => format!("{a}{b}"),
         (Some(a), None) => a,
@@ -137,18 +138,11 @@ pub fn initials(name: &str) -> String {
     }
 }
 
-/// The first character of `word` with the combining characters after it, in capitals.
-fn first_letter(word: &str) -> String {
-    let mut chars = word.chars();
-    let Some(head) = chars.next() else {
-        return String::new();
-    };
+/// The first letter or digit of `word` with the combining marks after it, in capitals.
+fn first_letter(word: &str) -> Option<String> {
+    let mut chars = word.chars().skip_while(|c| !c.is_alphanumeric());
+    let head = chars.next()?;
     let mut out: String = head.to_uppercase().collect();
-    out.extend(chars.take_while(|c| is_attached(*c)));
-    out
-}
-
-/// Characters that belong to the one before: combining marks, variation selectors, skin tones.
-fn is_attached(c: char) -> bool {
-    matches!(c, '\u{300}'..='\u{36F}' | '\u{FE00}'..='\u{FE0F}' | '\u{1F3FB}'..='\u{1F3FF}')
+    out.extend(chars.take_while(|c| matches!(c, '\u{300}'..='\u{36F}')));
+    Some(out)
 }

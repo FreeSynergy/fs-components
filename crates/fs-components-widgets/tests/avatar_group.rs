@@ -4,7 +4,7 @@
 
 mod common;
 
-use common::{background, draw, extent_x, ink, serial};
+use common::{background, draw, draw_settled, extent_x, ink, serial};
 use fs_components_widgets::{
     AvatarGroup, Person, Presence, Size, avatar_group_initials as initials,
 };
@@ -26,7 +26,12 @@ fn initials_cope_with_any_name() {
     assert_eq!(initials("e\u{301}ric z"), "E\u{301}Z");
     assert_eq!(initials("ßeta"), "SS");
     assert_eq!(initials("李 雷"), "李雷");
-    assert_eq!(initials("👍🏽 ok"), "👍🏽O");
+    assert_eq!(initials("👍🏽 ok"), "O");
+    assert_eq!(initials("\u{200B}Bob"), "B");
+    assert_eq!(initials("\u{202E}x"), "X");
+    assert_eq!(initials("🇩🇪 Anna"), "A");
+    assert_eq!(initials("🇩🇪"), "?");
+    assert_eq!(initials("(Dr.) Who"), "DW");
 }
 
 #[test]
@@ -127,4 +132,31 @@ fn a_picture_that_exists_is_drawn() {
         .filter(|p| p.0[0] > 150 && p.0[1] < 90 && p.0[2] < 90)
         .count();
     assert!(reds > 300, "red pixels: {reds}");
+}
+
+#[test]
+fn a_file_that_is_no_picture_falls_back_to_initials_too() {
+    let _g = serial();
+    let dir = common::Scratch::new("avatar-text");
+    let path = dir.path("notes.png");
+    std::fs::write(&path, "this is text, not a picture").unwrap();
+    let plain = AvatarGroup::new(vec![Person::new("a", "Bob Marley")]).build();
+    let fake = AvatarGroup::new(vec![
+        Person::new("a", "Bob Marley").with_image(path.to_string_lossy()),
+    ])
+    .build();
+    let a = draw(plain, 100, 60, "avatar-plain2.png");
+    let b = draw_settled(fake, 100, 60, "avatar-not-a-picture.png");
+    assert_eq!(a, b);
+}
+
+#[test]
+fn the_group_takes_no_keys() {
+    let _g = serial();
+    let mut tree = common::layout(AvatarGroup::new(people(3)).build(), 300.0, 80.0);
+    let mut input = common::Input::new();
+    for code in [13, 27, 32, 37, 38, 39, 40] {
+        input.key_broadcast(&mut tree, code);
+        input.key(&mut tree, code);
+    }
 }

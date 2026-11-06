@@ -26,7 +26,11 @@ fn one(person: &Person) -> AvatarBuilder {
         .alt(person.name.clone());
     // Blinc shows a grey disc for a picture it cannot load and never the initials, so a local file
     // that is not there is not handed over at all.
-    if let Some(image) = person.image.as_ref().filter(|i| loadable(i)) {
+    if let Some(image) = person
+        .image
+        .as_ref()
+        .filter(|i| crate::picture::loadable(i))
+    {
         a = a.src(image.clone());
     }
     match person.presence {
@@ -46,9 +50,4 @@ fn size(size: Size) -> AvatarSize {
         Size::ExtraLarge => AvatarSize::ExtraLarge,
         _ => AvatarSize::Medium,
     }
-}
-
-/// Can `image` be expected to load? Addresses are left to Blinc; a path must be a file.
-fn loadable(image: &str) -> bool {
-    image.contains("://") || image.starts_with("data:") || std::path::Path::new(image).is_file()
 }

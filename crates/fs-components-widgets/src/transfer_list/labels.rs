@@ -29,6 +29,8 @@ pub struct Labels {
     pub empty: String,
     /// More transfers than rows drawn; `{}` = how many.
     pub more: String,
+    /// Some of the transfers not drawn have failed; `{}` = how many.
+    pub more_failed: String,
     /// The size of a transfer is not known.
     pub unknown_size: String,
 }
@@ -48,6 +50,7 @@ impl Default for Labels {
             dismiss: s("Dismiss"),
             empty: s("No transfers."),
             more: s("{} more transfers not shown."),
+            more_failed: s("{} of them failed."),
             unknown_size: s("size unknown"),
         }
     }

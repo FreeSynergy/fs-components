@@ -177,9 +177,29 @@ impl TransferList {
         self
     }
 
-    /// The transfers not drawn because of `max_rows`.
+    /// Indexes of the transfers drawn: the first `max_rows`, and every failed one after them
+    /// (a failure never hides behind the cap; at most `max_rows` more of those, so the drawing
+    /// stays bounded).
+    pub fn shown(&self) -> Vec<usize> {
+        let mut out: Vec<usize> = (0..self.transfers.len().min(self.max_rows)).collect();
+        let late_failures = (self.max_rows..self.transfers.len())
+            .filter(|&i| matches!(self.transfers[i].state, State::Failed(_)))
+            .take(self.max_rows);
+        out.extend(late_failures);
+        out
+    }
+
+    /// The transfers not drawn.
     pub fn not_shown(&self) -> usize {
-        self.transfers.len().saturating_sub(self.max_rows)
+        self.transfers.len() - self.shown().len()
+    }
+
+    /// Failed transfers among those not drawn (only when there are more than `max_rows` of them).
+    pub fn failed_not_shown(&self) -> usize {
+        let shown = self.shown();
+        (0..self.transfers.len())
+            .filter(|i| matches!(self.transfers[*i].state, State::Failed(_)) && !shown.contains(i))
+            .count()
     }
 }
 

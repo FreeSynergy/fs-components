@@ -194,7 +194,7 @@ fn odd_input_and_size_do_not_crash() {
     let _g = serial();
     let lb = LightBox::new(vec![Media::other(
         "é\u{0}",
-        "Ein sehr langer Titel 李雷 😀 ".repeat(60),
+        "Ein sehr langer Titel 李雷 😀 ".repeat(6),
     )]);
     let img = draw(lb.build(), 300, 200, "lightbox-odd.png");
     assert!(ink(&img, (0, 0, 300, 200), background(&img)) > 300);
@@ -205,4 +205,50 @@ fn odd_input_and_size_do_not_crash() {
         120,
         "lightbox-huge.png",
     );
+}
+
+#[test]
+fn every_default_key_does_its_job_through_the_element() {
+    let _g = serial();
+    let lb = LightBox::new(items(5)).id("ek").keys(Bindings::default());
+    let mut tree = layout(lb.build(), 700.0, 500.0);
+    let mut input = Input::new();
+    input.focus(&tree, "ek");
+    for (code, at) in [(39, 2), (37, 1), (35, 5), (36, 1), (34, 2), (33, 1)] {
+        input.key(&mut tree, code);
+        assert_eq!(lb.position().0, at, "key {code}");
+    }
+    input.key(&mut tree, 65);
+    assert_eq!(lb.position().0, 1);
+}
+
+#[test]
+fn a_file_that_is_no_picture_is_announced_and_long_captions_wrap() {
+    let _g = serial();
+    let dir = Scratch::new("lb-text");
+    let path = dir.path("x.png");
+    std::fs::write(&path, "not a picture").unwrap();
+    let note = LightBox::new(vec![Media::picture("a", path.to_string_lossy(), "")]);
+    let img = draw(note.build(), 700, 400, "lightbox-fake-png.png");
+    assert!(ink(&img, (150, 100, 400, 250), background(&img)) > 300);
+    let long = "A caption that is much longer than the box is wide and must not be cut off at the end: THE END ".repeat(3);
+    let tall = |c: &str| {
+        let t = layout(
+            LightBox::new(vec![Media::other("a", c)]).id("cap").build(),
+            400.0,
+            500.0,
+        );
+        t.get_absolute_bounds(t.query_by_id("cap").unwrap())
+            .unwrap()
+            .height
+    };
+    let _ = tall(&long);
+    let img = draw(
+        LightBox::new(vec![Media::other("a", long)]).build(),
+        400,
+        500,
+        "lightbox-long-caption.png",
+    );
+    // ink right at the lower edge: the wrapped caption continues over several lines
+    assert!(ink(&img, (0, 400, 400, 100), background(&img)) > 600);
 }

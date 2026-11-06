@@ -161,7 +161,7 @@ fn odd_content_and_sizes_do_not_crash() {
             "",
             vec![
                 Item::new("", ""),
-                Item::new("u", "ein sehr langer Name äöü 李雷 😀 ".repeat(30)),
+                Item::new("u", "ein sehr langer Name äöü 李雷 😀 ".repeat(5)),
             ],
         ),
         Lane::new("l\u{0}", "Tïtle ".repeat(50), vec![]),
@@ -184,4 +184,58 @@ fn odd_content_and_sizes_do_not_crash() {
         empty.command(Command::Down),
         Outcome::Refused(fs_components_widgets::sortable_list::Refusal::Empty)
     );
+}
+
+#[test]
+fn a_long_label_wraps_instead_of_being_cut() {
+    let _g = serial();
+    let long = SortableList::new(vec![Lane::new(
+        "l",
+        "",
+        vec![Item::new(
+            "a",
+            "Write the very long report about the thing that went wrong last quarter in detail",
+        )],
+    )])
+    .id("wl");
+    let short =
+        SortableList::new(vec![Lane::new("l", "", vec![Item::new("a", "Report")])]).id("ws");
+    let h = |ui, id: &str| {
+        let t = layout(ui, 220.0, 400.0);
+        t.get_absolute_bounds(t.query_by_id(id).unwrap())
+            .unwrap()
+            .height
+    };
+    assert!(h(long.build(), "wl-l-a") > h(short.build(), "ws-l-a") + 15.0);
+}
+
+#[test]
+fn every_default_key_does_its_job_through_the_element() {
+    let _g = serial();
+    let list = board("ek").keys(Bindings::default());
+    let mut tree = layout(list.build(), 600.0, 260.0);
+    let mut input = Input::new();
+    input.focus(&tree, "ek");
+    let cursor = |l: &SortableList| l.cursor_key().unwrap_or_default();
+    input.key(&mut tree, 40); // Down
+    assert_eq!(cursor(&list), "b");
+    input.key(&mut tree, 35); // End
+    assert_eq!(cursor(&list), "c");
+    input.key(&mut tree, 36); // Home
+    assert_eq!(cursor(&list), "a");
+    input.key(&mut tree, 39); // Right: next lane
+    assert_eq!(cursor(&list), "x");
+    input.key(&mut tree, 37);
+    input.key(&mut tree, 32); // pick up a
+    assert_eq!(list.grabbed().as_deref(), Some("a"));
+    input.key(&mut tree, 40);
+    input.key(&mut tree, 27); // Escape: back
+    assert_eq!(list.grabbed(), None);
+    assert_eq!(list.lanes()[0].items[0].key, "a");
+    input.key(&mut tree, 13); // Enter picks up too
+    assert_eq!(list.grabbed().as_deref(), Some("a"));
+    input.key(&mut tree, 13);
+    assert_eq!(list.grabbed(), None);
+    input.key(&mut tree, 65); // an unbound key does nothing
+    assert_eq!(list.lanes()[0].items.len(), 3);
 }

@@ -98,9 +98,7 @@ impl LightBox {
     }
 }
 
-/// Can the picture be expected to load? Addresses are left to Blinc; a path must be a file.
+/// Can the picture be expected to load?
 fn loadable(m: &Media) -> bool {
-    m.source.contains("://")
-        || m.source.starts_with("data:")
-        || std::path::Path::new(&m.source).is_file()
+    crate::picture::loadable(&m.source)
 }
