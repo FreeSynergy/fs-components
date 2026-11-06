@@ -55,6 +55,8 @@ impl CalendarState {
     }
 
     fn save_failed(&mut self, key: Option<&str>, e: &SourceError) {
+        // Whoever got in the way may have moved it: the calendar beside the form shows it as it is now.
+        self.reload();
         let conflict = e.kind == ErrorKind::Conflict;
         let reason = if conflict {
             CalendarLabels::fill(&self.labels.conflict_confirm, &e.message)
