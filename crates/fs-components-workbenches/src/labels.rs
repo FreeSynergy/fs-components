@@ -48,6 +48,16 @@ pub struct Labels {
     pub lossy: String,
     /// After a conflict; `{}` = what happened. Pressing Save again replaces the other version.
     pub conflict_confirm: String,
+    /// Offer of a backed-up draft.
+    pub backup_found: String,
+    /// Button: use the backed-up draft.
+    pub restore: String,
+    /// Button: throw the backed-up draft away.
+    pub discard: String,
+    /// The document changed since the backed-up draft was made.
+    pub backup_stale: String,
+    /// `{}` = the reason.
+    pub backup_failed: String,
     /// `{}` = the reason.
     pub list_failed: String,
     /// `{}` = the reason.
@@ -78,6 +88,13 @@ impl Default for Labels {
             overwrite_confirm: s("{} Press Export again to replace it."),
             lossy: s("Saving will also change: {}."),
             conflict_confirm: s("{} Your text is kept. Press Save again to replace their version."),
+            backup_found: s("A draft you did not save was backed up earlier."),
+            restore: s("Restore"),
+            discard: s("Discard"),
+            backup_stale: s(
+                "The document changed after this draft was made. Saving asks before it replaces the newer version.",
+            ),
+            backup_failed: s("Backup of your draft failed: {}"),
             list_failed: s("The list failed: {}"),
             search_failed: s("The search failed: {}"),
         }

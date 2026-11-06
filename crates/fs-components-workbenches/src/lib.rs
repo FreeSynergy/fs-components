@@ -21,7 +21,7 @@ mod view;
 
 pub use error::{ErrorKind, SourceError};
 pub use labels::Labels;
-pub use reader::{Editing, Outcome, Reader, Shown};
+pub use reader::{Draft, DraftStore, Editing, Outcome, Reader, Shown};
 pub use shell::{
     Options, Picture, ReaderWidget, ScrollInfo, ShellError, Snapshot, Step, launch, register_fonts,
     snapshot, styles,

@@ -5,6 +5,7 @@
 
 use std::sync::Arc;
 
+use super::backup::Backup;
 use super::edit::Editing;
 use super::state::{Outcome, Shown};
 use crate::labels::Labels;
@@ -23,6 +24,7 @@ pub struct Reader {
     pub(super) search_problem: Option<String>,
     pub(super) editing: Option<Editing>,
     pub(super) edit_counter: u64,
+    pub(super) backup: Backup,
     pub(super) notice: Option<String>,
     pub(super) export_target: Option<String>,
     pub(super) overwrite_ok: Option<(String, String)>,
@@ -43,6 +45,7 @@ impl Reader {
             search_problem: None,
             editing: None,
             edit_counter: 0,
+            backup: Backup::new(),
             notice: None,
             export_target: None,
             overwrite_ok: None,

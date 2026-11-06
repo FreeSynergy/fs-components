@@ -12,11 +12,12 @@ use super::error::ShellError;
 use super::setup::{bundle, register_fonts};
 use super::widget::ReaderWidget;
 use crate::labels::Labels;
+use crate::reader::DraftStore;
 use crate::source::DocumentSource;
 
 /// Window settings.
 #[non_exhaustive]
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct Options {
     /// Window title.
     pub title: String,
@@ -28,6 +29,8 @@ pub struct Options {
     pub labels: Labels,
     /// Where Export writes to; `None` = no Export button.
     pub export_target: Option<String>,
+    /// Where drafts are backed up; `None` = no backup.
+    pub drafts: Option<Arc<dyn DraftStore>>,
 }
 
 impl Default for Options {
@@ -38,6 +41,7 @@ impl Default for Options {
             height: 800,
             labels: Labels::default(),
             export_target: None,
+            drafts: None,
         }
     }
 }
@@ -51,11 +55,14 @@ pub fn launch(
     source: Arc<dyn DocumentSource>,
 ) -> std::result::Result<(), ShellError> {
     register_fonts();
-    let widget = ReaderWidget::new(
+    let mut widget = ReaderWidget::new(
         source,
         options.labels.clone(),
         options.export_target.clone(),
     );
+    if let Some(store) = &options.drafts {
+        widget = widget.drafts(Arc::clone(store));
+    }
     let config = WindowConfig {
         title: options.title.clone(),
         width: options.width,

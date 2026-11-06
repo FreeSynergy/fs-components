@@ -34,6 +34,18 @@ pub(crate) fn editor(
         .class("fs-rd-bar")
         .child(cn::button(labels.save.clone()).on_click(move |_| save()))
         .child(cn::button(labels.cancel.clone()).on_click(move |_| cancel()));
+    if let Some(offer) = &editing.backup_offer {
+        let _ = offer;
+        let (restore, discard) = (actions.restore.clone(), actions.discard.clone());
+        buttons = buttons
+            .child(
+                div()
+                    .class("fs-rd-notice")
+                    .child(text(&labels.backup_found)),
+            )
+            .child(cn::button(labels.restore.clone()).on_click(move |_| restore()))
+            .child(cn::button(labels.discard.clone()).on_click(move |_| discard()));
+    }
     if let Some(note) = &editing.note {
         buttons = buttons.child(div().class("fs-rd-notice").child(text(note)));
     }

@@ -5,6 +5,8 @@
 //! another person's change is a conflict, never silently overwritten. Exporting is a separate,
 //! explicit action (ADR 0042, 0046).
 
+use super::draft::Draft;
+use super::exact::{lossy_note, same_text};
 use super::model::Reader;
 use crate::error::ErrorKind;
 use crate::labels::Labels;
@@ -30,6 +32,8 @@ pub struct Editing {
     pub note: Option<String>,
     /// The person pressed Cancel once with unsaved changes.
     pub discard_asked: bool,
+    /// A backup of an unsaved draft of this document from earlier, offered to the person.
+    pub backup_offer: Option<Draft>,
 }
 
 impl Editing {
@@ -55,12 +59,6 @@ impl Editing {
         }
         text
     }
-}
-
-/// Equal apart from line ends and blank lines at the end.
-fn same_text(a: &str, b: &str) -> bool {
-    let norm = |s: &str| s.replace("\r\n", "\n").trim_end_matches('\n').to_string();
-    norm(a) == norm(b)
 }
 
 impl Reader {
@@ -105,7 +103,12 @@ impl Reader {
                     error: None,
                     confirmed_revision: None,
                     discard_asked: false,
+                    backup_offer: None,
                 });
+                if let Some(mut editing) = self.editing.take() {
+                    self.find_backup(&path, &mut editing);
+                    self.editing = Some(editing);
+                }
             }
             Err(e) => self.notice = Some(Labels::fill(&self.labels.cannot_edit, &e.message)),
         }
@@ -116,6 +119,7 @@ impl Reader {
         if let Some(editing) = &mut self.editing {
             editing.draft = editing.restore_form(typed);
             editing.discard_asked = false;
+            self.note_change();
         }
     }
 
@@ -138,6 +142,7 @@ impl Reader {
             .or_else(|| editing.revision.clone());
         match self.source.save(&path, &draft, revision.as_deref()) {
             Ok(()) => {
+                self.clear_backup();
                 self.show(&path);
                 self.refresh_entries();
                 let term = self.term().to_string();
@@ -169,7 +174,8 @@ impl Reader {
         let Some(editing) = &mut self.editing else {
             return;
         };
-        if editing.changed() && !editing.discard_asked {
+        let chosen_discard = editing.changed();
+        if chosen_discard && !editing.discard_asked {
             editing.discard_asked = true;
             self.notice = Some(self.labels.discard_confirm.clone());
             return;
@@ -177,6 +183,11 @@ impl Reader {
         self.editing = None;
         self.overwrite_ok = None;
         self.notice = None;
+        // The backup goes only with a draft the person chose to throw away; an unchanged edit
+        // that never looked at the offer leaves it for next time.
+        if chosen_discard {
+            self.clear_backup();
+        }
     }
 
     /// Export the document shown to the target (an explicit action; saving never writes files).
@@ -210,20 +221,4 @@ impl Reader {
         self.editing = None;
         false
     }
-}
-
-/// What saving would change in `original` beyond the person's edits, because the text area cannot
-/// hold it: Windows or mixed line ends (they are unified), blank lines at the end (they are
-/// reduced to one line end). `None` when the text survives as it is.
-pub fn lossy_note(original: &str) -> Option<String> {
-    let mut reasons = Vec::new();
-    let crlf = original.matches("\r\n").count();
-    let lf_only = original.matches('\n').count() - crlf;
-    if crlf > 0 && lf_only > 0 {
-        reasons.push("mixed line ends become one kind");
-    }
-    if original.ends_with("\n\n") || original.ends_with("\r\n\r\n") {
-        reasons.push("blank lines at the end are dropped");
-    }
-    (!reasons.is_empty()).then(|| reasons.join("; "))
 }

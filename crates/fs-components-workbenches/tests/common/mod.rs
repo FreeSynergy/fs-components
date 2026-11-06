@@ -178,3 +178,43 @@ impl DocumentSource for Failing {
         Ok(vec![])
     }
 }
+
+/// A draft store in memory; `fail` makes every call fail.
+#[derive(Default)]
+pub struct MemDrafts {
+    pub drafts: Mutex<BTreeMap<String, fs_components_workbenches::Draft>>,
+    pub fail: std::sync::atomic::AtomicBool,
+}
+
+impl MemDrafts {
+    fn check(&self) -> Result<(), SourceError> {
+        if self.fail.load(std::sync::atomic::Ordering::Relaxed) {
+            Err(SourceError::failed("the disk is full"))
+        } else {
+            Ok(())
+        }
+    }
+    pub fn has(&self, path: &str) -> bool {
+        self.drafts.lock().unwrap().contains_key(path)
+    }
+}
+
+impl fs_components_workbenches::DraftStore for MemDrafts {
+    fn save(&self, draft: &fs_components_workbenches::Draft) -> Result<(), SourceError> {
+        self.check()?;
+        self.drafts
+            .lock()
+            .unwrap()
+            .insert(draft.path.clone(), draft.clone());
+        Ok(())
+    }
+    fn load(&self, path: &str) -> Result<Option<fs_components_workbenches::Draft>, SourceError> {
+        self.check()?;
+        Ok(self.drafts.lock().unwrap().get(path).cloned())
+    }
+    fn clear(&self, path: &str) -> Result<(), SourceError> {
+        self.check()?;
+        self.drafts.lock().unwrap().remove(path);
+        Ok(())
+    }
+}

@@ -18,7 +18,7 @@ use fs_components_widgets::Element;
 use fs_components_widgets::open_external;
 
 use crate::labels::Labels;
-use crate::reader::{Outcome, Reader};
+use crate::reader::{DraftStore, Outcome, Reader};
 use crate::source::DocumentSource;
 use crate::view::{Actions, content, editor_rows, frame, new_area, side_body, tree_nodes};
 
@@ -67,6 +67,23 @@ impl ReaderWidget {
             area: Arc::new(Mutex::new(None)),
             keys: true,
         }
+    }
+
+    /// Back the drafts of edits up into `store` (see [`DraftStore`]): after a pause in typing, at
+    /// least every ten seconds while typing goes on, and when the widget is dropped. A small
+    /// thread does the timing and ends with the widget.
+    #[must_use]
+    pub fn drafts(self, store: Arc<dyn DraftStore>) -> Self {
+        self.with_reader(|r| r.set_draft_store(Some(store)));
+        let weak = Arc::downgrade(&self.reader);
+        std::thread::spawn(move || {
+            while let Some(reader) = weak.upgrade() {
+                locked(&reader).backup_if_due();
+                drop(reader);
+                std::thread::sleep(std::time::Duration::from_millis(500));
+            }
+        });
+        self
     }
 
     /// Run `f` with the state, for a program's menus and commands (open, back, save ...). A
@@ -206,6 +223,8 @@ impl ReaderWidget {
             save: simple(Reader::save),
             cancel: simple(Reader::cancel_edit),
             export: simple(Reader::export),
+            restore: simple(Reader::restore_backup),
+            discard: simple(Reader::discard_backup),
         }
     }
 }

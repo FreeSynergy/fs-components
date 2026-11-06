@@ -22,6 +22,10 @@ pub(crate) struct Actions {
     pub save: Arc<dyn Fn() + Send + Sync>,
     /// Drop the draft.
     pub cancel: Arc<dyn Fn() + Send + Sync>,
+    /// Use the backed-up draft.
+    pub restore: Arc<dyn Fn() + Send + Sync>,
+    /// Throw the backed-up draft away.
+    pub discard: Arc<dyn Fn() + Send + Sync>,
     /// Export the page.
     pub export: Arc<dyn Fn() + Send + Sync>,
 }
@@ -38,6 +42,8 @@ impl Actions {
             save: Arc::new(|| {}),
             cancel: Arc::new(|| {}),
             export: Arc::new(|| {}),
+            restore: Arc::new(|| {}),
+            discard: Arc::new(|| {}),
         }
     }
 }
