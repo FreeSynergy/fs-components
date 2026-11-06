@@ -50,6 +50,7 @@ pub fn build(
         data,
         labels,
         series: &series,
+        max_marks: k.max_marks,
     };
     let pad = k.pad;
     let mut top = pad;
@@ -68,7 +69,8 @@ pub fn build(
         top += k.line(TextSize::Title) + k.title_gap * 2.0;
     }
     let lines = notes(&data.report, labels, m, k, w - 2.0 * pad);
-    let note_h = lines.len() as f32 * k.line(TextSize::Label);
+    let reserve = usize::from(data.data.len() > k.max_marks);
+    let note_h = (lines.len() + reserve) as f32 * k.line(TextSize::Label);
     let bottom_room = pad + note_h;
     for (i, text) in lines.iter().enumerate() {
         let y = h - pad - note_h + i as f32 * k.line(TextSize::Label);
@@ -107,11 +109,13 @@ pub fn build(
             (h - top - bottom_room).max(1.0),
         ];
         scene.plot = plot;
-        arc::draw(&c, plot, &mut scene);
         legend_at(&c, plot, w, m, k, &mut scene);
+        arc::draw(&c, plot, &mut scene);
+        omitted_note(&mut scene, labels, k);
         return scene;
     }
     super::cartesian::layout(&c, m, k, [pad, top, bottom_room, legend_w], &mut scene);
+    omitted_note(&mut scene, labels, k);
     scene
 }
 
@@ -128,4 +132,26 @@ pub(super) fn legend_at(
         let y = plot[1] + ((plot[3] - legend::height(c, k)) / 2.0).max(0.0);
         legend::draw(c, w - k.pad - lw + legend::MARGIN, y, m, k, scene);
     }
+}
+
+/// Say how many marks were left out, in the line reserved under the chart.
+fn omitted_note(scene: &mut Scene, labels: &Labels, k: &Metrics) {
+    if scene.omitted == 0 {
+        return;
+    }
+    let text = Labels::fill(
+        &labels.note_omitted,
+        &[("count", &scene.omitted.to_string())],
+    );
+    let y = scene.height - k.pad - k.line(TextSize::Label);
+    scene.items.push(Item::Text {
+        at: [k.pad, y],
+        text,
+        size: TextSize::Label,
+        bold: false,
+        paint: Paint::Muted,
+        anchor: Anchor::Start,
+        baseline: Baseline::Top,
+        angle: 0.0,
+    });
 }

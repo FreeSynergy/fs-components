@@ -27,6 +27,7 @@ pub fn heading(def: &ChannelDef, l: &Labels) -> String {
 /// The value of one cell as text.
 pub fn value(cell: &Cell, def: &ChannelDef, zone: Zone, l: &Labels) -> String {
     match cell {
+        Cell::Time { ms, zone } => iso(*ms, *zone),
         Cell::Num(n) if def.ftype == FieldType::Temporal => iso(*n, zone),
         Cell::Num(n) => plain(*n, l),
         Cell::Text(t) => t.clone(),

@@ -9,8 +9,6 @@ use super::measure::{Measure, Metrics};
 use crate::scene::{Anchor, Baseline, Item, Paint, Scene, TextSize};
 use crate::spec::Channel;
 
-const LABEL_LIMIT: f32 = 180.0;
-
 fn rotated(a: &Axis) -> bool {
     a.channel == Channel::X && a.cats.is_some()
 }
@@ -34,15 +32,47 @@ pub fn fit(text: &str, limit: f32, px: f32, bold: bool, m: &dyn Measure) -> Stri
     chars[..lo].iter().collect::<String>() + "\u{2026}"
 }
 
+/// Labels as shown. On an axis whose labels are one line high the step between labels follows
+/// from the tick spacing alone, so labels that will not be shown are not even measured (a bar
+/// chart of 30000 categories would otherwise measure them all, several times).
 fn labels(a: &Axis, m: &dyn Measure, k: &Metrics, limit: f32) -> Vec<String> {
+    let n = if by_height(a) { height_stride(a, k) } else { 1 };
     a.ticks
         .iter()
-        .map(|t| fit(&t.label, limit, k.label, false, m))
+        .enumerate()
+        .map(|(i, t)| {
+            if i % n == 0 {
+                fit(&t.label, limit, k.label, false, m)
+            } else {
+                String::new()
+            }
+        })
         .collect()
+}
+
+fn by_height(a: &Axis) -> bool {
+    rotated(a) || a.channel == Channel::Y
+}
+
+/// The smallest power of two such that every n-th label is one line apart from the next.
+fn height_stride(a: &Axis, k: &Metrics) -> usize {
+    let gap = a
+        .ticks
+        .windows(2)
+        .map(|w| (w[1].pos - w[0].pos).abs())
+        .fold(f32::INFINITY, f32::min);
+    let mut n = 1;
+    while gap.is_finite() && gap * (n as f32) < k.line(TextSize::Label) + 2.0 && n < a.ticks.len() {
+        n *= 2;
+    }
+    n
 }
 
 /// Which ticks get a label: every n-th, with n the smallest power of two that stops overlaps.
 fn stride(a: &Axis, texts: &[String], m: &dyn Measure, k: &Metrics) -> usize {
+    if by_height(a) {
+        return height_stride(a, k);
+    }
     let size = |s: &String| {
         if rotated(a) || a.channel == Channel::Y {
             k.line(TextSize::Label)
@@ -75,7 +105,7 @@ pub fn extent(a: &Axis, m: &dyn Measure, k: &Metrics) -> f32 {
     if !a.visible {
         return 0.0;
     }
-    let limit = LABEL_LIMIT;
+    let limit = a.label_limit;
     let mut size = 0.0;
     if a.labels {
         let t = labels(a, m, k, limit);
@@ -104,7 +134,7 @@ pub fn overhang(a: &Axis, m: &dyn Measure, k: &Metrics) -> f32 {
     if !a.visible || !a.labels || a.channel != Channel::X || rotated(a) {
         return 0.0;
     }
-    let last = labels(a, m, k, LABEL_LIMIT)
+    let last = labels(a, m, k, a.label_limit)
         .pop()
         .map_or(0.0, |s| m.width(&s, k.label, false) / 2.0);
     (a.ticks.last().map_or(0.0, |t| t.pos) + last - a.len).max(0.0)
@@ -154,7 +184,7 @@ pub fn draw(a: &Axis, plot: [f32; 4], m: &dyn Measure, k: &Metrics, out: &mut Sc
     } else {
         line([px, py], [px, py + ph])
     });
-    let texts = labels(a, m, k, LABEL_LIMIT);
+    let texts = labels(a, m, k, a.label_limit);
     let n = stride(a, &texts, m, k);
     let widest = texts
         .iter()
@@ -166,8 +196,11 @@ pub fn draw(a: &Axis, plot: [f32; 4], m: &dyn Measure, k: &Metrics, out: &mut Sc
         } else {
             ([px, py + t.pos], [px - k.tick, py + t.pos])
         };
+        if i % n != 0 {
+            continue;
+        }
         out.items.push(line(at, tip));
-        if !a.labels || i % n != 0 {
+        if !a.labels {
             continue;
         }
         let (anchor, baseline, angle, pos) = match (x, rotated(a)) {

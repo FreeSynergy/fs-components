@@ -28,8 +28,15 @@ pub enum Invalid {
 #[non_exhaustive]
 #[derive(Clone, Debug, PartialEq)]
 pub enum Cell {
-    /// A number; for a temporal field milliseconds on the UTC line.
+    /// A number.
     Num(f64),
+    /// An instant: milliseconds on the UTC line and the zone the data wrote it in.
+    Time {
+        /// Milliseconds since 1970-01-01T00:00 UTC (as if UTC for a wall-clock time).
+        ms: f64,
+        /// The zone of the text.
+        zone: Zone,
+    },
     /// A category written as text.
     Text(String),
     /// `null` or absent. On a discrete channel this is a category of its own.
@@ -42,14 +49,14 @@ impl Cell {
     /// The number, if there is one.
     pub fn num(&self) -> Option<f64> {
         match self {
-            Self::Num(n) => Some(*n),
+            Self::Num(n) | Self::Time { ms: n, .. } => Some(*n),
             _ => None,
         }
     }
 
     /// Cannot be put on a continuous scale.
     pub fn is_missing(&self) -> bool {
-        !matches!(self, Self::Num(_))
+        !matches!(self, Self::Num(_) | Self::Time { .. })
     }
 }
 
@@ -83,11 +90,17 @@ pub fn read(value: Option<&Value>, ft: FieldType, zone: &mut Zones) -> Cell {
         FieldType::Temporal => match value {
             Value::String(s) => time::parse(s).map_or(Cell::Invalid(Invalid::NotADate), |p| {
                 zone.see(p.zone);
-                Cell::Num(p.ms)
+                Cell::Time {
+                    ms: p.ms,
+                    zone: p.zone,
+                }
             }),
             Value::Number(n) => n.as_f64().map_or(Cell::Invalid(Invalid::NotADate), |ms| {
                 zone.see(Zone::Offset(0));
-                Cell::Num(ms)
+                Cell::Time {
+                    ms,
+                    zone: Zone::Offset(0),
+                }
             }),
             _ => Cell::Invalid(Invalid::WrongKind),
         },

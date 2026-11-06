@@ -215,4 +215,7 @@ pub struct Scene {
     pub hits: Vec<Hit>,
     /// The plot area `[x, y, w, h]`.
     pub plot: [f32; 4],
+    /// Marks left out because there were more than `Metrics::max_marks` (after merging marks
+    /// that fall on the same pixel); the chart says so under the plot.
+    pub omitted: usize,
 }

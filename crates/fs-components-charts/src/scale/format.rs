@@ -33,13 +33,25 @@ pub fn number(v: f64, decimals: usize, l: &Labels) -> String {
             grouped
         };
     }
-    let text = format!("{:e}", v.abs());
-    let text = text.replace('.', &l.decimal);
+    let text = exponent(v.abs(), &l.decimal);
     if v < 0.0 {
         format!("{}{text}", l.minus)
     } else {
         text
     }
+}
+
+/// `1.5e308`: at most six significant digits, trailing zeros removed (float noise such as
+/// 1.5000000000000008e308 is not shown).
+fn exponent(v: f64, decimal: &str) -> String {
+    let text = format!("{v:.5e}");
+    let (mantissa, power) = text.split_once('e').unwrap_or((&text, "0"));
+    let mantissa = if mantissa.contains('.') {
+        mantissa.trim_end_matches('0').trim_end_matches('.')
+    } else {
+        mantissa
+    };
+    format!("{}e{power}", mantissa.replace('.', decimal))
 }
 
 /// Shortest text of a number without fixed decimals (for categories that are numbers, tooltips

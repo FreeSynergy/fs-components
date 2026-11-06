@@ -60,7 +60,12 @@ pub struct Axis {
     pub len: f32,
     /// Values are fractions shown as percent (normalised stack).
     pub percent: bool,
+    /// Longest label in pixels; longer ones are cut with an ellipsis.
+    pub label_limit: f32,
 }
+
+/// Vega-Lite's `labelLimit` default.
+pub const LABEL_LIMIT: f32 = 180.0;
 
 /// What the data says about an axis.
 pub enum Source {
@@ -129,6 +134,7 @@ impl Axis {
             visible,
             len,
             percent: u.percent,
+            label_limit: LABEL_LIMIT,
         }
     }
 

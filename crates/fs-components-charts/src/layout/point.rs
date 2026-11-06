@@ -25,6 +25,8 @@ pub fn draw(c: &Ctx<'_>, x: &Axis, y: &Axis, plot: [f32; 4], out: &mut Scene) {
             .as_ref()
             .is_some_and(|d| d.aggregate.is_some());
     let opacity = if aggregated { 1.0 } else { 0.7 };
+    let mut seen = std::collections::HashSet::new();
+    let mut drawn = 0;
     for d in &c.data.data {
         let (Some(px), Some(py)) = (
             x.place(&d.cells[Channel::X.index()], c.labels),
@@ -33,6 +35,15 @@ pub fn draw(c: &Ctx<'_>, x: &Axis, y: &Axis, plot: [f32; 4], out: &mut Scene) {
             continue;
         };
         let s = c.series_of(d);
+        // marks of one series on the same half pixel are one mark to the eye
+        if !seen.insert((s, (px * 2.0).round() as i64, (py * 2.0).round() as i64)) {
+            continue;
+        }
+        if drawn >= c.max_marks {
+            out.omitted += 1;
+            continue;
+        }
+        drawn += 1;
         let at = [plot[0] + px, plot[1] + py];
         let shape = if c.multi() {
             shape_of(s)

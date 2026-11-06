@@ -45,6 +45,7 @@ struct Cart<'a, 'b> {
     defs: [&'a ChannelDef; 2],
     cats: [Option<Cats>; 2],
     marks: Marks,
+    size: (f32, f32),
 }
 
 impl Cart<'_, '_> {
@@ -73,7 +74,15 @@ impl Cart<'_, '_> {
                     && self.c.multi(),
                 force_zero: kind == MarkKind::Bar,
             };
-            Axis::new(ch, d, self.source(i), len, &u, self.c.labels)
+            let mut axis = Axis::new(ch, d, self.source(i), len, &u, self.c.labels);
+            // a rotated label may take a third of the height, a y label a third of the width
+            let share = if i == 0 {
+                self.size.1 * 0.3
+            } else {
+                self.size.0 * 0.35
+            };
+            axis.label_limit = axis.label_limit.min(share);
+            axis
         };
         (make(0, pw), make(1, ph))
     }
@@ -114,6 +123,7 @@ pub(super) fn layout(
         defs: [xd, yd],
         cats,
         marks,
+        size: (w, h),
     };
     let (mut left, mut below, mut right) = (40.0_f32, 40.0_f32, pad);
     let mut plot = [0.0; 4];
@@ -143,12 +153,17 @@ pub(super) fn layout(
     let (x, y) = pair;
     ai::grid(&x, plot, scene);
     ai::grid(&y, plot, scene);
-    match &cart.marks {
-        Marks::Bars(b) => b.draw(c, &x, &y, plot, scene),
-        Marks::Lines(l) => l.draw(c, &x, &y, plot, scene),
-        Marks::Points => point::draw(c, &x, &y, plot, scene),
-    }
     ai::draw(&x, plot, m, k, scene);
     ai::draw(&y, plot, m, k, scene);
     legend_at(c, plot, w, m, k, scene);
+    // marks last: if the drawing surface runs out of room, axes and legend are already there
+    let mut drawn = Scene::default();
+    match &cart.marks {
+        Marks::Bars(b) => b.draw(c, &x, &y, plot, &mut drawn),
+        Marks::Lines(l) => l.draw(c, &x, &y, plot, &mut drawn),
+        Marks::Points => point::draw(c, &x, &y, plot, &mut drawn),
+    }
+    scene.items.append(&mut drawn.items);
+    scene.hits.append(&mut drawn.hits);
+    scene.omitted += drawn.omitted;
 }

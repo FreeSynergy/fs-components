@@ -29,7 +29,8 @@ pub fn draw(c: &Ctx<'_>, plot: [f32; 4], out: &mut Scene) {
     let outer = (plot[2].min(plot[3]) / 2.0).max(0.0);
     let inner = (c.spec.mark.inner_radius as f32).min(outer);
     let centre = [plot[0] + plot[2] / 2.0, plot[1] + plot[3] / 2.0];
-    for (span, (&i, e)) in spans.iter().zip(at.iter().zip(&entries)) {
+    out.omitted += spans.len().saturating_sub(c.max_marks);
+    for (span, (&i, e)) in spans.iter().zip(at.iter().zip(&entries)).take(c.max_marks) {
         let (start, end) = (span[0] * TAU, span[1] * TAU);
         if end <= start {
             continue;

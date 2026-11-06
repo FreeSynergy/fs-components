@@ -19,6 +19,8 @@ pub struct Ctx<'a> {
     pub labels: &'a Labels,
     /// The series (colour categories); empty without a colour channel.
     pub series: &'a Cats,
+    /// Most marks to emit.
+    pub max_marks: usize,
 }
 
 impl Ctx<'_> {

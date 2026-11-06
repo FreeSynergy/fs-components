@@ -86,7 +86,8 @@ impl Bars {
             return;
         };
         let opacity = if self.overlay { 0.7 } else { 1.0 };
-        for s in &self.segs {
+        out.omitted += self.segs.len().saturating_sub(c.max_marks);
+        for s in self.segs.iter().take(c.max_marks) {
             let start = band.start(s.cat) as f32;
             let width = band.bandwidth() as f32;
             let (a, b) = (lin.map(s.span[0]) as f32, lin.map(s.span[1]) as f32);

@@ -76,9 +76,13 @@ pub struct Labels {
     pub min_title: String,
     /// Largest `{field}`.
     pub max_title: String,
-    /// Note under a chart; `{dropped}` of `{rows}` rows are left out, `{broken}` break a line.
+    /// Note under a chart: `{dropped}` of `{rows}` rows are left out.
     pub note_left_out: String,
-    /// Note: `{count}` values of `{field}` are `{why}`.
+    /// Note under a chart: `{broken}` rows break a line or an area.
+    pub note_broken: String,
+    /// Note under a chart: `{count}` marks are not drawn, there are too many.
+    pub note_omitted: String,
+    /// Note under a chart: `{field}` has `{count}` values that are `{why}`.
     pub note_issue: String,
     /// Why: no value.
     pub why_null: String,
@@ -140,8 +144,10 @@ impl Default for Labels {
             mean_title: s("Mean of {field}"),
             min_title: s("Min of {field}"),
             max_title: s("Max of {field}"),
-            note_left_out: s("{dropped} of {rows} rows are not drawn, {broken} break the line."),
-            note_issue: s("{count} values of {field} are {why}."),
+            note_left_out: s("Rows left out: {dropped} of {rows}."),
+            note_broken: s("Rows that break a line: {broken}."),
+            note_omitted: s("Marks not drawn, too many: {count}."),
+            note_issue: s("{field}: {why} ({count})"),
             why_null: s("missing"),
             why_not_number: s("not a number"),
             why_not_date: s("not a date"),

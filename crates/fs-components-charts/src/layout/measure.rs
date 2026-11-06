@@ -39,6 +39,9 @@ pub struct Metrics {
     pub title_gap: f32,
     /// Space around the chart.
     pub pad: f32,
+    /// Most marks drawn per chart. Blinc's drawing surface holds 20000 primitives by default and
+    /// silently drops the rest, so the layout keeps below that and says what it left out.
+    pub max_marks: usize,
 }
 
 impl Default for Metrics {
@@ -52,6 +55,7 @@ impl Default for Metrics {
             label_gap: 2.0,
             title_gap: 4.0,
             pad: 5.0,
+            max_marks: 10_000,
         }
     }
 }

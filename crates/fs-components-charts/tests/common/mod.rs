@@ -50,6 +50,8 @@ pub fn out_dir(tag: &str) -> (PathBuf, Option<TempDir>) {
 
 /// The pixels of a picture.
 pub struct Picture {
+    /// The surface colour of the theme the picture was drawn in.
+    pub bg: [u8; 3],
     pub width: u32,
     pub height: u32,
     pub rgba: Vec<u8>,
@@ -181,6 +183,7 @@ pub fn render(
     )
     .expect("png");
     Picture {
+        bg: to_u8(bg),
         width,
         height,
         rgba,

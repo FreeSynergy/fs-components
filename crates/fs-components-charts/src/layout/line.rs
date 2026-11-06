@@ -141,9 +141,12 @@ impl Lines {
 
     /// Draw a finished run of points and empty it.
     fn finish(&self, c: &Ctx<'_>, s: usize, run: &mut Vec<Pt>, out: &mut Scene) {
+        let merged = decimate(run, c.max_marks / c.series.len().max(1), out);
         let paint = Paint::Series(s);
         let top: Vec<[f32; 2]> = run.iter().map(|p| p.top).collect();
-        if self.kind == MarkKind::Area {
+        if self.kind == MarkKind::Area && merged {
+            strips(run, paint, out);
+        } else if self.kind == MarkKind::Area {
             area(run, paint, out);
         } else if top.len() > 1 {
             let dash = if c.multi() { dash_of(s) } else { Dash::Solid };
@@ -207,5 +210,85 @@ fn area(run: &[Pt], paint: Paint, out: &mut Scene) {
                 dash: Dash::Solid,
             });
         }
+    }
+}
+
+/// Keep a run to at most about `budget` points without changing what it looks like: per pixel
+/// column only the first, lowest, highest and last point stay (the envelope of the line at the
+/// resolution of the screen). What cannot be merged that way is counted as omitted.
+fn decimate(run: &mut Vec<Pt>, budget: usize, out: &mut Scene) -> bool {
+    if run.len() <= budget {
+        return false;
+    }
+    let mut kept: Vec<Pt> = Vec::new();
+    let mut column: Vec<Pt> = Vec::new();
+    let flush = |column: &mut Vec<Pt>, kept: &mut Vec<Pt>| {
+        if column.len() <= 4 {
+            kept.append(column);
+            return;
+        }
+        let at = |f: &dyn Fn(&Pt, &Pt) -> bool| {
+            (0..column.len()).fold(0, |b, i| if f(&column[i], &column[b]) { i } else { b })
+        };
+        let mut idx = vec![
+            0,
+            at(&|a, b| a.top[1] < b.top[1]),
+            at(&|a, b| a.top[1] > b.top[1]),
+            column.len() - 1,
+        ];
+        idx.sort_unstable();
+        idx.dedup();
+        for i in idx {
+            kept.push(Pt {
+                top: column[i].top,
+                base: column[i].base,
+                datum: column[i].datum,
+            });
+        }
+        column.clear();
+    };
+    let mut col = f32::NAN;
+    for p in run.drain(..) {
+        let c = p.top[0].floor();
+        if c != col {
+            flush(&mut column, &mut kept);
+            col = c;
+        }
+        column.push(p);
+    }
+    flush(&mut column, &mut kept);
+    if kept.len() > budget {
+        out.omitted += kept.len() - budget;
+        kept.truncate(budget);
+    }
+    *run = kept;
+    true
+}
+
+/// A merged area as one-pixel strips from the base to the highest point of each column. A
+/// polygon of that many zigzag points is too slow to fill (minutes in Blinc's tessellator).
+fn strips(run: &[Pt], paint: Paint, out: &mut Scene) {
+    let mut i = 0;
+    while i < run.len() {
+        let col = run[i].top[0].floor();
+        let mut j = i;
+        let mut top = run[i].top[1];
+        while j < run.len() && run[j].top[0].floor() == col {
+            top = top.min(run[j].top[1]);
+            j += 1;
+        }
+        let base = run[i].base;
+        let (y, h) = (top.min(base), (top - base).abs());
+        if h > 0.0 {
+            out.items.push(Item::Rect {
+                x: col,
+                y,
+                w: 1.0,
+                h,
+                paint,
+                opacity: 0.7,
+            });
+        }
+        i = j;
     }
 }

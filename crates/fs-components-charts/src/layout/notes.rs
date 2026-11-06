@@ -25,14 +25,20 @@ pub fn notes(r: &Report, l: &Labels, m: &dyn Measure, k: &Metrics, limit: f32) -
 /// All the sentences for a report, not cut.
 pub fn report_lines(r: &Report, l: &Labels) -> Vec<String> {
     let mut lines = Vec::new();
-    if r.dropped > 0 || r.broken > 0 {
+    if r.dropped > 0 {
+        let counts = [
+            ("dropped", r.dropped.to_string()),
+            ("rows", r.rows.to_string()),
+        ];
         lines.push(Labels::fill(
             &l.note_left_out,
-            &[
-                ("dropped", &r.dropped.to_string()),
-                ("rows", &r.rows.to_string()),
-                ("broken", &r.broken.to_string()),
-            ],
+            &counts.each_ref().map(|(k, v)| (*k, v.as_str())),
+        ));
+    }
+    if r.broken > 0 {
+        lines.push(Labels::fill(
+            &l.note_broken,
+            &[("broken", &r.broken.to_string())],
         ));
     }
     for i in &r.issues {
