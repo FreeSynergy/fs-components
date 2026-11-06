@@ -1,0 +1,19 @@
+[package]
+name = "fs-components-charts"
+description = "FreeSynergy charts (widget): a validated subset of Vega-Lite, parsed and laid out without a GUI, drawn on a Blinc canvas"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+serde_json = "1"
+blinc_core = "0.6"
+blinc_layout = "0.6"
+blinc_theme = "0.6"
+
+[dev-dependencies]
+blinc_app = "0.6"
+blinc_cn = "0.6"
+wgpu = "26"
+image = { version = "0.25", default-features = false, features = ["png"] }
