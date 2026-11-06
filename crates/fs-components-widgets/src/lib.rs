@@ -12,6 +12,7 @@
 #![warn(clippy::pedantic)]
 #![allow(clippy::must_use_candidate, clippy::module_name_repetitions)]
 
+pub mod agent_tree;
 pub mod avatar_group;
 pub mod keys;
 pub mod lightbox;
