@@ -1,11 +1,9 @@
 //! Editing and creating.
 //!
-//! Pattern: State — `CalendarState::editing` is `Some` while the person edits, with the rules of the
-//! reader and the people workbench: unsaved changes block leaving, the first Cancel with changes only
-//! asks, and Cancel reads again, so what is shown is what is stored. Saving is in `save.rs`, deleting in
+//! Pattern: State — `CalendarState::editing` is `Some` while the person edits: unsaved changes block
+//! leaving, Cancel with changes only asks and discarding is another action in another place, and
+//! leaving reads again, so what is shown is what is stored. Saving is in `save.rs`, deleting in
 //! `delete.rs`.
-
-use fs_components_widgets::Day;
 
 use super::draft::{FieldKind, ItemDraft};
 use super::labels::CalendarLabels;
@@ -25,7 +23,7 @@ pub struct ItemEdit {
     pub draft: ItemDraft,
     /// Why the last save failed, if it did.
     pub error: Option<String>,
-    /// The person pressed Cancel once with unsaved changes.
+    /// The person pressed Cancel with unsaved changes, and has not answered yet.
     pub discard_asked: bool,
 }
 
@@ -70,8 +68,7 @@ impl CalendarState {
             return Outcome::Blocked;
         }
         self.delete_asked = None;
-        let day: Day = self.selected_day().unwrap_or_else(|| self.anchor());
-        let draft = self.source.blank(day);
+        let draft = self.source.blank(self.working_day());
         self.start(None, draft);
         Outcome::Done
     }
@@ -128,18 +125,39 @@ impl CalendarState {
         }
     }
 
-    /// Stop editing. With unsaved changes the first call only asks; the second discards.
+    /// Stop editing. With unsaved changes this only asks, however often it is pressed, so a double-click
+    /// cannot discard: discarding is [`CalendarState::confirm_discard`], another action elsewhere.
     pub fn cancel_edit(&mut self) {
         let Some(edit) = &mut self.editing else {
             return;
         };
-        if edit.draft.changed() && !edit.discard_asked {
+        if edit.draft.changed() {
             edit.discard_asked = true;
             self.notice = Some(self.labels.discard_confirm.clone());
             return;
         }
-        let key = edit.key.clone();
-        self.editing = None;
+        self.leave_edit();
+    }
+
+    /// The second action: discards the changes. Does nothing unless asked.
+    pub fn confirm_discard(&mut self) {
+        if self.editing.as_ref().is_some_and(|e| e.discard_asked) {
+            self.leave_edit();
+        }
+    }
+
+    /// Answer the question of [`CalendarState::cancel_edit`] with no.
+    pub fn keep_editing(&mut self) {
+        if let Some(edit) = &mut self.editing
+            && edit.discard_asked
+        {
+            edit.discard_asked = false;
+            self.notice = None;
+        }
+    }
+
+    fn leave_edit(&mut self) {
+        let key = self.editing.take().and_then(|edit| edit.key);
         self.notice = None;
         // What is shown may be out of date by now, and the item may be gone.
         self.reload();

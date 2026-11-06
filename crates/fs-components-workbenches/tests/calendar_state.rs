@@ -9,8 +9,8 @@ use std::sync::Arc;
 
 use calendar_common::{Diary, d};
 use fs_components_workbenches::calendar::{
-    CalendarCapabilities, CalendarLabels, CalendarState, LAST_YEAR, Outcome, Picked, Shown,
-    Variant, ViewRange,
+    CalendarCapabilities, CalendarLabels, CalendarState, ItemProblem, LAST_YEAR, Outcome, Picked,
+    Shown, Variant, ViewRange,
 };
 
 fn state(diary: Diary) -> (Arc<Diary>, CalendarState) {
@@ -132,4 +132,74 @@ fn a_read_only_source_is_offered_nothing_that_changes() {
     assert!(!s.can_create() && !s.can_edit() && !s.can_delete());
     assert_eq!(s.begin_create(), Outcome::Done);
     assert!(s.editing().is_none());
+}
+
+#[test]
+fn an_unreadable_item_says_so_and_a_failed_read_of_the_items_too() {
+    let (diary, mut s) = state(pair());
+    s.select("broken");
+    assert!(matches!(s.shown(), Shown::Failed { reason, .. } if reason.contains("damaged")));
+    assert!(!s.can_edit());
+    *diary.broken.lock().unwrap() = Some("no store".into());
+    s.next();
+    assert!(s.problem().unwrap().contains("no store"));
+    assert!(s.items().is_empty());
+    *diary.broken.lock().unwrap() = None;
+    s.next();
+    assert_eq!(s.problem(), None);
+}
+
+#[test]
+fn what_could_not_be_read_is_named_and_the_rest_is_there() {
+    let diary = pair();
+    diary
+        .problems
+        .lock()
+        .unwrap()
+        .push(ItemProblem::of("broken", "Bad one: cannot be read"));
+    let (_, mut s) = state(diary);
+    assert_eq!(s.items().len(), 2);
+    assert_eq!(s.problems()[0].text, "Bad one: cannot be read");
+    assert_eq!(s.problem(), None);
+    s.select("broken");
+    assert!(s.can_delete(), "something damaged can still go");
+}
+
+#[test]
+fn a_new_item_after_moving_starts_on_a_day_in_view() {
+    let (_, mut s) = state(pair());
+    s.pick(&Picked::Day(d("2026-11-05")));
+    s.next();
+    assert_eq!(s.anchor(), d("2026-12-06"));
+    s.begin_create();
+    assert_eq!(
+        s.editing().unwrap().draft.value("day"),
+        Some("2026-12-06"),
+        "not the 5th of November"
+    );
+}
+
+#[test]
+fn the_context_is_what_is_shown_as_a_plain_value() {
+    let (_, mut s) = state(pair());
+    let context = s.context();
+    assert_eq!(
+        (context.item, context.view, context.date),
+        (None, ViewRange::Month, d("2026-11-06"))
+    );
+    s.set_view(ViewRange::Week);
+    s.pick(&Picked::Day(d("2026-11-05")));
+    s.select("ada");
+    let context = s.context();
+    assert_eq!(context.item.as_deref(), Some("ada"));
+    assert_eq!(
+        (context.view, context.date),
+        (ViewRange::Week, d("2026-11-05"))
+    );
+    s.next();
+    assert_eq!(
+        s.context().date,
+        d("2026-11-13"),
+        "the day chosen is out of view"
+    );
 }

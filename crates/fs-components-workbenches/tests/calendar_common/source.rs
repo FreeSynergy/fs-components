@@ -5,7 +5,7 @@
 use fs_components_workbenches::SourceError;
 use fs_components_workbenches::calendar::{
     CalendarCapabilities, CalendarItem, CalendarSource, Day, DraftField, FieldKind, ItemDraft,
-    ItemSheet, Moment, SheetField, SheetSection,
+    ItemSheet, ItemsRead, Moment, SheetField, SheetSection,
 };
 
 use super::Diary;
@@ -23,12 +23,12 @@ impl CalendarSource for Diary {
         self.week_start
     }
 
-    fn items(&self, first: Day, last: Day) -> Result<Vec<CalendarItem>, SourceError> {
+    fn items(&self, first: Day, last: Day) -> Result<ItemsRead, SourceError> {
         self.asked.lock().unwrap().push((first, last));
         if let Some(why) = self.broken.lock().unwrap().clone() {
             return Err(SourceError::failed(why));
         }
-        Ok(self
+        let items = self
             .entries
             .lock()
             .unwrap()
@@ -46,11 +46,20 @@ impl CalendarSource for Diary {
                 }
                 item
             })
-            .collect())
+            .collect();
+        Ok(ItemsRead::with_problems(
+            items,
+            self.problems.lock().unwrap().clone(),
+        ))
+    }
+
+    fn delete_warning(&self, key: &str) -> Option<String> {
+        key.contains("series")
+            .then(|| "All of the series goes.".to_string())
     }
 
     fn read(&self, key: &str) -> Result<ItemSheet, SourceError> {
-        if key == "broken" {
+        if key.contains("broken") {
             return Err(SourceError::failed("the record is damaged"));
         }
         let entries = self.entries.lock().unwrap();

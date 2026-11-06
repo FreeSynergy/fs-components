@@ -17,6 +17,7 @@ impl CalendarState {
         if self.view != view {
             self.view = view;
             self.reload();
+            self.refresh_shown();
         }
     }
 
@@ -46,6 +47,7 @@ impl CalendarState {
         }
         self.anchor = day;
         self.reload();
+        self.refresh_shown();
     }
 
     /// Take what a click on the calendar reported.
@@ -70,11 +72,9 @@ impl CalendarState {
         }
     }
 
-    /// Show this item. With unsaved changes this is refused and says why.
+    /// Show this item, read again, also if it is the one open: it may have changed elsewhere. With
+    /// unsaved changes this is refused and says why.
     pub fn select(&mut self, key: &str) -> Outcome {
-        if self.selected() == Some(key) && self.editing.is_none() {
-            return Outcome::Done;
-        }
         if self.blocked_by_edit() {
             return Outcome::Blocked;
         }

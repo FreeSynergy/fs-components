@@ -7,10 +7,10 @@
 use blinc_cn::components::button::ButtonVariant;
 use blinc_layout::div::{Div, div};
 use blinc_layout::text;
-use blinc_layout::widgets::scroll::scroll;
 
 use super::actions::CalendarActions;
 use super::form::{InputSlots, form};
+use super::page_scroll::PageScroll;
 use super::toolbar::button;
 use crate::calendar::model::{ItemSheet, SheetSection};
 use crate::calendar::shown::Shown;
@@ -22,6 +22,7 @@ pub(super) fn detail(
     name: &str,
     actions: &CalendarActions,
     slots: &InputSlots,
+    page_scroll: &PageScroll,
     back: bool,
 ) -> Div {
     let mut column = div()
@@ -33,7 +34,15 @@ pub(super) fn detail(
     if let Some(notice) = state.notice() {
         column = column.child(div().class("fs-calendar-notice").child(text(notice)));
     }
-    let page = div().class("fs-calendar-page").flex_col().w_full();
+    // Marks and the reason of a failed save stay in view, however far the page is scrolled.
+    if let Some(pinned) = pinned(state, name) {
+        column = column.child(pinned);
+    }
+    let page = div()
+        .id(format!("{name}-page"))
+        .class("fs-calendar-page")
+        .flex_col()
+        .w_full();
     let page = if let Some(edit) = state.editing() {
         form(edit, state.labels(), name, actions, slots, page)
     } else {
@@ -47,13 +56,51 @@ pub(super) fn detail(
             _ => page.child(text(&state.labels().nothing_selected)),
         }
     };
+    let what = format!(
+        "{:?}/{:?}",
+        state.selected(),
+        state.editing().map(|edit| edit.id)
+    );
     column.child(
         div()
             .flex_1()
             .min_h(0.0)
             .w_full()
-            .child(scroll().w_full().h_full().content(page)),
+            .child(page_scroll.scroller(&what).w_full().h_full().content(page)),
     )
+}
+
+/// What must not scroll away: the title and marks of an item, the marks and failure of an edit.
+fn pinned(state: &CalendarState, name: &str) -> Option<Div> {
+    let area = div()
+        .id(format!("{name}-pinned"))
+        .class("fs-calendar-pinned")
+        .flex_col()
+        .w_full();
+    if let Some(edit) = state.editing() {
+        if edit.draft.marks.is_empty() && edit.error.is_none() {
+            return None;
+        }
+        let mut area = area;
+        if !edit.draft.marks.is_empty() {
+            area = area.child(with_marks(
+                div().class("fs-calendar-title").flex_row(),
+                &edit.draft.marks,
+            ));
+        }
+        if let Some(error) = &edit.error {
+            area = area.child(div().class("fs-calendar-failed").child(text(error)));
+        }
+        return Some(area);
+    }
+    let Shown::Item { sheet, .. } = state.shown() else {
+        return None;
+    };
+    let head = div()
+        .class("fs-calendar-title")
+        .flex_row()
+        .child(div().child(text(&sheet.title).class("fs-calendar-title-text")));
+    Some(area.child(with_marks(head, &sheet.marks)))
 }
 
 /// The buttons that fit the state.
@@ -61,20 +108,25 @@ fn bar(state: &CalendarState, name: &str, actions: &CalendarActions, back: bool)
     let labels = state.labels();
     let id = |what: &str| format!("{name}-{what}");
     let mut bar = div().class("fs-calendar-bar").flex_row().items_center();
-    if state.editing().is_some() {
-        return bar
+    if let Some(edit) = state.editing() {
+        bar = bar
             .child(button(
                 id("save"),
                 &labels.save,
                 ButtonVariant::Primary,
                 &actions.save,
             ))
-            .child(button(
-                id("cancel"),
-                &labels.cancel,
-                ButtonVariant::Secondary,
-                &actions.cancel,
+            .child(cancel_or_keep(state, name, actions));
+        if edit.discard_asked {
+            // The deed is across the bar, so a second press at the same point can never be it.
+            bar = bar.child(div().flex_1()).child(button(
+                id("discard"),
+                &labels.discard_really,
+                ButtonVariant::Destructive,
+                &actions.confirm_discard,
             ));
+        }
+        return bar;
     }
     if back {
         bar = bar.child(button(
@@ -120,12 +172,27 @@ fn bar(state: &CalendarState, name: &str, actions: &CalendarActions, back: bool)
     bar
 }
 
-fn item(sheet: &ItemSheet, page: Div) -> Div {
-    let head = div()
-        .class("fs-calendar-title")
-        .flex_row()
-        .child(div().child(text(&sheet.title).class("fs-calendar-title-text")));
-    let mut page = page.child(with_marks(head, &sheet.marks));
+/// What lies where Cancel is: after the question it keeps the edit.
+fn cancel_or_keep(state: &CalendarState, name: &str, actions: &CalendarActions) -> Div {
+    let labels = state.labels();
+    if state.editing().is_some_and(|edit| edit.discard_asked) {
+        button(
+            format!("{name}-keep-editing"),
+            &labels.discard_keep,
+            ButtonVariant::Secondary,
+            &actions.keep_editing,
+        )
+    } else {
+        button(
+            format!("{name}-cancel"),
+            &labels.cancel,
+            ButtonVariant::Secondary,
+            &actions.cancel,
+        )
+    }
+}
+
+fn item(sheet: &ItemSheet, mut page: Div) -> Div {
     if let Some(note) = &sheet.note {
         page = page.child(div().class("fs-calendar-note").child(text(note)));
     }

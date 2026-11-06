@@ -1,8 +1,9 @@
 //! The calendar workbench as a thing a program can place in its own window.
 //!
 //! Pattern: Facade + Observer — `CalendarWidget` holds the shared state and builds the element. Every
-//! change asks the window for a full rebuild: there is no live area and no `stateful` here, so nothing
-//! decided in a build can go stale and no old callback keeps running.
+//! change asks the window for a full rebuild: there is no live area and no `stateful` here, so no old
+//! callback keeps running. What is drawn is as of the last reading: a change made elsewhere shows after
+//! the next click on the item or move of the view, because nothing here hears of it.
 //!
 //! No lock is held while elements are built: views draw from a snapshot, and the state is reached only
 //! through a closure.
@@ -17,7 +18,7 @@ use super::labels::CalendarLabels;
 use super::shown::Variant;
 use super::source::CalendarSource;
 use super::state::CalendarState;
-use super::view::{InputSlots, Places, workbench};
+use super::view::{InputSlots, PageScroll, Places, workbench};
 
 static NEXT_ID: AtomicU64 = AtomicU64::new(1);
 
@@ -28,6 +29,7 @@ pub struct CalendarWidget {
     pub(super) state: Arc<Mutex<CalendarState>>,
     position: CalendarPosition,
     slots: InputSlots,
+    page: PageScroll,
 }
 
 impl CalendarWidget {
@@ -51,6 +53,7 @@ impl CalendarWidget {
             state: Arc::new(Mutex::new(CalendarState::new(source, labels, variant))),
             position: CalendarPosition::new(),
             slots: InputSlots::default(),
+            page: PageScroll::default(),
         }
     }
 
@@ -59,6 +62,11 @@ impl CalendarWidget {
     /// other methods of this widget from inside `f`.
     pub fn with_state<T>(&self, f: impl FnOnce(&mut CalendarState) -> T) -> T {
         f(&mut locked(&self.state))
+    }
+
+    /// What the workbench is showing, as a plain value for the program around it (ADR 0056).
+    pub fn context(&self) -> super::model::CalendarContext {
+        locked(&self.state).context()
     }
 
     /// The style sheet to add to the theme of the window.
@@ -79,6 +87,7 @@ impl CalendarWidget {
             name: self.element_name(),
             position: self.position.clone(),
             slots: self.slots.clone(),
+            page: self.page.clone(),
         };
         workbench(&snapshot, &places, &self.actions(), width, height)
     }

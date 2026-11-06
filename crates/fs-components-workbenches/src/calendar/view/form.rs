@@ -16,7 +16,6 @@ use blinc_layout::widgets::text_area::{SharedTextAreaState, text_area_state};
 use blinc_layout::widgets::text_input::{SharedTextInputData, text_input_data};
 
 use super::actions::CalendarActions;
-use super::detail::with_marks;
 use crate::calendar::draft::{DraftField, FieldKind};
 use crate::calendar::edit::ItemEdit;
 use crate::calendar::labels::CalendarLabels;
@@ -94,17 +93,8 @@ pub(super) fn form(
     slots: &InputSlots,
     mut page: Div,
 ) -> Div {
-    if !edit.draft.marks.is_empty() {
-        page = page.child(with_marks(
-            div().class("fs-calendar-title").flex_row(),
-            &edit.draft.marks,
-        ));
-    }
     if let Some(note) = &edit.draft.note {
         page = page.child(div().class("fs-calendar-note").child(text(note)));
-    }
-    if let Some(error) = &edit.error {
-        page = page.child(div().class("fs-calendar-failed").child(text(error)));
     }
     for field in &edit.draft.fields {
         page = page.child(element(field, edit.id, labels, name, actions, slots));

@@ -23,7 +23,10 @@ pub use draft::{DraftField, FieldKind, ItemDraft};
 pub use edit::ItemEdit;
 pub use fs_components_widgets::{CalendarItem, CalendarNames, Day, Moment, Picked, ViewRange};
 pub use labels::CalendarLabels;
-pub use model::{CalendarCapabilities, ItemSheet, SheetField, SheetSection};
+pub use model::{
+    CalendarCapabilities, CalendarContext, ItemProblem, ItemSheet, ItemsRead, SheetField,
+    SheetSection,
+};
 pub use shown::{Outcome, Shown, Variant};
 pub use source::CalendarSource;
 pub use state::{CalendarState, FIRST_YEAR, LAST_YEAR};

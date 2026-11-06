@@ -57,6 +57,11 @@ impl CalendarPosition {
         &self.list
     }
 
+    /// How far the list is scrolled now, in pixels from the top.
+    pub fn list_offset(&self) -> f32 {
+        self.list.offset()
+    }
+
     /// How far the axis is scrolled now, in pixels from the top.
     pub fn axis_offset(&self) -> f32 {
         self.axis.offset()

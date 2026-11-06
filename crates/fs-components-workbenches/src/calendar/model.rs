@@ -3,7 +3,7 @@
 //! Pattern: Value objects — capabilities and sections of labelled fields. Nothing here
 //! knows what an event is made of.
 
-use fs_components_widgets::Day;
+use fs_components_widgets::{CalendarItem, Day, ViewRange};
 
 /// What a source can do; an action it cannot do is not offered.
 #[non_exhaustive]
@@ -109,4 +109,61 @@ impl ItemSheet {
             delete_warning: None,
         }
     }
+}
+
+/// Something that could not be shown, named so that the person can deal with it.
+#[non_exhaustive]
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ItemProblem {
+    /// What to open to deal with it, if there is something to open.
+    pub key: Option<String>,
+    /// What is wrong, in the source's words.
+    pub text: String,
+}
+
+impl ItemProblem {
+    /// A problem with an item that can be opened.
+    pub fn of(key: impl Into<String>, text: impl Into<String>) -> Self {
+        Self {
+            key: Some(key.into()),
+            text: text.into(),
+        }
+    }
+}
+
+/// What is on some days: what could be read, and what could not. One bad item costs itself only.
+#[non_exhaustive]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct ItemsRead {
+    /// The items.
+    pub items: Vec<CalendarItem>,
+    /// What could not be shown.
+    pub problems: Vec<ItemProblem>,
+}
+
+impl ItemsRead {
+    /// All of it was read.
+    pub fn all(items: Vec<CalendarItem>) -> Self {
+        Self {
+            items,
+            problems: Vec::new(),
+        }
+    }
+
+    /// Some of it could not be.
+    pub fn with_problems(items: Vec<CalendarItem>, problems: Vec<ItemProblem>) -> Self {
+        Self { items, problems }
+    }
+}
+
+/// What the workbench is showing, for the program around it (ADR 0056). A plain value.
+#[non_exhaustive]
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CalendarContext {
+    /// The key of the item open, if one is.
+    pub item: Option<String>,
+    /// What is shown: a month, a week, a day or the agenda.
+    pub view: ViewRange,
+    /// The day being worked on: the day chosen if it is in view, else the day the view is around.
+    pub date: Day,
 }

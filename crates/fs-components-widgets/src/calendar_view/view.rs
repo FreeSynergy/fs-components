@@ -161,7 +161,13 @@ impl CalendarView {
             ViewRange::Agenda => {
                 // A narrow month or week lists the same span the caller has items for.
                 let span = span_of(self.range, self.anchor, self.week_start, AGENDA_DAYS);
-                agenda(&drawing, items, span, self.position.list(span.0), size)
+                agenda(
+                    &drawing,
+                    &self.items,
+                    span,
+                    self.position.list(span.0),
+                    size,
+                )
             }
             ViewRange::Month => month(&drawing, items, self.anchor, self.week_start, size),
             _ => timeline(&drawing, items, &[self.anchor], &self.axis(), size),

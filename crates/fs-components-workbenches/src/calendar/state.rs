@@ -12,7 +12,7 @@ use fs_components_widgets::{CalendarItem, Day, Moment, ViewRange};
 
 use super::edit::ItemEdit;
 use super::labels::CalendarLabels;
-use super::model::CalendarCapabilities;
+use super::model::{CalendarCapabilities, CalendarContext, ItemProblem};
 use super::shown::{Shown, Variant};
 use super::source::CalendarSource;
 use crate::error::ErrorKind;
@@ -36,6 +36,7 @@ pub struct CalendarState {
     pub(super) selected_day: Option<Day>,
     items: Arc<Vec<CalendarItem>>,
     problem: Option<String>,
+    problems: Arc<Vec<ItemProblem>>,
     pub(super) shown: Shown,
     pub(super) notice: Option<String>,
     pub(super) editing: Option<ItemEdit>,
@@ -63,6 +64,7 @@ impl CalendarState {
             selected_day: None,
             items: Arc::new(Vec::new()),
             problem: None,
+            problems: Arc::new(Vec::new()),
             shown: Shown::Nothing,
             notice: None,
             editing: None,
@@ -118,6 +120,28 @@ impl CalendarState {
         self.problem.as_deref()
     }
 
+    /// What could not be shown, by name; the rest is.
+    pub fn problems(&self) -> &Arc<Vec<ItemProblem>> {
+        &self.problems
+    }
+
+    /// The day being worked on: the day chosen if it is in view, else the day the view is around.
+    pub fn working_day(&self) -> Day {
+        let (first, last) = self.span();
+        self.selected_day
+            .filter(|day| first <= *day && *day <= last)
+            .unwrap_or(self.anchor)
+    }
+
+    /// What the workbench is showing, for the program around it (ADR 0056).
+    pub fn context(&self) -> CalendarContext {
+        CalendarContext {
+            item: self.selected().map(str::to_string),
+            view: self.view,
+            date: self.working_day(),
+        }
+    }
+
     /// First and last day shown.
     pub fn span(&self) -> (Day, Day) {
         span_of(self.view, self.anchor, self.week_start, AGENDA_DAYS)
@@ -146,13 +170,41 @@ impl CalendarState {
         self.now = self.source.now();
         let (first, last) = self.span();
         match self.source.items(first, last) {
-            Ok(items) => {
-                self.items = Arc::new(items);
+            Ok(read) => {
+                self.items = Arc::new(read.items);
+                self.problems = Arc::new(read.problems);
                 self.problem = None;
             }
             Err(e) => {
                 self.items = Arc::new(Vec::new());
+                self.problems = Arc::new(Vec::new());
                 self.problem = Some(CalendarLabels::fill(&self.labels.items_failed, &e.message));
+            }
+        }
+    }
+
+    /// Read what is open again, after the view moved: it may have changed elsewhere. An edit stays, and
+    /// so does a question.
+    pub(super) fn refresh_shown(&mut self) {
+        if self.editing.is_some() {
+            return;
+        }
+        let Some(key) = self.selected().map(str::to_string) else {
+            return;
+        };
+        match self.source.read(&key) {
+            Ok(sheet) => {
+                self.shown = Shown::Item {
+                    key,
+                    sheet: Box::new(sheet),
+                };
+            }
+            Err(e) if e.kind == ErrorKind::NotFound => self.item_gone(),
+            Err(e) => {
+                self.shown = Shown::Failed {
+                    key,
+                    reason: CalendarLabels::fill(&self.labels.unreadable, &e.message),
+                };
             }
         }
     }

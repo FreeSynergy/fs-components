@@ -106,14 +106,22 @@ impl Drawing {
     }
 }
 
-/// The items of `items` on `day`: without a time first, then by start, then by title.
-pub(super) fn items_on(items: &[CalendarItem], day: Day) -> Vec<&CalendarItem> {
-    let mut found: Vec<&CalendarItem> = items
-        .iter()
-        .filter(|i| super::layout::segment_on(i, day).is_some())
+/// The places in `items` of what is on `day`: without a time first, then by start, then by title.
+pub(super) fn places_on(items: &[CalendarItem], day: Day) -> Vec<usize> {
+    let mut found: Vec<usize> = (0..items.len())
+        .filter(|&i| super::layout::segment_on(&items[i], day).is_some())
         .collect();
-    found.sort_by(|a, b| {
+    found.sort_by(|&a, &b| {
+        let (a, b) = (&items[a], &items[b]);
         (!a.all_day, a.start, &a.title, &a.key).cmp(&(!b.all_day, b.start, &b.title, &b.key))
     });
     found
+}
+
+/// The items of `items` on `day`, in that order.
+pub(super) fn items_on(items: &[CalendarItem], day: Day) -> Vec<&CalendarItem> {
+    places_on(items, day)
+        .into_iter()
+        .map(|i| &items[i])
+        .collect()
 }

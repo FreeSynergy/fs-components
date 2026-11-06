@@ -42,7 +42,14 @@ impl CalendarState {
                 self.reload();
                 self.notice = Some(message);
             }
-            Err(e) if e.kind == ErrorKind::NotFound => self.item_gone(),
+            Err(e) if e.kind == ErrorKind::NotFound => {
+                // What the person typed is theirs: the item leaves the view, the draft stays.
+                self.reload();
+                let gone = self.labels.gone_draft.clone();
+                if let Some(edit) = &mut self.editing {
+                    edit.error = Some(gone);
+                }
+            }
             Err(e) => self.save_failed(key.as_deref(), &e),
         }
     }

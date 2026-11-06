@@ -22,7 +22,21 @@ const ATTEMPTS: u32 = 16;
 /// # Errors
 /// A message for the person; nothing is left behind.
 pub fn write_new_file(path: &Path, bytes: &[u8]) -> Result<(), String> {
+    write_as(path, bytes, false)
+}
+
+/// Like [`write_new_file`], for what only its owner should read: on Unix the file is mode 0600 from
+/// the moment it exists, also the temporary one.
+///
+/// # Errors
+/// A message for the person; nothing is left behind.
+pub fn write_new_private_file(path: &Path, bytes: &[u8]) -> Result<(), String> {
+    write_as(path, bytes, true)
+}
+
+fn write_as(path: &Path, bytes: &[u8], private: bool) -> Result<(), String> {
     let steps = Steps {
+        private,
         fill: &|file: &mut File| file.write_all(bytes),
         link: &|from: &Path, to: &Path| fs::hard_link(from, to),
         copy: &|from: &mut File, to: &mut File| io::copy(from, to).map(|_| ()),
@@ -36,6 +50,7 @@ type Copy<'a> = &'a dyn Fn(&mut File, &mut File) -> io::Result<()>;
 
 /// The steps that can fail on a real disk, so a test can make them fail.
 struct Steps<'a> {
+    private: bool,
     fill: Fill<'a>,
     link: Link<'a>,
     copy: Copy<'a>,
@@ -45,25 +60,39 @@ fn write_with(path: &Path, steps: &Steps<'_>) -> io::Result<()> {
     if path.exists() {
         return Err(io::Error::new(ErrorKind::AlreadyExists, "the file exists"));
     }
-    let (temporary, mut file) = new_temporary(path)?;
+    let (temporary, mut file) = new_temporary(path, steps.private)?;
     let done = fill_and_place(&mut file, &temporary, path, steps);
     let _ = fs::remove_file(&temporary);
     done
 }
 
 /// A new file beside `path`. A file of that name that was already there is left alone.
-fn new_temporary(path: &Path) -> io::Result<(PathBuf, File)> {
+fn new_temporary(path: &Path, private: bool) -> io::Result<(PathBuf, File)> {
     let mut last = io::Error::new(ErrorKind::AlreadyExists, "no free temporary name");
     for attempt in 0..ATTEMPTS {
         let name = format!(".fsp{}-{attempt}.tmp", std::process::id());
         let temporary = path.with_file_name(name);
-        match File::create_new(&temporary) {
+        match create_new(&temporary, private) {
             Ok(file) => return Ok((temporary, file)),
             Err(e) if e.kind() == ErrorKind::AlreadyExists => last = e,
             Err(e) => return Err(e),
         }
     }
     Err(last)
+}
+
+/// A file that must not exist yet, for reading and writing.
+fn create_new(path: &Path, private: bool) -> io::Result<File> {
+    let mut options = fs::OpenOptions::new();
+    options.read(true).write(true).create_new(true);
+    #[cfg(unix)]
+    if private {
+        use std::os::unix::fs::OpenOptionsExt;
+        options.mode(0o600);
+    }
+    #[cfg(not(unix))]
+    let _ = private;
+    options.open(path)
 }
 
 fn fill_and_place(
@@ -82,7 +111,7 @@ fn fill_and_place(
 
 /// The file system cannot link: make the target from the finished temporary file.
 fn write_directly(temporary: &Path, path: &Path, steps: &Steps<'_>) -> io::Result<()> {
-    let mut target = File::create_new(path)?;
+    let mut target = create_new(path, steps.private)?;
     let copied = File::open(temporary)
         .and_then(|mut from| (steps.copy)(&mut from, &mut target))
         .and_then(|()| target.sync_all());
@@ -117,7 +146,12 @@ mod tests {
     }
 
     fn steps_with<'a>(fill: Fill<'a>, link: Link<'a>, copy: Copy<'a>) -> Steps<'a> {
-        Steps { fill, link, copy }
+        Steps {
+            private: false,
+            fill,
+            link,
+            copy,
+        }
     }
 
     fn writes(file: &mut File) -> io::Result<()> {
@@ -218,6 +252,27 @@ mod tests {
         let long = dir.join("x".repeat(255));
         write_new_file(&long, b"one").unwrap();
         assert_eq!(fs::read(&long).unwrap(), b"one");
+        fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn a_private_file_is_for_its_owner_also_without_hard_links() {
+        use std::os::unix::fs::PermissionsExt;
+        let dir = folder();
+        let path = dir.join("linked.ics");
+        write_new_private_file(&path, b"secret").unwrap();
+        let mode = |p: &Path| fs::metadata(p).unwrap().permissions().mode() & 0o777;
+        assert_eq!(mode(&path), 0o600);
+        let copied = dir.join("copied.ics");
+        let steps = Steps {
+            private: true,
+            fill: &writes,
+            link: &no_link,
+            copy: &copies,
+        };
+        write_with(&copied, &steps).unwrap();
+        assert_eq!(mode(&copied), 0o600);
         fs::remove_dir_all(dir).unwrap();
     }
 }

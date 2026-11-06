@@ -53,6 +53,8 @@ impl CalendarWidget {
             edit: simple(CalendarState::begin_edit),
             save: simple(CalendarState::save),
             cancel: simple(CalendarState::cancel_edit),
+            keep_editing: simple(CalendarState::keep_editing),
+            confirm_discard: simple(CalendarState::confirm_discard),
             back: simple(|s| {
                 s.close();
             }),

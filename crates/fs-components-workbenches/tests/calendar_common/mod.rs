@@ -11,7 +11,7 @@ use std::collections::BTreeMap;
 use std::sync::Mutex;
 
 use fs_components_workbenches::SourceError;
-use fs_components_workbenches::calendar::{CalendarCapabilities, Day};
+use fs_components_workbenches::calendar::{CalendarCapabilities, Day, ItemProblem};
 
 pub fn d(text: &str) -> Day {
     Day::parse(text).unwrap()
@@ -28,6 +28,8 @@ pub struct Diary {
     pub writes: Mutex<u32>,
     /// Keys to be marked.
     pub marked: Mutex<Vec<String>>,
+    /// Reported along with the items.
+    pub problems: Mutex<Vec<ItemProblem>>,
     /// Which spans were asked for.
     pub asked: Mutex<Vec<(Day, Day)>>,
     pub today: Day,
@@ -48,6 +50,7 @@ impl Diary {
             broken: Mutex::new(None),
             writes: Mutex::new(0),
             marked: Mutex::new(Vec::new()),
+            problems: Mutex::new(Vec::new()),
             asked: Mutex::new(Vec::new()),
             today: d("2026-11-06"),
             week_start: 0,

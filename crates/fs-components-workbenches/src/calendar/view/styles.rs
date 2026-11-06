@@ -26,6 +26,9 @@ const LAYOUT: &str = r"
 .fs-calendar-value { min-width: 0; font-size: var(--text-sm); }
 .fs-calendar-notice { padding: var(--space-2) var(--space-3); background: var(--warning-bg); color: var(--text-primary); font-size: var(--text-sm); }
 .fs-calendar-failed { padding: var(--space-3); background: var(--error-bg); border-radius: var(--radius-default); font-size: var(--text-sm); }
+.fs-calendar-pinned { flex-shrink: 0; gap: var(--space-2); padding-left: var(--space-4); padding-right: var(--space-4); padding-top: var(--space-2); }
+.fs-calendar-problem { flex-shrink: 0; padding-left: var(--space-3); background: var(--error-bg); border-bottom-width: 1px; border-bottom-color: var(--border); font-size: var(--text-sm); }
+.fs-calendar-problem-open { cursor: pointer; }
 .fs-calendar-input { padding-bottom: var(--space-2); }
 .fs-calendar-flag { padding: var(--space-1) var(--space-3); border-radius: var(--radius-default); cursor: pointer; font-size: var(--text-sm); }
 .fs-calendar-flag-on { background: var(--primary); color: var(--text-inverse); }

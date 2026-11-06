@@ -177,3 +177,40 @@ fn the_compact_variant_offers_nothing_that_changes_and_narrow_the_item_has_a_way
     assert!(h.has("item-bob@2026-11-20"));
     assert!(h.widget.with_state(|s| matches!(s.shown(), Shown::Nothing)));
 }
+
+#[test]
+fn a_double_click_on_cancel_discards_nothing_with_or_without_a_redraw_between() {
+    let (diary, mut h) = harness();
+    h.click(ADA);
+    h.click("edit");
+    h.widget.with_state(|s| s.set_field("title", "Typed"));
+    h.rebuild();
+    let point = h.centre("cancel");
+    h.press_at(point);
+    h.press_at(point);
+    let value = |h: &Harness| {
+        h.widget.with_state(|s| {
+            s.editing()
+                .and_then(|e| e.draft.value("title").map(str::to_string))
+        })
+    };
+    assert_eq!(value(&h).as_deref(), Some("Typed"));
+    h.rebuild();
+    assert!(h.has("keep-editing") && h.has("discard"), "only asking");
+    assert!(
+        h.centre("discard").0 > point.0 + 100.0,
+        "the deed is far from the pointer"
+    );
+    h.press_at(point);
+    h.rebuild();
+    assert_eq!(
+        value(&h).as_deref(),
+        Some("Typed"),
+        "the second press said keep"
+    );
+    assert!(h.has("cancel") && !h.has("discard"));
+    h.click("cancel");
+    h.click("discard");
+    assert_eq!(value(&h), None);
+    assert_eq!(diary.title("ada").as_deref(), Some("ada"));
+}

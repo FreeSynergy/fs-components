@@ -4,10 +4,10 @@
 //! program's core implements it). The trait is synchronous and called on the interface thread, like
 //! `DocumentSource` and `PeopleSource`; this is provisional (see DESIGN.md).
 
-use fs_components_widgets::{CalendarItem, Day, Moment};
+use fs_components_widgets::{Day, Moment};
 
 use super::draft::ItemDraft;
-use super::model::{CalendarCapabilities, ItemSheet};
+use super::model::{CalendarCapabilities, ItemSheet, ItemsRead};
 use crate::error::SourceError;
 
 /// A source of things on a calendar.
@@ -24,11 +24,12 @@ pub trait CalendarSource: Send + Sync {
     }
 
     /// What is on the days `first` through `last`, with wall-clock times in the zone the source
-    /// shows. Asked for a span of days at a time, never more than a view shows.
+    /// shows. Asked for a span of days at a time, never more than a view shows. What cannot be read
+    /// goes into [`ItemsRead::problems`] by name; the rest is still shown.
     ///
     /// # Errors
-    /// [`SourceError`] with a reason a person can read.
-    fn items(&self, first: Day, last: Day) -> Result<Vec<CalendarItem>, SourceError>;
+    /// [`SourceError`] with a reason a person can read, if nothing at all can be read.
+    fn items(&self, first: Day, last: Day) -> Result<ItemsRead, SourceError>;
 
     /// One item, to be read.
     ///
@@ -68,6 +69,11 @@ pub trait CalendarSource: Send + Sync {
     /// [`SourceError`] with the reason; the workbench keeps the draft.
     fn create(&self, _draft: &ItemDraft) -> Result<String, SourceError> {
         Err(SourceError::unsupported("this source cannot create"))
+    }
+
+    /// What a delete of `key` would take with it, for an item whose sheet could not be read.
+    fn delete_warning(&self, _key: &str) -> Option<String> {
+        None
     }
 
     /// Delete an item.

@@ -64,6 +64,14 @@ pub struct CalendarLabels {
     pub created: String,
     /// After a delete; `{}` = the item.
     pub deleted: String,
+    /// After a delete of something marked: its title is not repeated.
+    pub deleted_marked: String,
+    /// Save of an item that is gone: the draft stays.
+    pub gone_draft: String,
+    /// Button: go on editing after being asked about discarding.
+    pub discard_keep: String,
+    /// Button: the second action that really discards.
+    pub discard_really: String,
     /// Save without changes.
     pub no_changes: String,
     /// The calendar does not go further; `{}` = the year.
@@ -128,10 +136,16 @@ impl Default for CalendarLabels {
             delete_confirm: s("Delete {}? This cannot be taken back here."),
             gone: s("This item no longer exists."),
             unsaved: s("Save or cancel your changes first."),
-            discard_confirm: s("You have unsaved changes. Press Cancel again to discard them."),
+            discard_confirm: s("You have unsaved changes. Keep editing, or discard them."),
             saved: s("Saved."),
             created: s("Created."),
             deleted: s("{} was deleted."),
+            deleted_marked: s("The item was deleted."),
+            gone_draft: s(
+                "This item no longer exists, so this cannot be saved. Your text is still here.",
+            ),
+            discard_keep: s("Keep editing"),
+            discard_really: s("Discard changes"),
             no_changes: s("Nothing was changed."),
             edge: s("The calendar goes no further than the year {}."),
             not_saved: s("Not saved: {}"),

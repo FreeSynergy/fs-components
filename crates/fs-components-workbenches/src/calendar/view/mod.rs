@@ -8,10 +8,12 @@ mod actions;
 mod detail;
 mod form;
 mod frame;
+mod page_scroll;
 mod styles;
 mod toolbar;
 
 pub(super) use actions::{Act, ActOn, CalendarActions};
 pub(super) use form::InputSlots;
 pub(super) use frame::{Places, workbench};
+pub(super) use page_scroll::PageScroll;
 pub use styles::styles;

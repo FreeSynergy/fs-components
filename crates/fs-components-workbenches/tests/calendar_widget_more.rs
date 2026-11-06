@@ -12,7 +12,7 @@ use std::sync::Arc;
 use calendar_common::Diary;
 use calendar_common::harness::{Harness, serial};
 use fs_components_render::{Canvas, RenderError, draw_to_png};
-use fs_components_workbenches::calendar::{CalendarLabels, CalendarWidget, ViewRange};
+use fs_components_workbenches::calendar::{CalendarLabels, CalendarWidget, ItemProblem, ViewRange};
 
 const ADA: &str = "item-ada@2026-11-04";
 
@@ -124,4 +124,59 @@ fn an_item_on_the_scrolled_axis_is_clicked_where_it_is_drawn() {
     assert!(y < 300.0, "the bounds follow the scroll: {y}");
     h.click(ADA);
     assert_eq!(selected(&h).as_deref(), Some("ada"));
+}
+
+#[test]
+fn a_mark_stays_in_view_and_a_new_item_starts_at_the_top() {
+    let diary = Diary::with(&[("ada", "2026-11-04"), ("bob", "2026-11-05")]);
+    diary.marked.lock().unwrap().push("bob".into());
+    let diary = Arc::new(diary);
+    let w = CalendarWidget::new(diary, CalendarLabels::default());
+    w.with_state(|s| s.select("ada"));
+    let mut h = Harness::new(w, 1300.0, 300.0);
+    let at_rest = h.centre("page").1;
+    h.click("edit");
+    let form_at_rest = h.centre("page").1;
+    let scrolled = h.wheel_at((h.centre("page").0, 200.0), 200.0);
+    assert!(
+        scrolled < form_at_rest - 50.0,
+        "the form did scroll: {form_at_rest} {scrolled}"
+    );
+    h.widget.with_state(|s| s.cancel_edit());
+    h.widget.with_state(|s| s.select("bob"));
+    h.rebuild();
+    assert!(h.has("pinned"));
+    let page = h.centre("page").1;
+    assert!(
+        (page - at_rest).abs() < 60.0,
+        "at the top again: {page} {at_rest}"
+    );
+    let pinned = h.centre("pinned").1;
+    assert!(
+        pinned < page,
+        "the mark is above the page, out of the scroller"
+    );
+}
+
+#[test]
+fn a_problem_gets_a_line_that_opens_it() {
+    let diary = Diary::with(&[("ada", "2026-11-04")]);
+    diary.problems.lock().unwrap().extend([
+        ItemProblem::of("broken-1", "One cannot be read"),
+        ItemProblem::of("ada", "Too many occurrences"),
+    ]);
+    let w = CalendarWidget::new(Arc::new(diary), CalendarLabels::default());
+    let mut h = Harness::new(w, 1300.0, 800.0);
+    assert!(h.has(ADA), "the rest is there");
+    h.click("problem-1");
+    assert_eq!(selected(&h).as_deref(), Some("ada"));
+}
+
+#[test]
+fn the_context_of_the_widget_is_a_plain_value() {
+    let (_, w) = widget();
+    w.with_state(|s| s.select("bob"));
+    let context = w.context();
+    assert_eq!(context.item.as_deref(), Some("bob"));
+    assert_eq!(context.view, ViewRange::Month);
 }

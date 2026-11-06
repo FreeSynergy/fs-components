@@ -78,8 +78,9 @@ fn a_failed_save_keeps_the_draft_and_cancel_reads_again() {
     assert!(edit.error.as_deref().unwrap().contains("the store refuses"));
     diary.other_changes("ada", "Theirs");
     s.cancel_edit();
-    assert!(s.editing().is_some(), "the first Cancel only asks");
     s.cancel_edit();
+    assert!(s.editing().is_some(), "Cancel only asks, however often");
+    s.confirm_discard();
     assert!(s.editing().is_none());
     assert!(matches!(s.shown(), Shown::Item { sheet, .. } if sheet.title == "Theirs"));
     assert!(
@@ -89,26 +90,84 @@ fn a_failed_save_keeps_the_draft_and_cancel_reads_again() {
 }
 
 #[test]
-fn something_gone_from_the_store_leaves_the_view_after_cancel_and_after_a_save() {
+fn something_gone_leaves_the_view_after_cancel_and_a_save_keeps_the_draft() {
     let (diary, mut s) = state(pair());
     s.select("ada");
     s.begin_edit();
     s.set_field("title", "Mine");
     diary.other_deletes("ada");
     s.cancel_edit();
-    s.cancel_edit();
+    s.confirm_discard();
     assert_eq!(s.shown(), &Shown::Nothing);
     assert!(s.notice().unwrap().contains("no longer exists"));
     assert!(s.items().iter().all(|i| i.key != "ada"));
 
     s.select("bob");
     s.begin_edit();
-    s.set_field("title", "Mine");
+    s.set_field("title", "Typed with care");
     diary.other_deletes("bob");
     s.save();
-    assert!(s.editing().is_none());
+    let edit = s.editing().expect("the draft stays");
+    assert_eq!(edit.draft.value("title"), Some("Typed with care"));
+    assert!(edit.error.as_deref().unwrap().contains("no longer exists"));
+    assert!(s.items().iter().all(|i| i.key != "bob"), "it left the view");
+    s.cancel_edit();
+    s.confirm_discard();
     assert_eq!(s.shown(), &Shown::Nothing);
-    assert!(s.items().iter().all(|i| i.key != "bob"));
+}
+
+#[test]
+fn discarding_is_another_action_and_typing_takes_the_question_back() {
+    let (_, mut s) = state(pair());
+    s.select("ada");
+    s.begin_edit();
+    s.confirm_discard();
+    assert!(s.editing().is_some(), "not asked yet");
+    s.set_field("title", "Mine");
+    s.confirm_discard();
+    assert!(s.editing().is_some(), "not asked yet, with changes");
+    s.cancel_edit();
+    s.keep_editing();
+    s.confirm_discard();
+    assert_eq!(
+        s.editing().unwrap().draft.value("title"),
+        Some("Mine"),
+        "the answer was no"
+    );
+    s.cancel_edit();
+    s.set_field("title", "More");
+    s.confirm_discard();
+    assert_eq!(
+        s.editing().unwrap().draft.value("title"),
+        Some("More"),
+        "typing took it back"
+    );
+    s.cancel_edit();
+    s.confirm_discard();
+    assert!(s.editing().is_none());
+}
+
+#[test]
+fn a_change_elsewhere_shows_when_the_item_is_clicked_again_or_the_view_moves() {
+    let (diary, mut s) = state(pair());
+    s.select("ada");
+    let title = |s: &CalendarState| match s.shown() {
+        Shown::Item { sheet, .. } => sheet.title.clone(),
+        other => format!("{other:?}"),
+    };
+    diary.other_changes("ada", "First change");
+    s.select("ada");
+    assert_eq!(title(&s), "First change");
+    diary.other_changes("ada", "Second change");
+    s.next();
+    assert_eq!(title(&s), "Second change");
+    diary.other_changes("ada", "Third change");
+    s.set_view(fs_components_workbenches::calendar::ViewRange::Week);
+    assert_eq!(title(&s), "Third change");
+    diary.other_deletes("ada");
+    s.previous();
+    assert_eq!(s.shown(), &Shown::Nothing, "gone, so it leaves");
+    assert!(s.notice().unwrap().contains("no longer exists"));
 }
 
 #[test]
@@ -130,21 +189,6 @@ fn a_conflict_keeps_the_draft_and_the_next_save_writes_knowingly() {
     );
     s.save();
     assert_eq!(diary.title("ada").as_deref(), Some("Mine"));
-}
-
-#[test]
-fn an_unreadable_item_says_so_and_a_failed_read_of_the_items_too() {
-    let (diary, mut s) = state(pair());
-    s.select("broken");
-    assert!(matches!(s.shown(), Shown::Failed { reason, .. } if reason.contains("damaged")));
-    assert!(!s.can_edit());
-    *diary.broken.lock().unwrap() = Some("no store".into());
-    s.next();
-    assert!(s.problem().unwrap().contains("no store"));
-    assert!(s.items().is_empty());
-    *diary.broken.lock().unwrap() = None;
-    s.next();
-    assert_eq!(s.problem(), None);
 }
 
 #[test]
@@ -198,4 +242,30 @@ fn a_failed_delete_keeps_the_item_and_one_gone_leaves() {
     s.confirm_delete();
     assert_eq!(s.shown(), &Shown::Nothing);
     assert!(s.notice().unwrap().contains("no longer exists"));
+}
+
+#[test]
+fn what_was_marked_is_not_named_after_its_delete() {
+    let diary = pair();
+    diary.marked.lock().unwrap().push("ada".into());
+    let (_, mut s) = state(diary);
+    s.select("ada");
+    s.ask_delete();
+    s.confirm_delete();
+    let notice = s.notice().unwrap();
+    assert!(!notice.contains("ada"), "{notice}");
+    assert_eq!(notice, "The item was deleted.");
+}
+
+#[test]
+fn the_delete_question_about_something_unreadable_says_what_goes_with_it() {
+    let (_, mut s) = state(pair());
+    s.select("broken-series#2026-11-04");
+    assert!(matches!(s.shown(), Shown::Failed { .. }));
+    s.ask_delete();
+    assert!(
+        s.notice().unwrap().contains("All of the series goes."),
+        "{:?}",
+        s.notice()
+    );
 }

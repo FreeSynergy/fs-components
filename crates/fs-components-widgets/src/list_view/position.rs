@@ -147,7 +147,7 @@ impl ListPosition {
     }
 
     /// The rows in view, for these measures.
-    pub(super) fn window(&self, offset: f32, measure: Measure) -> Computed<Vec<usize>> {
+    pub(crate) fn window(&self, offset: f32, measure: Measure) -> Computed<Vec<usize>> {
         // Made once and kept across builds, so no build's scope may own it: `WindowNode` gives it back.
         let watch = Owner::detached(|| self.scroll.watch_y(offset));
         if watch.try_get().is_none_or(|y| (y - offset).abs() > 0.5) {

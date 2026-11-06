@@ -129,4 +129,21 @@ impl Harness {
             self.tree.dispatch_event(node, event, x, y);
         }
     }
+
+    /// Turn the wheel over a point, as a window does; returns where the element under it now is.
+    pub fn wheel_at(&mut self, (x, y): (f32, f32), down: f32) -> f32 {
+        let moved = self.router.on_mouse_move(&self.tree, x, y);
+        self.send(moved, x, y);
+        let hit = self
+            .router
+            .hit_test(&self.tree, x, y)
+            .expect("something is there");
+        self.tree
+            .dispatch_scroll_chain(hit.node, &hit.ancestors, x, y, 0.0, -down);
+        self.tree.tick_scroll_physics(1_000);
+        let updates = self.tree.take_pending_property_updates();
+        self.tree.apply_partial_property_updates(updates);
+        self.tree.compute_layout(self.size.0, self.size.1);
+        self.centre("page").1
+    }
 }

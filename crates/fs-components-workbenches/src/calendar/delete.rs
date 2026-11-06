@@ -34,11 +34,14 @@ impl CalendarState {
         }
         self.delete_asked = self.selected().map(str::to_string);
         let mut question = CalendarLabels::fill(&self.labels.delete_confirm, &self.title());
-        if let Shown::Item { sheet, .. } = &self.shown
-            && let Some(warning) = &sheet.delete_warning
-        {
+        let warning = match &self.shown {
+            Shown::Item { sheet, .. } => sheet.delete_warning.clone(),
+            Shown::Failed { key, .. } => self.source.delete_warning(key),
+            Shown::Nothing => None,
+        };
+        if let Some(warning) = warning {
             question.push(' ');
-            question.push_str(warning);
+            question.push_str(&warning);
         }
         self.notice = Some(question);
     }
@@ -52,6 +55,7 @@ impl CalendarState {
             return;
         };
         self.delete_asked = None;
+        let marked = matches!(&self.shown, Shown::Item { sheet, .. } if !sheet.marks.is_empty());
         let title = self.title();
         if let Err(e) = self.source.delete(&key) {
             if e.kind == ErrorKind::NotFound {
@@ -63,7 +67,12 @@ impl CalendarState {
         }
         self.reload();
         self.shown = Shown::Nothing;
-        self.notice = Some(CalendarLabels::fill(&self.labels.deleted, &title));
+        // The title of something marked does not stay on the screen after it has gone.
+        self.notice = Some(if marked {
+            self.labels.deleted_marked.clone()
+        } else {
+            CalendarLabels::fill(&self.labels.deleted, &title)
+        });
     }
 
     /// Answer the question of [`CalendarState::ask_delete`] with no.
