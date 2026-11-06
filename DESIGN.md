@@ -57,7 +57,9 @@ Two crates beside the three layers (provisional, Thread 4 of the sprint):
 
 A program's frontend (ADR 0005, 0009, 0037) is a crate `fs-<program>-app` in the program's repo: arguments, opening the core, labels, `Screen`s. It imports no `blinc_*` crate. Its work surface is a workbench in `fs-components` (open, knows no store and no program core, takes a trait), so another program can embed it.
 
-Not built in the shell: menus, shortcuts for the navigation, window state across runs, compact variants. The window path `launch` itself is not run by tests (no window on the owner's desktop); `AppWidget::build`, which it calls, is drawn offscreen and compared with `picture`. Clicks on the navigation are not simulated.
+Not built in the shell: menus, shortcuts for the navigation, window state across runs, compact variants. Tests open no window; `AppWidget::build`, which `launch` calls, is drawn offscreen and compared with `picture`. Clicks on the navigation are not simulated. `launch` ran once in a real Wayland window for 20 seconds without a crash or a log line (2026-11-06); that says it starts and keeps running, not that it looks right or reacts.
+
+To try it by hand: `cargo run -p fs-components-app --example shell`. Check: the window shows the title, two navigation entries and the status line "Ready"; a click on "Second" changes the heading and the highlighted entry; Tab reaches the entries; resizing keeps the layout. `cargo run -p fs-components-app --example shell -- /tmp/shell.png` draws a picture and opens no window.
 
 ## Public types and Blinc
 
