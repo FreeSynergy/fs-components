@@ -2,6 +2,8 @@
 //!
 //! Pattern: State transitions on `Reader` (see `backup.rs` for the timing and the writes).
 
+use super::backup::pending_key;
+use super::draft::Draft;
 use super::edit::Editing;
 use super::model::Reader;
 use crate::labels::Labels;
@@ -14,6 +16,15 @@ impl Reader {
         let Some(store) = self.backup.store.clone() else {
             return;
         };
+        // Text typed while an earlier offer was unanswered is newer: offer that.
+        let pending = pending_key(path);
+        if let Ok(Some(d)) = store.load(&pending)
+            && d.path == pending
+            && d.text != editing.original
+        {
+            editing.backup_offer = Some(Draft::new(path, d.text, d.original, d.revision));
+            return;
+        }
         match store.load(path) {
             Ok(Some(d)) if d.path != path => {
                 self.backup.problem = Some(Labels::fill(&self.labels.backup_mismatch, &d.path));
@@ -36,6 +47,7 @@ impl Reader {
     /// the document changed since the draft was made, the first Save reports it before it writes
     /// (through the source's revision, or, when the source has none, by the reader).
     pub fn restore_backup(&mut self) {
+        let path = self.current_path().map(str::to_string);
         let Some(editing) = &mut self.editing else {
             return;
         };
@@ -64,8 +76,13 @@ impl Reader {
             editing.error = Some(self.labels.backup_stale.clone());
         }
         self.notice = None;
-        // The restored text is this edit's now: a save or a chosen discard clears the backup.
-        self.backup.written = Some(editing_id);
+        // The restored text is this edit's now: a save or a chosen discard clears the backup, and
+        // the second slot (text typed while the offer was open) is obsolete.
+        if let (Some(store), Some(path)) = (self.backup.store.clone(), path) {
+            let _ = store.clear(&pending_key(&path));
+            self.backup.written = Some((editing_id, path));
+        }
+        self.backup.generation += 1;
         self.note_change();
     }
 
@@ -84,12 +101,14 @@ impl Reader {
         editing.restore_asked = false;
         let typed = editing.changed();
         if let Some(store) = self.backup.store.clone() {
+            let _ = store.clear(&pending_key(&path));
             self.backup.problem = store
                 .clear(&path)
                 .err()
                 .map(|e| Labels::fill(&self.labels.backup_failed, &e.message));
         }
         self.backup.written = None;
+        self.backup.generation += 1;
         if typed {
             self.note_change();
         }
@@ -98,14 +117,16 @@ impl Reader {
     /// Remove the backup that edit `edit` of the document at `path` wrote (after a save or a
     /// chosen discard). A backup this edit did not write (an offered one) stays.
     pub(super) fn clear_own_backup(&mut self, path: &str, edit: u64) {
-        if self.backup.written != Some(edit) {
+        self.backup.generation += 1;
+        let Some((_, key)) = self.backup.written.clone().filter(|w| w.0 == edit) else {
             return;
-        }
+        };
         let Some(store) = self.backup.store.clone() else {
             return;
         };
+        let _ = path;
         self.backup.problem = store
-            .clear(path)
+            .clear(&key)
             .err()
             .map(|e| Labels::fill(&self.labels.backup_failed, &e.message));
         self.backup.written = None;

@@ -4,6 +4,7 @@
 //! does, so an emphasised run is one small rich text.
 
 use blinc_core::Color;
+use blinc_layout::div::FontFamily;
 use blinc_layout::styled_text::{StyledLine, StyledText, TextSpan};
 use blinc_layout::{RichText, rich_text_styled};
 
@@ -22,10 +23,15 @@ pub(super) fn emphasised(
     span.strikethrough = style.strike;
     span.underline = style.link.is_some();
     span.code = style.code;
-    rich_text_styled(StyledText::from_lines(vec![StyledLine::new(
+    let rich = rich_text_styled(StyledText::from_lines(vec![StyledLine::new(
         piece.to_string(),
         vec![span],
     )]))
     .size(size)
-    .default_color(color)
+    .default_color(color);
+    // A run in a fallback font (Indic scripts, symbols) is set in that family.
+    match &style.font {
+        Some(family) => rich.font_family(FontFamily::named(family.to_string())),
+        None => rich,
+    }
 }

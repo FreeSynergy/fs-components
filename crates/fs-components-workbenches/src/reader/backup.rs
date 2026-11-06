@@ -33,8 +33,11 @@ pub(super) struct Backup {
     pub timing: Timing,
     /// The edit (by id) whose draft has changes that are not in the store yet.
     pub dirty: Option<u64>,
-    /// The edit whose draft this reader wrote into the store (and may clear again).
-    pub written: Option<u64>,
+    /// The edit and the store key of the draft this reader wrote into the store (and may clear).
+    pub written: Option<(u64, String)>,
+    /// Counts up whenever a backup is cleared or the document changes: a write that was made
+    /// before and finishes after is stale and is taken back.
+    pub generation: u64,
     pub last_change: Instant,
     pub last_attempt: Instant,
     pub problem: Option<String>,
@@ -51,6 +54,7 @@ impl Backup {
             },
             dirty: None,
             written: None,
+            generation: 0,
             last_change: now,
             last_attempt: now,
             problem: None,
@@ -61,8 +65,9 @@ impl Backup {
 /// One write to the store, made under the reader's lock and run outside it.
 pub struct BackupJob {
     store: Arc<dyn DraftStore>,
-    path: String,
+    key: String,
     edit: u64,
+    generation: u64,
     draft: Option<Draft>,
 }
 
@@ -71,13 +76,18 @@ impl BackupJob {
     pub fn run(&self) -> Result<(), SourceError> {
         match &self.draft {
             Some(d) => self.store.save(d),
-            None => self.store.clear(&self.path),
+            None => self.store.clear(&self.key),
         }
     }
 }
 
 /// How long a failed backup waits before it is tried again.
 const RETRY: Duration = Duration::from_secs(2);
+
+/// The store key of the second slot: the new text typed while an offered backup is unanswered.
+pub(super) fn pending_key(path: &str) -> String {
+    format!("{path}\u{1}pending")
+}
 
 impl Reader {
     /// Back drafts up into `store` (none = no backup).
@@ -118,7 +128,7 @@ impl Reader {
             (paused && since >= wait) || since >= b.timing.at_most.max(wait)
         };
         let e = self.editing.as_ref()?;
-        if b.dirty != Some(e.id) || e.backup_offer.is_some() {
+        if b.dirty != Some(e.id) {
             return None;
         }
         if !due(b.last_change.elapsed() >= b.timing.pause) {
@@ -130,7 +140,7 @@ impl Reader {
     /// The write for the draft now, due or not (the offered backup is still not touched).
     pub fn backup_job_now(&mut self) -> Option<BackupJob> {
         let e = self.editing.as_ref()?;
-        if self.backup.dirty != Some(e.id) || e.backup_offer.is_some() {
+        if self.backup.dirty != Some(e.id) {
             return None;
         }
         self.make_job(true)
@@ -140,18 +150,33 @@ impl Reader {
         let store = self.backup.store.clone()?;
         let path = self.current_path()?.to_string();
         let e = self.editing.as_ref()?;
+        // While a backup waits for the person's answer it stays untouched: the new text goes
+        // under a second key.
+        let key = if e.backup_offer.is_some() {
+            pending_key(&path)
+        } else {
+            path.clone()
+        };
         let draft = if e.changed() {
-            Some(Draft::new(&path, &e.draft, &e.original, e.revision.clone()))
-        } else if self.backup.written == Some(e.id) {
-            None // typed and undone: remove what this edit wrote
+            Some(Draft::new(&key, &e.draft, &e.original, e.revision.clone()))
+        } else if let Some((id, written_key)) = self.backup.written.clone().filter(|w| w.0 == e.id)
+        {
+            return Some(BackupJob {
+                store,
+                key: written_key,
+                edit: id,
+                generation: self.backup.generation,
+                draft: None, // typed and undone: remove what this edit wrote
+            });
         } else {
             self.backup.dirty = None;
             return None;
         };
         Some(BackupJob {
             store,
-            path,
+            key,
             edit: e.id,
+            generation: self.backup.generation,
             draft,
         })
     }
@@ -163,7 +188,14 @@ impl Reader {
         match result {
             Ok(()) => {
                 self.backup.problem = None;
-                self.backup.written = job.draft.is_some().then_some(job.edit);
+                if job.draft.is_some() && job.generation != self.backup.generation {
+                    // A save, a discard or a change of document happened while this write ran:
+                    // what it wrote is stale, take it back.
+                    let _ = job.store.clear(&job.key);
+                    self.backup.written = None;
+                    return;
+                }
+                self.backup.written = job.draft.as_ref().map(|_| (job.edit, job.key.clone()));
                 if self.backup.dirty == Some(job.edit) && !self.changed_since(job) {
                     self.backup.dirty = None;
                 }

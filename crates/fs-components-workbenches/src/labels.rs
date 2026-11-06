@@ -62,6 +62,8 @@ pub struct Labels {
     pub backup_mismatch: String,
     /// `{}` = the reason.
     pub backup_failed: String,
+    /// Characters no installed font has; `{}` = the first few, as `U+XXXX`.
+    pub glyphs_missing: String,
     /// `{}` = the reason.
     pub list_failed: String,
     /// `{}` = the reason.
@@ -103,6 +105,9 @@ impl Default for Labels {
                 "A stored draft belongs to another document (\"{}\") and was not offered.",
             ),
             backup_failed: s("Backup of your draft failed: {}"),
+            glyphs_missing: s(
+                "Some characters cannot be shown because no installed font has them ({}). Install a font that covers their script, for example Noto Sans.",
+            ),
             list_failed: s("The list failed: {}"),
             search_failed: s("The search failed: {}"),
         }

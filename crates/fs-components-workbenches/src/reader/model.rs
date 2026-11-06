@@ -25,6 +25,7 @@ pub struct Reader {
     pub(super) editing: Option<Editing>,
     pub(super) edit_counter: u64,
     pub(super) backup: Backup,
+    pub(super) glyphs_told: std::collections::BTreeSet<char>,
     pub(super) notice: Option<String>,
     pub(super) export_target: Option<String>,
     pub(super) overwrite_ok: Option<(String, String)>,
@@ -46,6 +47,7 @@ impl Reader {
             editing: None,
             edit_counter: 0,
             backup: Backup::new(),
+            glyphs_told: std::collections::BTreeSet::new(),
             notice: None,
             export_target: None,
             overwrite_ok: None,
@@ -190,6 +192,7 @@ impl Reader {
     }
 
     pub(super) fn show(&mut self, path: &str) {
+        self.backup.generation += 1;
         self.editing = None;
         self.overwrite_ok = None;
         self.notice = None;
@@ -203,5 +206,6 @@ impl Reader {
                 reason: Labels::fill(&self.labels.unreadable, &e.message),
             },
         };
+        self.tell_missing_glyphs();
     }
 }

@@ -82,15 +82,43 @@ pub fn ink_spans(
     y0: u32,
     y1: u32,
 ) -> Vec<(u32, u32)> {
+    ink_spans_gap(img, xs, y0, y1, 14)
+}
+
+/// Like [`ink_spans`] with the number of empty columns that separates two spans.
+pub fn ink_spans_gap(
+    img: &image::RgbaImage,
+    xs: std::ops::Range<u32>,
+    y0: u32,
+    y1: u32,
+    gap: u32,
+) -> Vec<(u32, u32)> {
     let has = |x: u32| (y0..y1).any(|y| dark(img.get_pixel(x, y)));
     let mut spans: Vec<(u32, u32)> = Vec::new();
     for x in xs {
         if has(x) {
             match spans.last_mut() {
-                Some(s) if x - s.1 <= 14 => s.1 = x,
+                Some(s) if x - s.1 <= gap => s.1 = x,
                 _ => spans.push((x, x)),
             }
         }
     }
     spans
+}
+
+/// Do glyphs draw at all on this machine? (With no fonts installed nothing does; tests that look
+/// at text then have nothing to look at and skip.)
+pub fn fonts_work(tmp: &Scratch) -> bool {
+    let file = tmp.file("fonts-probe.png");
+    let source = std::sync::Arc::new(Long(vec![Block::Paragraph(Inline::plain("Hello world"))]));
+    if fs_components_workbenches::snapshot(
+        fs_components_workbenches::Picture::new(source, 700, 200),
+        &file,
+    )
+    .is_err()
+    {
+        return false;
+    }
+    let img = pixels(&file);
+    (80..200).any(|y| (340..690).any(|x| dark(img.get_pixel(x, y))))
 }

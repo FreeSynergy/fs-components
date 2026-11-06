@@ -23,6 +23,8 @@ const LONG_PLAIN: usize = 1500;
 pub(super) struct Face {
     pub size: f32,
     pub bold: bool,
+    /// Set in the monospace font (code).
+    pub mono: bool,
 }
 
 /// The element for `inline` set in `face`.
@@ -32,11 +34,7 @@ pub(super) fn inline(
     look: &Look,
     on_link: Option<&LinkHandler>,
 ) -> Div {
-    if !inline.marks.is_empty()
-        || inline.text.len() > LONG_PLAIN
-        || inline.text.contains('\n')
-        || super::fallback::needs_fallback(&inline.text)
-    {
+    if uses_flow(inline) {
         return flow(inline, face, look, on_link);
     }
     let text = if inline.text.is_empty() {
@@ -53,4 +51,27 @@ pub(super) fn inline(
     .default_color(look.text);
     let rich = if face.bold { rich.bold() } else { rich };
     div().w_full().child(rich)
+}
+
+/// Does this text go through `flow.rs` (many small runs) instead of one rich text? Marks, line
+/// breaks, characters that need another font, and very long text do.
+pub(super) fn uses_flow(inline: &Inline) -> bool {
+    !inline.marks.is_empty()
+        || inline.text.len() > LONG_PLAIN
+        || inline.text.contains('\n')
+        || super::fallback::needs_fallback(&inline.text)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn long_plain_text_goes_through_the_flow_not_one_slow_rich_text() {
+        // 30 KB in one rich text took seconds in Blinc's measuring; the flow does not.
+        let long = Inline::plain("lorem ipsum dolor sit amet ".repeat(1200));
+        assert!(long.text.len() > 30_000 && uses_flow(&long));
+        assert!(!uses_flow(&Inline::plain("a short plain paragraph")));
+        assert!(uses_flow(&Inline::plain("two\nlines")));
+    }
 }

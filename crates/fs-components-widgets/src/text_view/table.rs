@@ -12,6 +12,8 @@ use crate::text::{Align, Inline};
 
 /// Longest word (in characters) a column keeps whole.
 const MAX_WORD: usize = 28;
+/// The widest a column asks to start with, in pixels: wider tables shrink to the room there is.
+const MAX_BASIS: f32 = 160.0;
 const MIN_SHARE: usize = 6;
 const MAX_SHARE: usize = 40;
 
@@ -44,7 +46,7 @@ pub(super) fn table(
                 .unwrap_or(0);
             #[allow(clippy::cast_precision_loss)]
             let chars = word.min(MAX_WORD) as f32;
-            chars * look.small * 0.7 + 2.0 * look.small
+            (chars * look.small * 0.7 + 2.0 * look.small).min(MAX_BASIS)
         })
         .collect();
     let mut out = div().class("fs-tv-block").class("fs-tv-table").flex_col();
@@ -59,13 +61,14 @@ pub(super) fn table(
             let face = Face {
                 size: look.small,
                 bold: r == 0,
+                mono: false,
             };
-            // The column is never narrower than its longest word and grows by its share of the
-            // room. Blinc does not know a minimum content width, so the table may be wider than
-            // its box when there are many wide columns (words are not broken instead).
+            // A column starts as wide as its longest word (at most `MAX_BASIS`), grows by its share
+            // of the room, and shrinks when there is not enough: a table wider than the window
+            // wraps words inside their columns (also in the middle of a long word) and never
+            // runs past the edge, so no column is cut off.
             let holder = div()
                 .class("fs-tv-cell")
-                .flex_shrink_0()
                 .w(narrowest[c])
                 .child(inline(cell, face, look, on_link));
             line = line.child(sized(holder, portion, align.get(c).copied()));

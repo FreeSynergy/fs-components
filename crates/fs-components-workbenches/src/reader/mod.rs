@@ -7,6 +7,7 @@ mod backup;
 mod draft;
 mod edit;
 mod exact;
+mod glyphs;
 mod model;
 mod offer;
 mod state;

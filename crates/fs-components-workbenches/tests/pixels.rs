@@ -6,12 +6,16 @@ mod common;
 
 use std::sync::Arc;
 
-use common::draw::{Long, Scratch, ink_spans, ink_top, pixels};
+use common::draw::{Long, Scratch, fonts_work, ink_spans, ink_spans_gap, ink_top, pixels};
 use fs_components_workbenches::{Block, Inline, Mark, MarkKind, Picture, snapshot};
 
 #[test]
 fn all_cells_of_a_row_start_at_the_same_height() {
     let tmp = Scratch::new();
+    if !fonts_work(&tmp) {
+        eprintln!("skipped: no fonts or no graphics");
+        return;
+    }
     let long = "word ".repeat(40);
     let row = vec![
         Inline::new("sortable", vec![Mark::new(MarkKind::Code, 0, 8)]),
@@ -46,6 +50,10 @@ fn all_cells_of_a_row_start_at_the_same_height() {
 #[test]
 fn symbols_and_scripts_without_a_default_glyph_are_drawn_not_boxes() {
     let tmp = Scratch::new();
+    if !fonts_work(&tmp) {
+        eprintln!("skipped: no fonts or no graphics");
+        return;
+    }
     let draw = |name: &str, text: &str| {
         let file = tmp.file(name);
         snapshot(
@@ -92,6 +100,10 @@ fn symbols_and_scripts_without_a_default_glyph_are_drawn_not_boxes() {
 #[test]
 fn unmapped_text_keeps_its_lines_blank_lines_and_indentation() {
     let tmp = Scratch::new();
+    if !fonts_work(&tmp) {
+        eprintln!("skipped: no fonts or no graphics");
+        return;
+    }
     let draw = |name: &str, text: String| {
         let file = tmp.file(name);
         snapshot(
@@ -134,5 +146,84 @@ fn unmapped_text_keeps_its_lines_blank_lines_and_indentation() {
             left(bands[1]) > left(bands[0]) + 15,
             "{name}: the indentation is lost"
         );
+    }
+}
+
+#[test]
+fn a_table_wider_than_the_window_loses_no_column() {
+    let tmp = Scratch::new();
+    if !fonts_work(&tmp) {
+        eprintln!("skipped: no fonts or no graphics");
+        return;
+    }
+    // Six columns, each a header and a cell with one 28-character word.
+    let word = |c: char| Inline::plain(c.to_string().repeat(28));
+    let letters = ['a', 'b', 'c', 'd', 'e', 'f'];
+    let blocks = vec![Block::Table {
+        align: vec![],
+        rows: vec![letters.iter().map(|c| word(*c)).collect()],
+    }];
+    let file = tmp.file("wide.png");
+    if snapshot(Picture::new(Arc::new(Long(blocks)), 1000, 400), &file).is_err() {
+        eprintln!("skipped: no graphics");
+        return;
+    }
+    let img = pixels(&file);
+    // Ink of the first row, in the page area (right of the 320 px sidebar, left of the scrollbar).
+    let spans = ink_spans_gap(&img, 340..img.width() - 8, 110, 300, 6);
+    let right_edge = spans.iter().map(|s| s.1).max().unwrap_or(0);
+    assert!(
+        right_edge < img.width() - 8,
+        "text runs into the window edge: {spans:?}"
+    );
+    // Each column is its own group of ink (wrapped words stay inside their column).
+    assert!(
+        spans.len() >= 6,
+        "columns are cut off: only {} of 6 on the picture: {spans:?}",
+        spans.len()
+    );
+}
+
+#[test]
+fn indic_text_in_code_unmapped_text_and_emphasis_is_drawn_not_boxes() {
+    let tmp = Scratch::new();
+    if !fonts_work(&tmp) || fs_components_widgets::fallback_family('\u{0928}').is_none() {
+        eprintln!("skipped: no fonts, or none for Devanagari");
+        return;
+    }
+    let deva = "\u{0928}\u{092E}\u{0938}\u{094D}\u{0924}\u{0947}";
+    let tofu = "\u{10FFFD}\u{10FFFC}\u{10FFFB}\u{10FFFA}\u{10FFF9}\u{10FFF8}";
+    let make = |kind: &str, text: &str| -> Vec<Block> {
+        match kind {
+            "code" => vec![Block::Code {
+                lang: String::new(),
+                text: text.into(),
+            }],
+            "plain" => vec![Block::Plain(text.into())],
+            _ => vec![Block::Paragraph(Inline::new(
+                text,
+                vec![Mark::new(MarkKind::Emphasis, 0, text.chars().count())],
+            ))],
+        }
+    };
+    for kind in ["code", "plain", "emphasis"] {
+        let draw = |name: &str, text: &str| {
+            let file = tmp.file(name);
+            snapshot(
+                Picture::new(Arc::new(Long(make(kind, text))), 700, 200),
+                &file,
+            )
+            .ok()?;
+            Some(pixels(&file))
+        };
+        let (Some(a), Some(b)) = (
+            draw(&format!("{kind}-deva.png"), deva),
+            draw(&format!("{kind}-tofu.png"), tofu),
+        ) else {
+            eprintln!("skipped: no graphics");
+            return;
+        };
+        let diff = a.pixels().zip(b.pixels()).filter(|(x, y)| x != y).count();
+        assert!(diff > 50, "{kind}: Devanagari looks like empty boxes");
     }
 }

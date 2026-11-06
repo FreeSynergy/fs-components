@@ -71,7 +71,7 @@ fn run(piece: &str, style: &Style, face: Face, look: &Look, on_link: Option<&Lin
     if style.link.is_some() {
         t = t.underline();
     }
-    if style.code {
+    if style.code || face.mono {
         t = t.monospace();
     }
     if let Some(family) = &style.font {
@@ -169,6 +169,7 @@ mod tests {
             Face {
                 size: 14.0,
                 bold: false,
+                mono: false,
             },
         );
         let texts: Vec<&str> = r.iter().map(|(t, _)| t.as_str()).collect();
@@ -184,6 +185,7 @@ mod tests {
             Face {
                 size: 14.0,
                 bold: false,
+                mono: false,
             },
         );
         let texts: Vec<&str> = r.iter().map(|(t, _)| t.as_str()).collect();
@@ -198,6 +200,7 @@ mod tests {
             Face {
                 size: 14.0,
                 bold: false,
+                mono: false,
             },
         );
         let texts: Vec<&str> = r.iter().map(|(t, _)| t.as_str()).collect();

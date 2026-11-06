@@ -102,3 +102,37 @@ fn all_texts_come_from_the_caller() {
     r.follow("x");
     assert!(r.notice().unwrap().starts_with("Nichts bei"));
 }
+
+#[test]
+fn characters_no_font_has_are_announced_once() {
+    use fs_components_workbenches::{
+        Block, Document, DocumentSource, Entry, Hit, Inline, LinkTarget, SourceError,
+    };
+    struct Odd;
+    impl DocumentSource for Odd {
+        fn entries(&self, _: &str) -> Result<Vec<Entry>, SourceError> {
+            Ok(vec![Entry::new("a", "A"), Entry::new("b", "B")])
+        }
+        fn read(&self, _: &str) -> Result<Document, SourceError> {
+            // U+1FAFF is in the emoji block and unassigned: no font has a glyph for it.
+            Ok(Document::new(
+                "d",
+                vec![Block::Paragraph(Inline::plain("odd \u{1FAFF} sign"))],
+            ))
+        }
+        fn resolve(&self, _: &str, h: &str) -> LinkTarget {
+            LinkTarget::Missing(h.into())
+        }
+        fn find(&self, _: &str) -> Result<Vec<Hit>, SourceError> {
+            Ok(vec![])
+        }
+    }
+    if fs_components_widgets::fallback_family('\u{1FAFF}').is_some() {
+        eprintln!("skipped: this machine has a font for the test character");
+        return;
+    }
+    let mut r = Reader::new(Arc::new(Odd), Labels::default());
+    assert!(r.notice().unwrap().contains("U+1FAFF"), "{:?}", r.notice());
+    r.open("b");
+    assert_eq!(r.notice(), None, "the same character was announced twice");
+}
