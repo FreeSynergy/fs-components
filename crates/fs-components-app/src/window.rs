@@ -7,6 +7,7 @@ use blinc_app::windowed::WindowedApp;
 use fs_components_render::{bundle, register_fonts};
 
 use crate::error::AppError;
+use crate::styles::MIN_WINDOW;
 use crate::widget::AppWidget;
 
 /// Window settings. The title comes from the [`AppWidget`].
@@ -35,9 +36,10 @@ impl Default for WindowOptions {
 pub fn launch(options: WindowOptions, app: AppWidget) -> Result<(), AppError> {
     register_fonts();
     let config = WindowConfig {
-        title: app.shell().title().to_owned(),
+        title: app.with_shell(|shell| shell.title().to_owned()),
         width: options.width,
         height: options.height,
+        min_size: Some(MIN_WINDOW),
         ..Default::default()
     };
     let css = app.styles();

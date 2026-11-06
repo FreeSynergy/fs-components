@@ -40,9 +40,11 @@ impl Canvas {
 
 /// Draw the element made by `build` to a PNG at `path`.
 ///
-/// `build` gets the width and height and runs after the runtime is up, because elements read theme
-/// and reactive state. `after_layout` runs once the layout is known and before drawing, for example
-/// to scroll. Only one picture is drawn at a time: Blinc keeps its state in process-wide singletons.
+/// `build` gets the width and height and runs after the runtime and the text measurer are up, because
+/// elements read theme and reactive state and measure their text. `after_layout` runs once the layout
+/// is known and before drawing, for a direct change such as scroll physics; a change sent through a
+/// signal is not drawn, because no frame runs. Not while a window of this process is open: it resets
+/// that window's theme. The picture is on the light theme. Only one picture is drawn at a time: Blinc keeps its state in process-wide singletons.
 ///
 /// # Errors
 /// [`RenderError`] if the size is 0, there is no graphics adapter, the style sheet does not parse,
@@ -68,13 +70,13 @@ where
     register_fonts();
     #[allow(clippy::cast_precision_loss)] // picture sizes are far below 2^23
     let (w, h) = (width as f32, height as f32);
-    let ui = build(w, h);
     let mut app = BlincApp::with_config(BlincConfig {
         sample_count: 1,
         ..Default::default()
     })
     .map_err(|e| RenderError::NoGraphics(e.to_string()))?;
     blinc_layout::init_text_measurer();
+    let ui = build(w, h);
     let mut tree = RenderTree::from_element(&ui);
     let vars = blinc_theme::ThemeState::get().to_css_variable_map();
     let mut css = String::new();

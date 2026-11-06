@@ -1,14 +1,16 @@
 //! The shell, ready to be drawn.
 //!
-//! Pattern: Facade + Observer — `AppWidget` holds the shared [`Shell`] and builds the element; one
-//! counter (signal) per live area tells it to draw again after a change, so a status message does
-//! not rebuild the workbench.
+//! Pattern: Facade + Observer. `AppWidget` holds the shared [`Shell`] and builds the element.
+//! Changing the screen asks the window for a full rebuild: a surface built outside a build pass
+//! would get new element keys on every change, and its old callbacks would keep running (see the
+//! Blinc notes in `DESIGN.md`). The status line is a live area of its own, so a message rebuilds
+//! nothing else. No lock is held while a surface runs, so a surface may use its `AppWidget`.
 
 use std::path::Path;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 
-use blinc_core::BlincContextState;
+use blinc_core::{BlincContextState, Signal};
 use blinc_layout::prelude::NoState;
 use blinc_layout::stateful::stateful;
 use fs_components_render::{Canvas, draw_to_png};
@@ -17,7 +19,7 @@ use crate::Element;
 use crate::error::AppError;
 use crate::shell::{Shell, Status};
 use crate::styles::STYLES;
-use crate::surface::Screen;
+use crate::surface::{Screen, Surface};
 use crate::view::{OnSelect, frame, has_nav, main_area, nav, status_line};
 
 static NEXT_ID: AtomicU64 = AtomicU64::new(1);
@@ -41,66 +43,66 @@ impl AppWidget {
         })
     }
 
-    /// The state, for reading. Change it through [`AppWidget::select`] and
-    /// [`AppWidget::set_status`], which also draw again.
-    pub fn shell(&self) -> MutexGuard<'_, Shell> {
-        locked(&self.shell)
+    /// Read the state. Change it through [`AppWidget::select`] and [`AppWidget::set_status`], which
+    /// also draw again. Those two must not be called from inside `read`.
+    pub fn with_shell<T>(&self, read: impl FnOnce(&Shell) -> T) -> T {
+        read(&locked(&self.shell))
     }
 
-    /// Show the screen with this id. Returns `false` and changes nothing if there is none. Call it
-    /// on the interface thread.
+    /// Show the screen with this id. Returns `false` and changes nothing if there is none. Selecting
+    /// the screen already shown draws nothing. Call it on the interface thread.
     pub fn select(&self, id: &str) -> bool {
-        let changed = locked(&self.shell).select(id);
-        if changed {
-            refresh(self.id, "nav");
-            refresh(self.id, "main");
+        let (found, changed) = {
+            let mut shell = locked(&self.shell);
+            let shown = shell.current().is_some_and(|s| s.id == id);
+            let found = shell.select(id);
+            (found, found && !shown)
+        };
+        if changed && BlincContextState::is_initialized() {
+            BlincContextState::get().request_rebuild();
         }
-        changed
+        found
     }
 
-    /// Replace what the status line says; `None` empties it. Call it on the interface thread.
+    /// Replace what the status line says; `None` empties it. Call it on the interface thread: there
+    /// is no way yet to post from a worker thread (`DESIGN.md`).
     pub fn set_status(&self, status: Option<Status>) {
         locked(&self.shell).set_status(status);
-        refresh(self.id, "status");
+        if BlincContextState::is_initialized() {
+            status_signal(self.id).update(|v| v + 1);
+        }
     }
 
-    /// The style sheet of the shell and all its surfaces.
+    /// The style sheet of the shell and all its surfaces; a sheet used by several comes once.
     pub fn styles(&self) -> String {
-        [STYLES, &locked(&self.shell).surface_styles()].concat()
+        let surfaces = self.with_shell(Shell::surfaces);
+        let mut sheets: Vec<String> = vec![STYLES.to_owned()];
+        for surface in surfaces {
+            let sheet = surface.styles();
+            if !sheet.is_empty() && !sheets.contains(&sheet) {
+                sheets.push(sheet);
+            }
+        }
+        sheets.concat()
     }
 
-    /// The shell filling `width` x `height`, reacting to changes. Call it inside the window's build
-    /// function (it keeps its counters in the framework's keyed state).
+    /// The shell filling `width` x `height`, with a live status line. Call it inside the window's
+    /// build function.
     pub fn build(&self, width: f32, height: f32) -> impl Element + use<> {
-        let (shell, id) = (&self.shell, self.id);
-        // Read first and let go of the lock: `on_state` may run at once and takes the lock itself.
-        let (title, with_nav) = {
-            let shell = locked(shell);
-            (shell.title().to_owned(), has_nav(&shell))
-        };
-        let side = with_nav.then(|| {
-            let (shell, on_select) = (Arc::clone(shell), self.on_select());
-            stateful::<NoState>()
-                .deps([counter(id, "nav").signal_id()])
-                .on_state(move |_| nav(&locked(&shell), &on_select))
-        });
-        let main = {
-            let shell = Arc::clone(shell);
-            stateful::<NoState>()
-                .deps([counter(id, "main").signal_id()])
-                .on_state(move |_| main_area(&locked(&shell), width, height))
-        };
+        let (title, side, surface, with_nav) = self.parts(&self.on_select());
         let status = {
-            let shell = Arc::clone(shell);
+            let shell = Arc::clone(&self.shell);
             stateful::<NoState>()
-                .deps([counter(id, "status").signal_id()])
+                .deps([status_signal(self.id).id()])
                 .on_state(move |_| status_line(&locked(&shell), width))
         };
+        let main = main_area(surface.as_ref(), with_nav, width, height);
         frame(&title, side, main, status, width, height)
     }
 
     /// Draw the shell as it is now to a PNG, without a window. The same view functions as in the
-    /// window draw the same state; no click is simulated.
+    /// window draw the same state, on the light theme; no click is simulated. Not while a window of
+    /// this process is open: it would reset that window's theme.
     ///
     /// # Errors
     /// [`AppError::Picture`] if the picture cannot be drawn or written.
@@ -108,18 +110,32 @@ impl AppWidget {
         let canvas = Canvas::new(width, height, self.styles());
         let on_select: OnSelect = Arc::new(|_| {});
         let build = |w: f32, h: f32| {
-            let shell = locked(&self.shell);
-            let side = has_nav(&shell).then(|| nav(&shell, &on_select));
-            frame(
-                shell.title(),
-                side,
-                main_area(&shell, w, h),
-                status_line(&shell, w),
-                w,
-                h,
-            )
+            let (title, side, surface, with_nav) = self.parts(&on_select);
+            let main = main_area(surface.as_ref(), with_nav, w, h);
+            let status = status_line(&locked(&self.shell), w);
+            frame(&title, side, main, status, w, h)
         };
         draw_to_png(&canvas, build, || {}, path).map_err(AppError::Picture)
+    }
+
+    /// What is read under the lock: nothing here runs a surface.
+    fn parts(
+        &self,
+        on_select: &OnSelect,
+    ) -> (
+        String,
+        Option<blinc_layout::div::Div>,
+        Option<Arc<dyn Surface>>,
+        bool,
+    ) {
+        let shell = locked(&self.shell);
+        let with_nav = has_nav(&shell);
+        (
+            shell.title().to_owned(),
+            with_nav.then(|| nav(&shell, on_select)),
+            shell.current().map(|s| Arc::clone(&s.surface)),
+            with_nav,
+        )
     }
 
     fn on_select(&self) -> OnSelect {
@@ -134,14 +150,8 @@ fn locked(shell: &Mutex<Shell>) -> MutexGuard<'_, Shell> {
     shell.lock().unwrap_or_else(PoisonError::into_inner)
 }
 
-fn counter(id: u64, area: &str) -> blinc_core::State<u64> {
-    BlincContextState::get().use_state_keyed(&format!("fs-app-{id}-{area}"), || 0u64)
-}
-
-/// Count up the signal of `area`, which makes it draw again. Before the runtime is up there is
-/// nothing to draw again.
-fn refresh(id: u64, area: &str) {
-    if BlincContextState::is_initialized() {
-        counter(id, area).update(|v| v + 1);
-    }
+/// Counts up when the status line changed. A signal, not a `State`: it also reaches the window when
+/// a picture set up the runtime first.
+fn status_signal(id: u64) -> Signal<u64> {
+    BlincContextState::get().use_signal_keyed(&format!("fs-app-{id}-status"), || 0u64)
 }

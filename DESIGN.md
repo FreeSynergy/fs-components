@@ -64,7 +64,7 @@ Two crates beside the three layers (provisional, Thread 4 of the sprint):
 
 A program's frontend (ADR 0005, 0009, 0037) is a crate `fs-<program>-app` in the program's repo: arguments, opening the core, labels, `Screen`s. It imports no `blinc_*` crate. Its work surface is a workbench in `fs-components` (open, knows no store and no program core, takes a trait), so another program can embed it.
 
-Not built in the shell: menus, shortcuts for the navigation, window state across runs, compact variants. Tests open no window; `AppWidget::build`, which `launch` calls, is drawn offscreen and compared with `picture`. Clicks on the navigation are not simulated. `launch` ran once in a real Wayland window for 20 seconds without a crash or a log line (2026-11-06); that says it starts and keeps running, not that it looks right or reacts.
+Not built in the shell: menus, shortcuts for the navigation, window state across runs, compact variants, and a way to post to the interface thread from a worker (`select` and `set_status` must be called on it; a program with background work cannot report yet). Changing the screen is a full rebuild; only the status line is a live area. Tests open no window; `AppWidget::build`, which `launch` calls, is drawn offscreen and compared with `picture`. Clicks on the navigation are not simulated. `launch` ran once in a real Wayland window for 20 seconds without a crash or a log line (2026-11-06); that says it starts and keeps running, not that it looks right or reacts.
 
 To try it by hand: `cargo run -p fs-components-app --example shell`. Check: the window shows the title, two navigation entries and the status line "Ready"; a click on "Second" changes the heading and the highlighted entry; Tab reaches the entries; resizing keeps the layout. `cargo run -p fs-components-app --example shell -- /tmp/shell.png` draws a picture and opens no window.
 
@@ -85,6 +85,10 @@ Questions for the owner (all provisional, easy to reverse):
 
 Blinc notes (0.6.0; to be passed upstream by the owner, reproductions in the report of the first release):
 
+* Elements built outside a build pass (a `stateful` callback building nested `stateful` or `cn` elements) get a new key each time, because `key::reset_call_counters` only runs at the start of a rebuild. `STATEFUL_DEPS` never shrinks, so the old callbacks keep running. Found by reading the code, not measured. Workaround in the shell: a change of screen is a full rebuild. A `ReaderWidget` rebuilt inside a live area would be affected.
+* `State::update` only reaches a `stateful` through a callback that `BlincContextState::init` does not install, and the window skips its own init when a picture came first; `Signal::update` works in both orders. Found by reading the code.
+* On the visual update path a live area's own node keeps the classes of its first drawing (`renderer/build/subtree.rs`), and a child without a handler keeps the handler of the node it replaces. Found by reading the code. Workaround for the classes: they sit on an inner element.
+* `blinc_noto_emoji::register()` adds the font again on each call (its doc says it does not).
 * A rich text is measured in one font weight but bold and italic spans are drawn in another face, so lines with marks run past the edge or overlap. Workaround: marks are drawn as a flow of single-style runs.
 * `RichText` links always call `open_url`; there is no handler for an internal link. Workaround: own click handler per run.
 * Emoji without a font are drawn blank but take their width; the bundled subset (`blinc_noto_emoji::register()`) lacks many (box glyphs).

@@ -9,7 +9,9 @@ use crate::Element;
 /// A work area: usually a workbench of `fs-components`.
 pub trait Surface: Send + Sync {
     /// The element of this surface, filling `width` x `height`. Called again whenever the screen is
-    /// shown or the window changes size, so a surface keeps its state outside the element.
+    /// shown or the window changes size, so a surface keeps its state outside the element. `width` and
+    /// `height` may be 0, never negative. No lock of the shell is held, so a surface may use its
+    /// `AppWidget`.
     fn build(&self, width: f32, height: f32) -> Box<dyn Element>;
 
     /// The style sheet this surface needs (theme variables only). Default: none.

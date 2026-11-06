@@ -134,3 +134,79 @@ fn the_live_areas_draw_what_the_picture_draws() {
         assert_eq!(at(&live, x, y), at(&picture, x, y), "at {x},{y}");
     }
 }
+
+/// A surface that uses its shell while it is built, and remembers the size it was told.
+struct Nosy {
+    app: std::sync::OnceLock<AppWidget>,
+    told: std::sync::Mutex<(f32, f32)>,
+}
+
+impl Surface for Nosy {
+    fn build(&self, width: f32, height: f32) -> Box<dyn Element> {
+        *self.told.lock().unwrap() = (width, height);
+        if let Some(app) = self.app.get() {
+            app.set_status(Some(Status::Info("seen".into())));
+            app.with_shell(|shell| assert_eq!(shell.title(), "Title"));
+        }
+        Box::new(div())
+    }
+    fn styles(&self) -> String {
+        if let Some(app) = self.app.get() {
+            app.with_shell(|shell| assert_eq!(shell.title(), "Title"));
+        }
+        String::new()
+    }
+}
+
+fn nosy() -> (AppWidget, Arc<Nosy>) {
+    let surface = Arc::new(Nosy {
+        app: std::sync::OnceLock::new(),
+        told: std::sync::Mutex::new((-1.0, -1.0)),
+    });
+    let app = AppWidget::new(
+        "Title",
+        vec![Screen::new(
+            "a",
+            "a",
+            Arc::clone(&surface) as Arc<dyn Surface>,
+        )],
+    )
+    .unwrap();
+    assert!(surface.app.set(app.clone()).is_ok());
+    (app, surface)
+}
+
+#[test]
+fn a_surface_may_use_its_shell_while_it_is_built() {
+    let (app, _surface) = nosy();
+    let _ = app.styles();
+    if draw(&app, "nosy.png").is_some() {
+        app.with_shell(|shell| {
+            assert_eq!(shell.status(), Some(&Status::Info("seen".into())));
+        });
+    }
+}
+
+#[test]
+fn a_surface_is_never_told_a_negative_size() {
+    let (app, surface) = nosy();
+    let path = std::env::temp_dir().join(format!("fs-app-tiny-{}.png", std::process::id()));
+    match app.picture(100, 50, &path) {
+        Err(AppError::Picture(RenderError::NoGraphics(why))) => eprintln!("skipped: {why}"),
+        other => {
+            other.unwrap();
+            assert_eq!(*surface.told.lock().unwrap(), (100.0, 0.0));
+        }
+    }
+}
+
+#[test]
+fn a_long_status_stays_in_its_line() {
+    let app = app(&["t-yellow"]);
+    let Some(before) = draw(&app, "short.png") else {
+        return;
+    };
+    app.set_status(Some(Status::Problem("failed because ".repeat(200))));
+    let after = draw(&app, "long.png").unwrap();
+    assert_eq!(at(&before, 400, 360), at(&after, 400, 360));
+}

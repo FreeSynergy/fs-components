@@ -14,6 +14,7 @@ use blinc_layout::text;
 
 use crate::shell::{Shell, Status};
 use crate::styles::{BAR_HEIGHT, NAV_WIDTH, STATUS_HEIGHT};
+use crate::surface::Surface;
 
 /// What a click on a navigation entry does.
 pub(crate) type OnSelect = Arc<dyn Fn(&str) + Send + Sync>;
@@ -32,7 +33,7 @@ pub(crate) fn frame(
     width: f32,
     height: f32,
 ) -> Div {
-    let body = height - BAR_HEIGHT - STATUS_HEIGHT;
+    let body = body_height(height);
     let mut row = div().class("fs-app-row").w(width).h(body).min_h(0.0);
     if let Some(nav) = nav {
         row = row.child(nav);
@@ -45,7 +46,7 @@ pub(crate) fn frame(
             div()
                 .class("fs-app-bar")
                 .h(BAR_HEIGHT)
-                .child(text(title).class("fs-app-title")),
+                .child(text(title).no_wrap().class("fs-app-title")),
         )
         .child(row.child(main))
         .child(status)
@@ -71,29 +72,44 @@ pub(crate) fn nav(shell: &Shell, on_select: &OnSelect) -> Div {
     column
 }
 
-/// The surface of the shown screen, told its real size.
-pub(crate) fn main_area(shell: &Shell, width: f32, height: f32) -> Div {
-    let body = height - BAR_HEIGHT - STATUS_HEIGHT;
-    let w = if has_nav(shell) {
-        width - NAV_WIDTH
+/// The surface, told its real size, never a negative one. Runs the surface: call it without the lock.
+pub(crate) fn main_area(
+    surface: Option<&Arc<dyn Surface>>,
+    with_nav: bool,
+    width: f32,
+    height: f32,
+) -> Div {
+    let body = body_height(height);
+    let w = if with_nav {
+        (width - NAV_WIDTH).max(0.0)
     } else {
         width
     };
     let area = div().class("fs-app-main").w(w).h(body).min_h(0.0);
-    match shell.current() {
-        Some(screen) => area.child(screen.surface.build(w, body)),
+    match surface {
+        Some(surface) => area.child(surface.build(w, body)),
         None => area.child(div().class("fs-app-empty")),
     }
 }
 
-/// The status line; empty but present when there is nothing to say.
+/// The status line; empty but present when there is nothing to say. The kind of message sits on an
+/// inner element: a live area's own node keeps the classes of its first drawing (`DESIGN.md`).
 pub(crate) fn status_line(shell: &Shell, width: f32) -> Div {
-    let line = div().class("fs-app-status").w(width).h(STATUS_HEIGHT);
-    match shell.status() {
-        Some(Status::Info(message)) => line.child(text(message.clone())),
-        Some(Status::Problem(message)) => line
+    let inner = div().class("fs-app-status").h_full().w_full();
+    let inner = match shell.status() {
+        Some(Status::Info(message)) => inner.child(text(message.clone()).no_wrap()),
+        Some(Status::Problem(message)) => inner
             .class("fs-app-status-problem")
-            .child(text(message.clone())),
-        None => line,
-    }
+            .child(text(message.clone()).no_wrap()),
+        None => inner,
+    };
+    div()
+        .class("fs-app-status-line")
+        .w(width)
+        .h(STATUS_HEIGHT)
+        .child(inner)
+}
+
+fn body_height(height: f32) -> f32 {
+    (height - BAR_HEIGHT - STATUS_HEIGHT).max(0.0)
 }

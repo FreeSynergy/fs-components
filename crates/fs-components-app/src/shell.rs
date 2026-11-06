@@ -2,8 +2,10 @@
 //!
 //! Pattern: State — which screen is shown and what the status line says, with its transitions.
 
+use std::sync::Arc;
+
 use crate::error::AppError;
-use crate::surface::Screen;
+use crate::surface::{Screen, Surface};
 
 /// What the status line says.
 #[non_exhaustive]
@@ -78,15 +80,11 @@ impl Shell {
         self.status = status;
     }
 
-    /// The style sheets of all surfaces; a sheet used by several screens comes once.
-    pub(crate) fn surface_styles(&self) -> String {
-        let mut sheets: Vec<String> = Vec::new();
-        for screen in &self.screens {
-            let sheet = screen.surface.styles();
-            if !sheet.is_empty() && !sheets.contains(&sheet) {
-                sheets.push(sheet);
-            }
-        }
-        sheets.concat()
+    /// All surfaces, to be used without holding the lock.
+    pub(crate) fn surfaces(&self) -> Vec<Arc<dyn Surface>> {
+        self.screens
+            .iter()
+            .map(|s| Arc::clone(&s.surface))
+            .collect()
     }
 }
