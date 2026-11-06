@@ -1,1 +1,2 @@
 - 2026-11-06: fs-components reader (embeddable ReaderWidget, DocumentSource with revisions, Labels) on main, untagged until reviewed. See DESIGN.md.
+- 2026-11-06: chat components on main: tool-call 08994d0, message-list 5ff81b3, message-composer f604d84, agent-tree 9de0b66, llm-chat 1092f3d (untagged). See DESIGN.md, section Chat components.
