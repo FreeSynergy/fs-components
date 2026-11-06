@@ -24,6 +24,7 @@ pub(super) fn code(source: &str, look: &Look) -> Div {
                 size: look.small,
                 bold: false,
                 mono: true,
+                cell: false,
             };
             block = block.child(flow(&Inline::plain(line), face, look, None));
         } else {

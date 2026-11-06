@@ -25,6 +25,8 @@ pub(super) struct Face {
     pub bold: bool,
     /// Set in the monospace font (code).
     pub mono: bool,
+    /// Inside a table cell: the room is the column's, so every run may wrap inside its box.
+    pub cell: bool,
 }
 
 /// The element for `inline` set in `face`.

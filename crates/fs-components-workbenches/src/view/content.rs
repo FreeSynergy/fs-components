@@ -32,6 +32,9 @@ pub(crate) fn content(
     if let Some(notice) = reader.notice() {
         column = column.child(div().class("fs-rd-notice").child(text(notice)));
     }
+    if let Some(glyphs) = reader.glyph_notice() {
+        column = column.child(div().class("fs-rd-notice").child(text(glyphs)));
+    }
     if let Some(problem) = reader.backup_problem() {
         column = column.child(div().class("fs-rd-failed").child(text(problem)));
     }

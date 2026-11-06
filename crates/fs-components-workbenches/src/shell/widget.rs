@@ -13,7 +13,7 @@ use blinc_core::BlincContextState;
 use blinc_layout::prelude::NoState;
 use blinc_layout::stateful::stateful;
 use blinc_layout::widgets::text_area::SharedTextAreaState;
-use fs_components_primitives::SearchField;
+use fs_components_primitives::{FieldSize, SearchField};
 use fs_components_widgets::Element;
 use fs_components_widgets::open_external;
 
@@ -55,10 +55,12 @@ impl ReaderWidget {
         let reader = Arc::new(Mutex::new(reader));
         let field = {
             let reader = Arc::clone(&reader);
-            SearchField::new(&placeholder).on_change(Arc::new(move |term| {
-                locked(&reader).search(term);
-                bump(id, "side");
-            }))
+            SearchField::new(&placeholder)
+                .size(FieldSize::Small)
+                .on_change(Arc::new(move |term| {
+                    locked(&reader).search(term);
+                    bump(id, "side");
+                }))
         };
         Self {
             id,

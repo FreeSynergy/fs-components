@@ -11,6 +11,10 @@
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex, OnceLock, PoisonError};
 
+/// After this many characters of a block found in no font (and none found), the rest of the
+/// block is not searched.
+const BLOCK_GIVE_UP: u32 = 8;
+
 /// One system font that can be asked for characters.
 struct Candidate {
     id: fontdb::ID,
@@ -22,6 +26,9 @@ struct Index {
     ranked: Vec<Candidate>,
     cache: Mutex<HashMap<char, Option<Arc<str>>>>,
     absent: Mutex<HashSet<char>>,
+    /// Per block of 256 code points: (found, not found) so far, to stop searching a block that no
+    /// installed font covers (thousands of CJK characters would each scan every font).
+    blocks: Mutex<HashMap<u32, (u32, u32)>>,
 }
 
 fn index() -> &'static Index {
@@ -43,6 +50,7 @@ fn index() -> &'static Index {
             ranked: ranked.into_iter().map(|(_, c)| c).collect(),
             cache: Mutex::new(HashMap::new()),
             absent: Mutex::new(HashSet::new()),
+            blocks: Mutex::new(HashMap::new()),
         }
     })
 }
@@ -68,7 +76,14 @@ fn rank(family: &str) -> Option<u8> {
 /// Does `ch` lie in a range where the default fonts often have no glyph?
 fn in_doubtful_range(ch: char) -> bool {
     matches!(u32::from(ch),
-        0x0900..=0x1DFF | 0x2300..=0x23FF | 0x2600..=0x27BF | 0x2900..=0x2BFF | 0x1F000..=0x1FAFF)
+        0x0900..=0x1DFF
+            | 0x2300..=0x23FF
+            | 0x2600..=0x27BF
+            | 0x2900..=0x2BFF
+            | 0x2E80..=0x9FFF // CJK
+            | 0xAC00..=0xD7AF // Hangul
+            | 0xFF00..=0xFFEF
+            | 0x1F000..=0x1FAFF)
 }
 
 /// Is `ch` in the colour subset that Blinc draws as emoji?
@@ -93,14 +108,34 @@ pub(super) fn font_for(ch: char) -> Option<Arc<str>> {
     {
         return hit.clone();
     }
-    let found = idx.ranked.iter().find_map(|c| {
-        idx.db
-            .with_face_data(c.id, |data, index| {
-                ttf_parser::Face::parse(data, index).is_ok_and(|f| f.glyph_index(ch).is_some())
-            })
-            .unwrap_or(false)
-            .then(|| c.family.clone())
-    });
+    let block = u32::from(ch) >> 8;
+    let hopeless = idx
+        .blocks
+        .lock()
+        .unwrap_or_else(PoisonError::into_inner)
+        .get(&block)
+        .is_some_and(|&(found, missed)| found == 0 && missed >= BLOCK_GIVE_UP);
+    let found = if hopeless {
+        None
+    } else {
+        idx.ranked.iter().find_map(|c| {
+            idx.db
+                .with_face_data(c.id, |data, index| {
+                    ttf_parser::Face::parse(data, index).is_ok_and(|f| f.glyph_index(ch).is_some())
+                })
+                .unwrap_or(false)
+                .then(|| c.family.clone())
+        })
+    };
+    {
+        let mut blocks = idx.blocks.lock().unwrap_or_else(PoisonError::into_inner);
+        let entry = blocks.entry(block).or_insert((0, 0));
+        if found.is_some() {
+            entry.0 += 1;
+        } else {
+            entry.1 += 1;
+        }
+    }
     if found.is_none() {
         idx.absent
             .lock()

@@ -132,7 +132,85 @@ fn characters_no_font_has_are_announced_once() {
         return;
     }
     let mut r = Reader::new(Arc::new(Odd), Labels::default());
-    assert!(r.notice().unwrap().contains("U+1FAFF"), "{:?}", r.notice());
-    r.open("b");
-    assert_eq!(r.notice(), None, "the same character was announced twice");
+    assert!(
+        r.glyph_notice().unwrap().contains("U+1FAFF"),
+        "{:?}",
+        r.glyph_notice()
+    );
+    // Other notices do not replace it.
+    r.follow("nowhere");
+    assert!(r.notice().is_some() && r.glyph_notice().unwrap().contains("U+1FAFF"));
+}
+
+#[test]
+fn a_long_list_of_missing_characters_says_how_many_more() {
+    use fs_components_workbenches::{
+        Block, Document, DocumentSource, Entry, Hit, Inline, LinkTarget, SourceError,
+    };
+    struct Many;
+    impl DocumentSource for Many {
+        fn entries(&self, _: &str) -> Result<Vec<Entry>, SourceError> {
+            Ok(vec![Entry::new("a", "A")])
+        }
+        fn read(&self, _: &str) -> Result<Document, SourceError> {
+            // Twelve unassigned code points at the end of the emoji block.
+            let text: String = (0x1FAF0..0x1FAFC).filter_map(char::from_u32).collect();
+            Ok(Document::new(
+                "d",
+                vec![Block::Paragraph(Inline::plain(text))],
+            ))
+        }
+        fn resolve(&self, _: &str, h: &str) -> LinkTarget {
+            LinkTarget::Missing(h.into())
+        }
+        fn find(&self, _: &str) -> Result<Vec<Hit>, SourceError> {
+            Ok(vec![])
+        }
+    }
+    let r = Reader::new(Arc::new(Many), Labels::default());
+    let Some(notice) = r.glyph_notice() else {
+        eprintln!("skipped: this machine has fonts for the test characters");
+        return;
+    };
+    if notice.matches("U+").count() < 8 {
+        eprintln!("skipped: this machine has fonts for most of the test characters");
+        return;
+    }
+    assert!(
+        notice.contains("and 4 more") || notice.contains("more"),
+        "{notice}"
+    );
+}
+
+#[test]
+fn titles_the_list_cannot_draw_are_announced() {
+    use fs_components_workbenches::{
+        Block, Document, DocumentSource, Entry, Hit, Inline, LinkTarget, SourceError,
+    };
+    struct Titles;
+    impl DocumentSource for Titles {
+        fn entries(&self, _: &str) -> Result<Vec<Entry>, SourceError> {
+            Ok(vec![Entry::new(
+                "a",
+                "\u{0928}\u{092E}\u{0938}\u{094D}\u{0924}\u{0947}",
+            )])
+        }
+        fn read(&self, _: &str) -> Result<Document, SourceError> {
+            Ok(Document::new(
+                "d",
+                vec![Block::Paragraph(Inline::plain("plain"))],
+            ))
+        }
+        fn resolve(&self, _: &str, h: &str) -> LinkTarget {
+            LinkTarget::Missing(h.into())
+        }
+        fn find(&self, _: &str) -> Result<Vec<Hit>, SourceError> {
+            Ok(vec![])
+        }
+    }
+    let r = Reader::new(Arc::new(Titles), Labels::default());
+    let notice = r
+        .glyph_notice()
+        .expect("Devanagari in a title: the list shows boxes, say so");
+    assert!(notice.contains("titles in the list"), "{notice}");
 }

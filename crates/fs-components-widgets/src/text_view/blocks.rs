@@ -43,6 +43,7 @@ fn one(block: &Block, look: &Look, on_link: Option<&LinkHandler>, depth: usize) 
                 size: look.heading[idx],
                 bold: true,
                 mono: false,
+                cell: false,
             };
             div()
                 .class("fs-tv-block")
@@ -73,6 +74,7 @@ fn paragraph(text: &Inline, look: &Look, on_link: Option<&LinkHandler>) -> Div {
         size: look.base,
         bold: false,
         mono: false,
+        cell: false,
     };
     div()
         .class("fs-tv-block")

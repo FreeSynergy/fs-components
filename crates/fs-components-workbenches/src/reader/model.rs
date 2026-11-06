@@ -25,7 +25,7 @@ pub struct Reader {
     pub(super) editing: Option<Editing>,
     pub(super) edit_counter: u64,
     pub(super) backup: Backup,
-    pub(super) glyphs_told: std::collections::BTreeSet<char>,
+    pub(super) glyph_notice: Option<String>,
     pub(super) notice: Option<String>,
     pub(super) export_target: Option<String>,
     pub(super) overwrite_ok: Option<(String, String)>,
@@ -47,7 +47,7 @@ impl Reader {
             editing: None,
             edit_counter: 0,
             backup: Backup::new(),
-            glyphs_told: std::collections::BTreeSet::new(),
+            glyph_notice: None,
             notice: None,
             export_target: None,
             overwrite_ok: None,
@@ -69,6 +69,7 @@ impl Reader {
             Ok(entries) => {
                 self.entries = entries;
                 self.list_problem = None;
+                self.tell_missing_glyphs();
             }
             Err(e) => {
                 self.entries.clear();

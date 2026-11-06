@@ -62,6 +62,7 @@ pub(super) fn table(
                 size: look.small,
                 bold: r == 0,
                 mono: false,
+                cell: true,
             };
             // A column starts as wide as its longest word (at most `MAX_BASIS`), grows by its share
             // of the room, and shrinks when there is not enough: a table wider than the window

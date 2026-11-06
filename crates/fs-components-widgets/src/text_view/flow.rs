@@ -59,7 +59,8 @@ fn run(piece: &str, style: &Style, face: Face, look: &Look, on_link: Option<&Lin
         face.size
     };
     let mut t = text(piece).size(size).color(color);
-    if piece.chars().count() <= LONG_RUN {
+    let may_wrap = face.cell || piece.chars().count() > LONG_RUN;
+    if !may_wrap {
         t = t.no_wrap();
     }
     if style.strong || face.bold {
@@ -83,8 +84,8 @@ fn run(piece: &str, style: &Style, face: Face, look: &Look, on_link: Option<&Lin
     } else {
         div().child(t)
     };
-    if piece.chars().count() > LONG_RUN {
-        // Only a really long word may wrap (or break) inside its own box.
+    if may_wrap {
+        // A really long word, or a run in a table cell, may wrap (or break) inside its own box.
         holder = holder.class("fs-tv-run");
     }
     if style.code {
@@ -170,6 +171,7 @@ mod tests {
                 size: 14.0,
                 bold: false,
                 mono: false,
+                cell: false,
             },
         );
         let texts: Vec<&str> = r.iter().map(|(t, _)| t.as_str()).collect();
@@ -186,6 +188,7 @@ mod tests {
                 size: 14.0,
                 bold: false,
                 mono: false,
+                cell: false,
             },
         );
         let texts: Vec<&str> = r.iter().map(|(t, _)| t.as_str()).collect();
@@ -201,6 +204,7 @@ mod tests {
                 size: 14.0,
                 bold: false,
                 mono: false,
+                cell: false,
             },
         );
         let texts: Vec<&str> = r.iter().map(|(t, _)| t.as_str()).collect();

@@ -23,6 +23,7 @@ impl Reader {
             && d.text != editing.original
         {
             editing.backup_offer = Some(Draft::new(path, d.text, d.original, d.revision));
+            editing.offer_from_pending = true;
             return;
         }
         match store.load(path) {
@@ -99,16 +100,27 @@ impl Reader {
             return;
         }
         editing.restore_asked = false;
+        let from_pending = std::mem::take(&mut editing.offer_from_pending);
         let typed = editing.changed();
-        if let Some(store) = self.backup.store.clone() {
+        let store = self.backup.store.clone();
+        if let Some(store) = &store {
             let _ = store.clear(&pending_key(&path));
-            self.backup.problem = store
-                .clear(&path)
-                .err()
-                .map(|e| Labels::fill(&self.labels.backup_failed, &e.message));
+            if !from_pending {
+                self.backup.problem = store
+                    .clear(&path)
+                    .err()
+                    .map(|e| Labels::fill(&self.labels.backup_failed, &e.message));
+            }
         }
         self.backup.written = None;
         self.backup.generation += 1;
+        if from_pending {
+            // The newer text is gone; the older backup that waited behind it is offered now.
+            if let (Some(_), Some(mut editing)) = (store, self.editing.take()) {
+                self.find_backup(&path, &mut editing);
+                self.editing = Some(editing);
+            }
+        }
         if typed {
             self.note_change();
         }

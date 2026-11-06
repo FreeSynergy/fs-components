@@ -106,19 +106,22 @@ pub fn ink_spans_gap(
     spans
 }
 
-/// Do glyphs draw at all on this machine? (With no fonts installed nothing does; tests that look
-/// at text then have nothing to look at and skip.)
+/// Do glyphs draw at all on this machine? Asked of Blinc's own text, not of the code under test
+/// (with no fonts installed nothing draws and the tests that look at text have nothing to look at;
+/// if the reader itself stopped drawing text, these tests must fail, not skip).
 pub fn fonts_work(tmp: &Scratch) -> bool {
+    use fs_components_render::{Canvas, draw_to_png};
     let file = tmp.file("fonts-probe.png");
-    let source = std::sync::Arc::new(Long(vec![Block::Paragraph(Inline::plain("Hello world"))]));
-    if fs_components_workbenches::snapshot(
-        fs_components_workbenches::Picture::new(source, 700, 200),
+    let canvas = Canvas::new(200, 60, "");
+    let drawn = draw_to_png(
+        &canvas,
+        |_, _| blinc_layout::div::div().child(blinc_layout::prelude::text("MMMMMMMM").size(30.0)),
+        || {},
         &file,
-    )
-    .is_err()
-    {
+    );
+    if drawn.is_err() {
         return false;
     }
     let img = pixels(&file);
-    (80..200).any(|y| (340..690).any(|x| dark(img.get_pixel(x, y))))
+    img.pixels().filter(|p| dark(p)).count() > 100
 }

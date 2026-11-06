@@ -8,7 +8,9 @@ use crate::error::SourceError;
 #[non_exhaustive]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Draft {
-    /// The document it belongs to.
+    /// The key of the backup: the document's path, or (for the second slot, text typed while an
+    /// earlier offer waited) the path with a suffix. A store treats it as an opaque key and gives
+    /// it back unchanged; it does not interpret it as a document path.
     pub path: String,
     /// The text of the draft.
     pub text: String,

@@ -7,7 +7,7 @@
 use std::sync::Mutex;
 
 use blinc_layout::widgets::scroll::Scroll;
-use fs_components_primitives::SearchField;
+use fs_components_primitives::{FieldSize, SearchField};
 use fs_components_render::{Canvas, draw_to_png};
 
 use super::error::ShellError;
@@ -52,7 +52,7 @@ pub fn snapshot(
         draw_to_png(
             &canvas,
             |w, h| {
-                let field = SearchField::new(&reader.labels().search);
+                let field = SearchField::new(&reader.labels().search).size(FieldSize::Small);
                 let tree = tree_nodes(reader.entries());
                 let actions = Actions::inert();
                 frame(

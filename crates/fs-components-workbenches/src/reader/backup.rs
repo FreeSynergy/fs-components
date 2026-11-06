@@ -68,6 +68,8 @@ pub struct BackupJob {
     key: String,
     edit: u64,
     generation: u64,
+    /// The draft text when the job was made: more typing since leaves the draft "not backed up".
+    snapshot: String,
     draft: Option<Draft>,
 }
 
@@ -166,6 +168,7 @@ impl Reader {
                 key: written_key,
                 edit: id,
                 generation: self.backup.generation,
+                snapshot: e.draft.clone(),
                 draft: None, // typed and undone: remove what this edit wrote
             });
         } else {
@@ -177,6 +180,7 @@ impl Reader {
             key,
             edit: e.id,
             generation: self.backup.generation,
+            snapshot: e.draft.clone(),
             draft,
         })
     }
@@ -208,10 +212,9 @@ impl Reader {
 
     /// Did the draft change after the job was made (more typing during the write)?
     fn changed_since(&self, job: &BackupJob) -> bool {
-        match (&self.editing, &job.draft) {
-            (Some(e), Some(d)) => e.draft != d.text,
-            _ => false,
-        }
+        self.editing
+            .as_ref()
+            .is_some_and(|e| e.draft != job.snapshot)
     }
 
     /// Back the draft up if it is due (the write runs under the caller's lock; a shell that cares

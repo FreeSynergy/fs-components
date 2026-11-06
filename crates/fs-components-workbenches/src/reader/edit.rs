@@ -12,6 +12,8 @@ use crate::error::ErrorKind;
 use crate::labels::Labels;
 
 /// An edit in progress.
+// Independent yes/no facts of one edit (asked once, stale, from the second slot ...).
+#[allow(clippy::struct_excessive_bools)]
 #[non_exhaustive]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Editing {
@@ -34,6 +36,8 @@ pub struct Editing {
     pub discard_asked: bool,
     /// A backup of an unsaved draft of this document from earlier, offered to the person.
     pub backup_offer: Option<Draft>,
+    /// The offer came from the second slot (text typed while an earlier offer was unanswered).
+    pub offer_from_pending: bool,
     /// The person pressed Restore once while there was typed text (the second press restores).
     pub restore_asked: bool,
     /// A restored draft for a document that changed, from a source without revisions: the first
@@ -109,6 +113,7 @@ impl Reader {
                     confirmed_revision: None,
                     discard_asked: false,
                     backup_offer: None,
+                    offer_from_pending: false,
                     restore_asked: false,
                     stale: false,
                 });

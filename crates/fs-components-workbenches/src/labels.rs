@@ -64,6 +64,10 @@ pub struct Labels {
     pub backup_failed: String,
     /// Characters no installed font has; `{}` = the first few, as `U+XXXX`.
     pub glyphs_missing: String,
+    /// Characters in titles of the list that it cannot draw; `{}` = the first few.
+    pub glyphs_titles: String,
+    /// "and N more" after a list of characters; `{}` = N.
+    pub glyphs_more: String,
     /// `{}` = the reason.
     pub list_failed: String,
     /// `{}` = the reason.
@@ -108,6 +112,8 @@ impl Default for Labels {
             glyphs_missing: s(
                 "Some characters cannot be shown because no installed font has them ({}). Install a font that covers their script, for example Noto Sans.",
             ),
+            glyphs_titles: s("Some titles in the list use characters it cannot draw ({})."),
+            glyphs_more: s("and {} more"),
             list_failed: s("The list failed: {}"),
             search_failed: s("The search failed: {}"),
         }
