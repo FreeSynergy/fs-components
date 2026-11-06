@@ -19,7 +19,21 @@
     clippy::similar_names
 )]
 
+pub mod alt;
+pub mod chart;
+pub mod color;
 pub mod data;
 pub mod labels;
+pub mod layout;
 pub mod scale;
+pub mod scene;
 pub mod spec;
+pub mod view;
+
+pub use alt::{Table, TextAlternative};
+pub use chart::Chart;
+pub use labels::Labels;
+pub use view::ChartView;
+
+/// What a widget returns to be placed in a layout: the one place a Blinc type is visible.
+pub use blinc_layout::prelude::ElementBuilder as Element;

@@ -124,3 +124,34 @@ pub fn tick_label(local_ms: f64, l: &Labels) -> String {
     };
     time(local_ms, pattern, l)
 }
+
+/// An instant as ISO 8601 text in its own zone: `2024-03-10T12:00:00+01:00`, or without the
+/// offset for a wall-clock time. Whole minutes lose their seconds, and a wall-clock midnight is
+/// written as the date alone.
+pub fn iso(ms: f64, zone: crate::data::time::Zone) -> String {
+    use crate::data::time::Zone;
+    let off = match zone {
+        Zone::Naive => 0,
+        Zone::Offset(o) => o,
+    };
+    let local = ms + f64::from(off) * MIN;
+    let whole = local.rem_euclid(DAY);
+    let pattern = if whole == 0.0 && zone == Zone::Naive {
+        "%Y-%m-%d"
+    } else if whole % MIN == 0.0 {
+        "%Y-%m-%dT%H:%M"
+    } else if whole % 1000.0 == 0.0 {
+        "%Y-%m-%dT%H:%M:%S"
+    } else {
+        "%Y-%m-%dT%H:%M:%S.%L"
+    };
+    let text = time(local, pattern, &Labels::default());
+    match zone {
+        Zone::Naive => text,
+        Zone::Offset(0) => text + "Z",
+        Zone::Offset(o) => {
+            let sign = if o < 0 { '-' } else { '+' };
+            format!("{text}{sign}{:02}:{:02}", o.abs() / 60, o.abs() % 60)
+        }
+    }
+}

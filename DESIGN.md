@@ -25,6 +25,7 @@ Version 0.1.0 (untagged until reviewed). First consumer: the wiki app (`fs-wiki-
 | Scrolling: every column on the way down has `min_h(0)`; a long document is clipped and scrolls (3000 paragraphs draw). Tested offscreen with a scroll offset | done |
 | Embedding keys: Alt+Left and Ctrl+S act on every reader in the window (keys are broadcast); `ReaderWidget::keys(false)` switches them off, the program then calls `with_reader` itself (state access is a closure: no lock can be held across calls) | done |
 | Keyboard: tree keys (Blinc), Alt+Left back, Ctrl+S save, Tab to search field and buttons. Search results, links and the tree rows are **not** reachable by Tab (the Blinc tree is no Tab stop; links are click targets) | partly |
+| `charts` (widget, crate `fs-components-charts`): a Vega-Lite subset (see below), parsed, laid out and drawn; bar, line, area, point, arc | in progress, provisional |
 | Pointer cursor over links; scrolling to a `#fragment`; table column alignment; selecting text; images; accessibility | not built |
 
 ## Structure and pattern map (ADR 0043)
@@ -123,6 +124,41 @@ Limits:
 * No test sends key events (Esc, Ctrl+S): Blinc offers no offscreen event dispatch we use; the handlers are two lines and Esc is not handled.
 * Table column alignment is not applied; a table with many wide columns may be wider than its box (Blinc has no minimum content width, so words are kept whole instead of broken); the editor text area is not monospace.
 
+## Charts (`crates/fs-components-charts`) - provisional
+
+Source of the requirements: `docs/en/components/charts.md` (Vega-Lite subset, own Rust interpreter, mandatory text alternative, scene description so charts can be plugins). The Vega-Lite specification (v5/v6 schema and docs) is the standard that is read; no code of Vega, Vega-Lite, Blinc or any chart library is used.
+
+**Why a new crate.** `widgets` stays the home of text and tree. A chart is a widget (it knows its data model when built: a spec with inline rows, ADR 0005, CONVENTIONS section 2), but it brings its own pure layers (spec, data, scales, layout, colour) with a lot of tests and one dependency (`serde_json`) that the other widgets do not need. A separate crate keeps those layers testable without Blinc being involved and lets other threads work in `widgets` without touching charts.
+
+**Layers (each one testable alone, the first four without Blinc):**
+
+| Layer | Pattern | What |
+|---|---|---|
+| `spec` | Facade over small readers; Specification (combination rules in `check.rs`) | JSON to a typed `Spec`. Every property that is not read is a named refusal (`Obj::finish`); nothing is ignored |
+| `data` | Pipeline; Strategy per field type | rows to `Datum`s; reads numbers, categories, ISO 8601 times; aggregates; drops or breaks and *counts* what cannot be drawn (`Report`) |
+| `scale` | Strategy per field type | linear (halved terms: no overflow), band/point, calendar ticks on the wall clock of the data, number and time formats with the caller's marks |
+| `layout` | Strategy per mark behind one Builder | `Spec` + data + `Labels` + `Measure` to a `Scene` (plain shapes with colour *roles*); a fixed-point loop settles the margins |
+| `color` | Strategy (greedy farthest point) | series colours from the theme accents, judged by simulated colour vision |
+| `view` | Adapter | `ChartView::build(w, h)` returns `impl Element`: a Blinc canvas, plus text elements for rotated labels |
+| `alt` | Adapter | text alternative: summary and the drawn data as a table |
+
+**Accepted subset (provisional; everything else is refused with a message that names it).**
+Marks `bar`, `line`, `area`, `point`, `arc` (string or object; object properties `type`, `innerRadius` on arc, `point` on line/area, `interpolate: "linear"`). Channels `x`, `y`, `color` (nominal only), `theta` (arc). Field types `quantitative`, `nominal`, `ordinal`, `temporal`. Per channel: `field` (nested `a.b`, escaped `a\.b`), `type`, `aggregate` (`count`, `sum`, `mean`/`average`, `min`, `max`), `title`, `axis` (`null`, or `title`, `grid`, `labels`), `scale` (`zero`, `nice`, `domain: [min, max]` of a quantitative field, `type: "linear"`), `sort` (`ascending`, `descending`, `null`, an explicit list, the other axis as `x`, `y`, `-x`, `-y`), `stack` (`zero`/`true`, `normalize`, `null`/`false`), `legend` (`null`). Top level: `$schema` (v5 or v6), `title` (string or `{text}`), `description` (becomes the summary of the text alternative), `width`, `height` (numbers), `data.values` (array of objects), `mark`, `encoding`, `usermeta`, `name`. Defaults follow Vega-Lite: zero and nice for quantitative x/y, band padding 0.1/0.05 for bars, point padding 0.5, ascending category order, ticks `ceil(length / 40)`, label angle -90 on discrete x, stacks with series 0 on top, 0.7 opacity for layered bars and unaggregated points, `invalid` mode `break-paths-show-path-domains` (paths break at an invalid value, other marks leave the row out).
+Refused by name, among others: `transform`, `layer`, `facet`/`repeat`/`concat`, `params`, `config`, `bin`, `timeUnit`, `condition`, `format`, other channels (`size`, `shape`, `opacity`, `tooltip`, `text`, `detail`, `order`, `x2`/`y2`, `xOffset`, ...), other marks (`rect`, `rule`, `text`, `tick`, `circle`, `square`, `trail`, `boxplot`, `errorbar`, `geoshape`), `url`/`name`/`format` data, `color` that is not nominal, bars over time or over two number axes, bars without a zero baseline, a line with a non-quantitative y, `stack: "center"`, other aggregates, bracket field paths, scale types other than linear, mark properties not listed (`tooltip`, `color`, ...).
+Departures that are deliberate: a literal colour is refused (colours come from the theme); a line of one point is drawn as a dot (Vega-Lite draws nothing); series also differ by dash and symbol shape (colour-blind readers); sectors are separated by a thin line in the surface colour.
+
+**Data problems (what happens, all tested):** empty data: "No data" in the chart and an empty table; one point: line drawn as a dot, bar as one bar, point as one point, domain of equal values widened (zero included, or +-half the value); all values equal: same; `null`/absent/`"NaN"`/`""`/`"Infinity"`/array/object/boolean in a number field: the row is left out of bars, points and arcs and breaks lines and areas, and a note under the chart and the text alternative count it by field and reason (`Report`); numeric text such as `"12.5"` counts as a number (as JavaScript reads it); `null` in a category field is the category "null" (caller's word); negative bars hang below zero; negative angles are left out and counted; huge values (1.7e308): scales halve their terms, sums that overflow are `Overflow` issues, means are summed per term; 100000 rows: prepared in well under a second and drawn (numbers in the report); long labels: cut with an ellipsis at 180 px (axes, legend) and at the chart width (title, notes); labels that would overlap are thinned by parity; unicode: text is passed through as it is; dates: ISO 8601 only, an impossible date (`2023-02-29`, hour 24) is invalid; the zone is the data's own: a text without offset is wall clock and never converted, a text with an offset is placed on the UTC line and the axis is written in the offset of the first value; a field that mixes the two is refused (`prepare` error) because the chart would have to guess a zone; across a daylight-saving change noon-to-noon is 23 hours apart on the axis when the data says `+01:00` then `+02:00`.
+
+**Colour.** Series colours are chosen from the theme (`Primary`, `Warning`, `Info`, `Secondary`, `Accent`, `Success`, `Error` and lighter or darker copies) by greedy farthest-point selection, judged as seen with normal vision, protanopia, deuteranopia and tritanopia (Machado et al. 2009 matrices, CIE 1976 Delta E). A colour needs contrast 3:1 against the surface (WCAG 1.4.11) and two series colours need a worst-case difference of 15. The default light and dark themes give five. A chart with more series than the theme offers shows a notice instead of repeating colours (`ChartView::build`); more than 8 is refused when the chart is read. `charts.md` says nothing on colour; the rule above is our choice (provisional, the numbers 3, 15 and 8 are open).
+
+**Text alternative.** `Chart::text_alternative(labels, max_rows)` and `ChartView::text_alternative()`: summary (the spec's `description`, else made from the data) and a table of what is drawn, plus the notes about what is not. Blinc has no ARIA or accessibility tree, so the view cannot expose it to a screen reader yet; the program has to show it (a "show data" view) or hand it over itself. Listed as a Blinc gap.
+
+**Words.** Every sentence, number mark, month name and time pattern comes from `Labels` (caller), English by `Default`. The chart's own words are the spec's (title, axis titles, field names).
+
+**Keys and focus.** The chart has no keys of its own yet: nothing to focus, nothing handled (so nothing can clash with other widgets in the window). A keyboard way through the data (arrows to step through points, reading each as text) is planned with tooltips and optional per widget (`.keys(bool)`).
+
+**Blinc notes (0.6.0):** `canvas` draws text unrotated: the transform moves the origin of a text but not its glyphs (reproduce: `push_transform(rotate)` then `draw_text`); rotated labels are therefore text elements rotated by the layout engine. A canvas asks for a frame every vsync unless `redraw_while` says no (done). Blinc has no text alternative or ARIA for any element.
+
 ## Dependencies
 
-`blinc_app`, `blinc_cn`, `blinc_core`, `blinc_layout`, `blinc_theme` (0.6), `wgpu` 26 and `image` 0.25 (both already part of Blinc's tree, used for the offscreen picture). No other repo.
+`blinc_app`, `blinc_cn`, `blinc_core`, `blinc_layout`, `blinc_theme` (0.6), `wgpu` 26 and `image` 0.25 (both already part of Blinc's tree, used for the offscreen picture). `fs-components-charts` additionally: `serde_json` (MIT OR Apache-2.0, pure Rust). No other repo.
