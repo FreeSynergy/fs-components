@@ -17,7 +17,7 @@ use blinc_core::{BlincContextState, Signal};
 use blinc_layout::div::div;
 use blinc_layout::prelude::NoState;
 use blinc_layout::stateful::stateful_with_key;
-use fs_components_primitives::SearchField;
+use fs_components_primitives::{FieldSize, SearchField};
 use fs_components_widgets::{Element, ListPosition};
 
 use super::labels::PeopleLabels;
@@ -56,10 +56,12 @@ impl PeopleWidget {
         let state = Arc::new(Mutex::new(PeopleState::new(source, labels, variant)));
         let field = {
             let state = Arc::clone(&state);
-            SearchField::new(&placeholder).on_change(Arc::new(move |term| {
-                locked(&state).search(term);
-                bump_list(id);
-            }))
+            SearchField::new(&placeholder)
+                .size(FieldSize::Small)
+                .on_change(Arc::new(move |term| {
+                    locked(&state).search(term);
+                    bump_list(id);
+                }))
         };
         Self {
             id,

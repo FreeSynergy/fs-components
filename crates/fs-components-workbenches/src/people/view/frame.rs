@@ -7,7 +7,7 @@ use blinc_layout::div::{Div, div};
 use blinc_layout::prelude::ElementBuilder;
 
 /// Height of the bar above the list in pixels.
-const SEARCH_HEIGHT: f32 = 76.0;
+const SEARCH_HEIGHT: f32 = 60.0;
 /// The part of the width the list takes.
 const LIST_SHARE: f32 = 0.42;
 

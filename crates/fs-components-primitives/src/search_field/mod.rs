@@ -4,4 +4,4 @@
 
 mod field;
 
-pub use field::{OnChange, SearchField};
+pub use field::{FieldSize, OnChange, SearchField};
