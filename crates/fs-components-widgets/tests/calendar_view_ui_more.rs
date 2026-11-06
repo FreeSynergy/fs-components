@@ -220,7 +220,7 @@ fn a_long_agenda_makes_elements_only_for_what_is_in_view_and_the_wheel_brings_th
     let hit = router
         .hit_test(&tree, 200.0, 200.0)
         .expect("something is there");
-    tree.dispatch_scroll_chain(hit.node, &hit.ancestors, 200.0, 200.0, 0.0, -149_000.0);
+    tree.dispatch_scroll_chain(hit.node, &hit.ancestors, 200.0, 200.0, 0.0, -151_000.0);
     tree.tick_scroll_physics(1_000);
     let updates = tree.take_pending_property_updates();
     tree.apply_partial_property_updates(updates);
