@@ -21,6 +21,8 @@ pub(in crate::tasks) type Typed = Arc<dyn Fn(&str, &str) + Send + Sync>;
 pub(in crate::tasks) struct TaskActions {
     /// A row was chosen.
     pub select: ActOn,
+    /// The keys of the list went to a row.
+    pub walk: ActOn,
     /// Show more rows.
     pub more: Act,
     /// A new task.
@@ -31,6 +33,10 @@ pub(in crate::tasks) struct TaskActions {
     pub save: Act,
     /// Cancel the edit.
     pub cancel: Act,
+    /// Go on editing after being asked.
+    pub keep_editing: Act,
+    /// Really discard the changes.
+    pub confirm_discard: Act,
     /// The first press of Delete: asks.
     pub ask_delete: Act,
     /// Really delete.

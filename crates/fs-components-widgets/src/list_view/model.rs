@@ -78,7 +78,7 @@ pub trait RowSource: Send + Sync {
     /// A reason a person can read; the list shows it in place of the rows.
     fn rows(&self, first: usize, limit: usize) -> Result<Vec<Row>, String>;
     /// Where the row with this key is, if the source can say. The keys start from the selected row
-    /// with it; without an answer they go on from the last row they reached.
+    /// with it when that row is no longer where it was; without an answer they begin at the first row.
     fn position_of(&self, _key: &str) -> Option<usize> {
         None
     }
@@ -120,6 +120,8 @@ pub struct ListView {
     pub(super) selected: Option<String>,
     pub(super) caller_selects: bool,
     pub(super) on_select: Option<OnSelect>,
+    pub(super) on_walk: Option<OnSelect>,
+    pub(super) on_open: Option<OnSelect>,
     pub(super) row_height: f32,
     pub(super) position: Option<ListPosition>,
     pub(super) keys: bool,
@@ -136,6 +138,8 @@ impl ListView {
             selected: None,
             caller_selects: false,
             on_select: None,
+            on_walk: None,
+            on_open: None,
             row_height: DEFAULT_ROW_HEIGHT,
             position: None,
             keys: false,
@@ -157,6 +161,15 @@ impl ListView {
     /// Report the key of the row the person chose.
     pub fn on_select(mut self, handler: OnSelect) -> Self {
         self.on_select = Some(handler);
+        self
+    }
+
+    /// Keys walk instead of choosing: they report the row they lead to here, not to `on_select`, which
+    /// then hears only of clicks, so walking over a row opens nothing. The caller answers as for
+    /// `selected`, and Enter or Space reports the row it drew as selected to `on_open`.
+    pub fn walking(mut self, on_walk: OnSelect, on_open: OnSelect) -> Self {
+        self.on_walk = Some(on_walk);
+        self.on_open = Some(on_open);
         self
     }
 

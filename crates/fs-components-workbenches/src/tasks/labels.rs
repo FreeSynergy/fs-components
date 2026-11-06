@@ -46,8 +46,14 @@ pub struct TaskLabels {
     pub gone: String,
     /// Going elsewhere while there are unsaved changes.
     pub unsaved: String,
-    /// First cancel with unsaved changes.
+    /// Cancel with unsaved changes.
     pub discard_confirm: String,
+    /// Button: go on editing after being asked about discarding.
+    pub discard_keep: String,
+    /// Button: the second action that really discards.
+    pub discard_really: String,
+    /// The task edited is gone, the draft stays.
+    pub gone_draft: String,
     /// After a save.
     pub saved: String,
     /// After making a new task.
@@ -70,7 +76,7 @@ pub struct TaskLabels {
     pub conflict_confirm: String,
     /// Heading of the buttons that move the task shown.
     pub move_to: String,
-    /// Shown in the status view until the first move: what moving does.
+    /// Shown wherever a task can be moved: what moving does.
     pub move_warning: String,
     /// After a move; `{}` = the task, then the column.
     pub moved: String,
@@ -109,7 +115,12 @@ impl Default for TaskLabels {
             delete_confirm: s("Delete {}? This cannot be taken back here."),
             gone: s("This task no longer exists."),
             unsaved: s("Save or cancel your changes first."),
-            discard_confirm: s("You have unsaved changes. Press Cancel again to discard them."),
+            discard_confirm: s("You have unsaved changes. Keep editing, or discard them."),
+            discard_keep: s("Keep editing"),
+            discard_really: s("Discard changes"),
+            gone_draft: s(
+                "This task no longer exists. What you typed is still here; it cannot be saved.",
+            ),
             saved: s("Saved."),
             created: s("Created."),
             deleted: s("{} was deleted."),
@@ -121,7 +132,9 @@ impl Default for TaskLabels {
             list_failed: s("The list failed: {}"),
             conflict_confirm: s("{} Your text is kept. Press Save again to write it anyway."),
             move_to: s("Move to"),
-            move_warning: s("Moving a card changes the status of the task itself, for everyone."),
+            move_warning: s(
+                "Moving a card changes the status of the task itself, for everyone. A status worked out from the participants becomes fixed and cannot go back to that here.",
+            ),
             moved: s("{} now has the status {}, for everyone."),
             not_moved: s("Not moved: {}"),
             order_is_fixed: s("The order within a column is not kept. Nothing was changed."),
@@ -136,5 +149,14 @@ impl TaskLabels {
     /// `template` with its first `{}` replaced by `value`.
     pub fn fill(template: &str, value: &str) -> String {
         template.replacen("{}", value, 1)
+    }
+
+    /// `template` with its first `{}` replaced by `first` and its second by `second`, whatever those
+    /// two hold.
+    pub fn fill_two(template: &str, first: &str, second: &str) -> String {
+        match template.split_once("{}") {
+            Some((head, tail)) => format!("{head}{first}{}", tail.replacen("{}", second, 1)),
+            None => template.to_string(),
+        }
     }
 }

@@ -12,7 +12,7 @@ use fs_components_widgets::sortable_list::{Moved, Outcome, Refusal};
 use super::context::TaskView;
 use super::state::TasksState;
 use super::view::TaskActions;
-use super::widget::{TasksWidget, locked, rebuild};
+use super::widget::{TasksWidget, bump_list, locked, rebuild};
 
 impl TasksWidget {
     /// Change the state, take the status view along, draw again.
@@ -40,6 +40,14 @@ impl TasksWidget {
             select: on_key(|s, key| {
                 s.select(key);
             }),
+            walk: {
+                let (state, id) = (Arc::clone(&self.state), self.id);
+                // A live area: the list keeps the keyboard.
+                Arc::new(move |key| {
+                    locked(&state).walk(key);
+                    bump_list(id);
+                })
+            },
             more: plain(TasksState::load_more),
             create: plain(|s| {
                 s.begin_create();
@@ -47,6 +55,8 @@ impl TasksWidget {
             edit: plain(TasksState::begin_edit),
             save: plain(TasksState::save),
             cancel: plain(TasksState::cancel_edit),
+            keep_editing: plain(TasksState::keep_editing),
+            confirm_discard: plain(TasksState::confirm_discard),
             ask_delete: plain(TasksState::ask_delete),
             confirm_delete: plain(TasksState::confirm_delete),
             keep: plain(TasksState::keep),
@@ -83,8 +93,11 @@ impl TasksWidget {
                 .clone()
                 .on_outcome(Arc::new(move |outcome: &Outcome| match outcome {
                     Outcome::Moved(moved) => this.landed(moved),
+                    Outcome::Chosen(chosen) => this.apply(|s| {
+                        s.select(&chosen.item);
+                    }),
                     Outcome::Refused(Refusal::Locked) => {
-                        if let Some(key) = this.board.list.cursor_key() {
+                        if let Some(key) = this.board.refused_card() {
                             this.apply(|s| s.refuse_move(&key));
                         }
                     }

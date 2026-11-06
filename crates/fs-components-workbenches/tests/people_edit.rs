@@ -72,7 +72,7 @@ fn an_untouched_edit_does_not_block() {
 }
 
 #[test]
-fn cancel_with_changes_asks_once_and_typing_takes_the_answer_back() {
+fn cancel_with_changes_only_asks_and_discarding_is_another_action() {
     let (book, mut s) = state(&["ada"]);
     s.begin_edit();
     s.set_field("name", "changed");
@@ -80,12 +80,19 @@ fn cancel_with_changes_asks_once_and_typing_takes_the_answer_back() {
     assert!(s.editing().is_some(), "only asked");
     assert_eq!(
         s.notice(),
-        Some("You have unsaved changes. Press Cancel again to discard them.")
+        Some("You have unsaved changes. Keep editing, or discard them.")
     );
+    s.cancel_edit();
+    assert!(s.editing().is_some(), "a double-click only asks");
     s.set_field("name", "changed more");
+    s.confirm_discard();
+    assert!(s.editing().is_some(), "typing took the question back");
     s.cancel_edit();
-    assert!(s.editing().is_some(), "typing took the answer back");
+    s.keep_editing();
+    s.confirm_discard();
+    assert!(s.editing().is_some(), "answered: keep editing");
     s.cancel_edit();
+    s.confirm_discard();
     assert!(s.editing().is_none());
     assert_eq!(book.name("ada").as_deref(), Some("ada"));
 }
@@ -229,7 +236,7 @@ fn after_a_refused_save_cancel_reads_the_person_again() {
     *book.refuse.lock().unwrap() = Some("no".into());
     s.save();
     s.cancel_edit();
-    s.cancel_edit();
+    s.confirm_discard();
     assert!(matches!(s.shown(), Shown::Person { sheet, .. } if sheet.title == "theirs"));
     assert_eq!(s.rows()[0].cells[0], "theirs", "the row too");
 }
@@ -243,7 +250,7 @@ fn a_person_someone_else_deleted_leaves_on_cancel_and_on_delete() {
     s.save();
     assert!(s.editing().is_some(), "the draft stays while they read why");
     s.cancel_edit();
-    s.cancel_edit();
+    s.confirm_discard();
     assert_eq!(s.shown(), &Shown::Nothing);
     assert_eq!(s.notice(), Some("This person no longer exists."));
     assert_eq!(s.rows().len(), 1);

@@ -137,9 +137,10 @@ pub(in crate::tasks) fn list(
                 .row_height(ROW_HEIGHT)
                 .named(name)
                 .position(position)
-                .selected(state.selected())
+                .selected(state.list_cursor())
                 .when_empty(empty_text(state))
                 .on_select(Arc::clone(&actions.select))
+                .walking(Arc::clone(&actions.walk), Arc::clone(&actions.select))
                 .keys(true)
                 .build(width, (height - footer_height(state)).max(0.0)),
         )

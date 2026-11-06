@@ -24,7 +24,7 @@ mod widget_actions;
 pub use context::{TaskView, TasksContext};
 pub use draft::{DraftField, FieldKind, FieldOption, TaskDraft};
 pub use edit::TaskEdit;
-pub use fs_components_widgets::sortable_list::{Outcome as BoardOutcome, Place, SortableList};
+pub use fs_components_widgets::sortable_list::{Lane, Outcome as BoardOutcome, Place};
 pub use labels::TaskLabels;
 pub use model::{
     RowQuery, TaskCapabilities, TaskColumn, TaskField, TaskRow, TaskSection, TaskSheet,

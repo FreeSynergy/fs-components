@@ -11,6 +11,10 @@ use fs_components_workbenches::tasks::{TaskLabels, TaskView, TasksWidget};
 use tasks_common::Shelf;
 use tasks_common::harness::Harness;
 
+const DOWN: u32 = 40;
+const END: u32 = 35;
+const ENTER: u32 = 13;
+
 fn widget(shelf: Shelf) -> (Arc<Shelf>, TasksWidget) {
     let shelf = Arc::new(shelf);
     (
@@ -161,4 +165,115 @@ fn typing_into_a_long_text_through_real_key_events_reaches_the_draft() {
             .and_then(|e| e.draft.value("notes").map(str::to_string))
     });
     assert_eq!(value.as_deref(), Some("hello"));
+}
+
+#[test]
+fn a_double_click_on_cancel_keeps_what_was_typed_and_discard_is_elsewhere() {
+    for rebuild in [false, true] {
+        let (shelf, w) = widget(Shelf::with(&["a"]));
+        let mut h = Harness::new(w, 1200.0, 700.0);
+        h.click("edit");
+        h.widget.with_state(|s| s.set_field("title", "typed"));
+        h.rebuild();
+        let point = h.centre("cancel");
+        h.press_at(point);
+        if rebuild {
+            h.rebuild();
+        }
+        h.press_at(point);
+        h.rebuild();
+        let draft = h.widget.with_state(|s| {
+            s.editing()
+                .and_then(|e| e.draft.value("title").map(str::to_string))
+        });
+        assert_eq!(draft.as_deref(), Some("typed"), "{rebuild}");
+        // After a redraw the second press landed on Keep editing, which is the point of it.
+        if !h.has("discard") {
+            h.click("cancel");
+        }
+        let (left, top, right, bottom) = h.edges("discard");
+        let under = point.0 >= left && point.0 <= right && point.1 >= top && point.1 <= bottom;
+        assert!(!under, "the first press does not land on it");
+        h.click("discard");
+        assert!(h.widget.with_state(|s| s.editing().is_none()));
+        assert_eq!(shelf.title_of("a").unwrap(), "A");
+    }
+}
+
+#[test]
+fn keep_editing_stands_where_cancel_was() {
+    let (_, w) = widget(Shelf::with(&["a"]));
+    let mut h = Harness::new(w, 1200.0, 700.0);
+    h.click("edit");
+    h.widget.with_state(|s| s.set_field("title", "typed"));
+    h.rebuild();
+    let point = h.centre("cancel");
+    h.click("cancel");
+    let (left, top, right, bottom) = h.edges("keep-editing");
+    assert!(point.0 >= left && point.0 <= right && point.1 >= top && point.1 <= bottom);
+}
+
+#[test]
+fn a_double_click_on_edit_does_not_land_on_save() {
+    let (shelf, w) = widget(Shelf::with(&["a"]));
+    let mut h = Harness::new(w, 1200.0, 700.0);
+    let point = h.centre("edit");
+    h.click("edit");
+    let (left, _, right, _) = h.edges("save");
+    assert!(point.0 < left || point.0 > right);
+    let (left, _, right, _) = h.edges("cancel");
+    assert!(point.0 < left || point.0 > right);
+    assert_eq!(shelf.writes(), 0);
+}
+
+#[test]
+fn arrow_keys_in_the_list_walk_and_a_marked_row_shows_nothing_until_enter() {
+    let shelf = Shelf::with(&["a", "b", "c"]);
+    shelf.guarded.lock().unwrap().push("c".into());
+    let (_, w) = widget(shelf);
+    let mut h = Harness::new(w, 1200.0, 700.0);
+    assert_eq!(h.widget.context().selected.as_deref(), Some("a"));
+    assert!(h.tab_to_list());
+    h.key(DOWN);
+    h.frame();
+    assert_eq!(
+        h.widget.context().selected.as_deref(),
+        Some("a"),
+        "Down opens nothing"
+    );
+    assert_eq!(
+        h.widget
+            .with_state(|s| s.list_cursor().map(str::to_string))
+            .as_deref(),
+        Some("b")
+    );
+    h.key(END);
+    h.frame();
+    assert_eq!(
+        h.widget.context().selected.as_deref(),
+        Some("a"),
+        "End reveals nothing"
+    );
+    assert_eq!(
+        h.widget
+            .with_state(|s| s.list_cursor().map(str::to_string))
+            .as_deref(),
+        Some("c")
+    );
+    h.key(ENTER);
+    assert_eq!(
+        h.widget.context().selected.as_deref(),
+        Some("c"),
+        "Enter opens it"
+    );
+}
+
+#[test]
+fn a_click_in_the_list_opens_a_marked_row() {
+    let shelf = Shelf::with(&["a", "b"]);
+    shelf.guarded.lock().unwrap().push("b".into());
+    let (_, w) = widget(shelf);
+    let mut h = Harness::new(w, 1200.0, 700.0);
+    h.click("b");
+    assert_eq!(h.widget.context().selected.as_deref(), Some("b"));
 }

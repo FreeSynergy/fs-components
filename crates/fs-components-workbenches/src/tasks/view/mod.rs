@@ -13,7 +13,7 @@ mod list;
 mod styles;
 mod toolbar;
 
-pub(super) use actions::{ActOn, TaskActions};
+pub(super) use actions::TaskActions;
 pub(super) use board::board_area;
 pub(super) use detail::detail;
 pub(super) use frame::{Areas, frame, work_size};

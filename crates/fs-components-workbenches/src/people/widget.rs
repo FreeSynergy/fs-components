@@ -26,6 +26,7 @@ use super::source::PeopleSource;
 use super::state::PeopleState;
 use super::view::{Areas, button_for, detail, frame, list, list_size};
 use crate::input_slots::InputSlots;
+use crate::page_scroll::PageScroll;
 
 static NEXT_ID: AtomicU64 = AtomicU64::new(1);
 
@@ -38,6 +39,7 @@ pub struct PeopleWidget {
     position: ListPosition,
     generation: Arc<AtomicU64>,
     slots: InputSlots,
+    page: PageScroll,
 }
 
 impl PeopleWidget {
@@ -71,6 +73,7 @@ impl PeopleWidget {
             position: ListPosition::new(),
             generation: Arc::new(AtomicU64::new(0)),
             slots: InputSlots::default(),
+            page: PageScroll::default(),
         }
     }
 
@@ -143,7 +146,7 @@ impl PeopleWidget {
                     list(&snapshot, &name, &position, &actions, list_w, list_h)
                 })
         };
-        let person = detail(&snapshot, &name, &actions, &self.slots);
+        let person = detail(&snapshot, &name, &actions, &self.slots, &self.page);
         frame(
             Areas {
                 search,

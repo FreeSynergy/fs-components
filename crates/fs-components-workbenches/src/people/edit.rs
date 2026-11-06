@@ -1,8 +1,8 @@
 //! Editing, creating and deleting.
 //!
 //! Pattern: State — `PeopleState::editing` is `Some` while the person edits, the same rules as the
-//! reader's editing: unsaved changes block leaving, the first Cancel with changes only asks, a failed
-//! save keeps the draft and shows why, after a conflict the next Save writes knowingly. Deleting
+//! reader's editing: unsaved changes block leaving, Cancel with changes only asks and discarding is
+//! another action in another place, a failed save keeps the draft and shows why, after a conflict the next Save writes knowingly. Deleting
 //! is in `delete.rs`.
 
 use super::labels::PeopleLabels;
@@ -23,7 +23,7 @@ pub struct PersonEdit {
     pub draft: PersonDraft,
     /// Why the last save failed, if it did.
     pub error: Option<String>,
-    /// The person pressed Cancel once with unsaved changes.
+    /// The person pressed Cancel with unsaved changes, and has not answered yet.
     pub discard_asked: bool,
 }
 
@@ -194,18 +194,39 @@ impl PeopleState {
         }
     }
 
-    /// Stop editing. With unsaved changes the first call only asks; the second discards.
+    /// Stop editing. With unsaved changes this only asks, however often it is pressed, so a double-click
+    /// cannot discard: discarding is [`PeopleState::confirm_discard`], another action elsewhere.
     pub fn cancel_edit(&mut self) {
         let Some(edit) = &mut self.editing else {
             return;
         };
-        if edit.draft.changed() && !edit.discard_asked {
+        if edit.draft.changed() {
             edit.discard_asked = true;
             self.notice = Some(self.labels.discard_confirm.clone());
             return;
         }
-        let key = edit.key.clone();
-        self.editing = None;
+        self.leave_edit();
+    }
+
+    /// The second action: discards the changes. Does nothing unless asked.
+    pub fn confirm_discard(&mut self) {
+        if self.editing.as_ref().is_some_and(|e| e.discard_asked) {
+            self.leave_edit();
+        }
+    }
+
+    /// Answer the question of [`PeopleState::cancel_edit`] with no.
+    pub fn keep_editing(&mut self) {
+        if let Some(edit) = &mut self.editing
+            && edit.discard_asked
+        {
+            edit.discard_asked = false;
+            self.notice = None;
+        }
+    }
+
+    fn leave_edit(&mut self) {
+        let key = self.editing.take().and_then(|edit| edit.key);
         self.notice = None;
         // What is shown may be out of date by now, and the person may be gone.
         if let Some(key) = key {

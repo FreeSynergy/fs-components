@@ -40,13 +40,17 @@ pub(super) fn form(
             let data = slots.line(edit.id, &field.key, &field.value);
             let (typed, key) = (Arc::clone(&actions.typed), field.key.clone());
             section = section.child(
-                div().class("fs-people-input").w_full().child(
-                    input(&data)
-                        .size(InputSize::Small)
-                        .label(field.label.clone())
-                        .w_full()
-                        .on_change(move |value| typed(&key, value)),
-                ),
+                div()
+                    .id(format!("{name}-field-{}", field.key))
+                    .class("fs-people-input")
+                    .w_full()
+                    .child(
+                        input(&data)
+                            .size(InputSize::Small)
+                            .label(field.label.clone())
+                            .w_full()
+                            .on_change(move |value| typed(&key, value)),
+                    ),
             );
         }
         if group.can_add {

@@ -27,6 +27,10 @@ pub(in crate::people) struct PeopleActions {
     pub save: Act,
     /// Cancel the edit.
     pub cancel: Act,
+    /// Go on editing after being asked.
+    pub keep_editing: Act,
+    /// Really discard the changes.
+    pub confirm_discard: Act,
     /// The first press of Delete: asks.
     pub ask_delete: Act,
     /// Really delete.

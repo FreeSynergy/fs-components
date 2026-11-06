@@ -40,12 +40,15 @@ fn a_click_on_a_card_opens_it() {
 }
 
 #[test]
-fn the_status_view_says_what_moving_does_until_the_first_move() {
+fn the_status_view_always_says_what_moving_does() {
     let (shelf, mut h) = in_status(Shelf::with(&["a"]), 1200.0);
-    assert!(h.has("move-warning"), "before the first move");
+    assert!(h.has("move-warning"), "before a move");
     h.click("move-done");
     assert_eq!(shelf.column_of("a").unwrap(), "done");
-    assert!(!h.has("move-warning"), "after it the notice says it");
+    assert!(
+        h.has("move-warning"),
+        "and after it: the next card may be a shared one"
+    );
     assert!(h.has("notice"));
 }
 
@@ -106,7 +109,7 @@ fn walking_over_cards_by_keyboard_opens_nothing_and_open_opens_the_cursor() {
     assert!(h.tab_to("board"));
     h.key(DOWN);
     assert_eq!(h.widget.context().selected, None, "ADR 0029");
-    assert_eq!(h.widget.board().cursor_key().as_deref(), Some("b"));
+    assert_eq!(h.widget.board_cursor().as_deref(), Some("b"));
     h.press("open");
     assert_eq!(h.widget.context().selected.as_deref(), Some("b"));
 }
@@ -114,7 +117,8 @@ fn walking_over_cards_by_keyboard_opens_nothing_and_open_opens_the_cursor() {
 #[test]
 fn open_is_reachable_by_tab_and_enter() {
     let (_, mut h) = in_status(Shelf::with(&["a", "b"]), 1200.0);
-    h.widget.board().set_cursor("b");
+    assert!(h.tab_to("board"));
+    h.key(DOWN);
     assert!(h.tab_to("open"));
     h.key(13);
     assert_eq!(h.widget.context().selected.as_deref(), Some("b"));
@@ -156,7 +160,7 @@ fn a_card_put_elsewhere_in_its_own_column_changes_nothing_and_goes_back() {
     h.key(DOWN);
     h.key(SPACE);
     assert_eq!(shelf.writes(), 0);
-    assert_eq!(h.widget.board().lanes()[0].items[0].key, "a", "as it was");
+    assert_eq!(h.widget.lanes()[0].items[0].key, "a", "as it was");
     assert!(h.widget.with_state(|s| s.notice().is_some()));
 }
 
@@ -179,40 +183,69 @@ fn a_card_that_cannot_move_cannot_be_picked_up_and_says_why() {
 #[test]
 fn a_frontends_gesture_lands_in_the_same_place_as_the_keyboard() {
     let (shelf, h) = in_status(Shelf::with(&["a"]), 1200.0);
-    let board = h.widget.board();
-    assert!(matches!(board.grab("a"), BoardOutcome::Grabbed(_)));
+    let w = &h.widget;
+    assert!(matches!(w.grab("a"), BoardOutcome::Grabbed(_)));
     assert!(matches!(
-        board.hover(&Place::new("done", 0)),
+        w.hover(&Place::new("done", 0)),
         BoardOutcome::Carried
     ));
     assert_eq!(shelf.writes(), 0, "not until it is put down");
-    assert!(matches!(board.drop_grabbed(), BoardOutcome::Moved(_)));
+    assert!(matches!(w.drop_held(), BoardOutcome::Moved(_)));
     assert_eq!(shelf.column_of("a").unwrap(), "done");
 }
 
 #[test]
-fn a_search_narrows_the_columns_without_a_rebuild() {
-    let (_, mut h) = in_status(Shelf::with(&["apple", "pear"]), 1200.0);
-    h.widget.with_state(|s| s.search("pea"));
-    h.frame();
-    assert!(h.has("board-todo-pear"));
-    assert!(!h.has("board-todo-apple"));
+fn a_refused_grab_talks_about_the_card_grabbed_not_the_one_under_the_cursor() {
+    let shelf = Shelf::with(&["a", "b"]);
+    shelf.fixed.lock().unwrap().push("b".into());
+    let (_, h) = in_status(shelf, 1200.0);
+    assert_eq!(h.widget.board_cursor().as_deref(), Some("a"));
+    assert!(matches!(h.widget.grab("b"), BoardOutcome::Refused(_)));
+    let says = h.widget.with_state(|s| s.notice().map(str::to_string));
+    assert!(says.unwrap().contains("it repeats"), "b's reason");
+}
+
+#[test]
+fn leaving_the_view_gives_a_held_card_up_and_the_lanes_follow_again() {
+    let (shelf, h) = in_status(Shelf::with(&["a", "b"]), 1200.0);
+    let w = &h.widget;
+    w.grab("a");
+    w.hover(&Place::new("done", 0));
+    w.with_state(|s| s.set_view(TaskView::List));
+    assert_eq!(w.lanes()[0].items[0].key, "a", "back where it was");
+    assert_eq!(shelf.writes(), 0);
+    assert!(
+        matches!(w.drop_held(), BoardOutcome::Refused(_)),
+        "nothing held"
+    );
+    w.with_state(|s| s.search("b"));
+    assert_eq!(w.lanes()[0].items.len(), 1, "the lanes follow");
+}
+
+#[test]
+fn a_click_on_a_card_opens_it_once_and_moves_the_cursor_with_a_narrow_window_too() {
+    for width in [1200.0, 480.0] {
+        let (_, mut h) = in_status(Shelf::with(&["a", "b"]), width);
+        h.click("board-todo-b");
+        assert_eq!(h.widget.context().selected.as_deref(), Some("b"), "{width}");
+        assert_eq!(h.widget.board_cursor().as_deref(), Some("b"), "{width}");
+    }
 }
 
 #[test]
 fn a_held_card_is_not_snatched_back_by_a_change_elsewhere() {
     let (shelf, h) = in_status(Shelf::with(&["a", "b"]), 1200.0);
-    let board = h.widget.board();
-    board.grab("a");
-    board.hover(&Place::new("done", 0));
-    h.widget.with_state(|s| {
+    let w = &h.widget;
+    w.grab("a");
+    w.hover(&Place::new("done", 0));
+    w.with_state(|s| {
         s.select("b");
     });
-    assert_eq!(board.lanes()[2].items[0].key, "a", "still where it is held");
-    assert!(matches!(board.drop_grabbed(), BoardOutcome::Moved(_)));
+    assert_eq!(w.lanes()[2].items[0].key, "a", "still where it is held");
+    assert!(matches!(w.drop_held(), BoardOutcome::Moved(_)));
     assert_eq!(shelf.column_of("a").unwrap(), "done");
-    assert_eq!(board.lanes()[2].items[0].key, "a");
-    assert_eq!(board.lanes()[0].items[0].key, "b");
+    assert_eq!(w.lanes()[2].items[0].key, "a");
+    assert_eq!(w.lanes()[0].items[0].key, "b");
 }
 
 #[test]

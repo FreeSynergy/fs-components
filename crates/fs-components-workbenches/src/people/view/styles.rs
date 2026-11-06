@@ -20,7 +20,8 @@ const LAYOUT: &str = r"
 .fs-people-main { min-width: 0; }
 .fs-people-bar { flex-shrink: 0; align-items: center; gap: var(--space-3); padding: var(--space-3); min-height: 60px; border-bottom-width: 1px; border-bottom-color: var(--border); }
 .fs-people-really { flex-shrink: 0; padding: var(--space-3); }
-.fs-people-page { padding: var(--space-6); gap: var(--space-4); }
+.fs-people-page { padding: var(--space-4); gap: var(--space-4); }
+.fs-people-spacer { flex-grow: 1; }
 .fs-people-head { align-items: center; gap: var(--space-3); flex-wrap: wrap; }
 .fs-people-title-text { font-size: var(--text-2xl); font-weight: 600; }
 .fs-people-mark { padding: var(--space-1) var(--space-2); border-radius: var(--radius-default); background: var(--warning-bg); color: var(--text-primary); font-size: var(--text-sm); }

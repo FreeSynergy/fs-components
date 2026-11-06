@@ -18,6 +18,7 @@ pub mod file_manager;
 mod input_slots;
 mod labels;
 pub mod llm_chat;
+mod page_scroll;
 pub mod people;
 pub mod reader;
 pub mod shell;

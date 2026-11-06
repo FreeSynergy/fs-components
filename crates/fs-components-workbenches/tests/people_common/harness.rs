@@ -167,6 +167,20 @@ impl Harness {
             .handle_navigation_key(&mut self.router, code, false);
     }
 
+    /// Turn the wheel over a point, as a window does.
+    pub fn wheel_at(&mut self, (x, y): (f32, f32), down: f32) {
+        let moved = self.router.on_mouse_move(&self.tree, x, y);
+        self.send(moved, x, y);
+        let hit = self
+            .router
+            .hit_test(&self.tree, x, y)
+            .expect("something is there");
+        self.tree
+            .dispatch_scroll_chain(hit.node, &hit.ancestors, x, y, 0.0, -down);
+        self.tree.tick_scroll_physics(1_000);
+        self.frame();
+    }
+
     /// Press Tab until the element `<name>-<what>` has the keyboard; `false` if it never does.
     pub fn tab_to(&mut self, what: &str) -> bool {
         let wanted = self.tree.query_by_id(&self.id(what));

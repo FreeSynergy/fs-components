@@ -18,7 +18,7 @@ use super::model::{ListView, OnSelect, Row, RowSource};
 use super::position::ListPosition;
 use super::window::column_widths;
 use crate::Element;
-use crate::keys::{KeyEvent, bind_keys};
+use crate::keys::{Key, KeyEvent, bind_keys};
 
 /// Height of the row of headings in pixels.
 const HEAD_HEIGHT: f32 = 28.0;
@@ -221,10 +221,17 @@ fn with_keys(root: Div, list: &ListView, position: ListPosition, count: usize, v
     let caller_answers = list.caller_selects && list.on_select.is_some();
     let (source, on_select, selected) = (
         Arc::clone(&list.source),
-        list.on_select.clone(),
+        list.on_walk.clone().or_else(|| list.on_select.clone()),
         list.selected.clone(),
     );
+    let on_open = list.on_open.clone();
     let handler = Arc::new(move |event: KeyEvent| {
+        if let (Some(on_open), Key::Activate | Key::Enter | Key::Space) = (&on_open, event.key) {
+            if let Some(key) = &selected {
+                on_open(key);
+            }
+            return true;
+        }
         // A caller that selects has the say; without one the keys go on from where they were, and
         // a selection nobody can change is only where they begin.
         let base = if caller_answers {

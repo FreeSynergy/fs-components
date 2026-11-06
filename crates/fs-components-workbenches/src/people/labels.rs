@@ -42,8 +42,12 @@ pub struct PeopleLabels {
     pub gone: String,
     /// Going elsewhere while there are unsaved changes.
     pub unsaved: String,
-    /// First cancel with unsaved changes.
+    /// Cancel with unsaved changes.
     pub discard_confirm: String,
+    /// Button: go on editing after being asked about discarding.
+    pub discard_keep: String,
+    /// Button: the second action that really discards.
+    pub discard_really: String,
     /// After a save.
     pub saved: String,
     /// After making a new person.
@@ -87,7 +91,9 @@ impl Default for PeopleLabels {
             delete_confirm: s("Delete {}? This cannot be taken back here."),
             gone: s("This person no longer exists."),
             unsaved: s("Save or cancel your changes first."),
-            discard_confirm: s("You have unsaved changes. Press Cancel again to discard them."),
+            discard_confirm: s("You have unsaved changes. Keep editing, or discard them."),
+            discard_keep: s("Keep editing"),
+            discard_really: s("Discard changes"),
             saved: s("Saved."),
             created: s("Created."),
             deleted: s("{} was deleted."),

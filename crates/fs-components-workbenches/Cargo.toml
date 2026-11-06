@@ -17,5 +17,7 @@ blinc_theme = "0.6"
 fs-components-render = { path = "../fs-components-render" }
 
 [dev-dependencies]
+# Only for the size of the smallest window: the app crate knows no workbench.
+fs-components-app = { path = "../fs-components-app" }
 wgpu = "26"
 image = { version = "0.25", default-features = false, features = ["png"] }

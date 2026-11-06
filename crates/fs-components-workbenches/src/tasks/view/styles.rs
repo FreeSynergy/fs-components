@@ -17,14 +17,15 @@ const LAYOUT: &str = r"
 .fs-tasks-work { flex-shrink: 0; border-right-width: 1px; border-right-color: var(--border); background: var(--surface); }
 .fs-tasks-main { min-width: 0; }
 .fs-tasks-board-bar { flex-shrink: 0; align-items: center; gap: var(--space-3); padding: var(--space-2) var(--space-3); }
-.fs-tasks-warning { padding: var(--space-1) var(--space-2); border-radius: var(--radius-default); background: var(--warning-bg); color: var(--text-primary); font-size: var(--text-sm); }
+.fs-tasks-warning { min-width: 0; padding: var(--space-1) var(--space-2); border-radius: var(--radius-default); background: var(--warning-bg); color: var(--text-primary); font-size: var(--text-xs); }
 .fs-tasks-more { flex-shrink: 0; display: flex; flex-direction: row; align-items: center; justify-content: center; border-top-width: 1px; border-top-color: var(--border); }
 .fs-tasks-more-button { padding: var(--space-2) var(--space-3); border-radius: var(--radius-default); background: var(--surface-elevated); cursor: pointer; }
 .fs-tasks-more-button:hover { background: var(--accent-subtle); }
 .fs-tasks-empty { padding: var(--space-4); color: var(--text-secondary); }
 .fs-tasks-bar { flex-shrink: 0; align-items: center; gap: var(--space-3); padding: var(--space-3); min-height: 60px; border-bottom-width: 1px; border-bottom-color: var(--border); }
 .fs-tasks-really { flex-shrink: 0; padding: var(--space-3); }
-.fs-tasks-page { padding: var(--space-6); gap: var(--space-4); }
+.fs-tasks-page { padding: var(--space-4); gap: var(--space-4); }
+.fs-tasks-spacer { flex-grow: 1; }
 .fs-tasks-head { align-items: center; gap: var(--space-3); }
 .fs-tasks-title-text { font-size: var(--text-2xl); font-weight: 600; }
 .fs-tasks-mark { padding: var(--space-1) var(--space-2); border-radius: var(--radius-default); background: var(--warning-bg); color: var(--text-primary); font-size: var(--text-sm); }

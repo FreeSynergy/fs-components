@@ -7,11 +7,11 @@ use blinc_cn::cn;
 use blinc_cn::components::button::ButtonVariant;
 use blinc_layout::div::{Div, div};
 use blinc_layout::text;
-use blinc_layout::widgets::scroll::scroll;
 
 use super::actions::{Act, PeopleActions};
 use super::form::form;
 use crate::input_slots::InputSlots;
+use crate::page_scroll::PageScroll;
 use crate::people::model::{PersonSection, PersonSheet};
 use crate::people::shown::Shown;
 use crate::people::state::PeopleState;
@@ -37,29 +37,25 @@ pub(in crate::people) fn button_for(
     button(format!("{name}-{what}"), label, variant, act)
 }
 
-/// The area right of the list.
+/// The area right of the list. All of it scrolls, the buttons too: in a small window there is no room
+/// to keep them apart from the page.
 pub(in crate::people) fn detail(
     state: &PeopleState,
     name: &str,
     actions: &PeopleActions,
     slots: &InputSlots,
+    scroller: &PageScroll,
 ) -> Div {
     let mut column = div()
+        .class("fs-people-detail")
         .flex_col()
         .w_full()
-        .flex_1()
-        .min_h(0.0)
         .child(bar(state, name, actions));
     if let Some(notice) = state.notice() {
         column = column.child(div().class("fs-people-notice").child(text(notice)));
     }
-    if state.can_delete() && state.delete_asked() {
-        column = column.child(div().class("fs-people-really").flex_row().child(button(
-            format!("{name}-really"),
-            &state.labels().delete_really,
-            ButtonVariant::Destructive,
-            &actions.confirm_delete,
-        )));
+    if let Some(deed) = deed(state, name, actions) {
+        column = column.child(deed);
     }
     let page = div().class("fs-people-page").flex_col().w_full();
     let page = if let Some(edit) = state.editing() {
@@ -73,33 +69,73 @@ pub(in crate::people) fn detail(
             _ => page.child(text(&state.labels().nothing_selected)),
         }
     };
-    column.child(
-        div()
-            .flex_1()
-            .min_h(0.0)
+    let what = match state.editing() {
+        Some(edit) => format!("edit-{}", edit.id),
+        None => state.selected().unwrap_or_default().to_string(),
+    };
+    div().flex_1().min_h(0.0).w_full().child(
+        scroller
+            .scroller(&what)
             .w_full()
-            .child(scroll().w_full().h_full().content(page)),
+            .h_full()
+            .content(column.child(page)),
     )
 }
 
-/// The buttons that fit the state.
+/// The second action of a question, on a line of its own below the bar: a second press at the place of
+/// the first can never be it, at any width.
+fn deed(state: &PeopleState, name: &str, actions: &PeopleActions) -> Option<Div> {
+    let labels = state.labels();
+    let button = if state.editing().is_some_and(|edit| edit.discard_asked) {
+        button(
+            format!("{name}-discard"),
+            &labels.discard_really,
+            ButtonVariant::Destructive,
+            &actions.confirm_discard,
+        )
+    } else if state.can_delete() && state.delete_asked() {
+        button(
+            format!("{name}-really"),
+            &labels.delete_really,
+            ButtonVariant::Destructive,
+            &actions.confirm_delete,
+        )
+    } else {
+        return None;
+    };
+    Some(div().class("fs-people-really").flex_row().child(button))
+}
+
+/// The buttons that fit the state. Save and Cancel stand at the far side, away from Edit and Delete, so
+/// the second press of a double-click on Edit lands on nothing; Keep editing stands where Cancel was.
 fn bar(state: &PeopleState, name: &str, actions: &PeopleActions) -> Div {
     let labels = state.labels();
     let id = |what: &str| format!("{name}-{what}");
     let mut bar = div().class("fs-people-bar").flex_row().flex_wrap();
-    if state.editing().is_some() {
+    if let Some(edit) = state.editing() {
+        let cancel_or_keep = if edit.discard_asked {
+            button(
+                id("keep-editing"),
+                &labels.discard_keep,
+                ButtonVariant::Secondary,
+                &actions.keep_editing,
+            )
+        } else {
+            button(
+                id("cancel"),
+                &labels.cancel,
+                ButtonVariant::Secondary,
+                &actions.cancel,
+            )
+        };
         return bar
+            .child(div().class("fs-people-spacer"))
+            .child(cancel_or_keep)
             .child(button(
                 id("save"),
                 &labels.save,
                 ButtonVariant::Primary,
                 &actions.save,
-            ))
-            .child(button(
-                id("cancel"),
-                &labels.cancel,
-                ButtonVariant::Secondary,
-                &actions.cancel,
             ));
     }
     if state.can_edit() {
@@ -111,23 +147,21 @@ fn bar(state: &PeopleState, name: &str, actions: &PeopleActions) -> Div {
         ));
     }
     if state.can_delete() {
-        if state.delete_asked() {
-            // What lies where Delete was keeps the person; the deed is on a line of its own below
-            // the bar, so a second press at the same point can never be it, at any width.
-            bar = bar.child(button(
+        bar = bar.child(if state.delete_asked() {
+            button(
                 id("keep"),
                 &labels.delete_keep,
                 ButtonVariant::Secondary,
                 &actions.keep,
-            ));
+            )
         } else {
-            bar = bar.child(button(
+            button(
                 id("delete"),
                 &labels.delete,
                 ButtonVariant::Ghost,
                 &actions.ask_delete,
-            ));
-        }
+            )
+        });
     }
     bar
 }

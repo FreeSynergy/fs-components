@@ -3,7 +3,9 @@
 //! Pattern: State + Command — a move is one transition with one value as its answer, whichever way
 //! it came (a button, the keyboard, a frontend's gesture). The source decides; the state only reads
 //! again and says what happened. A move that failed leaves the task where the source has it. A press
-//! on the column the task is in does nothing, so a double-click cannot move it twice.
+//! on the column the task is in does nothing, so a double-click cannot move it twice. While the list
+//! cannot be read nothing is known about a row's state, so a move is not tried then: it would answer
+//! with a conflict nobody caused.
 
 use super::labels::TaskLabels;
 use super::shown::Shown;
@@ -41,11 +43,6 @@ impl TasksState {
         self.capabilities.move_tasks
     }
 
-    /// Has a task been moved here yet? Until then the status view says what moving does.
-    pub fn moved_once(&self) -> bool {
-        self.moved_once
-    }
-
     /// What the last move came to.
     pub fn last_move(&self) -> Option<&MoveOutcome> {
         self.last_move.as_ref()
@@ -65,17 +62,30 @@ impl TasksState {
         if self.blocked_by_edit() {
             return MoveOutcome::Blocked;
         }
+        if self.list_problem.is_some() {
+            self.reload(self.loaded());
+            if let Some(problem) = self.list_problem.clone() {
+                self.notice = Some(TaskLabels::fill(&self.labels.not_moved, &problem));
+                return MoveOutcome::Refused(problem);
+            }
+        }
         let (from, title, revision) = self.where_is(key);
         if from.as_deref() == Some(column) {
             return MoveOutcome::Unchanged;
         }
         match self.source.move_to(key, column, revision.as_deref()) {
             Ok(()) => {
-                self.moved_once = true;
                 self.read_again(key);
+                // It did move: the card stands there also if the list could not be read again.
+                if self.list_problem.is_some() {
+                    self.put_row(key, column);
+                }
                 let column_title = self.column_title(column);
-                let text = TaskLabels::fill(&self.labels.moved, &title);
-                self.notice = Some(TaskLabels::fill(&text, &column_title));
+                self.notice = Some(TaskLabels::fill_two(
+                    &self.labels.moved,
+                    &title,
+                    &column_title,
+                ));
                 MoveOutcome::Moved {
                     key: key.to_string(),
                     from: from.unwrap_or_default(),

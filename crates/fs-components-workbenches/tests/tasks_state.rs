@@ -98,12 +98,42 @@ fn delete_takes_two_different_actions_tied_to_one_task() {
 }
 
 #[test]
+fn a_save_of_a_task_someone_else_deleted_keeps_what_was_typed() {
+    let (shelf, mut s) = state(Shelf::with(&["a", "b"]));
+    s.begin_edit();
+    s.set_field("title", "typed");
+    shelf.other_deletes("a");
+    s.save();
+    let edit = s.editing().expect("the draft stays");
+    assert_eq!(edit.draft.value("title"), Some("typed"));
+    assert_eq!(edit.error.as_deref(), Some(s.labels().gone_draft.as_str()));
+    assert_eq!(s.rows().len(), 1, "the task left the list");
+    s.cancel_edit();
+    s.confirm_discard();
+    assert_eq!(s.selected(), None);
+    assert_eq!(s.notice(), Some(s.labels().gone.as_str()));
+}
+
+#[test]
+fn walking_over_rows_opens_nothing_and_reads_nothing() {
+    let shelf = Shelf::with(&["a", "b"]);
+    shelf.guarded.lock().unwrap().push("b".into());
+    let (_, mut s) = state(shelf);
+    s.walk("b");
+    assert_eq!(s.list_cursor(), Some("b"));
+    assert_eq!(s.selected(), Some("a"), "still the one chosen");
+    assert_eq!(s.select("b"), Outcome::Done);
+    assert_eq!(s.selected(), Some("b"));
+    assert_eq!(s.list_cursor(), Some("b"));
+}
+
+#[test]
 fn a_task_someone_else_deleted_leaves_the_view() {
     let (shelf, mut s) = state(Shelf::with(&["a", "b"]));
     s.begin_edit();
     shelf.other_deletes("a");
     s.cancel_edit();
-    assert_eq!(s.selected(), None);
+    assert_eq!(s.selected(), None, "nothing typed: Cancel leaves at once");
     assert_eq!(s.rows().len(), 1);
     assert_eq!(s.notice(), Some(s.labels().gone.as_str()));
 }
@@ -118,11 +148,21 @@ fn unsaved_changes_block_leaving_and_the_first_cancel_only_asks() {
     assert_eq!(s.move_task("b", "done"), MoveOutcome::Blocked);
     assert_eq!(shelf.writes(), 0);
     s.cancel_edit();
-    assert!(s.editing().is_some(), "asked");
+    s.cancel_edit();
+    assert!(s.editing().is_some(), "a double-click only asks");
+    assert_eq!(s.editing().unwrap().draft.value("title"), Some("new"));
+    s.keep_editing();
+    s.confirm_discard();
+    assert!(s.editing().is_some(), "not asked any more");
+    s.cancel_edit();
     s.set_field("title", "newer");
+    s.confirm_discard();
+    assert!(
+        s.editing().is_some(),
+        "typing since then takes the question back"
+    );
     s.cancel_edit();
-    assert!(s.editing().is_some(), "typing since then asks again");
-    s.cancel_edit();
+    s.confirm_discard();
     assert!(s.editing().is_none());
     assert_eq!(shelf.title_of("a").unwrap(), "A");
 }

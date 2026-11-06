@@ -19,7 +19,6 @@ fn state(shelf: Shelf) -> (Arc<Shelf>, TasksState) {
 #[test]
 fn a_move_answers_with_a_value_and_says_so_for_everyone() {
     let (shelf, mut s) = state(Shelf::with(&["a"]));
-    assert!(!s.moved_once());
     let done = s.move_task("a", "done");
     assert_eq!(
         done,
@@ -30,7 +29,6 @@ fn a_move_answers_with_a_value_and_says_so_for_everyone() {
         }
     );
     assert_eq!(s.last_move(), Some(&done));
-    assert!(s.moved_once());
     assert_eq!(shelf.column_of("a").unwrap(), "done");
     assert_eq!(s.notice(), Some("A now has the status Done, for everyone."));
 }
@@ -40,7 +38,6 @@ fn a_move_to_the_column_it_is_in_writes_nothing() {
     let (shelf, mut s) = state(Shelf::with(&["a"]));
     assert_eq!(s.move_task("a", "todo"), MoveOutcome::Unchanged);
     assert_eq!(shelf.writes(), 0);
-    assert!(!s.moved_once());
 }
 
 #[test]
@@ -50,7 +47,6 @@ fn a_failed_move_leaves_the_task_says_why_and_shows_what_is_there() {
     assert!(matches!(s.move_task("a", "done"), MoveOutcome::Refused(_)));
     assert_eq!(s.rows()[0].column, "todo");
     assert!(s.notice().unwrap().contains("disk full"));
-    assert!(!s.moved_once());
 }
 
 #[test]
@@ -69,4 +65,36 @@ fn a_move_of_a_task_that_is_gone_takes_it_out_of_the_view() {
     assert_eq!(s.move_task("a", "done"), MoveOutcome::Gone);
     assert_eq!(s.rows().len(), 1);
     assert_eq!(s.selected(), None);
+}
+
+#[test]
+fn a_title_with_braces_stays_as_it_is_in_the_notice() {
+    let (shelf, mut s) = state(Shelf::with(&["a"]));
+    shelf.other_changes("a", "{} and {}");
+    s.search("{");
+    s.move_task("a", "done");
+    assert_eq!(
+        s.notice(),
+        Some("{} and {} now has the status Done, for everyone.")
+    );
+}
+
+#[test]
+fn a_move_that_worked_stays_shown_if_the_list_cannot_be_read_again_and_no_false_conflict_follows() {
+    let (shelf, mut s) = state(Shelf::with(&["a"]));
+    *shelf.broken_from.lock().unwrap() = Some(0);
+    let moved = s.move_task("a", "done");
+    assert!(matches!(moved, MoveOutcome::Moved { .. }), "{moved:?}");
+    assert_eq!(s.rows()[0].column, "done", "the card stands where it is");
+    assert!(s.list_problem().is_some(), "and the failure is said");
+    let meanwhile = s.move_task("a", "doing");
+    assert!(
+        matches!(meanwhile, MoveOutcome::Refused(_)),
+        "{meanwhile:?}"
+    );
+    assert_eq!(shelf.column_of("a").unwrap(), "done");
+    *shelf.broken_from.lock().unwrap() = None;
+    let later = s.move_task("a", "doing");
+    assert!(matches!(later, MoveOutcome::Moved { .. }), "{later:?}");
+    assert_eq!(shelf.column_of("a").unwrap(), "doing");
 }

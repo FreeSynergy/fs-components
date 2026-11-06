@@ -37,6 +37,8 @@ impl PeopleWidget {
             edit: simple(PeopleState::begin_edit),
             save: simple(PeopleState::save),
             cancel: simple(PeopleState::cancel_edit),
+            keep_editing: simple(PeopleState::keep_editing),
+            confirm_discard: simple(PeopleState::confirm_discard),
             ask_delete: simple(PeopleState::ask_delete),
             confirm_delete: simple(PeopleState::confirm_delete),
             keep: simple(PeopleState::keep),

@@ -37,8 +37,8 @@ pub struct TasksState {
     pub(super) editing: Option<TaskEdit>,
     pub(super) edit_counter: u64,
     pub(super) delete_asked: Option<String>,
-    pub(super) moved_once: bool,
     pub(super) last_move: Option<MoveOutcome>,
+    walked: Option<String>,
 }
 
 impl TasksState {
@@ -67,8 +67,8 @@ impl TasksState {
             editing: None,
             edit_counter: 0,
             delete_asked: None,
-            moved_once: false,
             last_move: None,
+            walked: None,
         };
         state.reload(PAGE);
         if let Some(key) = state.first_to_open(0) {
@@ -164,6 +164,7 @@ impl TasksState {
         }
         self.term = term.to_string();
         self.list_generation += 1;
+        self.walked = None;
         // The rows of another search must not stand here if this one cannot be read.
         self.rows = Arc::new(Vec::new());
         self.more = false;
@@ -187,8 +188,20 @@ impl TasksState {
         }
     }
 
+    /// The keys of the list went to this row: it stands out, and nothing is read or opened, so walking
+    /// over a marked row shows nothing of it (ADR 0029).
+    pub fn walk(&mut self, key: &str) {
+        self.walked = Some(key.to_string());
+    }
+
+    /// The row that stands out in the list: where the keys went, else the task selected.
+    pub fn list_cursor(&self) -> Option<&str> {
+        self.walked.as_deref().or_else(|| self.selected())
+    }
+
     /// Show this task. With unsaved changes this is refused and says why.
     pub fn select(&mut self, key: &str) -> Outcome {
+        self.walked = None;
         if self.selected() == Some(key) && self.editing.is_none() {
             return Outcome::Done;
         }
@@ -210,6 +223,15 @@ impl TasksState {
             // What is drawn stays: a failed read says nothing about the tasks.
             Err(e) => self.list_failed(&e),
         }
+    }
+
+    /// A row is in this column now, whatever the list could say.
+    pub(super) fn put_row(&mut self, key: &str, column: &str) {
+        let mut rows = self.rows.as_ref().clone();
+        if let Some(row) = rows.iter_mut().find(|r| r.key == key) {
+            column.clone_into(&mut row.column);
+        }
+        self.rows = Arc::new(rows);
     }
 
     pub(super) fn loaded(&self) -> usize {

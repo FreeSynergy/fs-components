@@ -27,21 +27,18 @@ pub(in crate::tasks) fn board_area(
     (width, height): (f32, f32),
 ) -> Div {
     let labels = state.labels();
-    let mut bar = div()
-        .class("fs-tasks-board-bar")
-        .flex_row()
-        .flex_wrap()
-        .child(button(
-            format!("{name}-open"),
-            &labels.open,
-            ButtonVariant::Secondary,
-            &actions.open_cursor,
-        ));
-    if state.can_move() && !state.moved_once() {
+    let mut bar = div().class("fs-tasks-board-bar").flex_row().child(button(
+        format!("{name}-open"),
+        &labels.open,
+        ButtonVariant::Secondary,
+        &actions.open_cursor,
+    ));
+    if state.can_move() {
         bar = bar.child(
             div()
                 .id(format!("{name}-move-warning"))
                 .class("fs-tasks-warning")
+                .flex_1()
                 .child(text(&labels.move_warning)),
         );
     }

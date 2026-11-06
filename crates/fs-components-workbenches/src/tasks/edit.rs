@@ -1,9 +1,10 @@
 //! Editing and creating.
 //!
 //! Pattern: State — `TasksState::editing` is `Some` while the person edits, the same rules as the
-//! other workbenches: unsaved changes block leaving, the first Cancel with changes only asks, a failed
-//! save keeps the draft and shows why, after a conflict the next Save writes knowingly. A Save without
-//! changes, a Cancel and a failed save read the task again.
+//! other workbenches: unsaved changes block leaving, Cancel with changes only asks and discarding is
+//! another action in another place, a failed save keeps the draft and shows why, after a conflict the next
+//! Save writes knowingly, and a task deleted elsewhere keeps what was typed. A Save without changes, a
+//! Cancel and a failed save read the task again.
 
 use super::draft::TaskDraft;
 use super::labels::TaskLabels;
@@ -23,7 +24,7 @@ pub struct TaskEdit {
     pub draft: TaskDraft,
     /// Why the last save failed, if it did.
     pub error: Option<String>,
-    /// The person pressed Cancel once with unsaved changes.
+    /// The person pressed Cancel with unsaved changes, and has not answered yet.
     pub discard_asked: bool,
 }
 
@@ -134,7 +135,14 @@ impl TasksState {
                 self.show(&saved);
                 self.notice = Some(message);
             }
-            Err(e) if e.kind == ErrorKind::NotFound && key.is_some() => self.task_gone(),
+            Err(e) if e.kind == ErrorKind::NotFound && key.is_some() => {
+                // What the person typed is theirs: the task leaves the list, the draft stays.
+                self.reload(self.loaded());
+                let gone = self.labels.gone_draft.clone();
+                if let Some(edit) = &mut self.editing {
+                    edit.error = Some(gone);
+                }
+            }
             Err(e) => self.save_failed(key.as_deref(), &e),
         }
     }
@@ -161,18 +169,39 @@ impl TasksState {
         }
     }
 
-    /// Stop editing. With unsaved changes the first call only asks; the second discards.
+    /// Stop editing. With unsaved changes this only asks, however often it is pressed, so a double-click
+    /// cannot discard: discarding is [`TasksState::confirm_discard`], another action elsewhere.
     pub fn cancel_edit(&mut self) {
         let Some(edit) = &mut self.editing else {
             return;
         };
-        if edit.draft.changed() && !edit.discard_asked {
+        if edit.draft.changed() {
             edit.discard_asked = true;
             self.notice = Some(self.labels.discard_confirm.clone());
             return;
         }
         let key = edit.key.clone();
         self.leave_edit(key);
+    }
+
+    /// The second action: discards the changes. Does nothing unless asked.
+    pub fn confirm_discard(&mut self) {
+        if let Some(edit) = &self.editing
+            && edit.discard_asked
+        {
+            let key = edit.key.clone();
+            self.leave_edit(key);
+        }
+    }
+
+    /// Answer the question of [`TasksState::cancel_edit`] with no.
+    pub fn keep_editing(&mut self) {
+        if let Some(edit) = &mut self.editing
+            && edit.discard_asked
+        {
+            edit.discard_asked = false;
+            self.notice = None;
+        }
     }
 
     /// The edit is over; what is shown may be out of date by now, and the task may be gone.

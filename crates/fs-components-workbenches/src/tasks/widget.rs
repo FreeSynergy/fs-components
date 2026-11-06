@@ -16,7 +16,7 @@ use blinc_core::{BlincContextState, Signal};
 use blinc_layout::prelude::NoState;
 use blinc_layout::stateful::stateful_with_key;
 use fs_components_primitives::{FieldSize, SearchField};
-use fs_components_widgets::sortable_list::SortableList;
+use fs_components_widgets::sortable_list::{Lane, Outcome as BoardOutcome, Place};
 use fs_components_widgets::{Element, ListPosition};
 
 use super::board::Board;
@@ -27,6 +27,7 @@ use super::source::TaskSource;
 use super::state::TasksState;
 use super::view::{Areas, board_area, detail, frame, list, toolbar, work_size};
 use crate::input_slots::InputSlots;
+use crate::page_scroll::PageScroll;
 
 static NEXT_ID: AtomicU64 = AtomicU64::new(1);
 
@@ -40,6 +41,7 @@ pub struct TasksWidget {
     position: ListPosition,
     generation: Arc<AtomicU64>,
     slots: InputSlots,
+    page: PageScroll,
 }
 
 impl TasksWidget {
@@ -60,15 +62,7 @@ impl TasksWidget {
         let state = Arc::new(Mutex::new(TasksState::new(source, labels, variant)));
         let board = {
             let snapshot = locked(&state).clone();
-            let target = Arc::clone(&state);
-            Board::new(
-                format!("fs-tasks-{id}-board"),
-                &snapshot,
-                Arc::new(move |key: &str| {
-                    locked(&target).select(key);
-                    rebuild();
-                }),
-            )
+            Board::new(format!("fs-tasks-{id}-board"), &snapshot)
         };
         let field = {
             let (state, board) = (Arc::clone(&state), board.clone());
@@ -92,6 +86,7 @@ impl TasksWidget {
             position: ListPosition::new(),
             generation: Arc::new(AtomicU64::new(0)),
             slots: InputSlots::default(),
+            page: PageScroll::default(),
         };
         widget.listen_to_board();
         widget
@@ -115,10 +110,35 @@ impl TasksWidget {
         locked(&self.state).context()
     }
 
-    /// The status view's list, for a frontend's gestures (ADR 0037): `grab`, `hover`, `drop_grabbed`,
-    /// `cancel` or `move_item`. What comes of it is [`TasksState::last_move`].
-    pub fn board(&self) -> SortableList {
-        self.board.list.clone()
+    /// A frontend's gesture begins (ADR 0037): pick up this card. What comes of the gesture in the end
+    /// is [`TasksState::last_move`]; a refusal says why, about this card.
+    pub fn grab(&self, key: &str) -> BoardOutcome {
+        self.board.grab(key)
+    }
+
+    /// The gesture is over this column.
+    pub fn hover(&self, to: &Place) -> BoardOutcome {
+        self.board.list.hover(to)
+    }
+
+    /// The gesture ends: the card held lands where it is.
+    pub fn drop_held(&self) -> BoardOutcome {
+        self.board.list.drop_grabbed()
+    }
+
+    /// The gesture is given up: the card goes back.
+    pub fn cancel_held(&self) -> BoardOutcome {
+        self.board.list.cancel()
+    }
+
+    /// The columns as drawn now, for a host or a test.
+    pub fn lanes(&self) -> Vec<Lane> {
+        self.board.list.lanes()
+    }
+
+    /// The card under the keyboard's cursor.
+    pub fn board_cursor(&self) -> Option<String> {
+        self.board.list.cursor_key()
     }
 
     /// The style sheet to add to the theme of the window.
@@ -143,7 +163,7 @@ impl TasksWidget {
         let actions = self.actions();
         let name = self.element_name();
         let bar = toolbar(&snapshot, &name, &actions, self.field.build());
-        let person = detail(&snapshot, &name, &actions, &self.slots);
+        let person = detail(&snapshot, &name, &actions, &self.slots, &self.page);
         let (work_w, work_h) = work_size(width, height);
         let live = {
             let (state, position, generation, actions, name) = (
@@ -198,7 +218,7 @@ fn list_signal(id: u64) -> Signal<u64> {
     BlincContextState::get().use_signal_keyed(&format!("fs-tasks-{id}-list"), || 0u64)
 }
 
-fn bump_list(id: u64) {
+pub(super) fn bump_list(id: u64) {
     if BlincContextState::is_initialized() {
         list_signal(id).update(|v| v + 1);
     }
