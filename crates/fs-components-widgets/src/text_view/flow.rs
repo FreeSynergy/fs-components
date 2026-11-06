@@ -15,6 +15,9 @@ use super::inline::Face;
 use super::look::Look;
 use crate::text::{Inline, MarkKind};
 
+/// Runs longer than this many characters may wrap inside themselves.
+const LONG_RUN: usize = 24;
+
 /// The style of a run.
 // Independent on/off flags of a run; a state enum would only mirror the mark kinds.
 #[allow(clippy::struct_excessive_bools)]
@@ -54,6 +57,9 @@ fn run(piece: &str, style: &Style, face: Face, look: &Look, on_link: Option<&Lin
         face.size
     };
     let mut t = text(piece).size(size).color(color);
+    if piece.chars().count() <= LONG_RUN {
+        t = t.no_wrap();
+    }
     if style.strong || face.bold {
         t = t.bold();
     }
@@ -72,7 +78,10 @@ fn run(piece: &str, style: &Style, face: Face, look: &Look, on_link: Option<&Lin
     } else {
         div().child(t)
     };
-    holder = holder.class("fs-tv-run");
+    if piece.chars().count() > LONG_RUN {
+        // Only a really long word may wrap (or break) inside its own box.
+        holder = holder.class("fs-tv-run");
+    }
     if style.code {
         holder = holder.class("fs-tv-codespan");
     }

@@ -76,7 +76,7 @@ Limits:
 * `DataSource` is synchronous; a slow source blocks the interface thread.
 * The tree is built completely (all nodes) once, because the Blinc tree is not lazy.
 * Table columns share the width by the length of their longest text (no automatic table layout in Blinc).
-* Table column alignment is not applied; a text area of the editor is not monospace.
+* Table column alignment is not applied; a table with many wide columns may be wider than its box (Blinc has no minimum content width, so words are kept whole instead of broken); the editor text area is not monospace.
 
 ## Dependencies
 

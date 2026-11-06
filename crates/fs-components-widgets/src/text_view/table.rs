@@ -10,7 +10,9 @@ use super::inline::{Face, inline};
 use super::look::Look;
 use crate::text::{Align, Inline};
 
-const MIN_SHARE: usize = 4;
+/// Longest word (in characters) a column keeps whole.
+const MAX_WORD: usize = 28;
+const MIN_SHARE: usize = 6;
 const MAX_SHARE: usize = 40;
 
 /// The element of a table.
@@ -41,7 +43,7 @@ pub(super) fn table(
                 .max()
                 .unwrap_or(0);
             #[allow(clippy::cast_precision_loss)]
-            let chars = word as f32;
+            let chars = word.min(MAX_WORD) as f32;
             chars * look.small * 0.7 + 2.0 * look.small
         })
         .collect();
@@ -58,14 +60,13 @@ pub(super) fn table(
                 size: look.small,
                 bold: r == 0,
             };
-            // A strut as wide as the longest word keeps the column from shrinking below it.
-            let strut = div().w(narrowest[c]).h(0.0);
+            // The column is never narrower than its longest word and grows by its share of the
+            // room. Blinc does not know a minimum content width, so the table may be wider than
+            // its box when there are many wide columns (words are not broken instead).
             let holder = div()
                 .class("fs-tv-cell")
-                .flex_col()
-                .flex_grow()
-                .w(0.0)
-                .child(strut)
+                .flex_shrink_0()
+                .w(narrowest[c])
                 .child(inline(cell, face, look, on_link));
             line = line.child(sized(holder, portion, align.get(c).copied()));
         }
