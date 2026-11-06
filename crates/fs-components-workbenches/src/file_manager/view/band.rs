@@ -51,6 +51,9 @@ fn question_text(state: &FilesState) -> Option<String> {
 /// How high the band is; 0 when there is nothing to ask.
 pub(super) fn band_height(state: &FilesState, width: f32) -> f32 {
     let mut height = 0.0;
+    if state.can_choose() && *state.ask() == Ask::Nothing {
+        height += BUTTONS;
+    }
     if let Some(text) = carrying_text(state) {
         height += text_height(text.chars().count(), width) + BUTTONS * button_lines(width, 3);
     }
@@ -89,6 +92,14 @@ pub(in crate::file_manager) fn band(
         return None;
     }
     let mut area = div().class("fs-files-band-inner").flex_col().w(width);
+    if state.can_choose() && *state.ask() == Ask::Nothing {
+        area = area.child(row().child(button(
+            format!("{name}-choose"),
+            &state.labels().choose,
+            ButtonVariant::Primary,
+            &actions.plain(FilesState::choose),
+        )));
+    }
     if let Some(text_of) = carrying_text(state) {
         area = area
             .child(

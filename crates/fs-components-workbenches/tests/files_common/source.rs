@@ -7,7 +7,7 @@ use std::sync::Arc;
 use fs_components_workbenches::file_manager::{
     EmptyReport, EntryPage, EntryRef, FileCapabilities, FileEntry, FileError, FileProblem,
     FileSource, FolderInfo, ListRequest, NameRule, PageMark, PendingUpload, PreviewBytes,
-    RescanSummary, Scope, TrashCount,
+    RescanSummary, Scope, Transferred, TrashCount,
 };
 
 use super::{Shelf, Thing, not_found};
@@ -242,7 +242,7 @@ impl FileSource for Shelf {
         path: &str,
         folder: Option<&str>,
         rule: NameRule,
-    ) -> Result<String, FileError> {
+    ) -> Result<Transferred, FileError> {
         self.check()?;
         let name = self.free_name(folder, path.rsplit('/').next().unwrap_or(path), "", rule)?;
         self.things.lock().unwrap().insert(
@@ -258,7 +258,7 @@ impl FileSource for Shelf {
             },
         );
         self.wrote();
-        Ok(name)
+        Ok(Transferred::new(name, 8))
     }
 
     fn pending_uploads(&self) -> Result<Vec<PendingUpload>, FileError> {
@@ -266,11 +266,11 @@ impl FileSource for Shelf {
         Ok(self.pending.lock().unwrap().clone())
     }
 
-    fn resume_upload(&self, id: &str, _path: &str) -> Result<String, FileError> {
+    fn resume_upload(&self, id: &str, _path: &str) -> Result<Transferred, FileError> {
         self.check()?;
         self.pending.lock().unwrap().retain(|p| p.id != id);
         self.wrote();
-        Ok(id.to_string())
+        Ok(Transferred::new(id, 8))
     }
 
     fn drop_upload(&self, id: &str) -> Result<(), FileError> {
@@ -280,7 +280,12 @@ impl FileSource for Shelf {
         Ok(())
     }
 
-    fn download(&self, key: &str, path: &str, release_marked: bool) -> Result<String, FileError> {
+    fn download(
+        &self,
+        key: &str,
+        path: &str,
+        release_marked: bool,
+    ) -> Result<Transferred, FileError> {
         self.check()?;
         let thing = self.thing(key).ok_or_else(not_found)?;
         if thing.marked && !release_marked {
@@ -290,6 +295,6 @@ impl FileSource for Shelf {
             .lock()
             .unwrap()
             .push((key.into(), path.into(), release_marked));
-        Ok(path.to_string())
+        Ok(Transferred::new(path, thing.bytes.len() as u64))
     }
 }

@@ -14,6 +14,7 @@ pub use view::{Fact, FilePreview, PreviewContent};
 /// CSS of the preview: only theme variables.
 pub const STYLES: &str = r"
 .fs-preview { min-height: 0; gap: var(--space-2); color: var(--text-primary); }
+.fs-preview-page { gap: var(--space-2); }
 .fs-preview-title { font-size: var(--text-lg); font-weight: 600; }
 .fs-preview-marks { gap: var(--space-1); }
 .fs-preview-mark { padding: var(--space-1) var(--space-2); border-radius: var(--radius-default); background: var(--warning-bg); color: var(--text-primary); font-size: var(--text-sm); }

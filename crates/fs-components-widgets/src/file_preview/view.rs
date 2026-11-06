@@ -98,7 +98,7 @@ impl FilePreview {
             }
             head = head.child(row);
         }
-        let mut page = div().flex_col().w(width);
+        let mut page = div().class("fs-preview-page").flex_col().w(width);
         for fact in &self.facts {
             page = page.child(
                 div()

@@ -3,9 +3,11 @@
 //! Pattern: Adapter — `breadcrumb` and `tree-view` over the state. The line with the way says that
 //! changes from outside do not come in by themselves.
 
+use std::sync::Arc;
+
 use blinc_layout::div::{Div, div};
 use blinc_layout::text;
-use blinc_layout::widgets::scroll::scroll;
+use blinc_layout::widgets::scroll::{Scroll, SharedScrollPhysics};
 use fs_components_widgets::TreeView;
 use fs_components_widgets::breadcrumb::{Breadcrumb, Crumb};
 
@@ -23,6 +25,8 @@ pub(in crate::file_manager) fn notice_line(notice: &Notice, name: &str) -> Div {
     div()
         .id(format!("{name}-notice"))
         .class(class)
+        .w_full()
+        .h_full()
         .child(text(notice.text()))
 }
 
@@ -63,8 +67,18 @@ pub(in crate::file_manager) fn crumbs_row(
     row
 }
 
-pub(in crate::file_manager) fn tree_pane(state: &FilesState, actions: &FileActions) -> Div {
-    let mut pane = div().flex_col().w_full().h_full();
+pub(in crate::file_manager) fn tree_pane(
+    state: &FilesState,
+    name: &str,
+    actions: &FileActions,
+    (width, height): (f32, f32),
+    physics: &SharedScrollPhysics,
+) -> Div {
+    let mut pane = div()
+        .id(format!("{name}-tree"))
+        .flex_col()
+        .w(width)
+        .h(height);
     if let Some(problem) = state.tree_problem() {
         pane = pane.child(div().class("fs-files-failed-line").child(text(problem)));
     }
@@ -72,10 +86,15 @@ pub(in crate::file_manager) fn tree_pane(state: &FilesState, actions: &FileActio
         return pane;
     }
     let choose = actions.on_key(FilesState::choose_in_tree);
-    let current = state.folder().unwrap_or(TOP).to_string();
-    let tree = TreeView::new(state.tree_nodes())
-        .selected(current)
-        .on_select(move |key| choose(key))
-        .build();
-    pane.child(scroll().w_full().h_full().content(tree))
+    let mut tree = TreeView::new(state.tree_nodes()).on_select(move |key| choose(key));
+    if !state.in_trash() {
+        tree = tree.selected(state.folder().unwrap_or(TOP).to_string());
+    }
+    let tree = tree.build();
+    pane.child(
+        Scroll::with_physics(Arc::clone(physics))
+            .w(width)
+            .h(height)
+            .content(div().w(width).flex_col().child(tree)),
+    )
 }

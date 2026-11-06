@@ -2,6 +2,8 @@
 //!
 //! Pattern: Value object (data only).
 
+use fs_components_widgets::transfer_list::Labels as TransferLabels;
+
 use super::labels::FileLabels;
 
 impl Default for FileLabels {
@@ -9,7 +11,8 @@ impl Default for FileLabels {
     fn default() -> Self {
         let s = str::to_string;
         Self {
-            search: s("Search all folders"),
+            transfer_words: TransferLabels::default(),
+            search: s("Search by name"),
             root: s("Files"),
             trash_place: s("Trash"),
             view_list: s("List"),
@@ -80,10 +83,10 @@ impl Default for FileLabels {
             gone: s("{} is no longer there."),
             folder_gone: s("That folder is no longer there."),
             outside_hint: s("Changes made outside appear after Rescan."),
-            name_conflict: s("The name is taken: {}"),
-            invalid_name: s("This name cannot be used: {}"),
+            name_conflict: s("The name is taken: {}."),
+            invalid_name: s("This name cannot be used: {}."),
             changed_outside: s(
-                "The file was changed outside the program: {} Rescan to bring it in.",
+                "The file was changed outside the program: {}. Rescan to bring it in.",
             ),
             unsupported: s("This is not offered: {}"),
             failed: s("That did not work: {}"),

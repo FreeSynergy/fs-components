@@ -47,7 +47,8 @@ pub use model::{
 };
 pub use picker::FilePicker;
 pub use reports::{
-    EmptyReport, FileCapabilities, PendingUpload, PreviewBytes, RescanSummary, TrashCount,
+    EmptyReport, FileCapabilities, PendingUpload, PreviewBytes, RescanSummary, Transferred,
+    TrashCount,
 };
 pub use side::{Place, Side, TransferRow};
 pub use source::FileSource;

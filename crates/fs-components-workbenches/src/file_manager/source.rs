@@ -9,7 +9,8 @@
 use super::error::FileError;
 use super::model::{EntryPage, EntryRef, FileEntry, FolderInfo, ListRequest, NameRule, PageMark};
 use super::reports::{
-    EmptyReport, FileCapabilities, PendingUpload, PreviewBytes, RescanSummary, TrashCount,
+    EmptyReport, FileCapabilities, PendingUpload, PreviewBytes, RescanSummary, Transferred,
+    TrashCount,
 };
 
 /// A source of files. Every method answers [`FileError`] with a reason a person can read; a source
@@ -142,8 +143,12 @@ pub trait FileSource: Send + Sync {
     ///
     /// # Errors
     /// [`FileError`]; what arrived so far stays as an unfinished upload.
-    fn upload(&self, path: &str, folder: Option<&str>, rule: NameRule)
-    -> Result<String, FileError>;
+    fn upload(
+        &self,
+        path: &str,
+        folder: Option<&str>,
+        rule: NameRule,
+    ) -> Result<Transferred, FileError>;
 
     /// The unfinished uploads, oldest first.
     ///
@@ -155,7 +160,7 @@ pub trait FileSource: Send + Sync {
     ///
     /// # Errors
     /// [`FileError`]; what arrived stays.
-    fn resume_upload(&self, id: &str, path: &str) -> Result<String, FileError>;
+    fn resume_upload(&self, id: &str, path: &str) -> Result<Transferred, FileError>;
 
     /// Throw an unfinished upload and what arrived of it away.
     ///
@@ -169,5 +174,10 @@ pub trait FileSource: Send + Sync {
     ///
     /// # Errors
     /// [`FileError`]; nothing was written.
-    fn download(&self, key: &str, path: &str, release_marked: bool) -> Result<String, FileError>;
+    fn download(
+        &self,
+        key: &str,
+        path: &str,
+        release_marked: bool,
+    ) -> Result<Transferred, FileError>;
 }

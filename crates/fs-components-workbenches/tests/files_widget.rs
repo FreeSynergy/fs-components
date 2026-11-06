@@ -5,15 +5,29 @@
 #[path = "files_common/mod.rs"]
 mod files_common;
 
-use files_common::harness::Harness;
+use std::sync::{Arc, Mutex};
+
+use files_common::harness::{Harness, PickerHarness};
 use files_common::{Shelf, widget};
-use fs_components_workbenches::file_manager::{Ask, FileView};
+use fs_components_workbenches::file_manager::{
+    Ask, FileLabels, FilePicker, FileView, PendingUpload, PickedFile,
+};
 
 const WIDTHS: [f32; 8] = [1300.0, 900.0, 720.0, 560.0, 400.0, 300.0, 200.0, 160.0];
 
 /// Press the point twice; only the first press may mean anything, whatever is drawn by then. Then the
 /// answer stands elsewhere, inside the window, and pressing it does the thing.
 fn second_act_is_elsewhere(h: &mut Harness, width: f32, first: &str, redraw: bool) {
+    second_act_with(h, width, first, redraw, |_| {});
+}
+
+fn second_act_with(
+    h: &mut Harness,
+    width: f32,
+    first: &str,
+    redraw: bool,
+    again: impl Fn(&mut Harness),
+) {
     let point = h.centre(first);
     h.press_at(point);
     if redraw {
@@ -22,6 +36,7 @@ fn second_act_is_elsewhere(h: &mut Harness, width: f32, first: &str, redraw: boo
     h.press_at(point);
     h.rebuild();
     if !h.has("really") {
+        again(h);
         h.click(first);
     }
     let (left, top, right, bottom) = h.edges("really");
@@ -71,7 +86,18 @@ fn purge_and_empty_trash_are_two_acts_at_every_width_and_say_how_many() {
             if width < 560.0 {
                 h.click("tools");
             }
-            second_act_is_elsewhere(&mut h, width, "empty-trash", redraw);
+            second_act_with(&mut h, width, "empty-trash", redraw, |h| {
+                // At narrow widths the question took the tools' room, and the second press went on
+                // to whatever was under it. That can only be something harmless.
+                h.widget.with_state(|s| {
+                    s.keep();
+                    s.open_trash();
+                    if !s.tools_open() {
+                        s.toggle_tools();
+                    }
+                });
+                h.rebuild();
+            });
             assert_eq!(shelf.writes(), 1, "{width}: only the purge");
             let words = h.widget.with_state(|s| s.confirm_words()).unwrap().0;
             assert!(words.contains('2'), "{words}");
@@ -175,8 +201,8 @@ fn the_toolbar_is_inside_the_window_at_every_width() {
                 "{width} {what}: {left}..{right}"
             );
             assert!(bottom <= 700.0, "{width} {what}: {top}..{bottom}");
-            let row = h.widget.element_name();
-            assert!(!row.is_empty());
+            let (_, crumbs, _, _) = h.edges("crumb-0");
+            assert!(bottom <= crumbs, "{width} {what}: the bar is high enough");
         }
     }
 }
@@ -265,4 +291,137 @@ fn search_keeps_the_field_redraws_the_list_only_and_a_failure_keeps_the_rows() {
     shelf.break_it(None);
     h.click("retry");
     assert!(!h.has("list-problem"));
+}
+
+#[test]
+fn a_new_folder_is_typed_with_real_key_events_and_a_bad_name_stays_in_the_field() {
+    let (shelf, w) = widget(Shelf::new().file("a"));
+    let mut h = Harness::new(w, 1300.0, 700.0);
+    h.click("new-folder");
+    h.press("line");
+    assert!(h.type_text("ab/c"), "the field has the focus after a click");
+    h.rebuild();
+    h.click("apply");
+    assert!(h.has("input-error"), "said as such");
+    assert_eq!(shelf.writes(), 0);
+    let typed = h.widget.with_state(|s| match s.ask() {
+        Ask::Input(input) => input.value.clone(),
+        _ => panic!("no input"),
+    });
+    assert_eq!(typed, "ab/c", "what was typed stays");
+    h.widget.with_state(|s| s.set_input("Fine name"));
+    h.rebuild();
+    h.click("apply");
+    assert!(shelf.thing("new-Fine name").is_some());
+    assert!(h.has("new-Fine name"), "the new row is in the list");
+}
+
+#[test]
+fn a_press_in_the_tree_goes_to_that_folder_and_it_opens() {
+    let (_, w) = widget(
+        Shelf::new()
+            .folder("alpha", None)
+            .folder("beta", None)
+            .folder("inner", Some("beta")),
+    );
+    let mut h = Harness::new(w, 1300.0, 700.0);
+    let (left, top, right, _) = h.edges("tree");
+    let x = f32::midpoint(left, right);
+    // The rows are 28 high: the top, alpha, beta.
+    h.press_at((x, top + 14.0 + 28.25 * 2.0));
+    h.rebuild();
+    assert_eq!(h.widget.context().folder.as_deref(), Some("beta"));
+    let opened = h
+        .widget
+        .with_state(|s| s.tree_nodes()[0].children[1].children.len());
+    assert_eq!(opened, 1, "its folders show");
+    h.press_at((x, top + 14.0));
+    h.rebuild();
+    assert_eq!(h.widget.context().folder, None, "the top");
+}
+
+#[test]
+fn keys_reach_the_grid_and_the_list_from_tab() {
+    for view in [FileView::Grid, FileView::List] {
+        let (_, w) = widget(Shelf::new().numbered(30));
+        w.with_state(|s| s.set_view(view));
+        let mut h = Harness::new(w, 1300.0, 700.0);
+        h.frame();
+        let name = h.widget.element_name();
+        assert!(h.has("f00000"), "{name}");
+        assert!(h.tab_to_list(&name), "{view:?}");
+        h.key(40);
+        h.rebuild();
+        assert!(
+            h.widget.context().selected.is_some(),
+            "{view:?}: down selects"
+        );
+    }
+}
+
+#[test]
+fn going_elsewhere_clears_the_search_field_too() {
+    let (_, w) = widget(Shelf::new().folder("d", None).file("a").file("b"));
+    let mut h = Harness::new(w, 1300.0, 700.0);
+    h.press("search");
+    h.type_text("a.");
+    h.frame();
+    assert_eq!(h.widget.with_state(|s| s.term().to_string()), "a.");
+    h.widget.with_state(|s| s.open_folder(Some("d")));
+    h.rebuild();
+    h.press("search");
+    h.type_text("z");
+    h.frame();
+    assert_eq!(
+        h.widget.with_state(|s| s.term().to_string()),
+        "z",
+        "the field was empty"
+    );
+    // Nothing of the old field is left holding the keyboard: keys reach the list again.
+    h.widget.with_state(|s| s.search(""));
+    h.widget.with_state(|s| s.open_folder(None));
+    h.rebuild();
+    let name = h.widget.element_name();
+    assert!(h.tab_to_list(&name));
+    h.key(40);
+    assert!(h.widget.context().selected.is_some(), "down selects");
+}
+
+#[test]
+fn the_buttons_of_the_transfers_answer_through_the_router() {
+    let shelf = Shelf::new();
+    shelf
+        .pending
+        .lock()
+        .unwrap()
+        .push(PendingUpload::new("u1", "big.iso", 500));
+    let (shelf, w) = widget(shelf);
+    w.with_state(|s| s.open_transfers());
+    let mut h = Harness::new(w, 1300.0, 700.0);
+    let point = h.point_of_id("fs-tl-pending-u1-dismiss");
+    h.press_at(point);
+    h.rebuild();
+    assert!(h.has("really"), "asks");
+    assert_eq!(shelf.pending.lock().unwrap().len(), 1);
+    h.click("really");
+    assert!(shelf.pending.lock().unwrap().is_empty());
+}
+
+#[test]
+fn the_picker_gives_back_a_value_and_offers_nothing_else() {
+    let shelf = Arc::new(Shelf::new().file("a").folder("d", None));
+    let picker = FilePicker::new(shelf.clone(), FileLabels::default());
+    let got = Arc::new(Mutex::new(None));
+    let seen = got.clone();
+    let picker = picker.on_pick(Arc::new(move |p: &PickedFile| {
+        *seen.lock().unwrap() = Some(p.key.clone());
+    }));
+    let mut h = PickerHarness::new(picker, 500.0, 500.0);
+    assert!(h.has("a"));
+    assert!(!h.has("trash") && !h.has("new-folder") && !h.has("upload"));
+    h.click("a");
+    assert!(!h.has("delete") && !h.has("rename"));
+    h.click("choose");
+    assert_eq!(got.lock().unwrap().as_deref(), Some("a"));
+    assert_eq!(shelf.writes(), 0);
 }

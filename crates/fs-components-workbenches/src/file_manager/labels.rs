@@ -4,11 +4,15 @@
 //! caller (translation, ADR 0053, is the caller's). `{}` is replaced by what the text talks about. The
 //! defaults are neutral English; the file `labels_default.rs` keeps them.
 
+use fs_components_widgets::transfer_list::Labels as TransferLabels;
+
 /// Texts of the file manager. Build by `Default` and assigning fields.
 #[non_exhaustive]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct FileLabels {
-    /// Default: `Search all folders`.
+    /// The words of the list of transfers.
+    pub transfer_words: TransferLabels,
+    /// Default: `Search by name`.
     pub search: String,
     /// Default: `Files`.
     pub root: String,

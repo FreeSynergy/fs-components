@@ -12,7 +12,7 @@ use super::ask::{Ask, Confirm, InputAsk};
 use super::command::Command;
 use super::error::{FileError, FileProblem};
 use super::labels::FileLabels;
-use super::reports::RescanSummary;
+use super::reports::{RescanSummary, Transferred};
 use super::side::{Side, TransferRow};
 use super::state::{FilesState, Notice};
 
@@ -77,12 +77,12 @@ impl FilesState {
         }
     }
 
-    pub(super) fn transfer_done(&mut self, command: &Command, said: &str) {
-        if let Command::Upload(path, _) = command {
-            let key = self.next_transfer();
-            self.push_row(TransferRow::upload(key, said, path, TransferState::Done));
-            self.read_pending();
-        }
+    pub(super) fn upload_done(&mut self, path: &str, done: &Transferred) {
+        let key = self.next_transfer();
+        let mut row = TransferRow::upload(key, &done.name, path, TransferState::Done);
+        row.shown = row.shown.with_progress(done.bytes, Some(done.bytes));
+        self.push_row(row);
+        self.read_pending();
     }
 
     pub(super) fn transfer_failed(&mut self, command: &Command, e: &FileError) {
@@ -111,12 +111,14 @@ impl FilesState {
     ) -> bool {
         let row = self.next_transfer();
         match self.source.download(key, path, release_marked) {
-            Ok(place) => {
+            Ok(done) => {
                 self.ask = Ask::Nothing;
-                self.push_row(TransferRow::download(row, name, key, TransferState::Done));
+                let mut line = TransferRow::download(row, name, key, TransferState::Done);
+                line.shown = line.shown.with_progress(done.bytes, Some(done.bytes));
+                self.push_row(line);
                 self.notice = Some(Notice::Info(FileLabels::fill(
                     &self.labels.downloaded,
-                    &place,
+                    &done.name,
                 )));
                 true
             }
@@ -140,12 +142,10 @@ impl FilesState {
 
     pub(super) fn resume_now(&mut self, input: InputAsk, id: &str, path: &str) {
         match self.source.resume_upload(id, path) {
-            Ok(name) => {
+            Ok(done) => {
                 self.ask = Ask::Nothing;
-                let key = self.next_transfer();
-                let said = FileLabels::fill(&self.labels.uploaded, &name);
-                self.push_row(TransferRow::upload(key, &said, path, TransferState::Done));
-                self.read_pending();
+                let said = FileLabels::fill(&self.labels.uploaded, &done.name);
+                self.upload_done(path, &done);
                 self.after_change();
                 self.notice = Some(Notice::Info(said));
             }

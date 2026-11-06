@@ -110,6 +110,26 @@ pub struct RescanSummary {
     pub skipped: Vec<String>,
 }
 
+/// What came of an upload or a download.
+#[non_exhaustive]
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Transferred {
+    /// The name the file has now, or the path it was written to.
+    pub name: String,
+    /// How many bytes it has.
+    pub bytes: u64,
+}
+
+impl Transferred {
+    /// A transfer that is done.
+    pub fn new(name: impl Into<String>, bytes: u64) -> Self {
+        Self {
+            name: name.into(),
+            bytes,
+        }
+    }
+}
+
 /// An unfinished upload.
 #[non_exhaustive]
 #[derive(Clone, Debug, PartialEq, Eq)]

@@ -15,6 +15,8 @@ use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 use blinc_core::{BlincContextState, Signal};
 use blinc_layout::prelude::NoState;
 use blinc_layout::stateful::stateful_with_key;
+use blinc_layout::widgets::scroll::{ScrollPhysics, SharedScrollPhysics};
+use blinc_layout::widgets::text_input::blur_all_text_inputs;
 use fs_components_primitives::{FieldSize, SearchField};
 use fs_components_widgets::{Element, ListPosition};
 
@@ -37,6 +39,7 @@ pub struct FileManagerWidget {
     field: Arc<Mutex<SearchField>>,
     typed_search: Arc<AtomicBool>,
     position: ListPosition,
+    tree_scroll: SharedScrollPhysics,
     generation: Arc<AtomicU64>,
     slots: InputSlots,
     filter_slots: InputSlots,
@@ -81,6 +84,7 @@ impl FileManagerWidget {
             field: Arc::new(Mutex::new(field)),
             typed_search,
             position: ListPosition::new(),
+            tree_scroll: Arc::new(Mutex::new(ScrollPhysics::default())),
             generation: Arc::new(AtomicU64::new(0)),
             slots: InputSlots::default(),
             filter_slots: InputSlots::default(),
@@ -124,6 +128,8 @@ impl FileManagerWidget {
     fn field_for(&self, snapshot: &FilesState) -> SearchField {
         let mut field = self.field.lock().unwrap_or_else(PoisonError::into_inner);
         if snapshot.term().is_empty() && self.typed_search.swap(false, Ordering::Relaxed) {
+            // Blinc counts focused inputs: one dropped while focused would leave the keys dead.
+            blur_all_text_inputs();
             *field = search_field(
                 &self.state,
                 &self.typed_search,
@@ -145,7 +151,16 @@ impl FileManagerWidget {
         let bar = toolbar(&snapshot, &name, &actions, search, width);
         let crumbs = crumbs_row(&snapshot, &name, &actions, width);
         let notice = snapshot.notice().map(|n| notice_line(n, &name));
-        let tree = tree_pane(&snapshot, &actions);
+        let tree = tree_pane(
+            &snapshot,
+            &name,
+            &actions,
+            (
+                (measured.tree - 24.0).max(0.0),
+                (measured.body - 24.0).max(0.0),
+            ),
+            &self.tree_scroll,
+        );
         let side_area = side(
             &snapshot,
             &name,

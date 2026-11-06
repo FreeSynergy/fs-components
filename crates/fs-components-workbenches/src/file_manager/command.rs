@@ -55,6 +55,7 @@ impl FilesState {
     /// input it came from, which stays as typed; anything else says why and reads again.
     pub(super) fn run(&mut self, command: Command, rule: NameRule, from: Option<InputAsk>) {
         let source = self.source.clone();
+        let mut sent = None;
         let done = match &command {
             Command::Rename(entry, name) => source
                 .rename(entry, name, rule)
@@ -71,15 +72,19 @@ impl FilesState {
             Command::RestoreTo(key, to) => source
                 .restore_to(key, to.as_deref(), rule)
                 .map(|n| FileLabels::fill(&self.labels.restored, &n)),
-            Command::Upload(path, to) => source
-                .upload(path, to.as_deref(), rule)
-                .map(|n| FileLabels::fill(&self.labels.uploaded, &n)),
+            Command::Upload(path, to) => source.upload(path, to.as_deref(), rule).map(|done| {
+                let said = FileLabels::fill(&self.labels.uploaded, &done.name);
+                sent = Some(done);
+                said
+            }),
         };
         match done {
             Ok(said) => {
                 self.ask = Ask::Nothing;
                 self.carrying = None;
-                self.transfer_done(&command, &said);
+                if let (Command::Upload(path, _), Some(done)) = (&command, &sent) {
+                    self.upload_done(path, done);
+                }
                 self.after_change();
                 self.notice = Some(Notice::Info(said));
             }

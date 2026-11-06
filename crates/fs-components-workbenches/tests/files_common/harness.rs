@@ -15,13 +15,16 @@ use blinc_layout::event_router::{EventRouter, MouseButton};
 use blinc_layout::prelude::RenderTree;
 use blinc_layout::tree::LayoutNodeId;
 use blinc_layout::widgets::text_input::{focused_text_area_node_id, focused_text_input_node_id};
-use fs_components_workbenches::file_manager::FileManagerWidget;
+use fs_components_workbenches::file_manager::{FileManagerWidget, FilePicker};
 
 static ONE_AT_A_TIME: Mutex<()> = Mutex::new(());
 
 /// Hold this while a test touches Blinc's singletons: their first set-up panics when two threads race.
 pub fn serial() -> MutexGuard<'static, ()> {
-    ONE_AT_A_TIME.lock().unwrap_or_else(PoisonError::into_inner)
+    let guard = ONE_AT_A_TIME.lock().unwrap_or_else(PoisonError::into_inner);
+    // The focus of a text input outlives its test, and a widget ignores keys while one has it.
+    blinc_layout::widgets::text_input::blur_all_text_inputs();
+    guard
 }
 
 /// A widget in a tree of its own, a mouse and a keyboard.
@@ -176,6 +179,30 @@ impl Harness {
             .broadcast_key_event(KEY_DOWN, code, false, false, false, false);
     }
 
+    /// Press Tab until the list or grid `id` has the keyboard.
+    pub fn tab_to_list(&mut self, id: &str) -> bool {
+        let Some(node) = self.tree.query_by_id(id) else {
+            return false;
+        };
+        for _ in 0..60 {
+            self.key(9);
+            if self.router.focused() == Some(node) {
+                return true;
+            }
+        }
+        false
+    }
+
+    /// The middle of the element with exactly this id.
+    pub fn point_of_id(&self, id: &str) -> (f32, f32) {
+        let node = self
+            .tree
+            .query_by_id(id)
+            .unwrap_or_else(|| panic!("no element {id}"));
+        let b = self.tree.get_absolute_bounds(node).expect("bounds");
+        (b.x + b.width / 2.0, b.y + b.height / 2.0)
+    }
+
     /// Press Tab until the element `<name>-<what>` has the keyboard; `false` if it never does.
     pub fn tab_to(&mut self, what: &str) -> bool {
         let (left, top, right, bottom) = self.edges(what);
@@ -195,5 +222,85 @@ impl Harness {
             }
         }
         false
+    }
+}
+
+/// The picker in a tree of its own, and a mouse.
+pub struct PickerHarness {
+    picker: FilePicker,
+    tree: RenderTree,
+    scope: BuildScope,
+    router: EventRouter,
+    size: (f32, f32),
+    _serial: MutexGuard<'static, ()>,
+}
+
+fn picker_tree(picker: &FilePicker, scope: &mut BuildScope, (w, h): (f32, f32)) -> RenderTree {
+    let bundle = fs_components_render::bundle(&picker.styles());
+    blinc_theme::ThemeState::init(bundle.clone(), blinc_theme::ColorScheme::Light);
+    if !BlincContextState::is_initialized() {
+        BlincContextState::init_with_callback(
+            global_graph(),
+            Arc::new(Mutex::new(HookState::new())),
+            Arc::new(std::sync::atomic::AtomicBool::new(false)),
+            Arc::new(|ids: &[blinc_core::reactive::SignalId]| {
+                blinc_layout::check_stateful_deps(ids);
+            }),
+        );
+    }
+    blinc_layout::init_text_measurer();
+    let pass = scope.begin();
+    blinc_layout::key::reset_call_counters();
+    let mut tree = RenderTree::from_element(&picker.build(w, h));
+    let vars = blinc_theme::ThemeState::get().to_css_variable_map();
+    let css = bundle.css_sources.join("\n");
+    tree.set_stylesheet(Stylesheet::parse_with_variables(&css, &vars).expect("stylesheet"));
+    tree.apply_stylesheet_layout_overrides();
+    tree.apply_stylesheet_base_styles();
+    tree.compute_layout(w, h);
+    scope.finish(pass);
+    tree
+}
+
+impl PickerHarness {
+    /// `picker` laid out at `w` x `h`.
+    pub fn new(picker: FilePicker, w: f32, h: f32) -> Self {
+        let serial = serial();
+        let mut scope = BuildScope::new();
+        let tree = picker_tree(&picker, &mut scope, (w, h));
+        Self {
+            picker,
+            tree,
+            scope,
+            router: EventRouter::new(),
+            size: (w, h),
+            _serial: serial,
+        }
+    }
+
+    /// Is there an element `<name>-<what>`?
+    pub fn has(&self, what: &str) -> bool {
+        let id = format!("{}-{what}", self.picker.element_name());
+        self.tree.query_by_id(&id).is_some()
+    }
+
+    /// Press the element `<name>-<what>`, then build again.
+    pub fn click(&mut self, what: &str) {
+        let id = format!("{}-{what}", self.picker.element_name());
+        let node = self
+            .tree
+            .query_by_id(&id)
+            .unwrap_or_else(|| panic!("no element {id}"));
+        let b = self.tree.get_absolute_bounds(node).expect("bounds");
+        let (x, y) = (b.x + b.width / 2.0, b.y + b.height / 2.0);
+        let moved = self.router.on_mouse_move(&self.tree, x, y);
+        let down = self
+            .router
+            .on_mouse_down(&self.tree, x, y, MouseButton::Left);
+        let up = self.router.on_mouse_up(&self.tree, x, y, MouseButton::Left);
+        for (node, event) in moved.into_iter().chain(down).chain(up) {
+            self.tree.dispatch_event(node, event, x, y);
+        }
+        self.tree = picker_tree(&self.picker, &mut self.scope, self.size);
     }
 }

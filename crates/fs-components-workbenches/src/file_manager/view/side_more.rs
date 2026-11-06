@@ -11,7 +11,7 @@ use blinc_layout::div::{Div, div};
 use blinc_layout::text;
 use blinc_layout::widgets::scroll::{Scroll, ScrollPhysics};
 use fs_components_widgets::list_view::fit_cell;
-use fs_components_widgets::transfer_list::{Labels as TransferLabels, TransferList};
+use fs_components_widgets::transfer_list::TransferList;
 
 use super::actions::{FileActions, button};
 use crate::file_manager::labels::FileLabels;
@@ -39,7 +39,7 @@ pub(super) fn transfers_panel(
     let shown = state.transfers().iter().map(|r| r.shown.clone()).collect();
     let apply = Arc::clone(&actions.apply);
     let list = TransferList::new(shown)
-        .labels(TransferLabels::default())
+        .labels(labels.transfer_words.clone())
         .on_outcome(Arc::new(move |outcome| {
             let outcome = outcome.clone();
             apply(&move |s: &mut FilesState| s.transfer_outcome(&outcome));

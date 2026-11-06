@@ -39,6 +39,7 @@ pub(in crate::file_manager) fn side(
         left -= BACK_HEIGHT;
         area = area.child(
             div()
+                .class("fs-files-side-line")
                 .flex_row()
                 .items_center()
                 .flex_shrink_0()
@@ -92,6 +93,7 @@ fn item_panel(
         left -= BACK_HEIGHT;
         column = column.child(
             div()
+                .class("fs-files-side-line")
                 .flex_row()
                 .items_center()
                 .flex_shrink_0()

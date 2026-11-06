@@ -20,6 +20,7 @@ const LAYOUT: &str = r"
 .fs-files-tree { padding: var(--space-2); border-right-width: 1px; border-right-color: var(--border); background: var(--surface); }
 .fs-files-work { border-right-width: 1px; border-right-color: var(--border); background: var(--surface); }
 .fs-files-side-inner { padding: 0; }
+.fs-files-side-line { padding: 0 var(--space-3); }
 .fs-files-item-bar { align-items: center; gap: var(--space-2); padding: var(--space-3); border-bottom-width: 1px; border-bottom-color: var(--border); }
 .fs-files-preview-room { padding: var(--space-3); min-height: 0; }
 .fs-files-band { border-top-width: 1px; border-top-color: var(--border); background: var(--warning-bg); }
