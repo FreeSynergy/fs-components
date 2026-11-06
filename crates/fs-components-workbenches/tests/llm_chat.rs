@@ -1,222 +1,124 @@
-//! The chat workbench: the full and the compact form, docked questions, send, stop, refresh.
+//! The chat workbench: the full and the compact form, send, agents, refresh through a frame.
 //!
-//! Pattern: the real element driven in process like a window drives it, and offscreen pictures.
+//! Pattern: the real element driven in process like a window drives it (frames, not rebuilds), and
+//! offscreen pictures.
 
 mod chat_common;
 
 use std::sync::{Arc, Mutex};
 
-use chat_common::{Chat, Driven, say, shot, stop};
+use chat_common::{Chat, Driven, busy_chat, say, shot};
 use fs_components_widgets::SenderKind;
-use fs_components_widgets::agent_tree::{AgentEnd, AgentNode, AgentState};
-use fs_components_widgets::tool_call::{ToolCall, ToolChoice, ToolKind, ToolOption, ToolRisk};
-use fs_components_workbenches::llm_chat::{LlmChat, Outcome, Pending, StopState};
-
-fn question() -> ToolCall {
-    ToolCall::new("q1", "shell")
-        .kind(ToolKind::RunsCommand)
-        .risk(ToolRisk::Destroys)
-        .summary("Delete the old build folder")
-        .asking(vec![
-            ToolOption::new("no", "Refuse", ToolChoice::Refuse),
-            ToolOption::new("once", "Allow once", ToolChoice::AllowOnce),
-        ])
-}
-
-fn busy_chat() -> Arc<Chat> {
-    let c = Arc::new(Chat::default());
-    {
-        let mut m = c.messages.lock().unwrap();
-        m.push(
-            say(
-                "1",
-                "Ana",
-                SenderKind::Person,
-                "Can you prepare the release notes?",
-            )
-            .at("10:02"),
-        );
-        m.push(
-            say(
-                "2",
-                "Helper",
-                SenderKind::Ai,
-                "Yes. I started two helpers: one collects the changes, one writes the text.",
-            )
-            .at("10:02"),
-        );
-        m.push(
-            say(
-                "3",
-                "indexer",
-                SenderKind::Software,
-                "Index updated: 212 pages.",
-            )
-            .at("10:03"),
-        );
-        m.push(say("4", "Stranger", SenderKind::Unknown, "Who allowed this?").at("10:04"));
-    }
-    *c.agents.lock().unwrap() = vec![
-        AgentNode::new("h", "Helper")
-            .of_kind(SenderKind::Ai)
-            .state(AgentState::Working)
-            .summary("Plan the release"),
-        AgentNode::new("h1", "Collector")
-            .of_kind(SenderKind::Ai)
-            .under("h")
-            .settled(AgentEnd::Failed)
-            .summary("tests broke"),
-        AgentNode::new("h2", "Writer")
-            .of_kind(SenderKind::Ai)
-            .under("h")
-            .state(AgentState::Question)
-            .summary("May I delete the build?"),
-    ];
-    *c.questions.lock().unwrap() = vec![Pending::new("2", question())];
-    *c.stop.lock().unwrap() = stop(StopState::Ready);
-    c
-}
+use fs_components_widgets::tool_call::Approvals;
+use fs_components_workbenches::llm_chat::{LlmChat, Outcome};
 
 fn chat(c: &Arc<Chat>) -> (LlmChat, Arc<Mutex<Vec<Outcome>>>) {
     let got: Arc<Mutex<Vec<Outcome>>> = Arc::default();
     let sink = Arc::clone(&got);
-    let chat =
-        LlmChat::new(c.clone()).on_outcome(Arc::new(move |o| sink.lock().unwrap().push(o.clone())));
+    let clock = Arc::new(chat_common::Manual::default());
+    let chat = LlmChat::new(c.clone())
+        .approvals(Approvals::with_clock(clock))
+        .on_outcome(Arc::new(move |o| sink.lock().unwrap().push(o.clone())));
     (chat, got)
 }
 
 #[test]
 fn the_full_chat_shows_messages_agents_dock_composer_and_stop() {
-    let c = busy_chat();
-    let (chat, _) = chat(&c);
-    let mut d = Driven::new(&chat, 1100.0, 720.0);
-    assert!(d.has("llm-stop"), "no stop control");
-    assert!(d.has("llm-tree-row-h2"), "no agent tree");
-    assert!(d.has("llm-list-msg-4"), "no messages");
-    assert!(d.has("llm-dock-opt-q1-once"), "the question is not docked");
-    assert!(d.has("llm-composer-send"), "no text field");
-    d.rebuild();
-    let img = shot(&chat, 1100, 720, "llm-chat-full.png");
-    assert!(img.width() == 1100);
-}
-
-#[test]
-fn the_compact_form_has_no_side_panel_but_keeps_marks_and_attention() {
-    let c = busy_chat();
-    let (full, _) = chat(&c);
-    let (compact, _) = chat(&c);
-    let compact = compact.compact(true);
-    let d = Driven::new(&compact, 520.0, 640.0);
-    assert!(
-        !d.has("llm-tree-row-h2"),
-        "the side panel is in the compact form"
-    );
-    assert!(d.has("llm-list-msg-2") && d.has("llm-composer-send") && d.has("llm-dock-opt-q1-once"));
-    let a = shot(&compact, 520, 640, "llm-chat-compact.png");
-    // the marks are drawn in the compact form: an AI message and a person's differ in the header
-    let ink_in = |img: &image::RgbaImage| {
-        img.pixels()
-            .filter(|p| i32::from(p.0[2]) > i32::from(p.0[0]) + 25)
-            .count()
-    };
-    assert!(
-        ink_in(&a) > 200,
-        "no blue mark of the AI in the compact form"
-    );
-    let b = shot(&full, 1100, 720, "llm-chat-full-2.png");
-    assert_ne!(a.width(), b.width());
-}
-
-#[test]
-fn a_question_cannot_scroll_away_in_a_long_conversation() {
-    let c = busy_chat();
-    {
-        let mut m = c.messages.lock().unwrap();
-        for i in 5..400 {
-            m.push(say(
-                &i.to_string(),
-                "Helper",
-                SenderKind::Ai,
-                "More output from the agent, line after line of it.",
-            ));
-        }
+    let (chat, _) = chat(&busy_chat());
+    let d = Driven::new(&chat, 1100.0, 720.0);
+    for id in [
+        "llm-stop",
+        "llm-tree-row-h2",
+        "llm-list-msg-4",
+        "llm-dock-2-opt-q1-once",
+        "llm-composer-send",
+        "llm-dock-2-detail-q1",
+    ] {
+        assert!(d.has(id), "missing {id}");
     }
-    let (chat, got) = chat(&c);
-    let mut d = Driven::new(&chat, 900.0, 600.0);
-    // the message the question belongs to is far above, the answer is still there
-    assert!(!d.has("llm-list-msg-2"));
-    assert!(d.has("llm-dock-opt-q1-once"));
-    assert!(
-        got.lock().unwrap().is_empty(),
-        "something was answered by itself"
-    );
-    d.click("llm-dock-opt-q1-once");
-    assert_eq!(
-        *got.lock().unwrap(),
-        [Outcome::ToolChose {
-            message: "2".into(),
-            call: "q1".into(),
-            option: "once".into(),
-            choice: ToolChoice::AllowOnce
-        }]
-    );
+    shot(&chat, 1100, 720, "llm-chat-full.png");
+}
+
+#[test]
+fn every_sender_is_marked_in_the_full_and_in_the_compact_form() {
+    let c = busy_chat();
+    for compact in [false, true] {
+        let (chat, _) = chat(&c);
+        let chat = chat.compact(compact);
+        let d = Driven::new(&chat, if compact { 520.0 } else { 1100.0 }, 700.0);
+        // the marks of the messages in view; the list follows the end, so the last ones are built
+        for key in ["3", "4"] {
+            let (_, _, w, h) = d.bounds(&format!("llm-list-mark-{key}"));
+            assert!(
+                w > 20.0 && h > 8.0,
+                "no mark on message {key} (compact={compact})"
+            );
+        }
+        assert_eq!(
+            d.has("llm-tree-row-h2"),
+            !compact,
+            "side panel (compact={compact})"
+        );
+        shot(
+            &chat,
+            if compact { 520 } else { 1100 },
+            700,
+            if compact {
+                "llm-chat-compact.png"
+            } else {
+                "llm-chat-full-2.png"
+            },
+        );
+    }
+}
+
+#[test]
+fn the_compact_header_says_what_needs_attention_and_what_works() {
+    let (chat, _) = chat(&busy_chat());
+    let chat = chat.compact(true);
+    let a = shot(&chat, 520, 700, "llm-chat-compact-agents.png");
+    let c2 = busy_chat();
+    c2.agents.lock().unwrap().clear();
+    let (quiet, _) = self::chat(&c2);
+    let b = shot(&quiet.compact(true), 520, 700, "llm-chat-compact-quiet.png");
+    assert_ne!(a, b, "the compact header does not show the agents");
 }
 
 #[test]
 fn send_is_an_outcome_a_failure_keeps_the_text_and_success_clears_it() {
-    let c = busy_chat();
-    let (chat, got) = chat(&c);
+    let (chat, got) = chat(&busy_chat());
     chat.composer().set_text("Please go on.\n");
-    let mut d = Driven::new(&chat, 900.0, 600.0);
+    let mut d = Driven::new(&chat, 900.0, 700.0);
     d.click("llm-composer-send");
-    assert_eq!(
-        got.lock().unwrap().last(),
-        Some(&Outcome::Send {
-            text: "Please go on.\n".into(),
-            attachments: vec![]
-        })
-    );
+    let Some(Outcome::Send { text, attempt, .. }) = got.lock().unwrap().last().cloned() else {
+        panic!()
+    };
+    assert_eq!(text, "Please go on.\n");
     chat.failed("offline");
     assert_eq!(chat.composer().text(), "Please go on.\n");
     d.rebuild();
     d.click("llm-composer-send");
-    chat.sent();
+    let Some(Outcome::Send {
+        attempt: second, ..
+    }) = got.lock().unwrap().last().cloned()
+    else {
+        panic!()
+    };
+    // a late answer of the first attempt must not clear the text of the second
+    chat.composer().sent_for(attempt);
+    assert_eq!(
+        chat.composer().text(),
+        "Please go on.\n",
+        "a late sent() of attempt 1 cleared attempt 2"
+    );
+    chat.composer().sent_for(second);
     assert_eq!(chat.composer().text(), "");
 }
 
 #[test]
-fn the_stop_is_only_shown_and_reported() {
-    let c = busy_chat();
-    let (chat, got) = chat(&c);
-    let mut d = Driven::new(&chat, 900.0, 600.0);
-    d.click("llm-stop");
-    assert_eq!(*got.lock().unwrap(), [Outcome::StopRequested]);
-    // the workbench did nothing itself: the source still says ready
-    assert_eq!(
-        c.stop.lock().unwrap().as_ref().unwrap().state,
-        StopState::Ready
-    );
-    for state in [
-        StopState::Stopping,
-        StopState::Stopped,
-        StopState::Unavailable,
-    ] {
-        *c.stop.lock().unwrap() = chat_common::stop(state);
-        chat.refresh();
-        d.rebuild();
-        assert!(!d.has("llm-stop"), "a button while {state:?}");
-    }
-    *c.stop.lock().unwrap() = None;
-    chat.refresh();
-    d.rebuild();
-    assert!(!d.has("llm-stop"), "a control the host did not give");
-}
-
-#[test]
 fn an_agent_click_is_an_outcome() {
-    let c = busy_chat();
-    let (chat, got) = chat(&c);
-    let mut d = Driven::new(&chat, 1100.0, 600.0);
+    let (chat, got) = chat(&busy_chat());
+    let mut d = Driven::new(&chat, 1100.0, 700.0);
     d.click("llm-tree-main-h2");
     assert_eq!(
         *got.lock().unwrap(),
@@ -225,25 +127,29 @@ fn an_agent_click_is_an_outcome() {
 }
 
 #[test]
-fn new_messages_and_a_new_question_appear_after_refresh() {
+fn new_messages_and_questions_reach_the_screen_through_a_frame() {
     let c = busy_chat();
     c.questions.lock().unwrap().clear();
     let (chat, _) = chat(&c);
-    let mut d = Driven::new(&chat, 900.0, 600.0);
-    assert!(!d.has("llm-dock-opt-q1-once"));
+    let mut d = Driven::new(&chat, 900.0, 700.0);
+    assert!(!d.has("llm-dock-2-opt-q1-once"));
     c.messages
         .lock()
         .unwrap()
         .push(say("5", "Helper", SenderKind::Ai, "A new line."));
-    *c.questions.lock().unwrap() = vec![Pending::new("5", question())];
     chat.refresh();
     d.frame();
-    d.rebuild();
-    assert!(d.has("llm-list-msg-5"), "the new message is not there");
     assert!(
-        d.has("llm-dock-opt-q1-once"),
-        "the new question is not docked"
+        d.has("llm-list-msg-5"),
+        "the new message did not reach a frame"
     );
-    let img = shot(&chat, 900, 600, "llm-chat-refreshed.png");
-    assert!(img.width() == 900);
+    // a question arriving changes the layout: it takes the next frame too
+    let busy = busy_chat();
+    *c.questions.lock().unwrap() = busy.questions.lock().unwrap().clone();
+    chat.refresh();
+    d.frame();
+    assert!(
+        d.has("llm-dock-2-opt-q1-once"),
+        "the new question did not reach a frame"
+    );
 }

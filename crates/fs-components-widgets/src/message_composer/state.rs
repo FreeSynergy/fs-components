@@ -9,7 +9,8 @@ use super::model::{Outcome, Refusal};
 #[derive(Clone, Debug, Default)]
 pub struct Composing {
     text: String,
-    sending: Option<String>,
+    sending: Option<(u64, String)>,
+    attempts: u64,
     error: Option<String>,
 }
 
@@ -47,30 +48,46 @@ impl Composing {
         if self.text.trim().is_empty() {
             return Outcome::Refused(Refusal::Empty);
         }
-        self.sending = Some(self.text.clone());
+        self.attempts += 1;
+        self.sending = Some((self.attempts, self.text.clone()));
         self.error = None;
         Outcome::Send {
             text: self.text.clone(),
             attachments,
+            attempt: self.attempts,
         }
     }
 
-    /// The host sent it. Clears the text if it is still what was sent; returns whether it did.
-    pub fn sent(&mut self) -> bool {
-        let Some(sent) = self.sending.take() else {
-            return false;
-        };
-        if self.text == sent {
-            self.text.clear();
-            true
-        } else {
-            false
+    /// The host sent attempt `attempt`. Clears the text if that is the attempt waiting and the text
+    /// is still what was sent; returns whether it did. An answer for an older attempt does nothing.
+    pub fn sent(&mut self, attempt: u64) -> bool {
+        match self.sending.take() {
+            Some((n, sent)) if n == attempt => {
+                if self.text == sent {
+                    self.text.clear();
+                    true
+                } else {
+                    false
+                }
+            }
+            other => {
+                self.sending = other;
+                false
+            }
         }
     }
 
-    /// The host could not send it: the text stays, the reason is shown.
-    pub fn failed(&mut self, reason: &str) {
-        self.sending = None;
-        self.error = Some(reason.to_owned());
+    /// The host could not send attempt `attempt`: the text stays, the reason is shown. An answer for
+    /// an older attempt does nothing.
+    pub fn failed(&mut self, attempt: u64, reason: &str) {
+        if self.sending.as_ref().is_some_and(|(n, _)| *n == attempt) {
+            self.sending = None;
+            self.error = Some(reason.to_owned());
+        }
+    }
+
+    /// The number of the attempt waiting for its answer.
+    pub fn waiting(&self) -> Option<u64> {
+        self.sending.as_ref().map(|(n, _)| *n)
     }
 }

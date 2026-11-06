@@ -25,10 +25,10 @@ pub const STYLES: &str = r"
 .fs-at-head-text, .fs-at-name { color: var(--text-primary); font-size: var(--text-sm); }
 .fs-at-row { display: flex; flex-direction: row; align-items: center; gap: var(--space-2); padding: 0 var(--space-2); overflow: hidden; border-left-width: 4px; border-color: var(--surface); }
 .fs-at-toggle { display: flex; flex-direction: row; justify-content: center; flex-shrink: 0; width: 20px; }
-.fs-at-main { display: flex; flex-direction: row; align-items: center; gap: var(--space-2); flex-grow: 1; min-width: 0; overflow: hidden; }
+.fs-at-main { min-width: 72px; display: flex; flex-direction: row; align-items: center; gap: var(--space-2); flex-grow: 1; min-width: 0; overflow: hidden; }
 .fs-at-summary, .fs-at-meta { color: var(--text-secondary); font-size: var(--text-xs); }
 .fs-at-state { color: var(--text-secondary); font-size: var(--text-xs); flex-shrink: 0; }
-.fs-at-below { flex-shrink: 0; padding: 0 var(--space-2); border-radius: var(--radius-sm); border-width: 1px; border-color: var(--border); }
+.fs-at-below { flex-shrink: 1; min-width: 0; overflow: hidden; padding: 0 var(--space-2); border-radius: var(--radius-sm); border-width: 1px; border-color: var(--border); }
 .fs-at-question { background: var(--warning-bg); border-color: var(--warning); }
 .fs-at-failure { background: var(--error-bg); border-color: var(--error); }
 .fs-at-delivery { background: var(--success-bg); border-color: var(--success); }

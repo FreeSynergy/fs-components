@@ -19,6 +19,9 @@ use crate::text::{Inline, MarkKind};
 /// Runs longer than this many characters may wrap inside themselves.
 const LONG_RUN: usize = 24;
 
+/// A run without a space is cut after this many characters.
+const MAX_WORD: usize = 32;
+
 /// The style of a run.
 // Independent on/off flags of a run; a state enum would only mirror the mark kinds.
 #[allow(clippy::struct_excessive_bools)]
@@ -137,7 +140,10 @@ fn runs(inline: &Inline, _face: Face) -> Vec<(String, Style)> {
             && (style != current_style
                 || (after_space && !c.is_whitespace())
                 || c == '\n'
-                || current == "\n");
+                || current == "\n"
+                // a very long word is cut into pieces that wrap one after the other: Blinc measures
+                // thousands of unbroken characters very slowly (8000 took 15 s in a debug build)
+                || (current.chars().count() >= MAX_WORD && !current.contains(char::is_whitespace)));
         if breaks {
             out.push((std::mem::take(&mut current), current_style.clone()));
         }

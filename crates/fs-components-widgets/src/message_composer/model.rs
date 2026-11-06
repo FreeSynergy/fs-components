@@ -46,6 +46,8 @@ pub enum Outcome {
         text: String,
         /// Keys of the attachments listed now.
         attachments: Vec<String>,
+        /// The number of this attempt; answer with `sent_for` / `failed_for`.
+        attempt: u64,
     },
     /// A send was asked for but not made.
     Refused(Refusal),

@@ -61,6 +61,7 @@ pub(super) fn uses_flow(inline: &Inline) -> bool {
     !inline.marks.is_empty()
         || inline.text.len() > LONG_PLAIN
         || inline.text.contains('\n')
+        || inline.text.split_whitespace().any(|w| w.len() > 120)
         || super::fallback::needs_fallback(&inline.text)
 }
 

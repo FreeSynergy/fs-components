@@ -11,7 +11,7 @@ use fs_components_widgets::agent_tree::{self, AgentTree};
 use fs_components_widgets::live::Live;
 use fs_components_widgets::message_composer::{self, MessageComposer};
 use fs_components_widgets::message_list::{self, MessageList, MessageSource, SourceError};
-use fs_components_widgets::tool_call::{self, ToolCallView};
+use fs_components_widgets::tool_call::{Approvals, ToolCallView};
 
 use super::labels::Labels;
 use super::outcome::Outcome;
@@ -52,7 +52,8 @@ pub struct LlmChat {
     pub(super) id: String,
     pub(super) compact: bool,
     sink: Sink,
-    had_questions: Arc<Mutex<bool>>,
+    had_questions: Arc<Mutex<usize>>,
+    approvals: Approvals,
 }
 
 impl LlmChat {
@@ -70,22 +71,12 @@ impl LlmChat {
             }
         };
         let emit = to(&sink);
+        let approvals = Approvals::new();
         let list = MessageList::new(Arc::new(Messages(Arc::clone(&source))))
             .id(format!("{id}-list"))
+            .approvals(approvals.clone())
             .on_outcome(Arc::new(move |o| match o.clone() {
-                message_list::Outcome::ToolChose {
-                    message,
-                    call,
-                    option,
-                    choice,
-                } => {
-                    emit(Outcome::ToolChose {
-                        message,
-                        call,
-                        option,
-                        choice,
-                    });
-                }
+                message_list::Outcome::ToolChose(decision) => emit(Outcome::ToolChose(decision)),
                 message_list::Outcome::Retry { message } => emit(Outcome::Retry { message }),
                 message_list::Outcome::Reference { message, reference } => {
                     emit(Outcome::Reference { message, reference });
@@ -97,8 +88,16 @@ impl LlmChat {
             .id(format!("{id}-composer"))
             .attach_button(true)
             .on_outcome(Arc::new(move |o| match o.clone() {
-                message_composer::Outcome::Send { text, attachments } => {
-                    emit(Outcome::Send { text, attachments });
+                message_composer::Outcome::Send {
+                    text,
+                    attachments,
+                    attempt,
+                } => {
+                    emit(Outcome::Send {
+                        text,
+                        attachments,
+                        attempt,
+                    });
                 }
                 message_composer::Outcome::RemoveAttachment { key } => {
                     emit(Outcome::RemoveAttachment { key });
@@ -118,25 +117,20 @@ impl LlmChat {
         let asked = Arc::clone(&source);
         let dock = ToolCallView::new()
             .id(format!("{id}-dock"))
+            .approvals(approvals.clone())
+            .verify(Arc::new(move |d| {
+                // what the source holds now, not what was drawn
+                asked.questions().iter().any(|p| {
+                    p.message == d.message
+                        && p.call.id == d.call
+                        && p.call.state == fs_components_widgets::tool_call::ToolState::Question
+                        && p.call.revision == d.revision
+                        && p.call.digest == d.digest
+                })
+            }))
             .on_outcome(Arc::new(move |o| {
-                if let tool_call::Outcome::Chose {
-                    call,
-                    option,
-                    choice,
-                } = o.clone()
-                {
-                    let message = asked
-                        .questions()
-                        .into_iter()
-                        .find(|p| p.call.id == call)
-                        .map(|p| p.message)
-                        .unwrap_or_default();
-                    emit(Outcome::ToolChose {
-                        message,
-                        call,
-                        option,
-                        choice,
-                    });
+                if let fs_components_widgets::tool_call::Outcome::Chose(decision) = o.clone() {
+                    emit(Outcome::ToolChose(decision));
                 }
             }));
         let chat = Self {
@@ -152,6 +146,7 @@ impl LlmChat {
             compact: false,
             sink,
             had_questions: Arc::default(),
+            approvals,
         };
         chat.sync();
         chat
@@ -184,25 +179,38 @@ impl LlmChat {
         self
     }
 
-    pub(super) fn questions_open(&self) -> bool {
-        !self.dock.calls().is_empty()
-    }
-
     fn sync(&self) -> bool {
         self.tree.set_nodes(self.source.agents());
-        let calls = self
+        let pending: Vec<_> = self
             .source
             .questions()
             .into_iter()
-            .map(|p| p.call)
+            .map(|p| (p.message, p.call))
             .collect();
-        self.dock.replace(calls);
-        let now = self.questions_open();
+        let now = pending.len();
+        self.dock.replace(pending);
         let mut had = self
             .had_questions
             .lock()
             .unwrap_or_else(PoisonError::into_inner);
         std::mem::replace(&mut *had, now) != now
+    }
+
+    /// Use this guard (and its clock) for every place that can answer a question.
+    #[must_use]
+    pub fn approvals(mut self, approvals: Approvals) -> Self {
+        self.list = self.list.approvals(approvals.clone());
+        self.dock = self.dock.approvals(approvals.clone());
+        self.approvals = approvals;
+        self
+    }
+
+    /// The engine refused a decision (the digest or revision no longer fit, or the call is
+    /// settled): the card shows the reason with the fresh question, and the person decides anew.
+    pub fn decision_refused(&self, message: &str, call: &str, reason: &str) {
+        self.list.decision_refused(message, call, reason);
+        self.dock.refused_in(message, call, reason);
+        self.refresh();
     }
 
     /// The host's source changed (new text, agents, questions, stop state): draw what changed.

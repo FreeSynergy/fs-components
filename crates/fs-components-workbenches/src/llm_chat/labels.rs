@@ -21,6 +21,8 @@ pub struct Labels {
     pub agents: String,
     /// Heading of the dock; `{}` = how many are waiting.
     pub waiting: String,
+    /// Agents at work, in the compact header; `{}` = how many.
+    pub working: String,
     /// The stop is being carried out.
     pub stopping: String,
     /// The stop is done.
@@ -39,6 +41,7 @@ impl Default for Labels {
             tools: tool_call::Labels::default(),
             agents: s("Agents"),
             waiting: s("{} waiting for you"),
+            working: s("{} working"),
             stopping: s("Stopping..."),
             stopped: s("Stopped"),
             stop_unavailable: s("Not available"),

@@ -19,3 +19,4 @@ pub use labels::Labels;
 pub use outcome::Outcome;
 pub use source::{ChatSource, Pending, StopControl, StopState};
 pub use styles::styles;
+pub use view::MIN_SIZE;

@@ -56,6 +56,10 @@ pub struct Labels {
     pub result: String,
     /// Caption: the summary is the agent's own words.
     pub by_agent: String,
+    /// Caption above what the engine says it will do.
+    pub engine_detail: String,
+    /// The engine refused an answer; `{}` = its reason. The question is asked again.
+    pub refused: String,
 }
 
 impl Default for Labels {
@@ -85,7 +89,9 @@ impl Default for Labels {
             hide_details: s("Hide"),
             detail: s("Full text"),
             result: s("Result"),
-            by_agent: s("Summary written by the agent"),
+            by_agent: s("Written by the agent:"),
+            engine_detail: s("The engine will do:"),
+            refused: s("The engine refused your answer: {}. Decide again."),
         }
     }
 }

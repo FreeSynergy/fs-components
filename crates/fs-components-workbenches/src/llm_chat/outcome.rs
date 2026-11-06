@@ -3,7 +3,7 @@
 //! Pattern: Value object, flattened from the parts. Nothing here is a decision: a question's
 //! answer and the stop are reported, the host (the engine) decides and carries them out.
 
-use fs_components_widgets::tool_call::ToolChoice;
+use fs_components_widgets::tool_call::Decision;
 
 /// What the chat reports.
 #[non_exhaustive]
@@ -15,6 +15,8 @@ pub enum Outcome {
         text: String,
         /// The attachments listed.
         attachments: Vec<String>,
+        /// The attempt; answer with the composer's `sent_for` / `failed_for` for late answers.
+        attempt: u64,
     },
     /// Remove this attachment from the list.
     RemoveAttachment {
@@ -23,17 +25,9 @@ pub enum Outcome {
     },
     /// The person wants to attach something.
     AttachRequested,
-    /// A question was answered. Nothing has happened yet.
-    ToolChose {
-        /// The message holding the call.
-        message: String,
-        /// The call.
-        call: String,
-        /// The option chosen.
-        option: String,
-        /// What the option said it meant.
-        choice: ToolChoice,
-    },
+    /// A question was answered, bound to the revision and digest drawn when the person decided.
+    /// Nothing has happened yet; the host passes it to the engine, which refuses it if it no longer fits.
+    ToolChose(Decision),
     /// Send a failed message again.
     Retry {
         /// The message.

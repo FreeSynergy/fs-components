@@ -30,7 +30,7 @@ impl SortableList {
     /// The element to place in a layout.
     pub fn build(&self) -> impl Element + use<> {
         let this = self.clone();
-        let body = self.live.view(move || this.render());
+        let body = self.live.view("lanes", move || this.render());
         let root = div().id(&self.id).class("fs-sl-root").w_full().child(body);
         match self.bindings.clone() {
             Some(_) => {

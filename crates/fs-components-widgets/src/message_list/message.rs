@@ -16,7 +16,7 @@ use super::labels::Labels;
 use super::model::{ChatMessage, Delivery};
 use crate::participant::{SenderKind, chip};
 use crate::text_view::TextView;
-use crate::tool_call::{Sinks, ToolState, card};
+use crate::tool_call::{Ctx, Sinks, card};
 
 fn delivery_word(l: &Labels, d: Delivery) -> &str {
     match d {
@@ -47,6 +47,18 @@ impl MessageList {
         if m.mine {
             row = row.class("fs-ml-mine");
         }
+        // a coloured edge in the kind's colour: a person, software, an AI and an unknown sender
+        // each have their own, and the tint of "mine" is another thing
+        row = row.relative().child(
+            div()
+                .class("fs-ml-edge")
+                .class(kind_class(m.sender.kind))
+                .absolute()
+                .left(0.0)
+                .top(0.0)
+                .bottom(0.0)
+                .w(5.0),
+        );
         row = row.child(self.header(m));
         if m.blocks.is_empty() && m.tool_calls.is_empty() {
             row = row.child(text(l.empty_message.clone()).class("fs-ml-note"));
@@ -80,7 +92,7 @@ impl MessageList {
         let mut head = div()
             .class("fs-ml-head")
             .child(text(m.sender.name.clone()).class("fs-ml-name"))
-            .child(chip(m.sender.kind, &l.kinds));
+            .child(chip(m.sender.kind, &l.kinds).id(format!("{}-mark-{}", self.id, m.key)));
         if !m.sender.operator.is_empty() {
             head = head.child(text(m.sender.operator.clone()).class("fs-ml-meta"));
         }
@@ -131,31 +143,24 @@ impl MessageList {
     }
 
     fn tools(&self, m: &ChatMessage) -> Div {
-        let (toggler, chooser, message) = (self.clone(), self.clone(), m.clone());
+        let (toggler, chooser, live) = (self.clone(), self.clone(), self.live);
         let key = m.key.clone();
         let sinks = Sinks {
-            toggle: Arc::new(move |call| toggler.toggle_open(format!("t:{key}:{call}"))),
-            choose: Arc::new(move |call, option| {
-                let found = message
-                    .tool_calls
-                    .iter()
-                    .find(|c| c.id == call && c.state == ToolState::Question)
-                    .and_then(|c| c.options.iter().find(|o| o.id == option));
-                if let Some(o) = found {
-                    chooser.emit(&Outcome::ToolChose {
-                        message: message.key.clone(),
-                        call: call.to_string(),
-                        option: option.to_string(),
-                        choice: o.choice,
-                    });
-                }
+            toggle: Arc::new(move |_message, call| toggler.toggle_open(format!("t:{key}:{call}"))),
+            choose: Arc::new(move |decision| {
+                chooser.answer(decision);
             }),
+            rearm: Arc::new(move |ms| crate::tool_call::refresh_later(live, ms)),
+        };
+        let ctx = Ctx {
+            approvals: self.approvals.clone(),
+            message: m.key.clone(),
         };
         let mut col = div().class("fs-ml-tools");
         let prefix = format!("{}-{}", self.id, m.key);
         for c in &m.tool_calls {
             let open = self.is_open(&format!("t:{}:{}", m.key, c.id));
-            col = col.child(card(c, open, &self.labels.tools, &prefix, &sinks));
+            col = col.child(card(c, open, &self.labels.tools, &prefix, &sinks, &ctx));
         }
         col
     }

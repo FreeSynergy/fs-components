@@ -68,3 +68,40 @@ impl MessageSource for Generated {
             .collect())
     }
 }
+
+/// A clock the test moves by hand.
+#[derive(Default)]
+pub struct Manual(pub std::sync::atomic::AtomicU64);
+
+impl Manual {
+    pub fn advance(&self, ms: u64) {
+        self.0.fetch_add(ms, std::sync::atomic::Ordering::SeqCst);
+    }
+}
+
+impl fs_components_widgets::tool_call::Clock for Manual {
+    fn now_ms(&self) -> u64 {
+        self.0.load(std::sync::atomic::Ordering::SeqCst)
+    }
+}
+
+/// A conversation the test can change at any time.
+pub struct Shared(pub std::sync::Mutex<Vec<ChatMessage>>);
+
+impl MessageSource for Shared {
+    fn count(&self) -> usize {
+        self.0.lock().unwrap().len()
+    }
+
+    fn messages(&self, first: usize, limit: usize) -> Result<Vec<ChatMessage>, SourceError> {
+        Ok(self
+            .0
+            .lock()
+            .unwrap()
+            .iter()
+            .skip(first)
+            .take(limit)
+            .cloned()
+            .collect())
+    }
+}

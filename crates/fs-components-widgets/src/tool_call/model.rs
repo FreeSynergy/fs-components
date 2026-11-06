@@ -107,6 +107,38 @@ impl ToolOption {
     }
 }
 
+/// What a person answered, bound to what was drawn when they did (not to what is current).
+#[non_exhaustive]
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Decision {
+    /// The message that holds the call (empty where there is none).
+    pub message: String,
+    /// The call's id.
+    pub call: String,
+    /// The option's id, as the host gave it.
+    pub option: String,
+    /// What the option said it meant.
+    pub choice: ToolChoice,
+    /// The revision of the call as drawn.
+    pub revision: u64,
+    /// The host's digest of the call as drawn.
+    pub digest: Vec<u8>,
+}
+
+impl Decision {
+    /// A decision of the call as drawn, for tests and hosts that replay one.
+    pub fn for_test(message: &str, call: &str, option: &str, revision: u64, digest: &[u8]) -> Self {
+        Self {
+            message: message.into(),
+            call: call.into(),
+            option: option.into(),
+            choice: ToolChoice::AllowOnce,
+            revision,
+            digest: digest.to_vec(),
+        }
+    }
+}
+
 /// One tool call. Updated in place by `id`.
 #[non_exhaustive]
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -133,6 +165,8 @@ pub struct ToolCall {
     pub options: Vec<ToolOption>,
     /// Raised by the host on every change; an older one than held is ignored.
     pub revision: u64,
+    /// The host's digest over what the call will do, passed back with an answer unchanged (opaque).
+    pub digest: Vec<u8>,
 }
 
 impl ToolCall {
@@ -150,6 +184,7 @@ impl ToolCall {
             result: String::new(),
             options: Vec::new(),
             revision: 0,
+            digest: Vec::new(),
         }
     }
 
@@ -208,6 +243,13 @@ impl ToolCall {
     pub fn asking(mut self, options: Vec<ToolOption>) -> Self {
         self.state = ToolState::Question;
         self.options = options;
+        self
+    }
+
+    /// Set the digest the host gave (what an answer must be bound to).
+    #[must_use]
+    pub fn digest(mut self, digest: Vec<u8>) -> Self {
+        self.digest = digest;
         self
     }
 

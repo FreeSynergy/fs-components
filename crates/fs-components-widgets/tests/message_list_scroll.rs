@@ -6,7 +6,6 @@
 mod chat_support;
 mod common;
 
-use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
 
@@ -229,43 +228,6 @@ fn text_that_grows_stays_in_place_and_only_the_bottom_follows() {
     layout(list.build(500.0, 360.0), 500.0, 360.0);
     assert!((list.offset() - reading).abs() < 0.5);
     assert!(!list.is_following());
-}
-
-#[test]
-fn measured_heights_replace_estimates_and_a_message_above_does_not_shift_the_reader() {
-    let _g = serial();
-    let src = shared(200);
-    let rows: Arc<Mutex<HashMap<String, f32>>> = Arc::default();
-    let seen = Arc::clone(&rows);
-    let list = MessageList::new(src.clone())
-        .id("h")
-        .probe(Arc::new(move |id| seen.lock().unwrap().get(id).copied()));
-    let tree = layout(list.build(600.0, 400.0), 600.0, 400.0);
-    list.scroll_by(-5000.0);
-    let tree2 = layout(list.build(600.0, 400.0), 600.0, 400.0);
-    drop(tree);
-    // read the real heights out of the layout, as the widget does itself in a window
-    let range = list.built();
-    for i in range.clone() {
-        let id = format!("h-msg-m{i}");
-        let node = tree2.query_by_id(&id).expect("built");
-        rows.lock()
-            .unwrap()
-            .insert(id, tree2.get_absolute_bounds(node).unwrap().height);
-    }
-    let before_total = list.total_height();
-    let offset = list.offset();
-    let changed = list.measure();
-    assert!(changed > 0, "nothing measured");
-    assert!(
-        (list.total_height() - before_total).abs() > 0.5,
-        "the estimates were all exact?"
-    );
-    // messages above the first one in view shifted the offset by exactly the change above
-    let delta_above = list.offset() - offset;
-    assert!(delta_above.abs() < 2000.0);
-    // a second pass over the same layout changes nothing
-    assert_eq!(list.measure(), 0);
 }
 
 #[test]

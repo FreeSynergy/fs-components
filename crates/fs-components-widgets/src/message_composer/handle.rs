@@ -198,11 +198,19 @@ impl MessageComposer {
         self.report(outcome)
     }
 
-    /// The host sent the message: the text is cleared if it is still what was sent.
+    /// The host sent the message (the attempt waiting): the text is cleared if it is unchanged.
     pub fn sent(&self) {
+        let waiting = self.lock().state.waiting();
+        if let Some(n) = waiting {
+            self.sent_for(n);
+        }
+    }
+
+    /// The host sent attempt `attempt`. A late answer for an older attempt changes nothing.
+    pub fn sent_for(&self, attempt: u64) {
         let (cleared, job) = {
             let mut inner = self.lock();
-            (inner.state.sent(), inner.job.clone())
+            (inner.state.sent(attempt), inner.job.clone())
         };
         if cleared {
             self.area
@@ -216,9 +224,17 @@ impl MessageComposer {
         self.live.refresh();
     }
 
-    /// The host could not send it: the text stays, the reason is shown.
+    /// The host could not send the message (the attempt waiting): the text stays, the reason is shown.
     pub fn failed(&self, reason: &str) {
-        self.lock().state.failed(reason);
+        let waiting = self.lock().state.waiting();
+        if let Some(n) = waiting {
+            self.failed_for(n, reason);
+        }
+    }
+
+    /// The host could not send attempt `attempt`. A late answer for an older attempt changes nothing.
+    pub fn failed_for(&self, attempt: u64, reason: &str) {
+        self.lock().state.failed(attempt, reason);
         self.live.refresh();
     }
 

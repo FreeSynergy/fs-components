@@ -105,6 +105,11 @@ impl AgentTree {
         self.live.refresh();
     }
 
+    /// How many agents are working (not settled, no question).
+    pub fn working(&self) -> usize {
+        self.lock().forest.working()
+    }
+
     /// How many agents.
     pub fn len(&self) -> usize {
         self.lock().forest.len()

@@ -27,6 +27,8 @@ pub struct Chat {
     pub agents: Mutex<Vec<AgentNode>>,
     pub questions: Mutex<Vec<Pending>>,
     pub stop: Mutex<Option<StopControl>>,
+    pub title: Mutex<String>,
+    pub usage: Mutex<String>,
 }
 
 impl MessageSource for Chat {
@@ -53,7 +55,12 @@ impl ChatSource for Chat {
     }
 
     fn title(&self) -> String {
-        "Release planning".into()
+        let t = self.title.lock().unwrap().clone();
+        if t.is_empty() {
+            "Release planning".into()
+        } else {
+            t
+        }
     }
 
     fn agents(&self) -> Vec<AgentNode> {
@@ -69,7 +76,12 @@ impl ChatSource for Chat {
     }
 
     fn usage(&self) -> Option<String> {
-        Some("1.2k tokens, local".into())
+        let u = self.usage.lock().unwrap().clone();
+        Some(if u.is_empty() {
+            "1.2k tokens, local".into()
+        } else {
+            u
+        })
     }
 }
 
@@ -142,6 +154,15 @@ impl Driven {
         self.tree = tree_of(&self.chat, self.size);
     }
 
+    pub fn bounds(&self, id: &str) -> (f32, f32, f32, f32) {
+        let n = self
+            .tree
+            .query_by_id(id)
+            .unwrap_or_else(|| panic!("no element {id}"));
+        let b = self.tree.get_absolute_bounds(n).unwrap();
+        (b.x, b.y, b.width, b.height)
+    }
+
     pub fn has(&self, id: &str) -> bool {
         self.tree.query_by_id(id).is_some()
     }
@@ -170,7 +191,9 @@ impl Driven {
 
 /// Draw the chat to a picture (kept in `FS_COMP_SHOTS` when set).
 pub fn shot(chat: &LlmChat, w: u32, h: u32, name: &str) -> image::RgbaImage {
-    let dir = std::env::temp_dir().join(format!("fs-llm-{}", std::process::id()));
+    static N: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+    let n = N.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    let dir = std::env::temp_dir().join(format!("fs-llm-{}-{n}", std::process::id()));
     std::fs::create_dir_all(&dir).unwrap();
     let path: PathBuf = dir.join(name);
     let canvas = Canvas::new(w, h, fs_components_workbenches::llm_chat::styles());
@@ -183,4 +206,88 @@ pub fn shot(chat: &LlmChat, w: u32, h: u32, name: &str) -> image::RgbaImage {
     }
     let _ = std::fs::remove_dir_all(&dir);
     img
+}
+
+/// A clock the test moves by hand.
+#[derive(Default)]
+pub struct Manual(pub std::sync::atomic::AtomicU64);
+
+impl Manual {
+    pub fn advance(&self, ms: u64) {
+        self.0.fetch_add(ms, std::sync::atomic::Ordering::SeqCst);
+    }
+}
+
+impl fs_components_widgets::tool_call::Clock for Manual {
+    fn now_ms(&self) -> u64 {
+        self.0.load(std::sync::atomic::Ordering::SeqCst)
+    }
+}
+
+/// A conversation with four senders of every kind, agents, a question and a stop control.
+pub fn busy_chat() -> Arc<Chat> {
+    use fs_components_widgets::agent_tree::{AgentEnd, AgentNode, AgentState};
+    use fs_components_widgets::tool_call::{ToolCall, ToolChoice, ToolKind, ToolOption, ToolRisk};
+    let c = Arc::new(Chat::default());
+    {
+        let mut m = c.messages.lock().unwrap();
+        m.push(
+            say(
+                "1",
+                "Ana",
+                SenderKind::Person,
+                "Can you prepare the release notes?",
+            )
+            .at("10:02"),
+        );
+        m.push(
+            say(
+                "2",
+                "Helper",
+                SenderKind::Ai,
+                "Yes. I started two helpers: one collects the changes, one writes the text.",
+            )
+            .at("10:02"),
+        );
+        m.push(
+            say(
+                "3",
+                "indexer",
+                SenderKind::Software,
+                "Index updated: 212 pages.",
+            )
+            .at("10:03"),
+        );
+        m.push(say("4", "Stranger", SenderKind::Unknown, "Who allowed this?").at("10:04"));
+    }
+    *c.agents.lock().unwrap() = vec![
+        AgentNode::new("h", "Helper")
+            .of_kind(SenderKind::Ai)
+            .state(AgentState::Working)
+            .summary("Plan the release"),
+        AgentNode::new("h1", "Collector")
+            .of_kind(SenderKind::Ai)
+            .under("h")
+            .settled(AgentEnd::Failed)
+            .summary("tests broke"),
+        AgentNode::new("h2", "Writer")
+            .of_kind(SenderKind::Ai)
+            .under("h")
+            .state(AgentState::Question)
+            .summary("May I delete the build?"),
+    ];
+    let call = ToolCall::new("q1", "shell")
+        .kind(ToolKind::RunsCommand)
+        .risk(ToolRisk::Destroys)
+        .summary("Delete the old build folder")
+        .detail("rm -rf ./target")
+        .asking(vec![
+            ToolOption::new("no", "Refuse", ToolChoice::Refuse),
+            ToolOption::new("once", "Allow once", ToolChoice::AllowOnce),
+        ])
+        .revision(1)
+        .digest(b"rm -rf ./target".to_vec());
+    *c.questions.lock().unwrap() = vec![Pending::new("2", call)];
+    *c.stop.lock().unwrap() = stop(StopState::Ready);
+    c
 }

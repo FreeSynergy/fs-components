@@ -24,7 +24,7 @@ impl MessageList {
         self.lock().size = (width, height);
         self.watch_scroll();
         let this = self.clone();
-        let content = self.live.view(move || this.render());
+        let content = self.live.view("rows", move || this.render());
         let scroll = Scroll::with_physics(Arc::clone(&self.position.physics))
             .bind(&self.position.scroll)
             .w(width)
@@ -33,7 +33,7 @@ impl MessageList {
         let this = self.clone();
         let notice = self
             .live
-            .view(move || this.indicator())
+            .view("notice", move || this.indicator())
             .absolute()
             .left(0.0)
             .bottom(8.0);

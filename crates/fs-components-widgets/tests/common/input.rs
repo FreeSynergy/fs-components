@@ -49,6 +49,28 @@ impl Input {
         self.send(tree, ev, x, y);
     }
 
+    /// Move the pointer to a point.
+    pub fn move_to(&mut self, tree: &mut RenderTree, x: f32, y: f32) {
+        let ev = self.router.on_mouse_move(tree, x, y);
+        self.send(tree, ev, x, y);
+    }
+
+    /// Press the left button at a point (moving there first).
+    pub fn press_at(&mut self, tree: &mut RenderTree, x: f32, y: f32) {
+        use blinc_layout::event_router::MouseButton::Left;
+        self.move_to(tree, x, y);
+        let ev = self.router.on_mouse_down(tree, x, y, Left);
+        self.send(tree, ev, x, y);
+    }
+
+    /// Release the left button at a point (the pointer moves there first).
+    pub fn release_at(&mut self, tree: &mut RenderTree, x: f32, y: f32) {
+        use blinc_layout::event_router::MouseButton::Left;
+        self.move_to(tree, x, y);
+        let ev = self.router.on_mouse_up(tree, x, y, Left);
+        self.send(tree, ev, x, y);
+    }
+
     /// Click the centre of the element with this id.
     pub fn click(&mut self, tree: &mut RenderTree, id: &str) {
         let (x, y) = Self::centre(tree, id);

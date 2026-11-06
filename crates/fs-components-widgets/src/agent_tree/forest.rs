@@ -9,6 +9,7 @@ use std::collections::{HashMap, HashSet};
 use super::model::{AgentNode, Attention, Counts};
 
 /// One line of the flattened tree.
+#[non_exhaustive]
 #[derive(Clone, Debug)]
 pub struct Row {
     /// The agent.
@@ -62,6 +63,14 @@ impl Forest {
     /// The agent with this key.
     pub fn get(&self, key: &str) -> Option<&AgentNode> {
         self.index.get(key).map(|&i| &self.nodes[i])
+    }
+
+    /// How many agents are working.
+    pub fn working(&self) -> usize {
+        self.nodes
+            .iter()
+            .filter(|n| n.state == super::model::AgentState::Working)
+            .count()
     }
 
     /// What every agent asks, all together.

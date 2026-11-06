@@ -4,13 +4,10 @@
 
 mod common;
 
-use std::sync::{Arc, Mutex};
-
-use common::{Input, background, draw, extent_x, ink, layout, serial};
+use common::{background, draw, extent_x, ink, serial};
 use fs_components_widgets::ToolCallView;
 use fs_components_widgets::tool_call::{
-    Applied, Outcome, ToolCall, ToolCalls, ToolChoice, ToolEnd, ToolKind, ToolOption, ToolRisk,
-    ToolState,
+    Applied, ToolCall, ToolCalls, ToolChoice, ToolEnd, ToolKind, ToolOption, ToolRisk, ToolState,
 };
 
 fn options() -> Vec<ToolOption> {
@@ -86,56 +83,23 @@ fn unset_things_read_as_unknown() {
 }
 
 #[test]
-fn a_click_on_an_option_is_an_outcome_and_nothing_is_decided_before() {
-    let _g = serial();
-    let got: Arc<Mutex<Vec<Outcome>>> = Arc::default();
-    let sink = Arc::clone(&got);
-    let view = ToolCallView::new()
-        .id("tc1")
-        .on_outcome(Arc::new(move |o| sink.lock().unwrap().push(o.clone())));
-    view.apply(question());
-    let mut tree = layout(view.build(), 520.0, 300.0);
-    assert!(got.lock().unwrap().is_empty(), "drawing must never answer");
-    // the options are drawn although nothing is expanded
-    assert!(tree.query_by_id("tc1-opt-c2-once").is_some());
-    Input::new().click(&mut tree, "tc1-opt-c2-once");
-    let seen = got.lock().unwrap().clone();
-    assert_eq!(
-        seen,
-        [Outcome::Chose {
-            call: "c2".into(),
-            option: "once".into(),
-            choice: ToolChoice::AllowOnce
-        }]
-    );
-    // the view decided nothing: the call is still a question
-    assert_eq!(view.calls()[0].state, ToolState::Question);
-}
-
-#[test]
-fn only_an_offered_option_of_a_question_answers() {
-    let _g = serial();
-    let view = ToolCallView::new();
-    view.apply(question());
-    assert_eq!(view.choose("c2", "always"), Outcome::NotAsked);
-    assert_eq!(view.choose("nope", "once"), Outcome::NotAsked);
-    view.apply(question().settled(ToolEnd::Refused).revision(1));
-    assert_eq!(view.choose("c2", "once"), Outcome::NotAsked);
-    let tree = layout(view.build(), 520.0, 300.0);
-    assert!(tree.query_by_id("fs-toolcall-opt-c2-once").is_none());
-}
-
-#[test]
 fn details_open_on_request_and_stay_after_an_update() {
     let _g = serial();
     let view = ToolCallView::new().id("tc3");
-    view.apply(question());
+    let working = || {
+        ToolCall::new("c2", "shell")
+            .kind(ToolKind::RunsCommand)
+            .state(ToolState::Working)
+            .summary("Remove the build folder")
+            .detail("rm -rf ./target")
+    };
+    view.apply(working());
     let closed = draw(view.build(), 520, 300, "tool-call-closed.png");
     view.toggle("c2");
     assert!(view.is_expanded("c2"));
     let open = draw(view.build(), 520, 300, "tool-call-open.png");
     assert_ne!(closed, open);
-    view.apply(question().summary("changed").revision(1));
+    view.apply(working().summary("changed").revision(1));
     assert!(view.is_expanded("c2"), "an update keeps the call open");
 }
 
@@ -208,9 +172,14 @@ fn the_kind_changes_the_picture_even_with_the_same_text() {
 fn a_long_word_wraps_inside_the_card() {
     let _g = serial();
     let view = ToolCallView::new();
-    let word = "x".repeat(120);
-    view.apply(ToolCall::new("1", "t").summary(word));
-    let img = draw(view.build(), 360, 220, "tool-call-long.png");
-    let (_, right) = extent_x(&img, 0, 220).expect("ink");
-    assert!(right < 360, "text ran out of the box: {right}");
+    view.apply(ToolCall::new("1", "t").summary("x".repeat(400)));
+    // the card is 360 wide in a picture 600 wide: ink beyond 360 means it ran out of its box
+    let boxed = blinc_layout::div::div().w(360.0).child(view.build());
+    let img = draw(boxed, 600, 400, "tool-call-long.png");
+    let (_, right) = extent_x(&img, 0, 400).expect("ink");
+    assert!(right < 362, "text ran out of the box: {right}");
+    assert!(
+        ink(&img, (0, 60, 360, 200), background(&img)) > 300,
+        "the text is not drawn"
+    );
 }

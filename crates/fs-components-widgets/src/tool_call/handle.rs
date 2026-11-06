@@ -9,37 +9,40 @@ use std::sync::{Arc, Mutex, PoisonError};
 
 use blinc_layout::div::div;
 
-use super::card::{Sinks, card};
+use super::card::{Ctx, Sinks, card};
+use super::guard::Approvals;
 use super::labels::Labels;
-use super::model::{ToolCall, ToolChoice, ToolState};
+use super::model::{Decision, ToolCall, ToolState};
 use super::store::{Applied, ToolCalls};
 use crate::Element;
 use crate::live::Live;
 
-/// What a person's click on a question reported.
+/// What a person's answer to a question reported.
 #[non_exhaustive]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Outcome {
-    /// The person chose an option. The host decides what that means; nothing has happened yet.
-    Chose {
-        /// The call's id.
-        call: String,
-        /// The option's id, as given.
-        option: String,
-        /// What the option said it meant.
-        choice: ToolChoice,
-    },
-    /// Nothing reported: no such call, not a question now, or no such option.
+    /// The person chose an option, bound to the question as drawn. The host decides what that means;
+    /// nothing has happened yet.
+    Chose(Decision),
+    /// Nothing reported: no such call, not a question now, no such option, or the call changed
+    /// after what the person saw.
     NotAsked,
 }
 
+/// Asks the host, at answer time, whether the decision still fits what it holds now.
+pub type Verify = Arc<dyn Fn(&Decision) -> bool + Send + Sync>;
 /// Called with every answer.
 pub type OnOutcome = Arc<dyn Fn(&Outcome) + Send + Sync>;
+
+fn tag_of(message: &str, call: &str) -> String {
+    format!("{message}\u{1}{call}")
+}
 
 struct Inner {
     calls: ToolCalls,
     expanded: HashSet<String>,
     on_outcome: Option<OnOutcome>,
+    verify: Option<Verify>,
 }
 
 /// The calls of one place, drawn as cards. Cheap to clone; clones share the state.
@@ -49,6 +52,7 @@ pub struct ToolCallView {
     live: Live,
     labels: Labels,
     id: String,
+    approvals: Approvals,
 }
 
 impl Default for ToolCallView {
@@ -65,10 +69,12 @@ impl ToolCallView {
                 calls: ToolCalls::new(),
                 expanded: HashSet::new(),
                 on_outcome: None,
+                verify: None,
             })),
             live: Live::new(),
             labels: Labels::default(),
             id: "fs-toolcall".into(),
+            approvals: Approvals::new(),
         }
     }
 
@@ -90,6 +96,33 @@ impl ToolCallView {
         self
     }
 
+    /// Share the guard with other places that can answer the same questions (the first answer wins).
+    #[must_use]
+    pub fn approvals(mut self, approvals: Approvals) -> Self {
+        self.approvals = approvals;
+        self
+    }
+
+    /// The engine refused a decision for this call: shown on its card.
+    pub fn refused(&self, call: &str, reason: &str) {
+        self.approvals.refused("", call, reason);
+        self.live.refresh();
+    }
+
+    /// The engine refused a decision for this call in this message: shown on its card.
+    pub fn refused_in(&self, message: &str, call: &str, reason: &str) {
+        self.approvals.refused(message, call, reason);
+        self.live.refresh();
+    }
+
+    /// Ask the host at answer time whether the decision still fits what it holds now; an answer
+    /// it denies is dropped.
+    #[must_use]
+    pub fn verify(self, check: Verify) -> Self {
+        self.lock().verify = Some(check);
+        self
+    }
+
     /// Hear of every answer.
     #[must_use]
     pub fn on_outcome(self, handler: OnOutcome) -> Self {
@@ -104,22 +137,35 @@ impl ToolCallView {
         applied
     }
 
-    /// Replace all calls by the host's list as it is now (open details of calls that stay are kept).
-    pub fn replace(&self, calls: Vec<ToolCall>) {
+    /// Replace all calls by the host's list as it is now, each with the message it belongs to.
+    /// Settled calls are final and are not revived by it.
+    pub fn replace(&self, calls: Vec<(String, ToolCall)>) {
         {
             let mut inner = self.lock();
             inner.calls.replace(calls);
             let Inner {
                 calls, expanded, ..
             } = &mut *inner;
-            expanded.retain(|id| calls.get(id).is_some());
+            expanded.retain(|tag| {
+                calls
+                    .entries()
+                    .iter()
+                    .any(|(m, c)| &tag_of(m, &c.id) == tag)
+            });
         }
         self.live.refresh();
     }
 
+    /// Add or replace the call with this id in this message.
+    pub fn apply_in(&self, message: &str, call: ToolCall) -> Applied {
+        let applied = self.lock().calls.apply_in(message, call);
+        self.live.refresh();
+        applied
+    }
+
     /// A copy of the calls in first-seen order.
     pub fn calls(&self) -> Vec<ToolCall> {
-        self.lock().calls.all().to_vec()
+        self.lock().calls.all().into_iter().cloned().collect()
     }
 
     /// Do any calls want attention (a question or a failure)?
@@ -127,16 +173,22 @@ impl ToolCallView {
         self.lock()
             .calls
             .all()
-            .iter()
+            .into_iter()
             .any(ToolCall::needs_attention)
     }
 
-    /// Show or hide the details of a call.
+    /// Show or hide the details of a call (in no message).
     pub fn toggle(&self, call: &str) {
+        self.toggle_in("", call);
+    }
+
+    /// Show or hide the details of a call in a message.
+    pub fn toggle_in(&self, message: &str, call: &str) {
         {
             let mut inner = self.lock();
-            if !inner.expanded.remove(call) {
-                inner.expanded.insert(call.to_string());
+            let tag = tag_of(message, call);
+            if !inner.expanded.remove(&tag) {
+                inner.expanded.insert(tag);
             }
         }
         self.live.refresh();
@@ -144,27 +196,36 @@ impl ToolCallView {
 
     /// Are the details of this call shown?
     pub fn is_expanded(&self, call: &str) -> bool {
-        self.lock().expanded.contains(call)
+        self.lock().expanded.contains(&tag_of("", call))
     }
 
-    /// The answer a click on an option gives. Reports to the callback; changes no call.
-    pub fn choose(&self, call: &str, option: &str) -> Outcome {
+    /// Report an answer, if it still fits: the call must still be a question, of the revision and
+    /// digest the person saw, and offer this option. Otherwise nothing is reported.
+    pub fn answer(&self, decision: Decision) -> Outcome {
         let (outcome, handler) = {
             let inner = self.lock();
-            let found = inner
+            let fits = inner
                 .calls
-                .get(call)
-                .filter(|c| c.state == ToolState::Question)
-                .and_then(|c| c.options.iter().find(|o| o.id == option));
-            let outcome = found.map_or(Outcome::NotAsked, |o| Outcome::Chose {
-                call: call.to_string(),
-                option: option.to_string(),
-                choice: o.choice,
-            });
+                .get_in(&decision.message, &decision.call)
+                .is_some_and(|c| {
+                    c.state == ToolState::Question
+                        && c.revision == decision.revision
+                        && c.digest == decision.digest
+                        && c.options.iter().any(|o| o.id == decision.option)
+                });
+            let fits = fits && inner.verify.as_ref().is_none_or(|v| v(&decision));
+            let outcome = if fits {
+                Outcome::Chose(decision)
+            } else {
+                Outcome::NotAsked
+            };
             (outcome, inner.on_outcome.clone())
         };
-        if let (Outcome::Chose { .. }, Some(handler)) = (&outcome, handler) {
-            handler(&outcome);
+        if let Outcome::Chose(d) = &outcome {
+            self.approvals.commit(&d.message, &d.call);
+            if let Some(handler) = handler {
+                handler(&outcome);
+            }
         }
         outcome
     }
@@ -172,22 +233,32 @@ impl ToolCallView {
     /// The element to place in a layout.
     pub fn build(&self) -> impl Element + use<> {
         let this = self.clone();
-        self.live.view(move || this.render())
+        self.live.view("cards", move || this.render())
     }
 
     fn render(&self) -> blinc_layout::div::Div {
-        let (toggle_view, choose_view) = (self.clone(), self.clone());
+        let (toggle_view, choose_view, live) = (self.clone(), self.clone(), self.live);
         let sinks = Sinks {
-            toggle: Arc::new(move |id| toggle_view.toggle(id)),
-            choose: Arc::new(move |call, option| {
-                choose_view.choose(call, option);
+            toggle: Arc::new(move |message, id| toggle_view.toggle_in(message, id)),
+            choose: Arc::new(move |decision| {
+                choose_view.answer(decision);
             }),
+            rearm: Arc::new(move |ms| crate::tool_call::refresh_later(live, ms)),
         };
         let inner = self.lock();
         let mut list = div().class("fs-tcl");
-        for call in inner.calls.all() {
-            let open = inner.expanded.contains(&call.id);
-            list = list.child(card(call, open, &self.labels, &self.id, &sinks));
+        for (message, call) in inner.calls.entries() {
+            let open = inner.expanded.contains(&tag_of(message, &call.id));
+            let ctx = Ctx {
+                approvals: self.approvals.clone(),
+                message: message.clone(),
+            };
+            let prefix = if message.is_empty() {
+                self.id.clone()
+            } else {
+                format!("{}-{message}", self.id)
+            };
+            list = list.child(card(call, open, &self.labels, &prefix, &sinks, &ctx));
         }
         list
     }

@@ -25,7 +25,7 @@ impl ShareDialog {
             .class("fs-sd")
             .child(text(self.labels.title.clone()).class("fs-sd-title"))
             .child(self.field.build())
-            .child(self.core.live.view(move || this.render()));
+            .child(self.core.live.view("dialog", move || this.render()));
         if self.bindings.is_none() {
             return root;
         }

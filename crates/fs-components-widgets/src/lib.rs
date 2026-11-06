@@ -24,6 +24,7 @@ pub mod message_list;
 pub mod participant;
 mod picture;
 pub mod share_dialog;
+mod softwrap;
 pub mod sortable_list;
 mod styles;
 pub mod task_card;

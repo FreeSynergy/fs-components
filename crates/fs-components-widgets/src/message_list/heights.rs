@@ -47,6 +47,22 @@ impl Heights {
         }
     }
 
+    /// `n` older messages were inserted at the front (their heights are not known yet).
+    pub fn prepend(&mut self, n: usize) {
+        let mut value = vec![self.default; n];
+        value.extend_from_slice(&self.value);
+        let mut exact = vec![false; n];
+        exact.extend_from_slice(&self.exact);
+        let default = self.default;
+        *self = Self::new(0, default);
+        self.grow(value.len());
+        for (i, (v, e)) in value.into_iter().zip(exact).enumerate() {
+            if (v - default).abs() > f32::EPSILON || e {
+                self.set(i, v, e);
+            }
+        }
+    }
+
     /// Forget everything and start with `count` unknown heights.
     pub fn reset(&mut self, count: usize) {
         *self = Self::new(count, self.default);

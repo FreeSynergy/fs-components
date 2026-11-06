@@ -25,7 +25,7 @@ impl LightBox {
             .class("fs-lb-root")
             .w_full()
             .h_full()
-            .child(self.live.view(move || this.render()));
+            .child(self.live.view("box", move || this.render()));
         if self.bindings.is_none() {
             return root;
         }

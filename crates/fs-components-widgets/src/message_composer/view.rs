@@ -8,6 +8,7 @@ use blinc_cn::components::button::{ButtonBuilder, ButtonSize, ButtonVariant};
 use blinc_cn::components::textarea::textarea;
 use blinc_layout::div::{Div, div};
 use blinc_layout::prelude::text;
+use blinc_layout::widgets::scroll::Scroll;
 use blinc_layout::widgets::text_area::SharedTextAreaState;
 
 use super::handle::MessageComposer;
@@ -27,9 +28,9 @@ impl MessageComposer {
         div()
             .class("fs-mc")
             .id(&self.id)
-            .child(self.live.view(move || top.notes()))
+            .child(self.live.view("notes", move || top.notes()))
             .child(div().class("fs-mc-area").child(field))
-            .child(self.live.view(move || bottom.buttons()))
+            .child(self.live.view("buttons", move || bottom.buttons()))
     }
 
     fn notes(&self) -> Div {
@@ -62,13 +63,19 @@ impl MessageComposer {
                         ),
                 );
             }
-            col = col.child(row);
+            // many attachments scroll in a small window: the Send button must stay in reach
+            if inner.attachments.len() > 3 {
+                col = col.child(Scroll::new().w_full().h(64.0).content(row));
+            } else {
+                col = col.child(row);
+            }
         }
         if let Some(why) = inner.state.error() {
             let line = l.failed.replacen("{}", why, 1);
             col = col.child(
                 div()
                     .class("fs-mc-failed")
+                    .id(format!("{}-failed", self.id))
                     .child(text(line).class("fs-mc-note")),
             );
         }

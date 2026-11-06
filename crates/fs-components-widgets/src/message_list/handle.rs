@@ -12,26 +12,16 @@ use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 use super::heights::Heights;
 use super::labels::Labels;
 use super::model::MessageSource;
-use super::window::covered;
 use crate::list_view::ListPosition;
 use crate::live::Live;
-use crate::tool_call::ToolChoice;
+use crate::tool_call::{Approvals, Decision, ToolCall, ToolState};
 
 /// What a person did that the host must answer.
 #[non_exhaustive]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Outcome {
     /// A tool-call question was answered: nothing has happened yet, the host decides.
-    ToolChose {
-        /// The message holding the call.
-        message: String,
-        /// The call's id.
-        call: String,
-        /// The option's id.
-        option: String,
-        /// What the option said it meant.
-        choice: ToolChoice,
-    },
+    ToolChose(Decision),
     /// "Try again" on a message that failed.
     Retry {
         /// The message.
@@ -74,6 +64,7 @@ pub struct MessageList {
     pub(super) labels: Labels,
     pub(super) id: String,
     pub(super) watch: Arc<Mutex<Option<blinc_core::reactive::Effect>>>,
+    pub(super) approvals: Approvals,
 }
 
 fn default_probe(id: &str) -> Option<f32> {
@@ -107,6 +98,7 @@ impl MessageList {
             labels: Labels::default(),
             id: "fs-ml".into(),
             watch: Arc::default(),
+            approvals: Approvals::new(),
         }
     }
 
@@ -126,6 +118,56 @@ impl MessageList {
     pub fn id(mut self, id: impl Into<String>) -> Self {
         self.id = id.into();
         self
+    }
+
+    /// Share the guard with other places that answer the same questions (the first answer wins).
+    #[must_use]
+    pub fn approvals(mut self, approvals: Approvals) -> Self {
+        self.approvals = approvals;
+        self
+    }
+
+    /// The engine refused a decision for this call: shown on its card with the fresh question.
+    pub fn decision_refused(&self, message: &str, call: &str, reason: &str) {
+        self.approvals.refused(message, call, reason);
+        self.live.refresh();
+    }
+
+    /// The call as the source has it now (not as it was drawn).
+    fn current_call(&self, message: &str, call: &str) -> Option<ToolCall> {
+        let (source, index) = {
+            let inner = self.lock();
+            let index = inner
+                .shown
+                .iter()
+                .find(|(_, k)| k == message)
+                .map(|(i, _)| *i)?;
+            (inner.source.clone(), index)
+        };
+        let found = source
+            .messages(index, 1)
+            .ok()?
+            .into_iter()
+            .find(|m| m.key == message)?;
+        found.tool_calls.into_iter().find(|c| c.id == call)
+    }
+
+    /// Report an answer if the call is still the question that was drawn (a question, the same
+    /// revision and digest, the option offered). Otherwise nothing is reported.
+    pub fn answer(&self, decision: Decision) -> bool {
+        let fits = self
+            .current_call(&decision.message, &decision.call)
+            .is_some_and(|c| {
+                c.state == ToolState::Question
+                    && c.revision == decision.revision
+                    && c.digest == decision.digest
+                    && c.options.iter().any(|o| o.id == decision.option)
+            });
+        if fits {
+            self.approvals.commit(&decision.message, &decision.call);
+            self.emit(&Outcome::ToolChose(decision));
+        }
+        fits
     }
 
     /// Hear of every outcome.
@@ -168,73 +210,6 @@ impl MessageList {
             }
         }
         self.live.refresh();
-    }
-
-    /// Scroll to the newest message and follow it from now on.
-    pub fn jump_to_end(&self) {
-        {
-            let mut inner = self.lock();
-            inner.follow = true;
-            inner.unseen = 0;
-        }
-        self.live.refresh();
-    }
-
-    /// Does the list follow the newest message (the reader is at the bottom)?
-    pub fn is_following(&self) -> bool {
-        self.lock().follow
-    }
-
-    /// Messages that arrived while the reader was away from the bottom.
-    pub fn unseen(&self) -> usize {
-        self.lock().unseen
-    }
-
-    /// Pixels scrolled from the top.
-    pub fn offset(&self) -> f32 {
-        self.position.offset()
-    }
-
-    /// Total height of the conversation as known now (estimates and measurements).
-    pub fn total_height(&self) -> f32 {
-        self.lock().heights.total()
-    }
-
-    /// The messages built now (indexes).
-    pub fn built(&self) -> Range<usize> {
-        self.lock().built.clone()
-    }
-
-    /// Scroll by `pixels` (positive = towards newer messages), as a wheel would.
-    pub fn scroll_by(&self, pixels: f32) {
-        let y = (self.position.offset() + pixels).max(0.0);
-        self.position.apply_offset(y);
-        self.on_scroll(y);
-    }
-
-    /// The scroll position changed (called from the scroll watcher; also by tests).
-    pub fn on_scroll(&self, y: f32) {
-        let rebuild = {
-            let mut inner = self.lock();
-            if inner.built.is_empty() {
-                return; // nothing drawn yet: the first drawing decides where the list stands
-            }
-            let view = inner.size.1;
-            let at_end = y + view + 4.0 >= inner.heights.total();
-            if at_end {
-                inner.unseen = 0;
-            }
-            let changed = inner.follow != at_end;
-            inner.follow = at_end;
-            let built = inner.built.clone();
-            changed || !covered(&inner.heights, &built, y, view)
-        };
-        if rebuild {
-            // Called from inside the reactive graph (the scroll watcher): drawing again from here
-            // would write a signal while the graph is locked, so it is done from outside.
-            let live = self.live;
-            std::thread::spawn(move || live.refresh());
-        }
     }
 
     /// Is this tool call or reasoning open?

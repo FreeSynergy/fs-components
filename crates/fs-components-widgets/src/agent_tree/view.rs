@@ -31,7 +31,7 @@ impl AgentTree {
     /// The element to place in a layout, filling `width` x `height`.
     pub fn build(&self, width: f32, height: f32) -> impl Element + use<> {
         let this = self.clone();
-        self.live.view(move || this.render(width, height))
+        self.live.view("tree", move || this.render(width, height))
     }
 
     #[allow(clippy::cast_precision_loss)]
@@ -113,7 +113,7 @@ impl AgentTree {
                 .flex_shrink_0(),
         );
         row = row.child(self.toggle_slot(r));
-        row = row.child(chip(r.node.kind, &l.kinds));
+        row = row.child(chip(r.node.kind, &l.kinds).id(format!("{}-mark-{}", self.id, r.node.key)));
         let (this, key) = (self.clone(), r.node.key.clone());
         let name = div()
             .class("fs-at-main")

@@ -12,7 +12,9 @@ use common::{Input, background, draw, extent_x, ink, layout, serial};
 use fs_components_widgets::message_list::{
     ChatMessage, Delivery, MessageList, MessageSource, Outcome, Reference, SourceError, VecMessages,
 };
-use fs_components_widgets::tool_call::{ToolCall, ToolChoice, ToolKind, ToolOption, ToolRisk};
+use fs_components_widgets::tool_call::{
+    Approvals, ToolCall, ToolChoice, ToolKind, ToolOption, ToolRisk,
+};
 use fs_components_widgets::{Block, Inline, Sender, SenderKind};
 
 fn list_of(messages: Vec<ChatMessage>) -> MessageList {
@@ -111,20 +113,36 @@ fn a_tool_question_in_a_message_is_an_outcome_only() {
             "Allow once",
             ToolChoice::AllowOnce,
         )]);
-    let l = list_of(vec![ai("1", "Helper").tool_calls(vec![call])])
+    let clock = Arc::new(chat_support::Manual::default());
+    let src = Arc::new(chat_support::Shared(Mutex::new(vec![
+        ai("1", "Helper").tool_calls(vec![call.clone()]),
+    ])));
+    let l = MessageList::new(src.clone())
         .id("t")
+        .approvals(Approvals::with_clock(clock.clone()))
         .on_outcome(Arc::new(move |o| sink.lock().unwrap().push(o.clone())));
+    drop(layout(l.build(560.0, 360.0), 560.0, 360.0)); // shown
+    clock.advance(701);
     let mut tree = layout(l.build(560.0, 360.0), 560.0, 360.0);
     assert!(got.lock().unwrap().is_empty());
+    // the call is settled in the source while the old element is still on screen: nothing answers
+    src.0.lock().unwrap()[0] = ai("1", "Helper").tool_calls(vec![
+        call.clone()
+            .settled(fs_components_widgets::tool_call::ToolEnd::Refused)
+            .revision(1),
+    ]);
     Input::new().click(&mut tree, "t-1-opt-c1-ok");
+    assert!(got.lock().unwrap().is_empty(), "a settled card answered");
+    // an open question answers, bound to what was drawn
+    src.0.lock().unwrap()[0] = ai("1", "Helper").tool_calls(vec![call.clone()]);
+    Input::new().click(&mut tree, "t-1-opt-c1-ok");
+    let seen = got.lock().unwrap().clone();
+    let Outcome::ToolChose(d) = &seen[0] else {
+        panic!("{seen:?}")
+    };
     assert_eq!(
-        *got.lock().unwrap(),
-        [Outcome::ToolChose {
-            message: "1".into(),
-            call: "c1".into(),
-            option: "ok".into(),
-            choice: ToolChoice::AllowOnce
-        }]
+        (d.message.as_str(), d.call.as_str(), d.option.as_str()),
+        ("1", "c1", "ok")
     );
     draw(l.build(560.0, 360.0), 560, 360, "message-toolcall.png");
 }

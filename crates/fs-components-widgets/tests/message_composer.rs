@@ -32,14 +32,32 @@ fn the_text_goes_out_exactly_and_stays_until_the_host_says_it_was_sent() {
     assert_eq!(c.text(), exact, "sending must not clear anything");
     assert!(c.is_sending());
     assert_eq!(c.send(vec![]), Outcome::Refused(Refusal::Busy));
-    c.failed("no network");
+    c.failed(1, "no network");
     assert_eq!(c.text(), exact, "a failed send lost text");
     assert_eq!(c.error(), Some("no network"));
     assert!(!c.is_sending());
     // again, and this time it works
     assert_eq!(sent_text(&c.send(vec![])), exact);
-    assert!(c.sent());
+    assert!(c.sent(2));
     assert_eq!(c.text(), "");
+}
+
+#[test]
+fn a_late_answer_of_an_older_attempt_changes_nothing() {
+    let mut c = Composing::new();
+    c.set_text("again");
+    c.send(vec![]);
+    c.failed(1, "slow");
+    c.send(vec![]);
+    assert!(
+        !c.sent(1),
+        "a late sent() of attempt 1 cleared attempt 2's text"
+    );
+    assert_eq!(c.text(), "again");
+    assert!(c.is_sending(), "attempt 2 is still waiting");
+    c.failed(1, "late failure");
+    assert!(c.is_sending() && c.error().is_none());
+    assert!(c.sent(2));
 }
 
 #[test]
@@ -48,7 +66,7 @@ fn text_typed_while_sending_is_never_cleared() {
     c.set_text("first");
     c.send(vec![]);
     c.set_text("first, and more");
-    assert!(!c.sent());
+    assert!(!c.sent(1));
     assert_eq!(c.text(), "first, and more");
 }
 
@@ -132,7 +150,8 @@ fn attachments_are_the_hosts_list_and_removal_is_an_outcome() {
         seen[2],
         Outcome::Send {
             text: "see files".into(),
-            attachments: vec!["f1".into(), "f2".into()]
+            attachments: vec!["f1".into(), "f2".into()],
+            attempt: 1
         }
     );
     assert_eq!(
@@ -249,4 +268,19 @@ fn the_compact_form_is_smaller() {
         120,
         "composer-compact.png",
     );
+}
+
+#[test]
+fn many_attachments_do_not_push_send_out_of_reach() {
+    let _g = serial();
+    let c = MessageComposer::new("r").id("ma");
+    c.set_attachments(
+        (0..24)
+            .map(|i| Attachment::new(format!("f{i}"), format!("file-{i}.pdf"), "1 MB"))
+            .collect(),
+    );
+    let tree = layout(c.build(), 500.0, 360.0);
+    let n = tree.query_by_id("ma-send").expect("send");
+    let b = tree.get_absolute_bounds(n).unwrap();
+    assert!(b.y + b.height <= 360.0, "Send is out of reach at y={}", b.y);
 }

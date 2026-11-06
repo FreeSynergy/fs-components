@@ -6,16 +6,21 @@
 //! nothing. Stopping an agent is not here: that is the engine's job, the host shows its control.
 
 mod card;
+mod guard;
 mod handle;
 mod labels;
 mod model;
 mod store;
 
-pub(crate) use card::{Sinks, card};
+pub(crate) use card::{Ctx, Sinks, card};
+pub(crate) use guard::refresh_later;
+pub use guard::{ARM_DELAY_MS, Approvals, Clock, SystemClock};
 
-pub use handle::{OnOutcome, Outcome, ToolCallView};
+pub use handle::{OnOutcome, Outcome, ToolCallView, Verify};
 pub use labels::Labels;
-pub use model::{ToolCall, ToolChoice, ToolEnd, ToolKind, ToolOption, ToolRisk, ToolState};
+pub use model::{
+    Decision, ToolCall, ToolChoice, ToolEnd, ToolKind, ToolOption, ToolRisk, ToolState,
+};
 pub use store::{Applied, ToolCalls};
 
 /// CSS of the tool call: only theme variables.
@@ -41,5 +46,11 @@ pub const STYLES: &str = r"
 .fs-tc-options { display: flex; flex-direction: row; flex-wrap: wrap; gap: var(--space-2); }
 .fs-tc-details { display: flex; flex-direction: column; gap: var(--space-1); min-width: 0; padding: var(--space-2); border-radius: var(--radius-sm); background: var(--surface-elevated); }
 .fs-tc-caption { color: var(--text-secondary); font-size: var(--text-xs); }
+.fs-tc-btn { display: flex; flex-direction: row; align-items: center; padding: var(--space-1) var(--space-3); border-radius: var(--radius-default); border-width: 1px; border-color: var(--border); min-height: 28px; }
+.fs-tc-btn-yes { background: var(--primary); border-color: var(--primary); }
+.fs-tc-btn-no { background: var(--surface); }
+.fs-tc-btn-off { background: var(--surface-elevated); border-color: var(--border); opacity: 0.45; }
+.fs-tc-btn-text { color: var(--text-primary); font-size: var(--text-sm); }
+.fs-tc-refused { padding: var(--space-2); border-radius: var(--radius-default); background: var(--error-bg); border-width: 1px; border-color: var(--border-error); }
 .fs-tc-code { color: var(--text-primary); font-size: var(--text-sm); }
 ";

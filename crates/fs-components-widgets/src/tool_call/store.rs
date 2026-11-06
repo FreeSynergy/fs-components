@@ -1,7 +1,8 @@
-//! The calls of one place, kept by id: an update replaces, it never appends a second entry.
+//! The calls of one place, kept by (message, id): an update replaces, it never appends a second
+//! entry; the same id in two messages is two calls.
 //!
 //! Pattern: Repository (in memory) + State. The rules mirror what a host promises: a lower
-//! revision than held is stale; a settled call is final.
+//! revision than held is stale; a settled call is final (not even a whole new list revives it).
 
 use std::collections::HashMap;
 
@@ -24,8 +25,8 @@ pub enum Applied {
 /// Calls in the order they first appeared, each once.
 #[derive(Clone, Debug, Default)]
 pub struct ToolCalls {
-    calls: Vec<ToolCall>,
-    index: HashMap<String, usize>,
+    calls: Vec<(String, ToolCall)>,
+    index: HashMap<(String, String), usize>,
 }
 
 impl ToolCalls {
@@ -34,39 +35,70 @@ impl ToolCalls {
         Self::default()
     }
 
-    /// Add or replace by id.
+    /// Add or replace by id (the call belongs to no message).
     pub fn apply(&mut self, call: ToolCall) -> Applied {
-        let Some(&at) = self.index.get(&call.id) else {
-            self.index.insert(call.id.clone(), self.calls.len());
-            self.calls.push(call);
+        self.apply_in("", call)
+    }
+
+    /// Add or replace by (message, id).
+    pub fn apply_in(&mut self, message: &str, call: ToolCall) -> Applied {
+        let k = (message.to_owned(), call.id.clone());
+        let Some(&at) = self.index.get(&k) else {
+            self.index.insert(k, self.calls.len());
+            self.calls.push((message.to_owned(), call));
             return Applied::Added;
         };
-        let held = &self.calls[at];
+        let held = &self.calls[at].1;
         if held.state == ToolState::Settled {
             return Applied::AlreadySettled;
         }
         if call.revision < held.revision {
             return Applied::Stale;
         }
-        self.calls[at] = call;
+        self.calls[at].1 = call;
         Applied::Updated
     }
 
-    /// Replace everything by the host's list as it is now (the host's list is the truth).
-    pub fn replace(&mut self, calls: Vec<ToolCall>) {
-        *self = Self::new();
-        for call in calls {
-            self.apply(call);
+    /// Replace everything by the host's list as it is now. Settled calls stay as they are.
+    pub fn replace(&mut self, calls: Vec<(String, ToolCall)>) {
+        let settled: Vec<(String, ToolCall)> = self
+            .calls
+            .iter()
+            .filter(|(_, c)| c.state == ToolState::Settled)
+            .cloned()
+            .collect();
+        let mut fresh = Self::new();
+        for (message, call) in calls {
+            match settled
+                .iter()
+                .find(|(m, c)| *m == message && c.id == call.id)
+            {
+                Some((_, done)) => fresh.apply_in(&message, done.clone()),
+                None => fresh.apply_in(&message, call),
+            };
         }
+        *self = fresh;
     }
 
-    /// The call with this id.
+    /// The call with this id (in no message).
     pub fn get(&self, id: &str) -> Option<&ToolCall> {
-        self.index.get(id).map(|&i| &self.calls[i])
+        self.get_in("", id)
+    }
+
+    /// The call with this id in this message.
+    pub fn get_in(&self, message: &str, id: &str) -> Option<&ToolCall> {
+        self.index
+            .get(&(message.to_owned(), id.to_owned()))
+            .map(|&i| &self.calls[i].1)
     }
 
     /// All calls in first-seen order.
-    pub fn all(&self) -> &[ToolCall] {
+    pub fn all(&self) -> Vec<&ToolCall> {
+        self.calls.iter().map(|(_, c)| c).collect()
+    }
+
+    /// All calls with the message each belongs to.
+    pub fn entries(&self) -> &[(String, ToolCall)] {
         &self.calls
     }
 

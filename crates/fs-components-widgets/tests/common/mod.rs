@@ -48,6 +48,18 @@ pub fn init_runtime() {
             Arc::new(std::sync::atomic::AtomicBool::new(false)),
         );
     }
+    // the window does this too: a changed signal reaches the live areas that depend on it
+    blinc_core::reactive::set_stateful_deps_notifier(|ids| {
+        blinc_layout::check_stateful_deps(ids);
+    });
+}
+
+/// One window frame: what asked to be drawn again is drawn again, then the layout runs.
+pub fn frame(tree: &mut RenderTree, w: f32, h: f32) {
+    let updates = tree.take_pending_property_updates();
+    tree.apply_partial_property_updates(updates);
+    tree.process_pending_subtree_rebuilds_routed(None);
+    tree.compute_layout(w, h);
 }
 
 /// The element laid out in `w` x `h`, with the stylesheet applied. No drawing.
