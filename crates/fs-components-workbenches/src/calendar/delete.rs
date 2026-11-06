@@ -1,0 +1,83 @@
+//! Deleting an item.
+//!
+//! Pattern: State — two different actions: asking and confirming. Pressing the first again only asks
+//! again, so a double-click can never delete, whatever is drawn under the pointer by then. The question
+//! is tied to that item; anything that shows another item drops it. A failure is kept and shown, and
+//! the item stays; one someone else deleted just leaves the view. Afterwards nothing opens on its own.
+
+use super::labels::CalendarLabels;
+use super::shown::Shown;
+use super::state::CalendarState;
+use crate::error::ErrorKind;
+
+impl CalendarState {
+    /// Is an item shown that can be deleted (show a Delete button)?
+    pub fn can_delete(&self) -> bool {
+        self.capabilities.delete
+            && self.editing.is_none()
+            && match &self.shown {
+                Shown::Item { sheet, .. } => sheet.can_delete,
+                Shown::Failed { .. } => true,
+                Shown::Nothing => false,
+            }
+    }
+
+    /// Has the person pressed Delete, for the one selected?
+    pub fn delete_asked(&self) -> bool {
+        self.delete_asked.is_some() && self.delete_asked.as_deref() == self.selected()
+    }
+
+    /// The first press: asks whether the item selected should really go, and says what goes with it.
+    pub fn ask_delete(&mut self) {
+        if !self.can_delete() {
+            return;
+        }
+        self.delete_asked = self.selected().map(str::to_string);
+        let mut question = CalendarLabels::fill(&self.labels.delete_confirm, &self.title());
+        if let Shown::Item { sheet, .. } = &self.shown
+            && let Some(warning) = &sheet.delete_warning
+        {
+            question.push(' ');
+            question.push_str(warning);
+        }
+        self.notice = Some(question);
+    }
+
+    /// The second action: deletes the one asked about. Does nothing unless asked.
+    pub fn confirm_delete(&mut self) {
+        if !self.can_delete() || !self.delete_asked() {
+            return;
+        }
+        let Some(key) = self.selected().map(str::to_string) else {
+            return;
+        };
+        self.delete_asked = None;
+        let title = self.title();
+        if let Err(e) = self.source.delete(&key) {
+            if e.kind == ErrorKind::NotFound {
+                self.item_gone();
+            } else {
+                self.notice = Some(CalendarLabels::fill(&self.labels.not_deleted, &e.message));
+            }
+            return;
+        }
+        self.reload();
+        self.shown = Shown::Nothing;
+        self.notice = Some(CalendarLabels::fill(&self.labels.deleted, &title));
+    }
+
+    /// Answer the question of [`CalendarState::ask_delete`] with no.
+    pub fn keep(&mut self) {
+        if self.delete_asked.take().is_some() {
+            self.notice = None;
+        }
+    }
+
+    fn title(&self) -> String {
+        match &self.shown {
+            Shown::Item { sheet, .. } => sheet.title.clone(),
+            Shown::Failed { key, .. } => key.clone(),
+            Shown::Nothing => String::new(),
+        }
+    }
+}

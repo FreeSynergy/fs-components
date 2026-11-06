@@ -12,6 +12,7 @@
 #![warn(clippy::pedantic)]
 #![allow(clippy::must_use_candidate, clippy::module_name_repetitions)]
 
+pub mod calendar;
 mod error;
 mod labels;
 pub mod llm_chat;
