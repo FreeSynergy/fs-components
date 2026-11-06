@@ -4,13 +4,14 @@ Shared UI components of FreeSynergy on Blinc 0.6 (released crates, `blinc_* = "0
 
 ## State
 
-Version 0.1.0 (untagged until reviewed). Built for one consumer: the wiki app (`fs-wiki-app`). Nothing else is planned or built here yet.
+Version 0.1.0 (untagged until reviewed). First consumer: the wiki app (`fs-wiki-app`). The shared "Build first" widgets of `docs/en/components/planned.md` follow, one per commit: `avatar-group`, `transfer-list`, `sortable-list`, `lightbox`, `share-dialog`.
 
 | Area | State |
 |---|---|
 | `search-field` (primitive): adapter over `blinc_cn` input, text kept in shared state | done |
 | `text-view` (widget): neutral model (`Block`, `Inline`, `Mark`); headings, paragraphs, lists (also task items), quotes (nesting depth guarded at 24), code, tables, rules, emphasis (italic, drawn as a rich text), strong, strike, code span, links, hard breaks; unknown things arrive as `Block::Plain` and are shown as text. Text with marks is a flow of runs that wrap (also inside a long word) | done |
 | `tree-view` (widget): adapter over `blinc_cn` tree (keys of the Blinc tree: arrows, Home, End, Enter) | done |
+| `avatar-group` (widget): adapter over the `blinc_cn` avatar group; neutral `Person` (key, name, picture, presence); initials safe for any name; at most `max` circles (never more than 50), the rest is one "+N" circle and stays available as `hidden()`; a picture that does not exist is not handed to Blinc, so the initials show | done |
 | `reader` (workbench): `DocumentSource` trait, `Labels` (all texts come from the caller), state machine `Reader` (open, follow, back, search, edit, export) | done |
 | Embedding: `ReaderWidget::new(source, labels, export_target)` and `.build(w, h)` place the reader in a program's own window and layout; `.reader()` gives the state to menus and commands; `launch` is a convenience window; `snapshot` is a picture without a window | done |
 | Editing: `DocumentSource::{can_edit(path), source_text -> EditableText{text, revision}, save(path, text, revision)}`. A save with an old revision is a `Conflict`: nothing is written, the draft stays and the reason is shown. Save without changes writes nothing. The text area cannot hold some text exactly (it drops a final newline, turns CRLF into LF): the draft is compared and saved in the form of the original (an untouched text is saved as the original, exactly), and what saving would change anyway (mixed line ends become one kind, blank lines at the end are dropped) is announced above the editor before the person saves. A final newline cannot be edited: Enter at the very end of a text that ends in a newline counts as no change. Unsaved changes block leaving the document and refuse `follow` (`Outcome::Blocked`). Cancel with unsaved changes asks first (second Cancel discards); Esc is not handled at all, so it can never throw a draft away. After a conflict the draft stays in view and the next Save replaces the other version knowingly. After a save the list, the title and the search results are read again; a failed list stays visible | done |
@@ -30,6 +31,7 @@ Version 0.1.0 (untagged until reviewed). Built for one consumer: the wiki app (`
 | `widgets/text_view/flow.rs` | Adapter (Iterator over runs) | text cut into runs of one style (word plus its spaces), each a small text element in a wrapping flex row; a link run has its own click handler and reports to the `LinkHandler` (Blinc's own link would open a browser) |
 | `workbenches/reader/edit.rs` | State | `Editing` (original, draft, error) and its transitions |
 | `widgets/text_view/look.rs` | Value object snapshot | every colour and size read from the theme |
+| `widgets/avatar_group` | Adapter + Value objects | `blinc_cn` avatar group behind `AvatarGroup`/`Person`; the people who do not fit are counted by Blinc's own "+N" circle (empty circles stand in for them) |
 | `widgets/tree_view` | Adapter + Composite | `TreeNode` to the `blinc_cn` tree |
 | `primitives/search_field` | Adapter | `blinc_cn` input; clone keeps its text across rebuilds |
 | `workbenches/source.rs`, `error.rs`, `labels.rs` | Strategy / Repository, Value objects | what a workbench needs from outside (it knows no store, no wiki, no language) |
@@ -71,6 +73,12 @@ Blinc notes (0.6.0; to be passed upstream by the owner, reproductions in the rep
 * `BlincContextState::init` panics when called twice, also across threads (two pictures at once): `snapshot` serialises itself.
 * `Scroll` has no `flex_1`; a `min_w` next to `w(0.0)` is ignored. The text area wraps at a narrower width than its box.
 * `blinc_cn::cn_styles` documents `register_cn_styles(ctx)`, which does not exist in 0.6.0 (the bundle `cn_bundle()` does it).
+
+Blinc notes for `avatar-group` (0.6.0):
+
+* `cn::avatar` shows either the picture or the initials: a picture that cannot be loaded leaves a grey disc and never falls back to the initials. Workaround: a local path that is not a file is not passed on (addresses cannot be checked without loading).
+* A picture appears only after a few frames (it fades in); an offscreen test must draw several frames with a pause. Reproduction: draw one frame of `cn::avatar().src(<png>)` and the disc is white.
+* Emoji without a font in the initials draw blank (same as the text notes above).
 
 Limits:
 
