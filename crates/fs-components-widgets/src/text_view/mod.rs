@@ -10,6 +10,7 @@
 mod blocks;
 mod code;
 mod emphasis;
+mod fallback;
 mod flow;
 mod inline;
 mod list;
@@ -19,5 +20,6 @@ mod table;
 
 mod view;
 
+pub use fallback::{fallback_family, missing as missing_glyphs};
 pub use styles::STYLES;
 pub use view::{LinkHandler, TextView, open_external};

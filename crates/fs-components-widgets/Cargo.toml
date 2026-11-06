@@ -11,6 +11,9 @@ blinc_core = "0.6"
 blinc_layout = "0.6"
 blinc_cn = "0.6"
 blinc_theme = "0.6"
+blinc_noto_emoji = "0.6"
+fontdb = "0.22"
+ttf-parser = "0.24"
 fs-components-primitives = { path = "../fs-components-primitives" }
 
 [dev-dependencies]

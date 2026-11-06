@@ -34,7 +34,7 @@ pub use list_view::{Column, ColumnWidth, ListPosition, ListView, Row, RowSource,
 pub use sortable_list::{Item, Lane, SortableList};
 pub use styles::styles;
 pub use text::{Align, Block, Document, Inline, ListItem, Mark, MarkKind};
-pub use text_view::{LinkHandler, TextView, open_external};
+pub use text_view::{LinkHandler, TextView, fallback_family, missing_glyphs, open_external};
 pub use transfer_list::{Transfer, TransferList};
 pub use tree_view::{TreeNode, TreeView};
 

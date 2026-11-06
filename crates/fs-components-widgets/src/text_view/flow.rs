@@ -11,6 +11,7 @@ use blinc_layout::text;
 
 use super::LinkHandler;
 use super::emphasis::emphasised;
+use super::fallback::font_for;
 use super::inline::Face;
 use super::look::Look;
 use crate::text::{Inline, MarkKind};
@@ -28,6 +29,7 @@ pub(super) struct Style {
     pub strike: bool,
     pub code: bool,
     pub link: Option<String>,
+    pub font: Option<std::sync::Arc<str>>,
 }
 
 /// The flow of runs of `inline`.
@@ -72,6 +74,9 @@ fn run(piece: &str, style: &Style, face: Face, look: &Look, on_link: Option<&Lin
     if style.code {
         t = t.monospace();
     }
+    if let Some(family) = &style.font {
+        t = t.font(family.as_ref());
+    }
     // Blinc's `text` does not draw italic; a rich text does, so emphasis uses one.
     let mut holder = if style.emphasis {
         div().child(emphasised(piece, style, size, color, face.bold))
@@ -85,6 +90,15 @@ fn run(piece: &str, style: &Style, face: Face, look: &Look, on_link: Option<&Lin
     if style.code {
         holder = holder.class("fs-tv-codespan");
     }
+    if style.font.is_some() && piece.chars().any(is_symbol) {
+        // Blinc measures a symbol set in a fallback font as nearly nothing, so the glyphs would
+        // pile up: give the run the width its characters need.
+        let symbols = piece.chars().filter(|c| is_symbol(*c)).count();
+        let spaces = piece.chars().filter(|c| c.is_whitespace()).count();
+        #[allow(clippy::cast_precision_loss)]
+        let width = symbols as f32 * size * 1.3 + spaces as f32 * size * 0.3;
+        holder = holder.w(width).flex_shrink_0();
+    }
     if let (Some(href), Some(handler)) = (&style.link, on_link) {
         let (href, handler) = (href.clone(), Arc::clone(handler));
         holder = holder.on_click(move |_| handler(&href));
@@ -97,7 +111,10 @@ fn run(piece: &str, style: &Style, face: Face, look: &Look, on_link: Option<&Lin
 fn runs(inline: &Inline, _face: Face) -> Vec<(String, Style)> {
     let chars: Vec<char> = inline.text.chars().collect();
     let style_at = |i: usize| {
-        let mut s = Style::default();
+        let mut s = Style {
+            font: chars.get(i).and_then(|&c| font_for(c)),
+            ..Style::default()
+        };
         for m in inline.marks.iter().filter(|m| m.start <= i && i < m.end) {
             match &m.kind {
                 MarkKind::Strong => s.strong = true,
@@ -132,6 +149,11 @@ fn runs(inline: &Inline, _face: Face) -> Vec<(String, Style)> {
         out.push((current, current_style));
     }
     out
+}
+
+/// Symbols and emoji (not letters of a script): these are the runs whose width Blinc misjudges.
+fn is_symbol(c: char) -> bool {
+    matches!(u32::from(c), 0x2300..=0x23FF | 0x2600..=0x27BF | 0x2900..=0x2BFF | 0x1F000..=0x1FAFF)
 }
 
 #[cfg(test)]

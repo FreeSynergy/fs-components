@@ -5,69 +5,11 @@
 
 mod common;
 
-use std::path::PathBuf;
 use std::sync::Arc;
 
 use common::Fake;
-use fs_components_workbenches::{
-    Block, Document, DocumentSource, Entry, Hit, Inline, LinkTarget, Mark, MarkKind, Picture,
-    SourceError, Step, snapshot,
-};
-
-/// A folder for the pictures of one test, removed when the test ends (also when it fails).
-struct Scratch(PathBuf);
-
-impl Scratch {
-    fn new() -> Self {
-        static N: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
-        let n = N.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-        let dir = std::env::temp_dir().join(format!("fs-wb-{}-{n}", std::process::id()));
-        std::fs::create_dir_all(&dir).unwrap();
-        Self(dir)
-    }
-
-    fn file(&self, name: &str) -> PathBuf {
-        self.0.join(name)
-    }
-}
-
-impl Drop for Scratch {
-    fn drop(&mut self) {
-        let _ = std::fs::remove_dir_all(&self.0);
-    }
-}
-
-fn pixels(path: &PathBuf) -> image::RgbaImage {
-    image::open(path).unwrap().to_rgba8()
-}
-
-/// A source with one long document.
-struct Long(Vec<Block>);
-
-impl DocumentSource for Long {
-    fn entries(&self, _p: &str) -> Result<Vec<Entry>, SourceError> {
-        Ok(vec![Entry::new("long", "Long")])
-    }
-    fn read(&self, path: &str) -> Result<Document, SourceError> {
-        Ok(Document::new(path, self.0.clone()))
-    }
-    fn resolve(&self, _f: &str, h: &str) -> LinkTarget {
-        LinkTarget::Missing(h.into())
-    }
-    fn find(&self, _t: &str) -> Result<Vec<Hit>, SourceError> {
-        Ok(vec![])
-    }
-}
-
-fn paragraphs(n: usize) -> Vec<Block> {
-    (0..n)
-        .map(|i| {
-            Block::Paragraph(Inline::plain(format!(
-                "Paragraph number {i} of the long document."
-            )))
-        })
-        .collect()
-}
+use common::draw::{Long, Scratch, paragraphs, pixels};
+use fs_components_workbenches::{Block, Inline, Mark, MarkKind, Picture, Step, snapshot};
 
 #[test]
 fn snapshot_draws_something_and_refuses_size_zero() {

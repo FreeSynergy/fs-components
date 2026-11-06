@@ -32,7 +32,10 @@ pub(super) fn inline(
     look: &Look,
     on_link: Option<&LinkHandler>,
 ) -> Div {
-    if !inline.marks.is_empty() || inline.text.len() > LONG_PLAIN {
+    if !inline.marks.is_empty()
+        || inline.text.len() > LONG_PLAIN
+        || super::fallback::needs_fallback(&inline.text)
+    {
         return flow(inline, face, look, on_link);
     }
     let text = if inline.text.is_empty() {
