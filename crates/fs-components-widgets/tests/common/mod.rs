@@ -20,9 +20,11 @@ static ONE_AT_A_TIME: Mutex<()> = Mutex::new(());
 
 /// Hold this while a test touches Blinc's singletons.
 pub fn serial() -> std::sync::MutexGuard<'static, ()> {
-    ONE_AT_A_TIME
+    let guard = ONE_AT_A_TIME
         .lock()
-        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
+    init_runtime();
+    guard
 }
 
 fn bundle() -> blinc_theme::ThemeBundle {
@@ -42,10 +44,16 @@ pub fn init_runtime() {
 }
 
 /// The element laid out in `w` x `h`, with the stylesheet applied. No drawing.
-pub fn layout(ui: &impl ElementBuilder, w: f32, h: f32) -> RenderTree {
+pub fn layout(ui: impl ElementBuilder + 'static, w: f32, h: f32) -> RenderTree {
     init_runtime();
     blinc_layout::init_text_measurer();
-    let mut tree = RenderTree::from_element(ui);
+    // A window paints the theme's background; an offscreen texture would stay clear.
+    let page = blinc_layout::div::div()
+        .w(w)
+        .h(h)
+        .bg(blinc_theme::ThemeState::get().color(blinc_theme::ColorToken::Background))
+        .child(ui);
+    let mut tree = RenderTree::from_element(&page);
     let vars = blinc_theme::ThemeState::get().to_css_variable_map();
     let mut css = String::new();
     for sheet in &bundle().css_sources {
@@ -60,7 +68,7 @@ pub fn layout(ui: &impl ElementBuilder, w: f32, h: f32) -> RenderTree {
 }
 
 /// Draw `ui` at `w` x `h` and return the pixels; `name` is the file name when pictures are kept.
-pub fn draw(ui: &impl ElementBuilder, w: u32, h: u32, name: &str) -> RgbaImage {
+pub fn draw(ui: impl ElementBuilder + 'static, w: u32, h: u32, name: &str) -> RgbaImage {
     let tree = layout(ui, w as f32, h as f32);
     draw_tree(&tree, w, h, name)
 }
@@ -71,7 +79,7 @@ pub fn draw_tree(tree: &RenderTree, w: u32, h: u32, name: &str) -> RgbaImage {
 }
 
 /// Like [`draw`], but waits for pictures: Blinc fades an image in over its first frames.
-pub fn draw_settled(ui: &impl ElementBuilder, w: u32, h: u32, name: &str) -> RgbaImage {
+pub fn draw_settled(ui: impl ElementBuilder + 'static, w: u32, h: u32, name: &str) -> RgbaImage {
     let tree = layout(ui, w as f32, h as f32);
     draw_frames(&tree, w, h, name, 3)
 }
@@ -186,4 +194,86 @@ pub fn write_png(scratch: &Scratch, name: &str, w: u32, h: u32, rgb: [u8; 3]) ->
     let path: &Path = &scratch.path(name);
     img.save(path).expect("png");
     path.to_string_lossy().into_owned()
+}
+
+/// An in-process mouse and keyboard: the same router and hit test a window uses, fed by the test.
+/// No window opens and nothing reaches the real desktop.
+pub struct Input {
+    router: blinc_layout::event_router::EventRouter,
+}
+
+impl Input {
+    /// A fresh input state.
+    pub fn new() -> Self {
+        Self {
+            router: blinc_layout::event_router::EventRouter::new(),
+        }
+    }
+
+    /// The centre of the element with this id.
+    pub fn centre(tree: &RenderTree, id: &str) -> (f32, f32) {
+        let node = tree
+            .query_by_id(id)
+            .unwrap_or_else(|| panic!("no element {id}"));
+        let b = tree.get_absolute_bounds(node).expect("bounds");
+        (b.x + b.width / 2.0, b.y + b.height / 2.0)
+    }
+
+    fn send(
+        &mut self,
+        tree: &mut RenderTree,
+        events: Vec<(blinc_layout::tree::LayoutNodeId, u32)>,
+        x: f32,
+        y: f32,
+    ) {
+        for (node, event) in events {
+            tree.dispatch_event(node, event, x, y);
+        }
+    }
+
+    /// Press and release the left button at a point.
+    pub fn click_at(&mut self, tree: &mut RenderTree, x: f32, y: f32) {
+        use blinc_layout::event_router::MouseButton::Left;
+        let ev = self.router.on_mouse_move(tree, x, y);
+        self.send(tree, ev, x, y);
+        let ev = self.router.on_mouse_down(tree, x, y, Left);
+        self.send(tree, ev, x, y);
+        let ev = self.router.on_mouse_up(tree, x, y, Left);
+        self.send(tree, ev, x, y);
+    }
+
+    /// Click the centre of the element with this id.
+    pub fn click(&mut self, tree: &mut RenderTree, id: &str) {
+        let (x, y) = Self::centre(tree, id);
+        self.click_at(tree, x, y);
+    }
+
+    /// Press a key the way a window does: to the focused element.
+    pub fn key(&mut self, tree: &mut RenderTree, code: u32) {
+        if let Some((node, ev)) = self.router.on_key_down(code) {
+            tree.dispatch_key_event_bubbling(&[node], ev, code, false, false, false, false);
+        }
+    }
+
+    /// Press a key the way a window does when it cannot tell who has focus: to every handler.
+    pub fn key_broadcast(&mut self, tree: &mut RenderTree, code: u32) {
+        self.router.note_keyboard(code);
+        tree.broadcast_key_event(
+            blinc_core::events::event_types::KEY_DOWN,
+            code,
+            false,
+            false,
+            false,
+            false,
+        );
+    }
+
+    /// Give the keyboard to the element with this id.
+    pub fn focus(&mut self, tree: &RenderTree, id: &str) {
+        let node = tree
+            .query_by_id(id)
+            .unwrap_or_else(|| panic!("no element {id}"));
+        self.router.set_focus(Some(node));
+        self.router.note_keyboard(16 + 100);
+    }
 }

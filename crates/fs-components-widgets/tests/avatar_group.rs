@@ -53,7 +53,7 @@ fn what_does_not_fit_is_counted_not_dropped() {
 fn the_picture_shows_circles_and_the_count() {
     let _g = serial();
     let ui = AvatarGroup::new(people(9)).max(3).build();
-    let img = draw(&ui, 300, 80, "avatar-group-9-max-3.png");
+    let img = draw(ui, 300, 80, "avatar-group-9-max-3.png");
     let bg = background(&img);
     let (l, r) = extent_x(&img, 0, 80).expect("something is drawn");
     // 3 circles + "+6" circle of 40 px, overlapping by 8 px each: about 4*40 - 3*8 = 136 px
@@ -64,7 +64,7 @@ fn the_picture_shows_circles_and_the_count() {
 
     // fewer shown, same people: the picture differs
     let wide = AvatarGroup::new(people(9)).max(8).build();
-    let img2 = draw(&wide, 400, 80, "avatar-group-9-max-8.png");
+    let img2 = draw(wide, 400, 80, "avatar-group-9-max-8.png");
     let (l2, r2) = extent_x(&img2, 0, 80).unwrap();
     assert!(r2 - l2 > r - l + 100, "{} vs {}", r2 - l2, r - l);
 }
@@ -83,22 +83,22 @@ fn edge_cases_draw_without_a_crash() {
     ];
     for size in [Size::ExtraSmall, Size::Large, Size::ExtraLarge] {
         let ui = AvatarGroup::new(odd.clone()).size(size).build();
-        let img = draw(&ui, 300, 90, "avatar-group-odd.png");
+        let img = draw(ui, 300, 90, "avatar-group-odd.png");
         assert!(ink(&img, (0, 0, 300, 90), background(&img)) > 100);
     }
     // empty and huge
     let img = draw(
-        &AvatarGroup::new(vec![]).build(),
+        AvatarGroup::new(vec![]).build(),
         100,
         50,
         "avatar-group-empty.png",
     );
     assert_eq!(ink(&img, (0, 0, 100, 50), background(&img)), 0);
     let huge = AvatarGroup::new(people(100_000)).max(5).build();
-    let img = draw(&huge, 300, 60, "avatar-group-huge.png");
+    let img = draw(huge, 300, 60, "avatar-group-huge.png");
     assert!(ink(&img, (0, 0, 300, 60), background(&img)) > 500);
     // zero size: laid out, not drawn
-    let _ = common::layout(&AvatarGroup::new(people(3)).build(), 0.0, 0.0);
+    let _ = common::layout(AvatarGroup::new(people(3)).build(), 0.0, 0.0);
 }
 
 #[test]
@@ -109,8 +109,8 @@ fn a_picture_that_cannot_be_loaded_falls_back_to_initials() {
         Person::new("a", "Bob Marley").with_image("/no/such/file.png"),
     ])
     .build();
-    let a = draw(&plain, 100, 60, "avatar-plain.png");
-    let b = draw(&broken, 100, 60, "avatar-broken-image.png");
+    let a = draw(plain, 100, 60, "avatar-plain.png");
+    let b = draw(broken, 100, 60, "avatar-broken-image.png");
     assert_eq!(a, b, "a missing picture must look like no picture");
     assert!(ink(&a, (0, 0, 100, 60), background(&a)) > 500);
 }
@@ -121,7 +121,7 @@ fn a_picture_that_exists_is_drawn() {
     let dir = common::Scratch::new("avatar");
     let png = common::write_png(&dir, "p.png", 64, 64, [220, 30, 30]);
     let ui = AvatarGroup::new(vec![Person::new("a", "Bob Marley").with_image(png)]).build();
-    let img = common::draw_settled(&ui, 100, 60, "avatar-with-picture.png");
+    let img = common::draw_settled(ui, 100, 60, "avatar-with-picture.png");
     let reds = img
         .pixels()
         .filter(|p| p.0[0] > 150 && p.0[1] < 90 && p.0[2] < 90)

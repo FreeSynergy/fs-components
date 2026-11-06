@@ -16,6 +16,7 @@ pub mod avatar_group;
 mod styles;
 pub mod text;
 pub mod text_view;
+pub mod transfer_list;
 pub mod tree_view;
 
 pub use avatar_group::{AvatarGroup, Person, Presence};
@@ -25,6 +26,7 @@ pub use avatar_group::{
 pub use styles::styles;
 pub use text::{Align, Block, Document, Inline, ListItem, Mark, MarkKind};
 pub use text_view::{LinkHandler, TextView, open_external};
+pub use transfer_list::{Transfer, TransferList};
 pub use tree_view::{TreeNode, TreeView};
 
 /// What a widget returns to be placed in a layout: the one place a Blinc type is visible.
