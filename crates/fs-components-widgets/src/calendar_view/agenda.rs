@@ -72,6 +72,11 @@ fn heading(drawing: &Drawing, day: Day, width: f32) -> Div {
         .w((width - SCROLLBAR_ROOM).max(0.0))
         .h(HEADING_HEIGHT)
         .child(text(drawing.names.date_text(day)).no_wrap().no_cursor());
+    let element = if drawing.today == Some(day) {
+        element.class("fs-calendar-agenda-today")
+    } else {
+        element
+    };
     let element = drawing.day_classes(element, day);
     let element = drawing.named(element, &format!("day-{day}"));
     drawing.reports(element, Picked::Day(day))

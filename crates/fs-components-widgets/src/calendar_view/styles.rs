@@ -33,6 +33,7 @@ pub const STYLES: &str = r"
 .fs-calendar-now { background: var(--error); }
 .fs-calendar-agenda { padding-left: var(--space-3); padding-right: var(--space-3); }
 .fs-calendar-agenda-day { color: var(--text-secondary); font-size: var(--text-sm); font-weight: 600; cursor: pointer; border-bottom-width: 1px; border-bottom-color: var(--border); }
+.fs-calendar-agenda-today { color: var(--primary); }
 .fs-calendar-agenda-row { gap: var(--space-2); padding-top: 2px; }
 .fs-calendar-agenda-time { color: var(--text-secondary); font-size: var(--text-xs); }
 .fs-calendar-empty { padding: var(--space-6); color: var(--text-secondary); }

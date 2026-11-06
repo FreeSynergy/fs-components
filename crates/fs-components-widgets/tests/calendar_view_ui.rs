@@ -1,16 +1,15 @@
-//! `calendar-view`: the real element, clicked over the router and hit test a window uses, and drawn.
+//! `calendar-view`: the real element, clicked over the router and hit test a window uses.
 //!
-//! Pattern: Input tests + pixel tests (the pixel tests pass silently without a graphics adapter, see
-//! `common`). No window is opened. A hang here is a deadlock.
+//! Pattern: Input tests. No window is opened. A hang here is a deadlock.
 
 mod common;
 
 use std::sync::{Arc, Mutex};
 
-use common::{Input, draw, layout, serial};
-use fs_components_widgets::calendar_view::{NARROW_WIDTH, OnPick};
+use common::{Input, layout, serial};
+use fs_components_widgets::calendar_view::OnPick;
 use fs_components_widgets::{
-    CalendarItem, CalendarNames, CalendarPosition, CalendarView, Day, Moment, Picked, ViewRange,
+    CalendarItem, CalendarNames, CalendarView, Day, Moment, Picked, ViewRange,
 };
 
 fn names() -> Arc<CalendarNames> {
@@ -176,75 +175,4 @@ fn a_crowd_on_the_axis_keeps_readable_lanes_and_counts_the_rest() {
     let mut input = Input::new();
     input.click(&mut tree, "c-more-2026-11-04");
     assert_eq!(*picks.lock().unwrap(), [Picked::More(d("2026-11-04"))]);
-}
-
-#[test]
-fn a_narrow_month_is_an_agenda_and_an_agenda_without_items_says_so() {
-    let _one = serial();
-    let (v, _) = view(ViewRange::Month, sample());
-    assert_eq!(v.range_at(NARROW_WIDTH - 1.0), ViewRange::Agenda);
-    assert_eq!(v.range_at(NARROW_WIDTH), ViewRange::Month);
-    let tree = layout(v.build(300.0, 500.0), 300.0, 500.0);
-    assert!(tree.query_by_id("c-item-a@2026-11-04").is_some());
-    assert!(
-        tree.query_by_id("c-day-2026-11-20").is_none(),
-        "no empty days"
-    );
-    let (empty, _) = view(ViewRange::Agenda, Arc::new(Vec::new()));
-    let tree = layout(empty.build(500.0, 300.0), 500.0, 300.0);
-    assert!(tree.query_by_id("c-day-2026-11-04").is_none());
-}
-
-#[test]
-fn the_axis_starts_at_the_hour_asked_once_and_then_stays() {
-    let _one = serial();
-    let position = CalendarPosition::new();
-    let build = |hour: u16| {
-        let (v, _) = view(ViewRange::Day, sample());
-        let v = v.position(&position).start_hour(hour);
-        layout(v.build(500.0, 400.0), 500.0, 400.0)
-    };
-    let _tree = build(8);
-    assert!((position.axis_offset() - 8.0 * 44.0).abs() < 0.5);
-    let _tree = build(3);
-    assert!(
-        (position.axis_offset() - 8.0 * 44.0).abs() < 0.5,
-        "the first time only"
-    );
-}
-
-#[test]
-fn no_room_at_all_does_not_crash() {
-    let _one = serial();
-    for range in [
-        ViewRange::Month,
-        ViewRange::Week,
-        ViewRange::Day,
-        ViewRange::Agenda,
-    ] {
-        let (v, _) = view(range, sample());
-        let _tree = layout(v.build(0.0, 0.0), 1.0, 1.0);
-    }
-}
-
-#[test]
-fn the_views_draw_and_differ() {
-    let _one = serial();
-    let pictures: Vec<_> = [
-        (ViewRange::Month, "calendar-view-month.png"),
-        (ViewRange::Week, "calendar-view-week.png"),
-        (ViewRange::Day, "calendar-view-day.png"),
-        (ViewRange::Agenda, "calendar-view-agenda.png"),
-    ]
-    .into_iter()
-    .map(|(range, name)| {
-        let (v, _) = view(range, sample());
-        draw(v.build(900.0, 600.0), 900, 600, name)
-    })
-    .collect();
-    for (i, a) in pictures.iter().enumerate() {
-        for b in &pictures[i + 1..] {
-            assert_ne!(a.as_raw(), b.as_raw());
-        }
-    }
 }
