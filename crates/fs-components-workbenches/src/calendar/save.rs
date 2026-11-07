@@ -22,7 +22,10 @@ impl CalendarState {
             if let Some(key) = key {
                 self.show(&key);
             }
-            self.notice = Some(self.labels.no_changes.clone());
+            // A message the reading left ("gone") is the truer one.
+            if self.notice.is_none() {
+                self.notice = Some(self.labels.no_changes.clone());
+            }
             return;
         }
         let (key, draft) = (edit.key.clone(), edit.draft.clone());

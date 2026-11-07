@@ -194,3 +194,18 @@ fn a_conflict_keeps_the_draft_and_the_next_save_writes_knowingly() {
     s.save();
     assert_eq!(diary.title("ada").as_deref(), Some("Mine"));
 }
+
+#[test]
+fn saving_without_a_change_after_a_delete_elsewhere_says_gone_not_nothing_changed() {
+    let (diary, mut s) = state(pair());
+    s.select("ada");
+    s.begin_edit();
+    diary.other_deletes("ada");
+    s.save();
+    assert_eq!(s.shown(), &Shown::Nothing);
+    assert!(
+        s.notice().unwrap().contains("no longer exists"),
+        "{:?}",
+        s.notice()
+    );
+}
