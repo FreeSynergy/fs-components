@@ -11,11 +11,11 @@ use fs_components_widgets::list_view::fit_cell;
 use super::actions::CalendarActions;
 use super::detail_bar::bar;
 use super::form::form;
-use super::page_scroll::PageScroll;
 use crate::calendar::model::{ItemSheet, SheetSection};
 use crate::calendar::shown::Shown;
 use crate::calendar::state::CalendarState;
 use crate::input_slots::InputSlots;
+use crate::page_scroll::PageScroll;
 
 /// A title is larger than the text `fit_cell` measures, by about this.
 const TITLE_FIT: f32 = 0.7;

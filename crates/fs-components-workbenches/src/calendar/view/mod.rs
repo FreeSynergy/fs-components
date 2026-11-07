@@ -9,12 +9,10 @@ mod detail;
 mod detail_bar;
 mod form;
 mod frame;
-mod page_scroll;
 mod problems;
 mod styles;
 mod toolbar;
 
 pub(super) use actions::{Act, ActOn, CalendarActions};
 pub(super) use frame::{Places, workbench};
-pub(super) use page_scroll::PageScroll;
 pub use styles::styles;

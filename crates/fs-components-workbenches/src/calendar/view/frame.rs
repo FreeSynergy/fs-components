@@ -12,12 +12,12 @@ use fs_components_widgets::{CalendarPosition, CalendarView};
 
 use super::actions::CalendarActions;
 use super::detail::detail;
-use super::page_scroll::PageScroll;
 use super::problems::with_problems;
 use super::toolbar::toolbar;
 use crate::calendar::shown::Shown;
 use crate::calendar::state::CalendarState;
 use crate::input_slots::InputSlots;
+use crate::page_scroll::PageScroll;
 
 /// Height of the bar in pixels on one line.
 const BAR_HEIGHT: f32 = 56.0;
