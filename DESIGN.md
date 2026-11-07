@@ -34,6 +34,7 @@ Version 0.2.0 is tagged (breaking against 0.1.0: `DataSource` is `DocumentSource
 | Scrolling: every column on the way down has `min_h(0)`; a long document is clipped and scrolls (3000 paragraphs draw). Tested offscreen with a scroll offset | done |
 | Embedding keys: Alt+Left and Ctrl+S act on every reader in the window (keys are broadcast); `ReaderWidget::keys(false)` switches them off, the program then calls `with_reader` itself (state access is a closure: no lock can be held across calls) | done |
 | Keyboard: tree keys (Blinc), Alt+Left back, Ctrl+S save, Tab to search field and buttons. Search results, links and the tree rows are **not** reachable by Tab (the Blinc tree is no Tab stop; links are click targets) | partly |
+| `words` (crate `fs-components-words`, std only): translatable text, ADR 0057. `Words::say(TextId, Args) -> Said` (found, or missing with the id shown); `Args` of named `Value`s with a kind (Text, Count, Number, Date, Time; no finished strings); `PluralRules` per language (zero to other; English, Polish); template language (`{name}`, `{n, plural, one {# x} other {# y}}`, backslash escapes); `Catalog` (from a table or `id = template` lines), `English`, `Fallback` (a missing text comes in English). Unsupported: per-language number and date formatting, plural of fractions, exact `=N`, `select`, a Fluent/MF2 adapter. `labels.rs` unchanged. See the crate's `DESIGN.md` | done, first version |
 | `charts` (widget, crate `fs-components-charts`): a Vega-Lite subset (see below), parsed, laid out and drawn; bar, line, area, point, arc; text alternative; theme colours checked for colour-blind readers | done, provisional (subset, numbers 3 / 15 / 8 / 10000 open) |
 | Pointer cursor over links; scrolling to a `#fragment`; table column alignment; selecting text; images; accessibility | not built |
 
@@ -72,6 +73,7 @@ Version 0.2.0 is tagged (breaking against 0.1.0: `DataSource` is `DocumentSource
 | `widgets/drafts`, `widgets/source_error.rs` | Strategy (`DraftStore`), none | a draft as backed up and where backups go (the host supplies the store); the error of a source is plain data; both shared by the reader and the composer |
 | `widgets/message_composer/drafts.rs` | Observer | the timer thread that writes the backup outside the composer's lock |
 | `primitives/search_field` | Adapter | `blinc_cn` input; clone keeps its text across rebuilds |
+| `words` (crate `fs-components-words`) | Strategy + Decorator + Newtype | `Words` and `PluralRules` are interchangeable behind one call; `Fallback` wraps a `Words`; `TextId` is a type (details in the crate's `DESIGN.md`) |
 | `workbenches/source.rs`, `labels.rs` | Strategy, none | what a workbench needs from outside (it knows no store, no wiki, no language); `labels.rs` is plain data |
 | `workbenches/shell/widget.rs` | Facade + Observer | `ReaderWidget`: shared state, element, redraw counters |
 | `workbenches/reader` | State | `Shown` + transitions, testable without a window |
@@ -300,4 +302,4 @@ Refused by name, among others: `transform`, `layer`, `facet`/`repeat`/`concat`, 
 
 ## Dependencies
 
-`blinc_app`, `blinc_cn`, `blinc_core`, `blinc_layout`, `blinc_theme` (0.6), `wgpu` 26 and `image` 0.25 (both already part of Blinc's tree, used for the offscreen picture). `fs-components-charts` additionally: `serde_json` (MIT OR Apache-2.0, pure Rust). No other repo.
+`blinc_app`, `blinc_cn`, `blinc_core`, `blinc_layout`, `blinc_theme` (0.6), `wgpu` 26 and `image` 0.25 (both already part of Blinc's tree, used for the offscreen picture). `fs-components-charts` additionally: `serde_json` (MIT OR Apache-2.0, pure Rust). `fs-components-words`: std only. No other repo.
