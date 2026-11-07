@@ -1,6 +1,6 @@
 //! An element as a picture, drawn without a window.
 //!
-//! Pattern: Facade over Blinc's offscreen renderer; Template method — the fixed order (runtime,
+//! Pattern: Facade over Blinc's offscreen renderer; one function keeps the fixed order (runtime,
 //! element, stylesheet, layout, draw, write) with two steps supplied by the caller.
 
 use std::path::Path;

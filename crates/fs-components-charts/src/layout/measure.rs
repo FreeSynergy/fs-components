@@ -1,6 +1,6 @@
 //! What the layout needs to know about text, and the sizes it uses.
 //!
-//! Pattern: Strategy (`Measure`) + Value object (`Metrics`). The view measures with Blinc's text
+//! Pattern: Strategy (`Measure`), with plain data (`Metrics`). The view measures with Blinc's text
 //! engine; tests measure with a fixed advance, so layout numbers are exact and reproducible.
 
 use crate::scene::TextSize;

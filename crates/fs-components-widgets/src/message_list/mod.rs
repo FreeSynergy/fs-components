@@ -1,6 +1,6 @@
 //! `message-list`: a long conversation, virtualised. Only the messages near the view exist.
 //!
-//! Pattern: Adapter + Strategy (`MessageSource`, `Probe`) + Observer (outcomes) + Memento
+//! Pattern: Adapter + Strategy (`MessageSource`, `Probe`) + Observer (outcomes) + State
 //! (scroll position). Neutral data in ([`ChatMessage`]), outcomes out ([`Outcome`]): the list
 //! knows no messenger, no model and no transport. Text that grows is the host changing its
 //! source and calling `refresh`; the list keeps the place of a reader who is reading older

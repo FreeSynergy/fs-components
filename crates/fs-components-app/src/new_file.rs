@@ -1,6 +1,6 @@
 //! Writing a new file without ever replacing one or leaving half of one.
 //!
-//! Pattern: Template method — fixed order: a temporary file beside the target, the whole content,
+//! Pattern: Facade — one function hides a fixed order: a temporary file beside the target, the whole content,
 //! a sync, then the target appears at once through a hard link, which refuses a name that is taken
 //! (a rename would replace it). Where the file system has no hard links, the target is created
 //! directly from the temporary file, and removed again if that fails. Only files this code created
