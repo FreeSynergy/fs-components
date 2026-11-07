@@ -38,20 +38,24 @@ pub(super) fn options(call: &ToolCall, prefix: &str, sinks: &Sinks, ctx: &Ctx) -
     // this row has the keyboard focus; a held key (it repeats the press) never answers.
     let focused = Arc::new(AtomicBool::new(false));
     let (on, down, up) = (Arc::clone(&focused), Arc::clone(&focused), focused);
-    // Is Enter or Space down? The first press of a key is the only one that may begin an answer:
-    // its repeats come while it is held, and a held key never answers (also not when the question
-    // gets armed meanwhile).
-    let held = Arc::new(AtomicBool::new(false));
-    let (off_held, down_held, up_held) = (Arc::clone(&held), Arc::clone(&held), held);
     let off = Arc::clone(&on);
     let mine = |c: &blinc_layout::event_handler::EventContext, flag: &AtomicBool| {
         let node = blinc_layout::event_router::keyboard_focused_node();
         node.map_or_else(|| flag.load(Ordering::Relaxed), |n| n == c.node_id)
             && !blinc_layout::widgets::text_input::has_focused_text_input()
     };
-    let (a1, a2) = (ctx.approvals.clone(), ctx.approvals.clone());
+    let (a1, a2, a3, a4) = (
+        ctx.approvals.clone(),
+        ctx.approvals.clone(),
+        ctx.approvals.clone(),
+        ctx.approvals.clone(),
+    );
     let (place, message, id) = (ctx.place.clone(), ctx.message.clone(), call.id.clone());
     let (p2, m2, i2) = (place.clone(), message.clone(), id.clone());
+    let (p3, m3, i3) = (place.clone(), message.clone(), id.clone());
+    let (p4, m4, i4) = (place.clone(), message.clone(), id.clone());
+    let opt3 = call.options.clone();
+    let prefix3 = prefix.to_owned();
     let options = call.options.clone();
     let opt2 = options.clone();
     let prefix = prefix.to_owned();
@@ -64,7 +68,26 @@ pub(super) fn options(call: &ToolCall, prefix: &str, sinks: &Sinks, ctx: &Ctx) -
     row.on_focus(move |_| on.store(true, Ordering::Relaxed))
         .on_blur(move |_| {
             off.store(false, Ordering::Relaxed);
-            off_held.store(false, Ordering::Relaxed);
+            a4.key_up(&p4, &m4, &i4);
+        })
+        // Enter and Space on the focused row reach it as a click, not as a key (Blinc's
+        // `handle_navigation_key` presses and releases the element). A click whose receiver is the
+        // row that has the keyboard is that key; its first one begins an answer (a repeat of a held
+        // key is no new press), the answer comes on the key's release.
+        .on_mouse_down(move |c| {
+            let keyboard = blinc_layout::event_router::keyboard_focused_node() == Some(c.node_id)
+                && !blinc_layout::widgets::text_input::has_focused_text_input();
+            if !keyboard || opt3.is_empty() || !a3.key_down(&p3, &m3, &i3) || a3.has_press() {
+                return;
+            }
+            let o = &opt3[a3.cursor(&p3, &m3, &i3).min(opt3.len() - 1)];
+            a3.press(
+                &p3,
+                &m3,
+                &i3,
+                &format!("{prefix3}-opt-{i3}-{}", o.id),
+                o.choice == ToolChoice::Refuse,
+            );
         })
         .on_key_down(move |c| {
             if !mine(c, &down) || options.is_empty() {
@@ -76,16 +99,6 @@ pub(super) fn options(call: &ToolCall, prefix: &str, sinks: &Sinks, ctx: &Ctx) -
                     a1.move_cursor(&place, &message, &id, delta, options.len());
                     rearm(0);
                 }
-                13 | 32 if !down_held.swap(true, Ordering::Relaxed) && !a1.has_press() => {
-                    let o = &options[a1.cursor(&place, &message, &id).min(options.len() - 1)];
-                    a1.press(
-                        &place,
-                        &message,
-                        &id,
-                        &format!("{prefix}-opt-{id}-{}", o.id),
-                        o.choice == ToolChoice::Refuse,
-                    );
-                }
                 _ => {}
             }
         })
@@ -93,7 +106,7 @@ pub(super) fn options(call: &ToolCall, prefix: &str, sinks: &Sinks, ctx: &Ctx) -
             if !matches!(c.key_code, 13 | 32) {
                 return;
             }
-            let was_down = up_held.swap(false, Ordering::Relaxed);
+            let was_down = a2.key_up(&p2, &m2, &i2);
             if !was_down || !mine(c, &up) || opt2.is_empty() {
                 return;
             }

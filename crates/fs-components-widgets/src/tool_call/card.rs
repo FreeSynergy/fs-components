@@ -91,9 +91,14 @@ pub(crate) fn card(
     if question {
         let (lines, window) = text_lines(call, ctx.body_h);
         let more = lines.saturating_sub(window);
-        let body = ctx
-            .approvals
-            .show(&ctx.place, &ctx.message, call, ctx.slot, more > 0);
+        let body = ctx.approvals.show(
+            &ctx.place,
+            &ctx.message,
+            call,
+            ctx.slot,
+            more > 0,
+            &sinks.rearm,
+        );
         body_state = Some((body, more));
         if let Some(ms) = ctx
             .approvals

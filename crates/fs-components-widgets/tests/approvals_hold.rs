@@ -63,26 +63,56 @@ impl Rig {
 
 #[test]
 fn a_key_held_while_the_question_becomes_armed_does_not_answer_on_release() {
-    use blinc_core::events::event_types::{KEY_DOWN, KEY_UP};
     let _g = serial();
     let r = rig("h1");
     r.view.apply(q("q1", "rm ./cache", b"rm ./cache"));
     let mut tree = r.draw();
     let mut input = Input::new();
-    input.focus(&tree, "h1-keys-q1");
-    input.key_event_to(&mut tree, "h1-keys-q1", KEY_DOWN, 39); // Right: to Allow once
-    input.key_event_to(&mut tree, "h1-keys-q1", KEY_UP, 39);
-    input.key_event_to(&mut tree, "h1-keys-q1", KEY_DOWN, 13); // disarmed: counts for nothing
+    assert!(input.tab_to(&mut tree, "h1-keys-q1"));
+    input.key(&mut tree, 39); // Right: to Allow once
+    input.key_release(&mut tree, 39);
+    input.key(&mut tree, 13); // disarmed: counts for nothing
     r.clock.advance(701); // armed while the key is still held
     for _ in 0..5 {
-        input.key_event_to(&mut tree, "h1-keys-q1", KEY_DOWN, 13); // the repeats
+        input.key(&mut tree, 13); // the repeats
     }
-    input.key_event_to(&mut tree, "h1-keys-q1", KEY_UP, 13);
+    input.key_release(&mut tree, 13);
     assert_eq!(r.count.load(Ordering::Relaxed), 0, "a held key answered");
     // a new press, now that it is armed, answers on its release
-    input.key_event_to(&mut tree, "h1-keys-q1", KEY_DOWN, 13);
-    input.key_event_to(&mut tree, "h1-keys-q1", KEY_UP, 13);
+    input.key(&mut tree, 13);
+    input.key_release(&mut tree, 13);
     assert_eq!(r.count.load(Ordering::Relaxed), 1);
+}
+
+#[test]
+fn a_redraw_between_the_press_and_its_repeat_keeps_the_key_held() {
+    let _g = serial();
+    let r = rig("h5");
+    r.view.apply(q("q1", "rm ./cache", b"rm ./cache"));
+    let mut tree = r.draw();
+    let mut input = Input::new();
+    assert!(input.tab_to(&mut tree, "h5-keys-q1"));
+    input.key(&mut tree, 39); // Right: to Allow once
+    input.key_release(&mut tree, 39);
+    input.key(&mut tree, 13); // disarmed: counts for nothing, but the key is down
+    r.clock.advance(741);
+    let mut tree = r.draw(); // the redraw the guard asked for: the question is armed now
+    for _ in 0..5 {
+        input.key(&mut tree, 13); // the repeats
+    }
+    input.key_release(&mut tree, 13);
+    assert_eq!(
+        r.count.load(Ordering::Relaxed),
+        0,
+        "a held key answered after a redraw"
+    );
+    input.key(&mut tree, 13);
+    input.key_release(&mut tree, 13);
+    assert_eq!(
+        r.count.load(Ordering::Relaxed),
+        1,
+        "a new press did not answer"
+    );
 }
 
 #[test]
@@ -123,4 +153,44 @@ fn a_question_that_time_cannot_arm_asks_for_no_redraw() {
         drop(r.draw());
     }
     assert_eq!(r.approvals.redraws_asked(), 0, "not read to the end");
+}
+
+#[test]
+fn scrolling_a_long_command_to_its_end_asks_for_exactly_one_redraw() {
+    let _g = serial();
+    let long = "echo x; ".repeat(400);
+    let r = rig("h6");
+    r.view.apply(q("q1", &long, long.as_bytes()));
+    r.clock.advance(701);
+    let mut tree = r.draw();
+    // just inside the top left of the text, which is far taller than its window
+    let b = tree
+        .get_absolute_bounds(tree.query_by_id("h6-detail-q1").unwrap())
+        .unwrap();
+    let (x, y) = (b.x + 20.0, b.y + 5.0);
+    let mut input = Input::new();
+    // a little way: the end is not reached, nothing to draw
+    input.wheel_at(&mut tree, x, y, 40.0);
+    assert_eq!(
+        r.approvals.redraws_asked(),
+        0,
+        "a scroll that did not reach the end redrew"
+    );
+    // the whole way, in many small turns of the wheel
+    for _ in 0..200 {
+        input.wheel_at(&mut tree, x, y, 60.0);
+    }
+    assert_eq!(
+        r.approvals.redraws_asked(),
+        1,
+        "reaching the end must draw once"
+    );
+    for _ in 0..5 {
+        input.wheel_at(&mut tree, x, y, 60.0);
+    }
+    assert_eq!(
+        r.approvals.redraws_asked(),
+        1,
+        "at the end nothing more to draw"
+    );
 }

@@ -86,13 +86,17 @@ fn the_keyboard_answers_only_from_the_focused_row_on_release_and_never_by_repeat
     r.view.apply(q("q1", 1, "rm ./cache"));
     let mut tree = r.armed();
     let mut input = Input::new();
-    input.focus(&tree, "k2-keys-q1");
-    input.key_event_to(&mut tree, "k2-keys-q1", KEY_DOWN, 39); // Right: from Refuse to Allow once
+    assert!(
+        input.tab_to(&mut tree, "k2-keys-q1"),
+        "the row is a tab stop"
+    );
+    input.key(&mut tree, 39); // Right: from Refuse to Allow once
+    input.key_release(&mut tree, 39);
     for _ in 0..5 {
-        input.key_event_to(&mut tree, "k2-keys-q1", KEY_DOWN, 13); // a held key repeats the press
+        input.key(&mut tree, 13); // a held key repeats the press
     }
     assert_eq!(r.answers(), 0, "key repeat answered");
-    input.key_event_to(&mut tree, "k2-keys-q1", KEY_UP, 13);
+    input.key_release(&mut tree, 13);
     let seen = r.got.lock().unwrap().clone();
     assert_eq!(seen.len(), 1, "the focused row did not answer on release");
     let Outcome::Chose(d) = &seen[0] else {

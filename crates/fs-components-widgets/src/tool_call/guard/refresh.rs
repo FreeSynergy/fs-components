@@ -4,9 +4,19 @@
 //! becomes armed by the clock alone, so it must be drawn once more at that moment, but only once:
 //! every drawing asks, so the guard answers "yes" to the first and "no" until the moment has
 //! passed. A question that time cannot arm (empty digest, a command not scrolled to its end,
-//! answered) asks for nothing.
+//! answered) asks for nothing; scrolling a long command to its end (or away from it) asks once, at
+//! that change, through a watch on the scroll offset.
+
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
+
+use blinc_core::reactive::effect;
+use blinc_layout::selector::ScrollRef;
 
 use super::{Approvals, entry_key};
+
+/// Draw again in this many milliseconds.
+pub(crate) type Rearm = Arc<dyn Fn(u64) + Send + Sync>;
 
 /// Slack after the delay, so the redraw finds the question armed.
 const SLACK_MS: u64 = 40;
@@ -32,6 +42,23 @@ impl Approvals {
         g.pending.insert(k, now + left + SLACK_MS);
         g.asked += 1;
         Some(left)
+    }
+
+    /// A command that does not fit its window arms Allow when it is scrolled to its end, and
+    /// disarms it when it is scrolled back: draw once when the window gains or loses its end, and
+    /// not while it only moves (the scroll reports its offset to a signal, this watches it).
+    pub(super) fn watch_end(&self, scroll: &ScrollRef, rearm: &Rearm) {
+        let (this, scroll, rearm) = (self.clone(), scroll.clone(), Arc::clone(rearm));
+        let offset = scroll.watch_y(0.0);
+        let at_end = AtomicBool::new(false);
+        let _ = effect(move |g| {
+            let _ = g.get(offset);
+            let now = scroll.content_size().is_some() && scroll.is_at_bottom();
+            if at_end.swap(now, Ordering::Relaxed) != now {
+                this.lock().asked += 1;
+                rearm(0);
+            }
+        });
     }
 
     /// How many redraws the guard has asked for so far.

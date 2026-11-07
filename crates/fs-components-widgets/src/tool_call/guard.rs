@@ -20,8 +20,9 @@ use std::sync::{Arc, Mutex, PoisonError};
 use super::entry::{Body, Call, Entry, EntryKey, Press, call_key, entry_key, text_of};
 use super::model::ToolCall;
 
+mod press;
 mod refresh;
-pub(crate) use refresh::refresh_later;
+pub(crate) use refresh::{Rearm, refresh_later};
 
 use super::clock::{ARM_DELAY_MS, Clock, MIN_DELAY_MS, SystemClock};
 
@@ -35,6 +36,7 @@ struct Inner {
     answered: HashMap<Call, u64>,
     refusals: HashMap<Call, String>,
     pending: HashMap<EntryKey, u64>,
+    held: HashSet<EntryKey>,
     asked: u64,
 }
 
@@ -66,6 +68,7 @@ impl Approvals {
             answered: HashMap::new(),
             refusals: HashMap::new(),
             pending: HashMap::new(),
+            held: HashSet::new(),
             asked: 0,
         })))
     }
@@ -98,9 +101,13 @@ impl Approvals {
         let seen = std::mem::take(&mut g.seen);
         g.entries.retain(|k, _| k.0 != place || seen.contains(k));
         let Inner {
-            entries, pending, ..
+            entries,
+            pending,
+            held,
+            ..
         } = &mut *g;
         pending.retain(|k, _| entries.contains_key(k));
+        held.retain(|k| entries.contains_key(k));
         g.seen = seen;
     }
 
@@ -113,6 +120,7 @@ impl Approvals {
         call: &ToolCall,
         slot: usize,
         needs_read: bool,
+        rearm: &Rearm,
     ) -> Body {
         let mut g = self.lock();
         let k = entry_key(place, message, &call.id);
@@ -147,7 +155,13 @@ impl Approvals {
                 },
             );
         }
-        g.entries[&k].body.clone()
+        let body = g.entries[&k].body.clone();
+        drop(g);
+        // outside the lock: the watch runs in the reactive graph, which locks this guard in turn
+        if needs_read && !same {
+            self.watch_end(&body.scroll, rearm);
+        }
+        body
     }
 
     /// The option under the keyboard cursor of this question (the first one to begin with).
@@ -175,6 +189,7 @@ impl Approvals {
     pub fn forget(&self, message: &str, call: &str) {
         let mut g = self.lock();
         g.entries.retain(|k, _| !(k.1 == message && k.2 == call));
+        g.held.retain(|k| !(k.1 == message && k.2 == call));
         g.answered.remove(&call_key(message, call));
         g.refusals.remove(&call_key(message, call));
     }
@@ -218,69 +233,5 @@ impl Approvals {
             generation,
         });
         ok
-    }
-
-    /// Is a press under way?
-    pub fn has_press(&self) -> bool {
-        self.lock().press.is_some()
-    }
-
-    /// The pointer left the button (or anything else cancelled the press).
-    pub fn cancel_press(&self) {
-        self.lock().press = None;
-    }
-
-    /// The mouse (or the key) went up on `button`. True once, if the press began on this button, the
-    /// entry is still the one it began on, and the button is still armed.
-    pub fn release(
-        &self,
-        place: &str,
-        message: &str,
-        call: &str,
-        button: &str,
-        refuse: bool,
-    ) -> bool {
-        let press = self.lock().press.take();
-        let generation = self
-            .lock()
-            .entries
-            .get(&entry_key(place, message, call))
-            .map(|e| e.generation);
-        press.is_some_and(|p| p.button == button && Some(p.generation) == generation)
-            && self.armed(place, message, call, refuse)
-    }
-
-    /// The answer was reported: this call is answered for this revision, in every place, until it
-    /// changes.
-    pub fn commit(&self, message: &str, call: &str, revision: u64) {
-        let mut g = self.lock();
-        g.answered.insert(call_key(message, call), revision);
-        g.refusals.remove(&call_key(message, call));
-    }
-
-    /// The engine refused the decision: show `reason`, lift the answered mark and disarm the call
-    /// again for the delay, so the person can decide anew (also when nothing changed).
-    pub fn refused(&self, message: &str, call: &str, reason: &str) {
-        let mut g = self.lock();
-        g.answered.remove(&call_key(message, call));
-        g.refusals
-            .insert(call_key(message, call), reason.to_owned());
-        let (now, mut next) = (g.clock.now_ms(), g.next);
-        for (k, e) in g
-            .entries
-            .iter_mut()
-            .filter(|(k, _)| k.1 == message && k.2 == call)
-        {
-            let _ = k;
-            e.at = now;
-            e.generation = next;
-            next += 1;
-        }
-        g.next = next;
-    }
-
-    /// The reason shown on this card, if the engine refused a decision.
-    pub fn refusal(&self, message: &str, call: &str) -> Option<String> {
-        self.lock().refusals.get(&call_key(message, call)).cloned()
     }
 }

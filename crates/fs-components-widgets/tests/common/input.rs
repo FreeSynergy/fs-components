@@ -166,6 +166,17 @@ impl Input {
         tree.dispatch_key_event_bubbling(&[node], event_type, code, false, false, false, false);
     }
 
+    /// Turn the wheel over a point (`dy` > 0 scrolls the content up, towards its end).
+    pub fn wheel_at(&mut self, tree: &mut RenderTree, x: f32, y: f32, dy: f32) {
+        let _ = self.router.on_mouse_move(tree, x, y);
+        if let Some(hit) = self.router.on_scroll_nested(tree, 0.0, -dy) {
+            tree.dispatch_scroll_chain(hit.node, &hit.ancestors, x, y, 0.0, -dy);
+        }
+        tree.tick_scroll_physics(1_000);
+        let updates = tree.take_pending_property_updates();
+        tree.apply_partial_property_updates(updates);
+    }
+
     /// Give the keyboard to the element with this id.
     pub fn focus(&mut self, tree: &RenderTree, id: &str) {
         let node = tree
