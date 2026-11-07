@@ -56,6 +56,18 @@ impl FilesState {
         }
     }
 
+    /// Ask for the path of a file to upload here, with this path filled in. An input that is
+    /// being typed is left alone.
+    pub(super) fn begin_upload_at(&mut self, path: &str) {
+        if self.typing() {
+            return;
+        }
+        self.begin_upload();
+        if matches!(&self.ask, Ask::Input(i) if matches!(i.kind, InputKind::UploadPath)) {
+            self.set_input(path);
+        }
+    }
+
     /// Ask where to write the file selected.
     pub fn begin_download(&mut self) {
         if !self.capabilities.download || self.typing() {

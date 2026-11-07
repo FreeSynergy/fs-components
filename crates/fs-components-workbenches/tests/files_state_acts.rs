@@ -252,3 +252,27 @@ fn the_picker_changes_nothing_and_a_marked_file_is_a_second_act() {
     assert_eq!(picked.key, "m");
     assert!(picked.marked);
 }
+
+#[test]
+fn retrying_an_upload_leaves_a_name_being_typed_alone() {
+    let (_, mut s) = state(Shelf::new());
+    s.begin_upload();
+    s.set_input("/there/a.txt");
+    s.submit_input();
+    let key = s.transfers()[0].shown.key.clone();
+    s.begin_new_folder();
+    s.set_input("my folder");
+    s.transfer_outcome(&transfer_list_outcome(&key, true));
+    let Ask::Input(input) = s.ask() else {
+        panic!("the input was thrown away")
+    };
+    assert_eq!(input.value, "my folder");
+    // with nothing typed, the retry asks for the path again
+    s.cancel_input();
+    s.set_input("");
+    s.transfer_outcome(&transfer_list_outcome(&key, true));
+    let Ask::Input(input) = s.ask() else {
+        panic!("no input")
+    };
+    assert_eq!(input.value, "/there/a.txt");
+}

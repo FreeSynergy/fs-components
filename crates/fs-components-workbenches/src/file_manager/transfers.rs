@@ -189,8 +189,7 @@ impl FilesState {
             }
             (Action::Retry, None) => {
                 if let Some(path) = &row.path {
-                    self.begin_upload();
-                    self.set_input(path);
+                    self.begin_upload_at(path);
                 } else if let Some(file) = &row.file {
                     self.begin_download_of(file.clone(), row.shown.name.clone());
                 }
