@@ -95,11 +95,11 @@ pub(crate) fn card(
             .approvals
             .show(&ctx.place, &ctx.message, call, ctx.slot, more > 0);
         body_state = Some((body, more));
-        if !ctx
+        if let Some(ms) = ctx
             .approvals
-            .armed(&ctx.place, &ctx.message, &call.id, false)
+            .refresh_due(&ctx.place, &ctx.message, &call.id)
         {
-            (sinks.rearm)(ctx.approvals.delay());
+            (sinks.rearm)(ms);
         }
     } else if call.state == ToolState::Settled {
         ctx.approvals.forget(&ctx.message, &call.id);

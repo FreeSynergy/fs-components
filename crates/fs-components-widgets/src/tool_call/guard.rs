@@ -20,6 +20,9 @@ use std::sync::{Arc, Mutex, PoisonError};
 use super::entry::{Body, Call, Entry, EntryKey, Press, call_key, entry_key, text_of};
 use super::model::ToolCall;
 
+mod refresh;
+pub(crate) use refresh::refresh_later;
+
 use super::clock::{ARM_DELAY_MS, Clock, MIN_DELAY_MS, SystemClock};
 
 struct Inner {
@@ -31,6 +34,8 @@ struct Inner {
     press: Option<Press>,
     answered: HashMap<Call, u64>,
     refusals: HashMap<Call, String>,
+    pending: HashMap<EntryKey, u64>,
+    asked: u64,
 }
 
 /// The state shared by every place that can answer the same questions (a message card, the dock).
@@ -60,6 +65,8 @@ impl Approvals {
             press: None,
             answered: HashMap::new(),
             refusals: HashMap::new(),
+            pending: HashMap::new(),
+            asked: 0,
         })))
     }
 
@@ -90,6 +97,10 @@ impl Approvals {
         let mut g = self.lock();
         let seen = std::mem::take(&mut g.seen);
         g.entries.retain(|k, _| k.0 != place || seen.contains(k));
+        let Inner {
+            entries, pending, ..
+        } = &mut *g;
+        pending.retain(|k, _| entries.contains_key(k));
         g.seen = seen;
     }
 
@@ -272,12 +283,4 @@ impl Approvals {
     pub fn refusal(&self, message: &str, call: &str) -> Option<String> {
         self.lock().refusals.get(&call_key(message, call)).cloned()
     }
-}
-
-/// Draw again in `ms` milliseconds (a disarmed question becomes answerable at that moment).
-pub(crate) fn refresh_later(live: crate::live::Live, ms: u64) {
-    std::thread::spawn(move || {
-        std::thread::sleep(std::time::Duration::from_millis(ms + 40));
-        live.refresh_now();
-    });
 }

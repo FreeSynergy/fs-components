@@ -37,12 +37,13 @@ pub(super) fn options(call: &ToolCall, prefix: &str, sinks: &Sinks, ctx: &Ctx) -
     // over the options, Enter or Space answers the one under it, on the key's release. Only while
     // this row has the keyboard focus; a held key (it repeats the press) never answers.
     let focused = Arc::new(AtomicBool::new(false));
-    let (on, off, down, up) = (
-        Arc::clone(&focused),
-        Arc::clone(&focused),
-        Arc::clone(&focused),
-        focused,
-    );
+    let (on, down, up) = (Arc::clone(&focused), Arc::clone(&focused), focused);
+    // Is Enter or Space down? The first press of a key is the only one that may begin an answer:
+    // its repeats come while it is held, and a held key never answers (also not when the question
+    // gets armed meanwhile).
+    let held = Arc::new(AtomicBool::new(false));
+    let (off_held, down_held, up_held) = (Arc::clone(&held), Arc::clone(&held), held);
+    let off = Arc::clone(&on);
     let mine = |c: &blinc_layout::event_handler::EventContext, flag: &AtomicBool| {
         let node = blinc_layout::event_router::keyboard_focused_node();
         node.map_or_else(|| flag.load(Ordering::Relaxed), |n| n == c.node_id)
@@ -61,7 +62,10 @@ pub(super) fn options(call: &ToolCall, prefix: &str, sinks: &Sinks, ctx: &Ctx) -
     );
     let drawn = (call.revision, call.digest.clone());
     row.on_focus(move |_| on.store(true, Ordering::Relaxed))
-        .on_blur(move |_| off.store(false, Ordering::Relaxed))
+        .on_blur(move |_| {
+            off.store(false, Ordering::Relaxed);
+            off_held.store(false, Ordering::Relaxed);
+        })
         .on_key_down(move |c| {
             if !mine(c, &down) || options.is_empty() {
                 return;
@@ -72,7 +76,7 @@ pub(super) fn options(call: &ToolCall, prefix: &str, sinks: &Sinks, ctx: &Ctx) -
                     a1.move_cursor(&place, &message, &id, delta, options.len());
                     rearm(0);
                 }
-                13 | 32 if !a1.has_press() => {
+                13 | 32 if !down_held.swap(true, Ordering::Relaxed) && !a1.has_press() => {
                     let o = &options[a1.cursor(&place, &message, &id).min(options.len() - 1)];
                     a1.press(
                         &place,
@@ -86,7 +90,11 @@ pub(super) fn options(call: &ToolCall, prefix: &str, sinks: &Sinks, ctx: &Ctx) -
             }
         })
         .on_key_up(move |c| {
-            if !matches!(c.key_code, 13 | 32) || !mine(c, &up) || opt2.is_empty() {
+            if !matches!(c.key_code, 13 | 32) {
+                return;
+            }
+            let was_down = up_held.swap(false, Ordering::Relaxed);
+            if !was_down || !mine(c, &up) || opt2.is_empty() {
                 return;
             }
             let o = &opt2[a2.cursor(&p2, &m2, &i2).min(opt2.len() - 1)];
