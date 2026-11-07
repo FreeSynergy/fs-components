@@ -16,6 +16,83 @@ use super::card::{Ctx, Sinks};
 use super::model::{Decision, ToolCall, ToolChoice, ToolOption};
 use crate::softwrap::soft_wrap;
 
+/// What the keys of one row of options need: the question it belongs to and where to report.
+#[derive(Clone)]
+struct Keys {
+    approvals: super::Approvals,
+    place: String,
+    message: String,
+    call: String,
+    prefix: String,
+    options: Vec<ToolOption>,
+    drawn: (u64, Vec<u8>),
+    choose: super::card::ChooseFn,
+    rearm: Arc<dyn Fn(u64) + Send + Sync>,
+}
+
+impl Keys {
+    /// The option under the cursor and the id of its button.
+    fn under_cursor(&self) -> Option<(&ToolOption, String)> {
+        let at = self
+            .approvals
+            .cursor(&self.place, &self.message, &self.call)
+            .min(self.options.len().checked_sub(1)?);
+        let o = &self.options[at];
+        Some((o, format!("{}-opt-{}-{}", self.prefix, self.call, o.id)))
+    }
+
+    /// Enter or Space went down (as the click Blinc makes of it): the first press of the key
+    /// begins an answer, its repeats do not, also not after a redraw.
+    fn key_down(&self) {
+        let first = self
+            .approvals
+            .key_down(&self.place, &self.message, &self.call);
+        if !first || self.approvals.has_press() {
+            return;
+        }
+        if let Some((o, button)) = self.under_cursor() {
+            let refuse = o.choice == ToolChoice::Refuse;
+            self.approvals
+                .press(&self.place, &self.message, &self.call, &button, refuse);
+        }
+    }
+
+    /// Enter or Space went up: the answer, if the press began here and the question is still armed.
+    fn key_up(&self, mine: bool) {
+        let was_down = self
+            .approvals
+            .key_up(&self.place, &self.message, &self.call);
+        let Some((o, button)) = self.under_cursor().filter(|_| was_down && mine) else {
+            return;
+        };
+        let refuse = o.choice == ToolChoice::Refuse;
+        if self
+            .approvals
+            .release(&self.place, &self.message, &self.call, &button, refuse)
+        {
+            (self.choose)(Decision {
+                message: self.message.clone(),
+                call: self.call.clone(),
+                option: o.id.clone(),
+                choice: o.choice,
+                revision: self.drawn.0,
+                digest: self.drawn.1.clone(),
+            });
+        }
+    }
+
+    fn walk(&self, delta: i32) {
+        self.approvals.move_cursor(
+            &self.place,
+            &self.message,
+            &self.call,
+            delta,
+            self.options.len(),
+        );
+        (self.rearm)(0);
+    }
+}
+
 pub(super) fn options(call: &ToolCall, prefix: &str, sinks: &Sinks, ctx: &Ctx) -> Div {
     use std::sync::atomic::{AtomicBool, Ordering};
     let cursor = ctx
@@ -37,38 +114,35 @@ pub(super) fn options(call: &ToolCall, prefix: &str, sinks: &Sinks, ctx: &Ctx) -
     // over the options, Enter or Space answers the one under it, on the key's release. Only while
     // this row has the keyboard focus; a held key (it repeats the press) never answers.
     let focused = Arc::new(AtomicBool::new(false));
-    let (on, down, up) = (Arc::clone(&focused), Arc::clone(&focused), focused);
-    let off = Arc::clone(&on);
+    let (on, off, down, up) = (
+        Arc::clone(&focused),
+        Arc::clone(&focused),
+        Arc::clone(&focused),
+        focused,
+    );
     let mine = |c: &blinc_layout::event_handler::EventContext, flag: &AtomicBool| {
         let node = blinc_layout::event_router::keyboard_focused_node();
         node.map_or_else(|| flag.load(Ordering::Relaxed), |n| n == c.node_id)
             && !blinc_layout::widgets::text_input::has_focused_text_input()
     };
-    let (a1, a2, a3, a4) = (
-        ctx.approvals.clone(),
-        ctx.approvals.clone(),
-        ctx.approvals.clone(),
-        ctx.approvals.clone(),
-    );
-    let (place, message, id) = (ctx.place.clone(), ctx.message.clone(), call.id.clone());
-    let (p2, m2, i2) = (place.clone(), message.clone(), id.clone());
-    let (p3, m3, i3) = (place.clone(), message.clone(), id.clone());
-    let (p4, m4, i4) = (place.clone(), message.clone(), id.clone());
-    let opt3 = call.options.clone();
-    let prefix3 = prefix.to_owned();
-    let options = call.options.clone();
-    let opt2 = options.clone();
-    let prefix = prefix.to_owned();
-    let (prefix2, choose, rearm) = (
-        prefix.clone(),
-        Arc::clone(&sinks.choose),
-        Arc::clone(&sinks.rearm),
-    );
-    let drawn = (call.revision, call.digest.clone());
+    let keys = Keys {
+        approvals: ctx.approvals.clone(),
+        place: ctx.place.clone(),
+        message: ctx.message.clone(),
+        call: call.id.clone(),
+        prefix: prefix.to_owned(),
+        options: call.options.clone(),
+        drawn: (call.revision, call.digest.clone()),
+        choose: Arc::clone(&sinks.choose),
+        rearm: Arc::clone(&sinks.rearm),
+    };
+    let (k_blur, k_click, k_down, k_up) = (keys.clone(), keys.clone(), keys.clone(), keys);
     row.on_focus(move |_| on.store(true, Ordering::Relaxed))
         .on_blur(move |_| {
             off.store(false, Ordering::Relaxed);
-            a4.key_up(&p4, &m4, &i4);
+            k_blur
+                .approvals
+                .key_up(&k_blur.place, &k_blur.message, &k_blur.call);
         })
         // Enter and Space on the focused row reach it as a click, not as a key (Blinc's
         // `handle_navigation_key` presses and releases the element). A click whose receiver is the
@@ -77,56 +151,18 @@ pub(super) fn options(call: &ToolCall, prefix: &str, sinks: &Sinks, ctx: &Ctx) -
         .on_mouse_down(move |c| {
             let keyboard = blinc_layout::event_router::keyboard_focused_node() == Some(c.node_id)
                 && !blinc_layout::widgets::text_input::has_focused_text_input();
-            if !keyboard || opt3.is_empty() || !a3.key_down(&p3, &m3, &i3) || a3.has_press() {
-                return;
+            if keyboard {
+                k_click.key_down();
             }
-            let o = &opt3[a3.cursor(&p3, &m3, &i3).min(opt3.len() - 1)];
-            a3.press(
-                &p3,
-                &m3,
-                &i3,
-                &format!("{prefix3}-opt-{i3}-{}", o.id),
-                o.choice == ToolChoice::Refuse,
-            );
         })
         .on_key_down(move |c| {
-            if !mine(c, &down) || options.is_empty() {
-                return;
-            }
-            match c.key_code {
-                37 | 39 => {
-                    let delta = if c.key_code == 37 { -1 } else { 1 };
-                    a1.move_cursor(&place, &message, &id, delta, options.len());
-                    rearm(0);
-                }
-                _ => {}
+            if mine(c, &down) && !k_down.options.is_empty() && matches!(c.key_code, 37 | 39) {
+                k_down.walk(if c.key_code == 37 { -1 } else { 1 });
             }
         })
         .on_key_up(move |c| {
-            if !matches!(c.key_code, 13 | 32) {
-                return;
-            }
-            let was_down = a2.key_up(&p2, &m2, &i2);
-            if !was_down || !mine(c, &up) || opt2.is_empty() {
-                return;
-            }
-            let o = &opt2[a2.cursor(&p2, &m2, &i2).min(opt2.len() - 1)];
-            let refuse = o.choice == ToolChoice::Refuse;
-            if a2.release(
-                &p2,
-                &m2,
-                &i2,
-                &format!("{prefix2}-opt-{i2}-{}", o.id),
-                refuse,
-            ) {
-                choose(Decision {
-                    message: m2.clone(),
-                    call: i2.clone(),
-                    option: o.id.clone(),
-                    choice: o.choice,
-                    revision: drawn.0,
-                    digest: drawn.1.clone(),
-                });
+            if matches!(c.key_code, 13 | 32) {
+                k_up.key_up(mine(c, &up));
             }
         })
 }

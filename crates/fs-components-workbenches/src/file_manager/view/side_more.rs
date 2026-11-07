@@ -44,9 +44,9 @@ pub(super) fn transfers_panel(
         list = list.without(Action::Retry);
     }
     let list = list.on_outcome(Arc::new(move |outcome| {
-            let outcome = outcome.clone();
-            apply(&move |s: &mut FilesState| s.transfer_outcome(&outcome));
-        }));
+        let outcome = outcome.clone();
+        apply(&move |s: &mut FilesState| s.transfer_outcome(&outcome));
+    }));
     div()
         .class("fs-files-panel")
         .flex_col()

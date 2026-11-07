@@ -80,7 +80,11 @@ impl TransferList {
             main = main.child(text(status).class("fs-tl-reason"));
         }
         let mut actions = div().class("fs-tl-actions");
-        for action in t.actions().into_iter().filter(|a| !self.without.contains(a)) {
+        for action in t
+            .actions()
+            .into_iter()
+            .filter(|a| !self.without.contains(a))
+        {
             actions = actions.child(self.button(t, action));
         }
         let mut row = div().class("fs-tl-row").child(main).child(actions);

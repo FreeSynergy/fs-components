@@ -126,7 +126,10 @@ fn a_build_still_alive_asked_for_a_line_only_a_later_build_has_draws_nothing() {
     old.apply_partial_property_updates(updates);
     old.process_pending_subtree_rebuilds_routed(None);
     old.compute_layout(900.0, 400.0);
-    assert!(old.query_by_id("a-item-k0@2026-11-04").is_some());
+    assert!(
+        old.query_by_id("a-item-k0@2026-11-04").is_none(),
+        "the window had moved, so the old build was asked for lines it does not have"
+    );
 }
 
 #[test]

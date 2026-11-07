@@ -119,7 +119,10 @@ fn the_question_about_a_taken_name_still_guards_what_was_typed() {
     assert!(matches!(s.ask(), Ask::NameTaken(_)), "a name taken asks");
     s.ask_delete();
     s.carry(CarryKind::Move);
-    assert!(matches!(s.ask(), Ask::NameTaken(_)), "the typing was thrown away");
+    assert!(
+        matches!(s.ask(), Ask::NameTaken(_)),
+        "the typing was thrown away"
+    );
 }
 
 #[test]
