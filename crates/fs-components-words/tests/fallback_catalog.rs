@@ -15,7 +15,7 @@ fn text_present_in_the_language_is_used() {
     let w = Fallback::new(pl(), English::new(EN));
     assert_eq!(
         w.say(&TextId::new("a"), &Args::new()),
-        Said::Found("Polskie A".into())
+        Said::found(&"a".into(), "Polskie A")
     );
 }
 
@@ -33,7 +33,7 @@ fn missing_everywhere_shows_the_id() {
     let w = Fallback::new(pl(), English::new(EN));
     assert_eq!(
         w.say(&"zz".into(), &Args::new()),
-        Said::Missing("zz".into())
+        Said::missing(&"zz".into())
     );
 }
 

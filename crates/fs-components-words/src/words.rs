@@ -7,7 +7,7 @@
 use crate::{Args, Said, TextId};
 
 /// Turns a text identifier and named values into a sentence. Never panics and never returns an
-/// empty text: what cannot be made comes back as [`Said::Missing`] carrying the identifier.
+/// empty text: what cannot be made comes back as [`Said::missing`] carrying the identifier.
 pub trait Words: Send + Sync {
     /// The sentence for `id`, filled with `args`.
     fn say(&self, id: &TextId, args: &Args) -> Said;

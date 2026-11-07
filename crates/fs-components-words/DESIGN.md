@@ -35,14 +35,15 @@ Order of work: pattern, then signatures (`TextId`, `Args`, `Value`, `Said`, `Wor
 
 ## Rules of the contract
 
-- `say` never panics and never returns empty text. A missing text, a missing or wrongly typed value, a malformed template, no matching plural branch (and no `other`), an empty result: `Said::Missing(id)`, the id is what is shown (an empty id shows `(no id)`).
+- `say` does not panic (no indexing, no unwrap; nesting is limited to 32 so the stack cannot run out) and never returns empty or blank text. A missing text, a missing or wrongly typed value, a malformed template, no matching plural branch (and no `other`), a blank result: the missing mark, `Said::missing(id)`, which shows the id (a blank id shows `(no id)`). `Said` has private fields; `Said::found(id, text)` turns blank text into the missing mark, so even a foreign `Words` cannot hand out nothing, and `Fallback` treats it as missing.
+- A malformed template is found when a catalog is made from text (`CatalogError` with the line) or by `Catalog::validate()` / `English::validate()` (all faulty ids, sorted). Each program should have one test that asserts `validate()` is empty, above all for its English last stage. Templates are parsed once, at load.
 - Values are inserted as data. `{`, `}`, `#` inside a value are never evaluated again.
-- `#` means the count only inside a plural branch; elsewhere it is a plain character. Escape `\{`, `\}`, `\#`, `\\` in templates.
+- `#` means the count only inside a plural branch; elsewhere it is a plain character. Escapes in templates are exactly `\{`, `\}`, `\#`, `\\` and `\ ` (a space, so a line of a text table can end in one); any other escape, a blank template, a duplicate plural branch and a name containing white space are errors. In a text table an identifier given twice is an error; in a static table the later entry wins.
 - A plural needs a `Value::Count`; a branch not present for the category falls to `other`.
 
 ## State
 
-Version 0.2.0 workspace. Done: `TextId`, `Args`/`Value`, `Said`, `Words` (also for `Box` and `&`), `PluralRules` with `EnglishPlural` and `PolishPlural`, template language, `Catalog` (from a static table or text lines, checked per line), `English`, `Fallback`, example `examples/say.rs`, tests in `tests/` (placeholders, plural, fallback_catalog).
+Version 0.2.0 workspace. Done: `TextId`, `Args`/`Value`, `Said`, `Words` (also for `Box` and `&`), `PluralRules` with `EnglishPlural` and `PolishPlural`, template language, `Catalog` (from a static table or text lines, checked per line), `English`, `Fallback`, example `examples/say.rs`, tests in `tests/` (placeholders, plural, fallback_catalog, robust: depth, extreme values, foreign `Words`).
 
 **Unsupported (not built):**
 - Number, date and time formatting per language: `{name}` shows a number plainly, a date as `YYYY-MM-DD`, a time as `HH:MM` (UTC). The kinds are there for a language to take over later.
@@ -51,3 +52,13 @@ Version 0.2.0 workspace. Done: `TextId`, `Args`/`Value`, `Said`, `Words` (also f
 - Reading direction (right to left): not checked; belongs to the frontend.
 - Fluent or MF2 adapter: the library decision is made in the week from 2026-11-09 (ADR 0057).
 - Loading language packages from Git (ADR 0036): `Catalog::from_text` takes the text; fetching it is the program's.
+
+**Gaps and limits, stated plainly:**
+- The template syntax is a small subset of **ICU MessageFormat 1** (`{name}`, `plural`), not MessageFormat 2 and not Fluent. Language packages written for MF2 or Fluent must be converted, or a library adapter replaces `Catalog` behind the same `Words`.
+- A date is a Unix instant shown in **UTC**; there is no pure calendar date (a birthday has no instant) and no time zone. Numbers have no options (currency, percent, unit, number of decimals); plural uses the whole number only, without the CLDR operands v, f, t. No ordinal numbers, no `=N`, no `select`.
+- Value kinds missing: list ("a, b and c"), duration, relative time.
+- `Said` carries no language and no bidirectional isolation of inserted values, and no markup.
+- `Missing` does not say why (text absent, value absent, wrong kind, malformed template, no branch).
+- `Words: Send + Sync`. A Fluent adapter probably needs its concurrent bundle for that; not checked.
+- `Catalog`, `English` and `Fallback` are `pub` because the callers build them (a program wires its English table and the language package); everything else (`template`, `format`) is private.
+- A number is shown plainly between 1e-6 and 1e15, scientific outside, `NaN` and the infinity signs by name; the year of a date before year 0 has a minus sign.

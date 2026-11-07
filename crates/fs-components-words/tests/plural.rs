@@ -61,7 +61,7 @@ fn no_matching_branch_and_no_other_is_missing() {
     let w = Catalog::from_table(EnglishPlural, &[("t", "{n, plural, one {# a}}")]);
     assert_eq!(
         w.say(&"t".into(), &Args::new().count("n", 3)),
-        Said::Missing("t".into())
+        Said::missing(&"t".into())
     );
 }
 
@@ -74,7 +74,7 @@ fn plural_needs_a_count() {
         .text("count", "3");
     assert_eq!(
         w.say(&"files.deleted".into(), &args),
-        Said::Missing("files.deleted".into())
+        Said::missing(&"files.deleted".into())
     );
     let args = Args::new().text("who", "A").text("where", "B");
     assert!(!w.say(&"files.deleted".into(), &args).is_found());

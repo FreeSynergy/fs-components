@@ -6,7 +6,7 @@
 use std::fmt;
 
 /// Identifier of a text, for example `files.deleted`. Never shown on purpose, except as the
-/// visible mark of a missing text (see [`Said::Missing`](crate::Said::Missing)).
+/// visible mark of a missing text (see [`Said::missing`](crate::Said::missing)).
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct TextId(String);
 

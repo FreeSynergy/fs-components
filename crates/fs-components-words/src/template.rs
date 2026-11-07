@@ -1,10 +1,15 @@
 //! Template syntax: parse a sentence template into parts and fill it with `Args`.
 //!
 //! Pattern: Interpreter — a small language (`{name}`, `{n, plural, one {# x} other {# y}}`,
-//! `\` escapes) evaluated over its parsed tree. Values are inserted as data and never parsed again.
+//! escapes `\{ \} \# \\ \<space>`) evaluated over its parsed tree. Values are inserted as data
+//! and never parsed again. Nesting is limited to [`MAX_DEPTH`] so hostile input cannot exhaust
+//! the stack.
 
 use crate::format::show;
 use crate::{Args, PluralCategory, PluralRules, Value};
+
+/// Deepest nesting of plural branches a template may have.
+pub(crate) const MAX_DEPTH: usize = 32;
 
 /// One piece of a parsed template.
 #[derive(Debug)]
@@ -18,10 +23,13 @@ pub(crate) enum Part {
     },
 }
 
-/// Parse a template; `None` if it is malformed.
+/// Parse a template; `None` if it is malformed, blank or nested too deeply.
 pub(crate) fn parse(src: &str) -> Option<Vec<Part>> {
+    if src.trim().is_empty() {
+        return None;
+    }
     let chars: Vec<char> = src.chars().collect();
-    Parser { c: &chars, i: 0 }.parts(false)
+    Parser { c: &chars, i: 0 }.parts(0)
 }
 
 /// Fill a parsed template. `None` if a value is missing or of the wrong kind, or no branch fits.
@@ -69,26 +77,32 @@ impl Parser<'_> {
         ch
     }
 
-    /// Parts up to the end (top level) or up to the closing `}` of a branch.
-    fn parts(&mut self, in_branch: bool) -> Option<Vec<Part>> {
+    /// Parts up to the end (depth 0) or up to the closing `}` of a branch (depth >= 1).
+    fn parts(&mut self, depth: usize) -> Option<Vec<Part>> {
+        if depth > MAX_DEPTH {
+            return None;
+        }
         let (mut out, mut lit) = (Vec::new(), String::new());
         loop {
             let Some(ch) = self.next() else {
                 flush(&mut lit, &mut out);
-                return if in_branch { None } else { Some(out) };
+                return (depth == 0).then_some(out);
             };
             match ch {
-                '\\' => lit.push(self.next()?),
+                '\\' => match self.next()? {
+                    e @ ('{' | '}' | '#' | '\\' | ' ') => lit.push(e),
+                    _ => return None,
+                },
                 '{' => {
                     flush(&mut lit, &mut out);
-                    out.push(self.placeholder()?);
+                    out.push(self.placeholder(depth)?);
                 }
-                '}' if in_branch => {
+                '}' if depth > 0 => {
                     flush(&mut lit, &mut out);
                     return Some(out);
                 }
                 '}' => return None,
-                '#' if in_branch => {
+                '#' if depth > 0 => {
                     flush(&mut lit, &mut out);
                     out.push(Part::Hash);
                 }
@@ -97,7 +111,7 @@ impl Parser<'_> {
         }
     }
 
-    /// Read up to (and past) one of `stops`; returns the text and the stop.
+    /// Read up to (and past) one of `stops`; returns the trimmed text and the stop.
     fn until(&mut self, stops: &[char]) -> Option<(String, char)> {
         let mut s = String::new();
         loop {
@@ -110,9 +124,9 @@ impl Parser<'_> {
     }
 
     /// After `{`: `name}` or `name, plural, sel {..} sel {..}}`.
-    fn placeholder(&mut self) -> Option<Part> {
+    fn placeholder(&mut self, depth: usize) -> Option<Part> {
         let (name, stop) = self.until(&[',', '}'])?;
-        if name.is_empty() || name.contains(['{', '\\', '#']) {
+        if name.is_empty() || name.contains(|c: char| c.is_whitespace() || "{\\#".contains(c)) {
             return None;
         }
         if stop == '}' {
@@ -122,14 +136,18 @@ impl Parser<'_> {
         if kind != "plural" {
             return None;
         }
-        let mut branches = Vec::new();
+        let mut branches: Vec<(PluralCategory, Vec<Part>)> = Vec::new();
         loop {
             let (sel, stop) = self.until(&['{', '}'])?;
             if stop == '}' {
                 return (sel.is_empty() && !branches.is_empty())
                     .then_some(Part::Plural { name, branches });
             }
-            branches.push((PluralCategory::from_name(&sel)?, self.parts(true)?));
+            let cat = PluralCategory::from_name(&sel)?;
+            if branches.iter().any(|(c, _)| *c == cat) {
+                return None;
+            }
+            branches.push((cat, self.parts(depth + 1)?));
         }
     }
 }

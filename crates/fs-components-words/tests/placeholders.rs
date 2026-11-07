@@ -14,7 +14,7 @@ fn named_placeholder_is_filled() {
         "hi",
         &Args::new().text("name", "Ada"),
     );
-    assert_eq!(s, Said::Found("Hello Ada!".into()));
+    assert_eq!(s, Said::found(&"hi".into(), "Hello Ada!"));
 }
 
 #[test]
@@ -40,7 +40,7 @@ fn same_name_twice_and_unused_value() {
 #[test]
 fn missing_value_shows_the_id_not_a_guess() {
     let s = say(&[("hi", "Hello {name}!")], "hi", &Args::new());
-    assert_eq!(s, Said::Missing("hi".into()));
+    assert_eq!(s, Said::missing(&"hi".into()));
     assert!(!s.is_found());
 }
 
@@ -68,7 +68,7 @@ fn broken_templates_do_not_panic() {
         "{ }",
     ] {
         let s = say(&[("t", bad)], "t", &Args::new().text("x", "1"));
-        assert_eq!(s, Said::Missing("t".into()), "template {bad:?}");
+        assert_eq!(s, Said::missing(&"t".into()), "template {bad:?}");
     }
 }
 

@@ -12,6 +12,12 @@ impl English {
     pub fn new(table: &[(&str, &str)]) -> Self {
         Self(Catalog::from_table(EnglishPlural, table))
     }
+
+    /// Identifiers whose template is malformed (see [`Catalog::validate`]). The last resort
+    /// must have none: call this in one test per program.
+    pub fn validate(&self) -> Vec<TextId> {
+        self.0.validate()
+    }
 }
 
 impl Words for English {
