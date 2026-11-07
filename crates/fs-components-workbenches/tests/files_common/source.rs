@@ -229,11 +229,8 @@ impl FileSource for Shelf {
         let before = things.len();
         let stays = self.stays.lock().unwrap().clone();
         things.retain(|k, t| !t.trashed || stays.contains(k));
-        let failed = things
-            .iter()
-            .filter(|(_, t)| t.trashed)
-            .map(|(_, t)| t.name.clone())
-            .collect();
+        let failed = things.values().filter(|t| t.trashed);
+        let failed = failed.map(|t| t.name.clone()).collect();
         self.wrote();
         Ok(EmptyReport::new(before - things.len(), failed))
     }

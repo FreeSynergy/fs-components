@@ -14,7 +14,7 @@ use blinc_layout::text;
 use super::actions::{FileActions, button};
 use super::frame::text_height;
 use crate::file_manager::ask::{Ask, InputAsk};
-use crate::file_manager::command::CarryKind;
+use crate::file_manager::carry::CarryKind;
 use crate::file_manager::labels::FileLabels;
 use crate::file_manager::state::FilesState;
 use crate::input_slots::InputSlots;

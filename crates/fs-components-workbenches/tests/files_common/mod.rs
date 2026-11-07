@@ -5,6 +5,7 @@
 #![allow(dead_code)] // each test file uses a different subset
 
 pub mod harness;
+mod keys;
 mod source;
 
 use std::collections::BTreeMap;

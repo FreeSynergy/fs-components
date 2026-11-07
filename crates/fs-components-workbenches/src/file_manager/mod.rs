@@ -7,6 +7,7 @@
 //! it has no window function, and gives its host what is current as a plain [`FilesContext`].
 
 mod ask;
+mod carry;
 mod command;
 mod confirm;
 mod context;
@@ -31,7 +32,8 @@ mod widget;
 mod widget_actions;
 
 pub use ask::{Ask, Confirm, InputAsk, InputKind, NameTaken};
-pub use command::{CarryKind, Carrying, Command};
+pub use carry::{CarryKind, Carrying};
+pub use command::Command;
 pub use context::{FileView, FilesContext, PickedFile, Variant};
 pub use error::{FileError, FileProblem};
 pub use filter::FilterDraft;

@@ -7,7 +7,7 @@ use blinc_cn::components::button::ButtonVariant;
 
 use super::actions::FileActions;
 use super::toolbar::Press;
-use crate::file_manager::command::CarryKind;
+use crate::file_manager::carry::CarryKind;
 use crate::file_manager::context::Variant;
 use crate::file_manager::state::FilesState;
 

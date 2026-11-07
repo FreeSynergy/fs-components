@@ -8,7 +8,7 @@ use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
 use super::ask::Ask;
-use super::command::Carrying;
+use super::carry::Carrying;
 use super::context::{FileView, FilesContext, PickedFile, Variant};
 use super::error::{FileError, FileProblem};
 use super::filter::FilterDraft;
