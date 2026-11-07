@@ -260,9 +260,10 @@ fn with_keys(root: Div, list: &ListView, position: ListPosition, count: usize, v
             position.set_cursor_on(row, &found.key);
             bring_into_view(&position, row, row_height, view);
         }
-        // A key that leads to the row already chosen reports nothing: a caller reads a report of the
-        // chosen row as "open it".
-        if selected.as_deref() != Some(found.key.as_str())
+        // A key that leads to the row it started from (the arrow at the edge) reports nothing: a
+        // caller reads a report of the chosen row as "open it". The row the keys began on is not
+        // always the chosen one: a walker that went on and comes back is told.
+        if start != Some(row)
             && let Some(on_select) = &on_select
         {
             on_select(&found.key);

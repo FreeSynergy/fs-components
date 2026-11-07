@@ -85,3 +85,31 @@ fn a_grid_reports_nothing_for_a_key_that_leads_to_the_tile_already_chosen() {
     input.key_broadcast(&mut tree, LEFT);
     assert_eq!(*chosen.lock().unwrap(), ["t1"]);
 }
+
+#[test]
+fn walking_without_on_select_reports_the_step_back_onto_the_row_it_began_on() {
+    let _one = serial();
+    let (walked, walk) = recording();
+    let (_, open) = recording();
+    let rows = (0..3)
+        .map(|i| Row::new(format!("k{i}"), vec![format!("Row {i}")]))
+        .collect();
+    let list = ListView::new(
+        vec![Column::new("Name", ColumnWidth::Share(1.0))],
+        Arc::new(VecRows::new(rows)),
+    )
+    .named("w")
+    .position(&ListPosition::new())
+    .selected(Some("k0"))
+    .walking(walk, open)
+    .keys(true);
+    let mut tree = layout(list.build(400.0, 300.0), 400.0, 300.0);
+    let mut input = Input::new();
+    input.focus(&tree, "w");
+    for key in [DOWN, DOWN, UP, UP] {
+        input.key_broadcast(&mut tree, key);
+    }
+    assert_eq!(*walked.lock().unwrap(), ["k1", "k2", "k1", "k0"]);
+    input.key_broadcast(&mut tree, UP); // the edge: nothing more to report
+    assert_eq!(walked.lock().unwrap().len(), 4);
+}

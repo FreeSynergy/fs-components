@@ -92,3 +92,49 @@ fn the_transfers_do_not_offer_a_retry_while_a_name_is_typed() {
     h.rebuild();
     assert!(!h.has_id(&retry), "a retry that does nothing is offered");
 }
+
+#[test]
+fn restore_and_empty_trash_leave_a_name_being_typed_alone() {
+    let shelf = Arc::new(Shelf::new().file("a"));
+    shelf.change("a", |t| t.trashed = true);
+    let mut s = FilesState::new(shelf.clone(), FileLabels::default(), Variant::Full);
+    s.begin_new_folder();
+    s.set_input("typed name");
+    s.open_trash();
+    s.select("a");
+    s.restore_selected();
+    assert!(shelf.thing("a").unwrap().trashed, "restored while typing");
+    s.ask_empty_trash();
+    assert_eq!(typed(&s).as_deref(), Some("typed name"), "Empty trash");
+}
+
+#[test]
+fn the_question_about_a_taken_name_still_guards_what_was_typed() {
+    let shelf = Arc::new(Shelf::new().file("a").file("b"));
+    let mut s = FilesState::new(shelf, FileLabels::default(), Variant::Full);
+    s.select("a");
+    s.begin_rename();
+    s.set_input("b.txt");
+    s.submit_input();
+    assert!(matches!(s.ask(), Ask::NameTaken(_)), "a name taken asks");
+    s.ask_delete();
+    s.carry(CarryKind::Move);
+    assert!(matches!(s.ask(), Ask::NameTaken(_)), "the typing was thrown away");
+}
+
+#[test]
+fn a_picker_can_start_no_input_so_nothing_typed_stands_in_the_way_of_choosing() {
+    // `can_choose` also asks `typing()`; a picker reads only, so it cannot be true there
+    let picker = FilePicker::new(Arc::new(Shelf::new().file("a")), FileLabels::default());
+    picker.with_state(|s| {
+        s.select("a");
+        s.begin_new_folder();
+        s.begin_rename();
+        s.begin_upload();
+        s.begin_download();
+        assert!(matches!(s.ask(), Ask::Nothing), "an input was started");
+        assert!(s.can_choose());
+        s.choose();
+    });
+    assert_eq!(picker.picked().unwrap().key, "a");
+}

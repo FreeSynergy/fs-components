@@ -88,6 +88,47 @@ fn position_moved(position: &CalendarPosition) -> bool {
     position.list_offset() > 100.0
 }
 
+fn items(count: u16) -> Arc<Vec<CalendarItem>> {
+    Arc::new(
+        (0..count)
+            .map(|i| {
+                let day = d("2026-11-04").add_days(i64::from(i % 30));
+                CalendarItem::timed(
+                    format!("k{i}"),
+                    format!("Item {i}"),
+                    Moment::at(day, 8, i % 60),
+                    Moment::at(day, 9, 0),
+                )
+            })
+            .collect(),
+    )
+}
+
+#[test]
+fn a_build_still_alive_asked_for_a_line_only_a_later_build_has_draws_nothing() {
+    let _one = serial();
+    let position = CalendarPosition::new();
+    let view = |name: &str, count: u16| {
+        CalendarView::new(ViewRange::Agenda, d("2026-11-04"), names(), items(count))
+            .named(name)
+            .position(&position)
+    };
+    // the first build has one line and one item; the window is shared
+    let mut old = layout(view("a", 1).build(900.0, 400.0), 900.0, 400.0);
+    let mut new = layout(view("b", 2000).build(900.0, 400.0), 900.0, 400.0);
+    let mut router = EventRouter::new();
+    router.on_mouse_move(&new, 200.0, 200.0);
+    let hit = router.hit_test(&new, 200.0, 200.0).expect("a list");
+    new.dispatch_scroll_chain(hit.node, &hit.ancestors, 200.0, 200.0, 0.0, -60_000.0);
+    new.tick_scroll_physics(1_000);
+    // the old build draws again for the window the later one moved
+    let updates = old.take_pending_property_updates();
+    old.apply_partial_property_updates(updates);
+    old.process_pending_subtree_rebuilds_routed(None);
+    old.compute_layout(900.0, 400.0);
+    assert!(old.query_by_id("a-item-k0@2026-11-04").is_some());
+}
+
 #[test]
 fn a_rebuild_with_other_items_of_the_same_number_shows_those() {
     let _one = serial();
