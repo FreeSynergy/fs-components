@@ -20,7 +20,11 @@ static ONE_AT_A_TIME: Mutex<()> = Mutex::new(());
 
 /// Hold this while a test touches Blinc's singletons: their first set-up panics when two threads race.
 pub fn serial() -> MutexGuard<'static, ()> {
-    ONE_AT_A_TIME.lock().unwrap_or_else(PoisonError::into_inner)
+    let guard = ONE_AT_A_TIME.lock().unwrap_or_else(PoisonError::into_inner);
+    // The text field of the test before may still have the keyboard (process-wide in Blinc): Tab
+    // and the keys would go to it.
+    blinc_layout::widgets::text_input::blur_all_text_inputs();
+    guard
 }
 
 /// A widget in a tree of its own, a mouse and a keyboard.
