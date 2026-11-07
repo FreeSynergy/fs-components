@@ -1,7 +1,7 @@
 //! The outer layout: bars above, the tree, the list and the side area beside each other, the band of
 //! questions below.
 //!
-//! Pattern: none — fixed skeleton; the areas are passed in. Sizes are worked out here because the
+//! Pattern: Adapter (state to elements) — fixed skeleton; the areas are passed in. Sizes are worked out here because the
 //! list must be told its height in pixels. Questions stand at the bottom so nothing above them moves
 //! when one appears: the second act of something destructive can never be under the first press. At
 //! narrow widths the tree gives way to the breadcrumb, and the side area takes the place of the list

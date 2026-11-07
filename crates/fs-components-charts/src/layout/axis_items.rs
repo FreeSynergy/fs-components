@@ -1,6 +1,6 @@
 //! Drawing an axis: line, ticks, grid, labels, title; and how much room it needs.
 //!
-//! Pattern: none — the x and y axis share the steps (labels that fit, thinned by parity when
+//! Pattern: none of the table fits (functions that draw an `Axis` into the `Scene`) — the x and y axis share the steps (labels that fit, thinned by parity when
 //! they would overlap, shortened with an ellipsis when too long), only the geometry differs.
 //! The x axis of a discrete field turns its labels by -90 degrees, as Vega-Lite does.
 

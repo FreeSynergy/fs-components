@@ -4,7 +4,7 @@ Shared UI components of FreeSynergy on Blinc 0.6 (released crates, `blinc_* = "0
 
 ## State
 
-Version 0.2.0 is tagged (breaking against 0.1.0: `DataSource` is `DocumentSource`, `.reader()` is `.with_reader(..)`, `Options` has fields for labels, export target and drafts). First consumer: the wiki app (`fs-wiki-app`). Since 0.2.0 (work towards 0.3.0, untagged until the second reviewer has passed it; the fixes of that review are on the branch `fix-0.3`): the workbenches `tasks`, `calendar`, `people` and `file_manager` (with the `FilePicker`), the widgets `list-view`, `calendar-view`, `breadcrumb`, `file-tile`, `file-preview` and `task-card`, the shared `drafts` and `source_error` (moved down from the workbenches), `page_scroll` and `input_slots` (shared by the workbenches with a detail page or a form), the menus and status panel of `fs-components-app`, and the chat components with the hardened answer guard of `tool-call` (`tool_call/guard`, `clock`, `guard/refresh`). Changed by the review: a held key never answers a question and a disarmed question asks for one redraw only (never more, none if time cannot arm it); `ToolCallView::answer` refuses a decision whose `choice` differs from the option it names; `ListView` and `TileGrid` report nothing for a key that leads to the row already chosen (so an arrow at the edge opens no folder); the file manager leaves a name being typed alone (Delete, carry, put down, restore, choose, empty trash and a retry of an upload are not offered or do nothing while one is typed) and asks the source for no change its capabilities do not allow; a save without changes keeps a "gone" message in `calendar`. The pattern lines of the source files name only the patterns of ADR 0043 (coding rules, section 2) or `none` (plain data, constants, pure functions); tests say `Tests:`.
+Version 0.2.0 is tagged (breaking against 0.1.0: `DataSource` is `DocumentSource`, `.reader()` is `.with_reader(..)`, `Options` has fields for labels, export target and drafts). First consumer: the wiki app (`fs-wiki-app`). Since 0.2.0 (the workspace version is 0.3.0, untagged until the second reviewer has passed it; the fixes of that review are on the branch `fix-0.3`): the workbenches `tasks`, `calendar`, `people` and `file_manager` (with the `FilePicker`), the widgets `list-view`, `calendar-view`, `breadcrumb`, `file-tile`, `file-preview` and `task-card`, the shared `drafts` and `source_error` (moved down from the workbenches), `page_scroll` and `input_slots` (shared by the workbenches with a detail page or a form), the menus and status panel of `fs-components-app`, and the chat components with the hardened answer guard of `tool-call` (`tool_call/guard`, `clock`, `guard/refresh`). Changed by the review: a held key never answers a question and a disarmed question asks for one redraw only (never more, none if time cannot arm it); `ToolCallView::answer` refuses a decision whose `choice` differs from the option it names; `ListView` and `TileGrid` report nothing for a key that leads to the row already chosen (so an arrow at the edge opens no folder); the file manager leaves a name being typed alone (Delete, carry, put down, restore, choose, empty trash and a retry of an upload are not offered or do nothing while one is typed) and asks the source for no change its capabilities do not allow; a save without changes keeps a "gone" message in `calendar`. The pattern lines of the source files name only the patterns of ADR 0043 (coding rules, section 2) or `none` (plain data, constants, pure functions); tests say `Tests:`.
 
 | Area | State |
 |---|---|
@@ -43,10 +43,10 @@ Version 0.2.0 is tagged (breaking against 0.1.0: `DataSource` is `DocumentSource
 | Where | Pattern | Why |
 |---|---|---|
 | `widgets/text` | none | the neutral description (blocks hold blocks, marks are stand-off ranges in characters): plain data, `plain.rs` one fold over it |
-| `widgets/text_view/blocks.rs` | Adapter | a `match` on the block kind picks one drawing function; `Plain` is the safe fallback |
+| `widgets/text_view/blocks.rs` | Adapter | our block model in, Blinc elements out; a `match` on the block kind picks one drawing function; `Plain` is the safe fallback |
 | `widgets/text_view/inline.rs` | Adapter | no marks: one Blinc rich text; marks: `flow.rs` |
-| `widgets/text_view/flow.rs` | Adapter (Iterator over runs) | text cut into runs of one style (word plus its spaces), each a small text element in a wrapping flex row; a link run has its own click handler and reports to the `LinkHandler` (Blinc's own link would open a browser) |
-| `widgets/text_view/fallback.rs` | Strategy | which installed font draws a character Blinc's fonts lack, looked up once and kept |
+| `widgets/text_view/flow.rs` | Adapter | text cut into runs of one style (word plus its spaces), each a small text element in a wrapping flex row; a link run has its own click handler and reports to the `LinkHandler` (Blinc's own link would open a browser) |
+| `widgets/text_view/fallback.rs` | Strategy (open: no trait, see the open questions) | which installed font draws a character Blinc's fonts lack, looked up once and kept |
 | `widgets/text_view/look.rs`, `*/styles.rs` | none | every colour and size read from the theme; style sheets are constants with theme variables only |
 | `workbenches/reader/edit.rs` | State | `Editing` (original, draft, error) and its transitions |
 | `widgets/avatar_group` | Adapter | `blinc_cn` avatar group behind `AvatarGroup`/`Person`; the people who do not fit are counted by Blinc's own "+N" circle (empty circles stand in for them) |
@@ -54,22 +54,22 @@ Version 0.2.0 is tagged (breaking against 0.1.0: `DataSource` is `DocumentSource
 | `widgets/sortable_list/{state,moves,steps}` | State + Command | pure, no Blinc; `Command` is the one vocabulary for keys and gestures |
 | `widgets/sortable_list/bindings` | Strategy | key to command; optional and replaceable |
 | `widgets/sortable_list/{handle,view}` | Facade + Observer + Adapter | `SortableList` handle (clonable, no guard returned, copies out), outcome callback, Blinc view |
-| `widgets/keys`, `widgets/live` | Adapter + Guard, Observer | `Key` is ours; `bind_keys` lets a key reach a handler only while that element has the keyboard (a broadcast reaches all handlers; two lists must never both move); `Live` redraws a view after a state change |
+| `widgets/keys`, `widgets/live` | Adapter, Observer | `Key` is ours; `bind_keys` lets a key reach a handler only while that element has the keyboard (a broadcast reaches all handlers; two lists must never both move); `Live` redraws a view after a state change |
 | `widgets/lightbox` | State + Command + Adapter | same shape as `sortable-list`: pure `Viewer`, optional `Bindings`, handle plus view; Blinc's image behind `Media` |
 | `widgets/share_dialog` | State + Command + Adapter | pure `Sharing` state, optional `Bindings`, handle plus view; neutral `Choice`/`Permission`/`Grant`, no dependency on any program |
 | `widgets/tree_view` | Adapter | `TreeNode` to the `blinc_cn` tree |
 | `widgets/list_view` | Strategy (`RowSource`) + Adapter | the caller's rows read a page at a time; only the rows in view exist as elements, on Blinc's scroll container |
 | `widgets/list_view/cache.rs` | Decorator | a few pages of rows kept over the `RowSource` |
 | `widgets/list_view/position.rs`, `widgets/calendar_view/position.rs` | State | a handle the owner keeps, so scroll place and the row under the keyboard survive a rebuild |
-| `widgets/calendar_view` | Adapter | pure layout (`layout.rs`) then plain Blinc elements; `view.rs` is the `CalendarView` builder, `day.rs` the `Day` newtype (days since 1970-01-01), `agenda.rs` a windowed list of lines |
+| `widgets/calendar_view` | Adapter | pure layout (`layout.rs`) then plain Blinc elements; `view.rs` is the `CalendarView` builder, `day.rs` the value types `Day` and `Moment` (no pattern of the table fits), `agenda.rs` a windowed list of lines |
 | `widgets/breadcrumb`, `widgets/task_card`, `widgets/file_tile` | Adapter | neutral data in, plain Blinc elements out; no words, no colours; `Breadcrumb` has a pure `plan`, `TileGrid` the grid on `ListPosition` |
 | `widgets/file_preview` | Facade + Adapter | facts, marks and either text from `safe_text` or a picture that passed `picture_fits` (both pure functions in `safe.rs`, which has no pattern of its own) |
-| `widgets/tool_call/guard.rs`, `guard/refresh.rs` | State (+ Strategy `Clock`) | `Approvals`: an entry per drawn question with a generation, armed after a delay, answered marks, refusals; `refresh.rs` asks for at most one redraw per question and none when time cannot arm it |
+| `widgets/tool_call/guard.rs`, `guard/refresh.rs` | State (+ Strategy `Clock`) | `Approvals`: an entry per drawn question with a generation, armed after a delay, answered marks, refusals; `refresh.rs` asks for at most one redraw per question and none when time cannot arm it; it watches the scroll offset of a command that does not fit and asks once when the window gains or loses its end |
 | `widgets/tool_call/clock.rs` | Strategy | `Clock`, injectable, so tests need no waiting |
-| `widgets/tool_call/{buttons,card}` | Adapter + State | the row of options is the one tab stop; a held key never answers; the answer is reported by `Sinks`, never decided |
+| `widgets/tool_call/{buttons,card}` | Adapter + State | the row of options is the one tab stop; Enter and Space reach it as the click Blinc makes of them (a click whose receiver is the row that has the keyboard); a held key never answers, also across a redraw (`Approvals::key_down`); the answer is reported by `Sinks`, never decided |
 | `widgets/tool_call/store.rs` | Repository (in memory) + State | calls by (message, id); a lower revision is stale, a settled call is final |
 | `widgets/message_list/scroll.rs` | Facade | more of the handle's methods (follow, jump, older messages in front), kept apart for size |
-| `widgets/message_list/heights.rs` | State | a Fenwick tree of heights: an estimate until the message is drawn, then the measured height; `estimate.rs` and `window.rs` are pure functions |
+| `widgets/message_list/heights.rs` | none of the table fits | a Fenwick tree of heights: an estimate until the message is drawn, then the measured height; `estimate.rs` and `window.rs` are pure functions |
 | `widgets/drafts`, `widgets/source_error.rs` | Strategy (`DraftStore`), none | a draft as backed up and where backups go (the host supplies the store); the error of a source is plain data; both shared by the reader and the composer |
 | `widgets/message_composer/drafts.rs` | Observer | the timer thread that writes the backup outside the composer's lock |
 | `primitives/search_field` | Adapter | `blinc_cn` input; clone keeps its text across rebuilds |
@@ -82,14 +82,18 @@ Version 0.2.0 is tagged (breaking against 0.1.0: `DataSource` is `DocumentSource
 | `workbenches/page_scroll.rs`, `workbenches/input_slots.rs` | State | one scroll place per detail page, one input state per field of an edit: a redraw keeps them; a new item or a new edit forgets them |
 | `workbenches/{tasks,calendar,people,file_manager}/{mod,widget}.rs` | Facade (+ Observer) | `TasksWidget`, `CalendarWidget`, `PeopleWidget`, `FileManagerWidget`: shared state, the element, `with_state`, `context()`; a search redraws the list area only |
 | `workbenches/{tasks,calendar,people,file_manager}/state.rs` | State over a Strategy (the `*Source` trait) | one transition per method, the view only reads; `edit.rs`, `delete.rs`, `navigate.rs`, `moving.rs`, `ask.rs`, `input.rs`, `confirm.rs`, `carry.rs`, `tree.rs`, `select.rs`, `filter.rs` are State too: unsaved changes block leaving, Cancel asks once, asking and confirming a deed are two acts in two places |
-| `workbenches/{tasks,calendar,people,file_manager}/widget_actions.rs` | Command | each callback is one action on the shared state under a short lock, then a redraw; `*/view/actions.rs` are the Observer side: the view reports a press and the widget decides |
+| `workbenches/{tasks,calendar,people,file_manager}/widget_actions.rs` | Observer | the callbacks the view calls when the person acts: plain closures (no operation enum, no `apply`), each one action on the shared state under a short lock, then a redraw; `*/view/actions.rs` are the Observer side: the view reports a press and the widget decides |
 | `workbenches/file_manager/command.rs` | Command | a change that a taken name can stop, a value, so it can run again with the keep-both rule |
 | `workbenches/tasks/moving.rs` | State + Command | a move is one transition with one value as its answer, by button, key or gesture |
 | `workbenches/tasks/board.rs` | Adapter | rows and columns in, `sortable-list` lanes out |
 | `workbenches/file_manager/picker.rs` | Facade | the same widget and state with read-only capabilities; gives back a `PickedFile` |
-| `workbenches/*/view/{detail,detail_bar,band,side}.rs` | State | draw by what is shown or asked (an item, the form, a failure, nothing); toolbars, `item_bar.rs`, `frame.rs` and `styles.rs` offer or arrange what the capabilities and the state allow and have no pattern of their own |
+| `workbenches/*/view/{detail,detail_bar,band,side}.rs` | State | draw by what is shown or asked (an item, the form, a failure, nothing); toolbars, `item_bar.rs` and `frame.rs` are Adapters (state to elements: they offer or arrange what the capabilities and the state allow); `styles.rs` is constants and has none |
 | `app/{menu,menu_view,menu_overlay,status_panel,widget_menu}.rs` | Command, Adapter, Facade | an entry is an id that one handler receives; menus as elements; the overlay stack kept in step with the shell; the status panel and the menu calls of `AppWidget` |
 | `app/{shell,surface,new_file}.rs` | State, Strategy, Facade | which screen, status line and open menu; anything the shell can draw; a new file that appears whole or not at all |
+
+### Open pattern questions (for the strategy)
+
+The table of coding rules section 2 has no pattern for these; the lines say so instead of inventing one: pure rule or reader functions (`charts/spec/check.rs`, `spec/channel.rs`), a tagged value and its reader (`data/cell.rs`), categories in an order (`layout/cats.rs`), colour maths (`color/space.rs`), a hand-written parser (`data/time.rs`, `words/template.rs` says Interpreter), axis drawing (`layout/axis_items.rs`), value types with arithmetic (`widgets/calendar_view/day.rs`), a Fenwick tree (`message_list/heights.rs`). Named by the table but used in a looser sense (no trait, no struct): Strategy by `match` over an enum (`charts/color/*`, `data/aggregate.rs`, `data/jsnum.rs`, `layout/{arc,axis,bar,line,point,mod}.rs`, `scale/{format,mod,timeticks}.rs`, `text_view/fallback.rs`); Builder as a function (`layout/build.rs`, `layout/cartesian.rs`, `view/tree_build.rs`); Adapter as free functions (`charts/view/draw.rs`, `text_view/blocks.rs`, the workbenches' `view/frame.rs`, toolbars and `item_bar.rs`); Observer as plain closures (`*/widget_actions.rs`, `reader/glyphs.rs`); State for a draft without states (`calendar/draft.rs`, `tasks/draft.rs`). Whether `none` may name a file of pure functions is open too.
 
 ## Decisions
 
@@ -245,11 +249,11 @@ Source: `docs/en/programs/apps/assistant/index.md` (patterns from the Strata, Co
 | `widgets/tool_call/{card,handle}` | Adapter + Observer + Facade | Blinc elements; `Sinks` are the only way a card reports; outcome callback |
 | `widgets/message_composer/{state,drafts}` | State, Strategy (`DraftStore`, shared with the reader), Observer (timer thread) | pure state; optional store; background writer |
 | `widgets/message_composer/{handle,view}` | Facade + Adapter | handle over state and the `blinc_cn` text area; area outside the redrawn part |
-| `widgets/agent_tree/{model,forest}` | Repository, iterative pure pass | the forest and the attention counts, no Blinc |
+| `widgets/agent_tree/{model,forest}` | Repository, one iterative pure pass | the forest and the attention counts, no Blinc |
 | `widgets/agent_tree/{handle,view}` | Facade + Observer + State + Adapter | handle over forest, closed set and scroll position; fixed-height windowed rows |
 | `workbenches/llm_chat` | Facade + Strategy (`ChatSource`) + Observer | joins the widgets; one outcome type; words from the caller (`Labels` composite); a question dock |
 | `widgets/participant` | Adapter | neutral sender and kind; one function draws the mark |
-| `widgets/message_list/{heights,window,estimate}` | State (`heights`), none (`window`, `estimate`) | Fenwick prefix sums, which messages to build, first guess of a height; tested without Blinc |
+| `widgets/message_list/{heights,window,estimate}` | none of the table fits (`heights`), none (`window`, `estimate`) | Fenwick prefix sums, which messages to build, first guess of a height; tested without Blinc |
 | `widgets/message_list/{handle,measure,view,message}` | Facade + Observer + State + Strategy (`Probe`, `MessageSource`) + Adapter | state and scroll position behind a clonable handle; learning heights; Blinc elements per message |
 
 ## Charts (`crates/fs-components-charts`) - provisional
@@ -262,8 +266,8 @@ Source of the requirements: `docs/en/components/charts.md` (Vega-Lite subset, ow
 
 | Layer | Pattern | What |
 |---|---|---|
-| `spec` | Facade over small readers; Strategy (the combination rules, one function each, in `check.rs`) | JSON to a typed `Spec`. Every property that is not read is a named refusal (`Obj::finish`); nothing is ignored |
-| `data` | Facade (read, aggregate, prepare); Strategy per field type | rows to `Datum`s; reads numbers, categories, ISO 8601 times; aggregates; drops or breaks and *counts* what cannot be drawn (`Report`) |
+| `spec` | Facade over small readers; `check.rs` (pure rule functions) and `channel.rs` (reader functions) fit no pattern of the table | JSON to a typed `Spec`. Every property that is not read is a named refusal (`Obj::finish`); nothing is ignored |
+| `data` | Facade (read, aggregate, prepare); `cell.rs` and `time.rs` fit no pattern of the table | rows to `Datum`s; reads numbers, categories, ISO 8601 times; aggregates; drops or breaks and *counts* what cannot be drawn (`Report`) |
 | `scale` | Strategy per field type | linear (halved terms: no overflow), band/point, calendar ticks on the wall clock of the data, number and time formats with the caller's marks |
 | `layout` | Strategy per mark behind one Builder | `Spec` + data + `Labels` + `Measure` to a `Scene` (plain shapes with colour *roles*); a fixed-point loop settles the margins |
 | `color` | Strategy (greedy farthest point) | series colours from the theme accents, judged by simulated colour vision |

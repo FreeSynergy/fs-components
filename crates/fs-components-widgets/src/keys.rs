@@ -1,6 +1,6 @@
 //! Keys, as the widgets understand them.
 //!
-//! Pattern: Adapter + Guard — [`Key`] is our neutral name for a key (the platform's key codes
+//! Pattern: Adapter — [`Key`] is our neutral name for a key (the platform's key codes
 //! stay inside this file). A widget that wants keys binds them to its own element with
 //! [`bind_keys`], which lets an event through only when this element is the one that has the
 //! keyboard: Blinc may hand a key press to every handler in the window (broadcast), and two

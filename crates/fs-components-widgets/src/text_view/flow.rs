@@ -1,6 +1,6 @@
 //! Text with marks as a flow of words.
 //!
-//! Pattern: Adapter (Iterator over runs) — the text is cut into runs of one style, each run is a
+//! Pattern: Adapter — the text is cut into runs of one style, each run is a
 //! small text element, and the runs flow and wrap like words in a flex row. Every run is measured
 //! in the face it is drawn in, and a link is a run with its own click handler.
 

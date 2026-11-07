@@ -1,6 +1,6 @@
 //! Which row a key leads to.
 //!
-//! Pattern: Adapter — the list's answer to a [`Key`]; `view.rs` connects it through
+//! Pattern: none — a pure function, the list's answer to a [`Key`]; `view.rs` connects it through
 //! `bind_keys`, which already keeps a press from reaching two widgets.
 
 use crate::keys::Key;

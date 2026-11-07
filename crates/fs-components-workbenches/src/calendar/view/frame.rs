@@ -1,6 +1,6 @@
 //! The outer layout: the bar on top, the calendar, and the item beside it or in its place.
 //!
-//! Pattern: none — fixed skeleton. Sizes are worked out here because the calendar view must be told
+//! Pattern: Adapter (state to elements) — fixed skeleton. Sizes are worked out here because the calendar view must be told
 //! them in pixels. Where there is no room for both, an open item takes the calendar's place and has a
 //! way back; the calendar view itself draws no menu, no form and no export (ADR 0005).
 

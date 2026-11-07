@@ -1,6 +1,6 @@
 //! The buttons of the thing selected.
 //!
-//! Pattern: none — what the source or the state does not allow is not offered. The first
+//! Pattern: Adapter (state to elements) — what the source or the state does not allow is not offered. The first
 //! press of Delete is here, its answer in the band; once asked, Keep stands where Delete stood.
 
 use blinc_cn::components::button::ButtonVariant;

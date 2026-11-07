@@ -1,6 +1,6 @@
 //! An item as a form.
 //!
-//! Pattern: none — labelled fields with what they held at the start, so a source can write
+//! Pattern: State (a draft) — labelled fields with what they held at the start, so a source can write
 //! only what differs and keep everything a form does not show.
 
 /// How a field of a draft is asked for.

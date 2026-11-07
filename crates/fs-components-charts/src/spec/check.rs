@@ -1,6 +1,6 @@
 //! Which marks accept which channels: the combination rules of the subset.
 //!
-//! Pattern: Strategy (a list of rules, each a small function) — a spec that passes each
+//! Pattern: none of the table fits (pure rule functions over the finished `Spec`, no trait) — a spec that passes each
 //! rule means what Vega-Lite says it means; one that does not is refused with the rule's name.
 
 use super::error::{Result, SpecError};

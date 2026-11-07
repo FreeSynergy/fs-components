@@ -1,6 +1,6 @@
 //! Reading one channel definition (`encoding/x`, `encoding/color`, ...).
 //!
-//! Pattern: Builder by steps — each property has its own small reader; the combination rules live
+//! Pattern: none of the table fits (small reader functions, no builder type) — each property has its own small reader; the combination rules live
 //! in `check.rs`, so a property is understood in one place and judged in another.
 
 use serde_json::Value;

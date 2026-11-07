@@ -1,6 +1,6 @@
 //! Search, the two views, and New.
 //!
-//! Pattern: none — the view pressed is the primary button; what the source or the
+//! Pattern: Adapter (state to elements) — the view pressed is the primary button; what the source or the
 //! variant cannot do is not offered. The compact variant has only the search.
 
 use blinc_cn::components::button::ButtonVariant;
