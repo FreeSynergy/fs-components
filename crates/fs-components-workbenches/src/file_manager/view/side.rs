@@ -1,6 +1,6 @@
 //! The area beside the list: the thing selected, or what else was asked for.
 //!
-//! Pattern: State. Marks and buttons stand outside the scroller, and the preview's scroller
+//! Pattern: none (pure functions of what is shown). Marks and buttons stand outside the scroller, and the preview's scroller
 //! starts at the top for each build. The first press of something destructive is here; its answer is
 //! in the band.
 

@@ -6,6 +6,7 @@ use blinc_layout::selector::ScrollRef;
 use blinc_layout::widgets::scroll::SharedScrollPhysics;
 
 use super::model::ToolCall;
+use blinc_core::reactive::{EffectId, SignalId, dispose_host_effect, dispose_signal};
 
 pub(super) type Call = (String, String);
 pub(super) type EntryKey = (String, String, String);
@@ -27,6 +28,23 @@ pub(super) struct Entry {
     pub(super) needs_read: bool,
     pub(super) body: Body,
     pub(super) cursor: usize,
+    /// The watch on the end of its text window, made for a text that does not fit.
+    pub(super) watch: Option<Watch>,
+}
+
+/// The effect and the signal that tell the guard a text window gained or lost its end. They belong
+/// to the entry, not to the build that made them: a window gives its builds back on a resize.
+pub(super) struct Watch {
+    pub(super) effect: EffectId,
+    pub(super) offset: SignalId,
+}
+
+impl Watch {
+    /// Give it back. Never under the guard's lock: the effect locks the guard when it runs.
+    pub(super) fn dispose(self) {
+        dispose_host_effect(self.effect);
+        dispose_signal(self.offset);
+    }
 }
 
 pub(super) struct Press {

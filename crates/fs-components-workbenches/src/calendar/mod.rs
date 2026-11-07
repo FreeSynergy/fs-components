@@ -1,6 +1,6 @@
 //! The calendar workbench: a month, week, day or agenda, one item read, edited, created or deleted.
 //!
-//! Pattern: Facade — [`CalendarWidget`] is what a program places. It embeds the `calendar-view` widget
+//! Pattern: none (declares modules and re-exports only) — [`CalendarWidget`] is what a program places. It embeds the `calendar-view` widget
 //! and draws no calendar of its own (ADR 0005). Like the people workbench it is open (ADR 0037): it
 //! knows no store and no program core, only [`CalendarSource`], and every word comes from
 //! [`CalendarLabels`]. The state machine [`CalendarState`] works without a window.

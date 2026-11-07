@@ -1,6 +1,6 @@
 //! The sidebar: a search box above either the tree of documents or the search results.
 //!
-//! Pattern: State — the body shows results while there is a search text, the tree
+//! Pattern: none (pure functions of the search text) — the body shows results while there is a search text, the tree
 //! otherwise.
 
 use blinc_layout::div::{Div, div};

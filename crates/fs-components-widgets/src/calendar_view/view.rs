@@ -1,6 +1,6 @@
 //! The widget: what it is given and how it picks the drawing.
 //!
-//! Pattern: Builder — no lock and no `stateful`: it draws what it was given, and
+//! Pattern: Adapter, part of `CalendarView` (the others are `layout.rs`, `agenda.rs`, `day.rs`): the widget turns what it was given into Blinc elements; no lock and no `stateful`: it draws what it was given, and
 //! whoever holds it builds it again after a change. The one reactive part is the agenda's window of lines
 //! in view, a `Computed` over the scroll offset kept in the position: it says which lines exist, while
 //! what a line shows comes from the items of this build. Below [`NARROW_WIDTH`] a month or a week

@@ -1,6 +1,6 @@
 //! The content area: the bar (back, path, actions), a notice, and the document or its editor.
 //!
-//! Pattern: State ([`Shown`], editing or not) — document, editor, failure or nothing.
+//! Pattern: none (pure functions of [`Shown`]) — document, editor, failure or nothing.
 //! Every column on the way down has `min_h(0)`, so the document gets a bounded height and the
 //! scroll area can scroll and clip (without it a long document grows the layout without limit).
 

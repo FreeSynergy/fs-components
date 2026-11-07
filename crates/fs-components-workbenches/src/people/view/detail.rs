@@ -1,6 +1,6 @@
 //! The person: read, or the form while editing.
 //!
-//! Pattern: State — a person, the form, a failure or nothing. Actions the source cannot
+//! Pattern: none (pure functions of what is shown) — a person, the form, a failure or nothing. Actions the source cannot
 //! do are not offered.
 
 use blinc_cn::cn;

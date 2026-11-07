@@ -17,7 +17,7 @@ use blinc_layout::widgets::scroll::ScrollPhysics;
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex, PoisonError};
 
-use super::entry::{Body, Call, Entry, EntryKey, Press, call_key, entry_key, text_of};
+use super::entry::{Body, Call, Entry, EntryKey, Press, Watch, call_key, entry_key, text_of};
 use super::model::ToolCall;
 
 mod press;
@@ -25,6 +25,13 @@ mod refresh;
 pub(crate) use refresh::{Rearm, refresh_later};
 
 use super::clock::{ARM_DELAY_MS, Clock, MIN_DELAY_MS, SystemClock};
+
+/// Give back the watches of entries that went. Outside the lock of the guard.
+fn give_back(watches: Vec<Watch>) {
+    for w in watches {
+        w.dispose();
+    }
+}
 
 struct Inner {
     clock: Arc<dyn Clock>,
@@ -38,6 +45,18 @@ struct Inner {
     pending: HashMap<EntryKey, u64>,
     held: HashSet<EntryKey>,
     asked: u64,
+}
+
+impl Inner {
+    /// Remove the entries whose key matches; their watches are returned, to be given back once the
+    /// lock is released.
+    fn drop_entries(&mut self, gone: impl Fn(&EntryKey) -> bool) -> Vec<Watch> {
+        let keys: Vec<EntryKey> = self.entries.keys().filter(|k| gone(k)).cloned().collect();
+        keys.iter()
+            .filter_map(|k| self.entries.remove(k))
+            .filter_map(|e| e.watch)
+            .collect()
+    }
 }
 
 /// The state shared by every place that can answer the same questions (a message card, the dock).
@@ -99,7 +118,7 @@ impl Approvals {
     pub fn end_place(&self, place: &str) {
         let mut g = self.lock();
         let seen = std::mem::take(&mut g.seen);
-        g.entries.retain(|k, _| k.0 != place || seen.contains(k));
+        let gone = g.drop_entries(|k| k.0 == place && !seen.contains(k));
         let Inner {
             entries,
             pending,
@@ -109,6 +128,8 @@ impl Approvals {
         pending.retain(|k, _| entries.contains_key(k));
         held.retain(|k| entries.contains_key(k));
         g.seen = seen;
+        drop(g);
+        give_back(gone);
     }
 
     /// A card for `call` is drawn in `place` at position `slot`. `needs_read`: its command does not
@@ -133,6 +154,7 @@ impl Approvals {
                 && e.slot == slot
                 && e.needs_read == needs_read
         });
+        let mut gone = Vec::new();
         if !same {
             let (generation, at) = (g.next, g.clock.now_ms());
             g.next += 1;
@@ -140,7 +162,7 @@ impl Approvals {
                 scroll: ScrollRef::new(),
                 physics: Arc::new(Mutex::new(ScrollPhysics::default())),
             };
-            g.entries.insert(
+            let old = g.entries.insert(
                 k.clone(),
                 Entry {
                     generation,
@@ -152,14 +174,27 @@ impl Approvals {
                     needs_read,
                     body,
                     cursor: 0,
+                    watch: None,
                 },
             );
+            gone.extend(old.and_then(|e| e.watch));
         }
-        let body = g.entries[&k].body.clone();
+        let entry = &g.entries[&k];
+        let body = entry.body.clone();
+        let watch = needs_read && entry.watch.is_none();
         drop(g);
         // outside the lock: the watch runs in the reactive graph, which locks this guard in turn
-        if needs_read && !same {
-            self.watch_end(&body.scroll, rearm);
+        give_back(gone);
+        if watch {
+            let made = self.watch_end(&body.scroll, rearm);
+            let mut g = self.lock();
+            match g.entries.get_mut(&k) {
+                Some(e) if e.watch.is_none() => e.watch = Some(made),
+                _ => {
+                    drop(g);
+                    made.dispose();
+                }
+            }
         }
         body
     }
@@ -188,10 +223,12 @@ impl Approvals {
     /// The call is settled or gone: forget it everywhere.
     pub fn forget(&self, message: &str, call: &str) {
         let mut g = self.lock();
-        g.entries.retain(|k, _| !(k.1 == message && k.2 == call));
+        let gone = g.drop_entries(|k| k.1 == message && k.2 == call);
         g.held.retain(|k| !(k.1 == message && k.2 == call));
         g.answered.remove(&call_key(message, call));
         g.refusals.remove(&call_key(message, call));
+        drop(g);
+        give_back(gone);
     }
 
     /// May a press on this call's button begin an answer now? `refuse` buttons are never delayed.

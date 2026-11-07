@@ -6,7 +6,7 @@
 //! appears in a public signature except where a function must return an element to be placed in
 //! a Blinc layout ([`Element`]).
 //!
-//! Pattern: Facade — this file only declares modules and re-exports the public API.
+//! Pattern: none — this file only declares modules and re-exports the public API.
 
 #![deny(missing_docs)]
 #![warn(clippy::pedantic)]

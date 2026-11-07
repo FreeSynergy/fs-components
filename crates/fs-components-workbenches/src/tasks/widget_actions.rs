@@ -1,6 +1,6 @@
 //! The callbacks of the widget.
 //!
-//! Pattern: Observer — the callbacks the view calls when the person acts (plain closures, no operation enum); each changes the shared state under a short lock, then
+//! Pattern: none of the table fits (plain closures, no listener trait) — the callbacks the view calls when the person acts (plain closures, no operation enum); each changes the shared state under a short lock, then
 //! brings the status view up to date and asks for a redraw. No lock is held for either. What the
 //! status view's list reports comes back here as a value: a move is decided by the source, and a move
 //! that did not happen puts the card back where the source has it.

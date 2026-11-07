@@ -1,6 +1,6 @@
 //! A datum as words: the same text for a tooltip and for the data table of the text alternative.
 //!
-//! Pattern: Adapter from `Datum` to `(title, value)` pairs. Times are written as ISO 8601 in the
+//! Pattern: none (pure functions from `Datum` to `(title, value)` pairs). Times are written as ISO 8601 in the
 //! zone of the data, so nothing in the text depends on the machine.
 
 use crate::data::{Cell, Datum, time::Zone};

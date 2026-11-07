@@ -2,8 +2,8 @@
 //!
 //! Pattern: Adapter + State (the guard, `Approvals`). An answer button answers on a release inside
 //! it that follows a press that began on it while armed (Blinc routes a release to the pressed
-//! element wherever the pointer is, so the position is checked here). The keyboard works on the row
-//! of options, the one tab stop: Left and Right move a cursor, Enter or Space answers the option
+//! element wherever the pointer is, so the position is checked here). A button is no tab stop and
+//! takes no key. The keyboard works on the row of options, the one tab stop: Left and Right move a cursor, Enter or Space answers the option
 //! under it on the key's release, only while the row has the keyboard focus; a held key (which
 //! repeats the press) never answers.
 
@@ -179,8 +179,7 @@ fn inside(ctx: &blinc_layout::event_handler::EventContext) -> bool {
 
 /// An answer button. It answers on a release **inside it** that follows a press that began on it
 /// while armed (Blinc routes a release to the pressed element wherever the pointer is, so the
-/// position is checked here). The keyboard answers only while this very button has the keyboard
-/// focus, on the key's release; a held key (which repeats the press) never answers.
+/// position is checked here). It is no tab stop and answers to no key: the row of options does.
 fn answer_button(call: &ToolCall, o: &ToolOption, prefix: &str, sinks: &Sinks, ctx: &Ctx) -> Div {
     let refuse = o.choice == ToolChoice::Refuse;
     let armed = ctx
@@ -192,11 +191,7 @@ fn answer_button(call: &ToolCall, o: &ToolOption, prefix: &str, sinks: &Sinks, c
     } else {
         "fs-tc-btn-yes"
     };
-    let mut b = div()
-        .class("fs-tc-btn")
-        .class(class)
-        .id(&id)
-        .attr("tabindex", "0");
+    let mut b = div().class("fs-tc-btn").class(class).id(&id);
     if !armed {
         b = b.class("fs-tc-btn-off");
     }
@@ -220,7 +215,9 @@ fn answer_button(call: &ToolCall, o: &ToolOption, prefix: &str, sinks: &Sinks, c
     let (rearm, dec) = (Arc::clone(&sinks.rearm), decision);
     b.child(text(soft_wrap(&o.label)).class("fs-tc-btn-text"))
         .on_mouse_down(move |c| {
-            if !(inside(c) && w1.0.press(&w1.1, &w1.2, &w1.3, &w1.4, refuse)) {
+            // A repeat of the key that is held on the row is no press of a button.
+            let key = w1.0.is_held(&w1.1, &w1.2, &w1.3);
+            if key || !(inside(c) && w1.0.press(&w1.1, &w1.2, &w1.3, &w1.4, refuse)) {
                 w1.0.cancel_press();
                 rearm(0); // a disarmed button does nothing, visibly: draw it as it is now
             }

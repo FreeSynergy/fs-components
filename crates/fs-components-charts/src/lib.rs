@@ -3,7 +3,7 @@
 //! Layers, each testable alone: [`spec`] reads and validates, data and scales and layout are
 //! pure and give exact numbers, the view draws on a Blinc canvas.
 //!
-//! Pattern: Facade — this file only declares modules and re-exports the public API.
+//! Pattern: none — this file only declares modules and re-exports the public API.
 
 #![deny(missing_docs)]
 #![warn(clippy::pedantic)]

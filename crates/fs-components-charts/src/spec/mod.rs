@@ -4,7 +4,7 @@
 //! `point`, `arc`; channels `x`, `y`, `color` (nominal), `theta`; inline data; no transforms.
 //! Everything else is a [`SpecError`] that names the feature. Nothing is ignored.
 //!
-//! Pattern: Facade — [`parse`] is the entry point; `channel`, `mark`, `check` do the parts.
+//! Pattern: none (declares modules and re-exports only) — [`parse`] is the entry point; `channel`, `mark`, `check` do the parts.
 
 mod channel;
 mod check;

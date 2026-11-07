@@ -1,6 +1,6 @@
 //! Keys to commands (optional).
 //!
-//! Pattern: Command + Strategy, as in `sortable-list`.
+//! Pattern: Value object, as `sortable-list/bindings`: plain data, the keys and the step each one names.
 
 use crate::keys::{Key, KeyEvent};
 

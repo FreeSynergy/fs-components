@@ -3,7 +3,7 @@
 //! A primitive cannot be broken down further: one value, one gesture, one state. Here:
 //! [`SearchField`]. Blinc stays behind this API.
 //!
-//! Pattern: Facade — this file only declares modules and re-exports the public API.
+//! Pattern: none — this file only declares modules and re-exports the public API.
 
 #![deny(missing_docs)]
 #![warn(clippy::pedantic)]

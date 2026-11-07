@@ -1,7 +1,8 @@
 //! Keys to commands.
 //!
-//! Pattern: Command + Strategy — [`Command`] is one step of the move logic; [`Bindings`] is the
-//! default mapping, optional and replaceable: a frontend may build its own or none at all.
+//! Pattern: Value object — [`Command`] names one step of the move logic; [`Bindings`] is the
+//! default mapping of keys to it, plain data, optional and replaceable: a frontend may build its
+//! own or none at all. (What a command does is in `steps.rs`.)
 
 use crate::keys::{Key, KeyEvent};
 

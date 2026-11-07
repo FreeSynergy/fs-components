@@ -1,6 +1,6 @@
 //! What the chat gets from outside.
 //!
-//! Pattern: Strategy / Repository — the workbench is open (ADR 0037): it knows no messenger, no
+//! Pattern: Strategy (`ChatSource`) — the workbench is open (ADR 0037): it knows no messenger, no
 //! model and no store, only this trait. The host feeds it at run time; the workbench has no
 //! network code and no streaming transport. Provisional: synchronous, called on the interface
 //! thread (like `DocumentSource`).

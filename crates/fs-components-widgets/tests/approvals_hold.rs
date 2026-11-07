@@ -2,64 +2,14 @@
 //!
 //! Tests: the real element in a tree driven like a window drives it, a clock by hand.
 
+mod approvals_rig;
 mod chat_support;
 mod common;
 
-use std::sync::Arc;
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::atomic::Ordering;
 
-use chat_support::Manual;
-use common::{Input, layout, serial};
-use fs_components_widgets::ToolCallView;
-use fs_components_widgets::tool_call::{
-    Approvals, ToolCall, ToolChoice, ToolKind, ToolOption, ToolRisk,
-};
-
-fn q(id: &str, command: &str, digest: &[u8]) -> ToolCall {
-    ToolCall::new(id, "shell")
-        .kind(ToolKind::RunsCommand)
-        .risk(ToolRisk::Destroys)
-        .summary("Clean up")
-        .detail(command)
-        .asking(vec![
-            ToolOption::new("no", "Refuse", ToolChoice::Refuse),
-            ToolOption::new("once", "Allow once", ToolChoice::AllowOnce),
-        ])
-        .revision(1)
-        .digest(digest.to_vec())
-}
-
-struct Rig {
-    clock: Arc<Manual>,
-    approvals: Approvals,
-    view: ToolCallView,
-    count: Arc<AtomicUsize>,
-}
-
-fn rig(id: &str) -> Rig {
-    let clock = Arc::new(Manual::default());
-    let approvals = Approvals::with_clock(clock.clone());
-    let count = Arc::new(AtomicUsize::new(0));
-    let c = Arc::clone(&count);
-    let view = ToolCallView::new()
-        .id(id)
-        .approvals(approvals.clone())
-        .on_outcome(Arc::new(move |_| {
-            c.fetch_add(1, Ordering::Relaxed);
-        }));
-    Rig {
-        clock,
-        approvals,
-        view,
-        count,
-    }
-}
-
-impl Rig {
-    fn draw(&self) -> blinc_layout::prelude::RenderTree {
-        layout(self.view.build(), 520.0, 900.0)
-    }
-}
+use approvals_rig::{q, rig};
+use common::{Input, serial};
 
 #[test]
 fn a_key_held_while_the_question_becomes_armed_does_not_answer_on_release() {
@@ -193,4 +143,9 @@ fn scrolling_a_long_command_to_its_end_asks_for_exactly_one_redraw() {
         1,
         "at the end nothing more to draw"
     );
+    // the redraw it asked for finds Allow armed
+    r.clock.advance(741);
+    let mut tree = r.draw();
+    input.click(&mut tree, "h6-opt-q1-once");
+    assert_eq!(r.count.load(Ordering::Relaxed), 1, "Allow stayed disarmed");
 }

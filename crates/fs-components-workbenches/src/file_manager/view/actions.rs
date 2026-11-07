@@ -1,6 +1,6 @@
 //! What the person can do, as callbacks.
 //!
-//! Pattern: Observer — the widget decides what each does: change the state and
+//! Pattern: none of the table fits (plain closures, no listener trait) — the widget decides what each does: change the state and
 //! draw again. A view asks for the callback of a transition by naming it.
 
 use std::sync::Arc;

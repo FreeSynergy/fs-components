@@ -1,6 +1,6 @@
 //! The text alternative of a chart: a summary and the data as a table.
 //!
-//! Pattern: Adapter from the drawn data to words. Charts must never be the only way to read
+//! Pattern: none (pure functions from the drawn data to words; `Table` and `TextAlternative` are plain data). Charts must never be the only way to read
 //! numbers (accessibility): the summary is the spec's own `description` when it has one, else
 //! one made from the data; the table lists exactly what is drawn, then the notes list what is not.
 

@@ -1,6 +1,6 @@
 //! The item: read, or the form while editing.
 //!
-//! Pattern: State — an item, the form, a failure or nothing. Actions the source cannot do
+//! Pattern: none (pure functions of what is shown) — an item, the form, a failure or nothing. Actions the source cannot do
 //! are not offered. Asking and confirming a delete are two actions in different places: what lies
 //! where Delete was keeps the item, and the deed is across the bar.
 

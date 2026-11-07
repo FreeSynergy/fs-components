@@ -1,6 +1,6 @@
 //! Putting the reader on screen.
 //!
-//! Pattern: Facade — [`ReaderWidget`] is the reader to place in a program's own window,
+//! Pattern: none (declares modules and re-exports only) — [`ReaderWidget`] is the reader to place in a program's own window,
 //! [`launch`] opens a bare app (the reader over the whole screen, ADR 0056), [`snapshot`] draws a picture without one.
 
 mod error;

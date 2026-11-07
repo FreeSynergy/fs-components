@@ -1,7 +1,7 @@
 //! Which characters of a folder of Markdown files need a fallback font, and which no installed
 //! font can draw.
 //!
-//! Pattern: Facade consumer of `fs_components_widgets::fallback_family`.
+//! Pattern: none (a thin binary over `fs_components_widgets::fallback_family`).
 //!
 //! `cargo run -p fs-components-workbenches --example glyph_coverage [folder]`
 fn main() {

@@ -1,6 +1,6 @@
 //! The task: read, or the form while editing.
 //!
-//! Pattern: State — a task, the form, a failure or nothing. Actions the source cannot do
+//! Pattern: none (pure functions of what is shown) — a task, the form, a failure or nothing. Actions the source cannot do
 //! are not offered. Delete and discarding ask in one place and are done in another.
 
 use std::sync::Arc;

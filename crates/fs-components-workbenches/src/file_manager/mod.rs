@@ -1,7 +1,7 @@
 //! The file manager: folders, a list or a grid of what is in them, one thing selected and shown, the
 //! trash and transfers; and a compact picker that gives back a value.
 //!
-//! Pattern: Facade — [`FileManagerWidget`] and [`FilePicker`] are what a host places. The workbench
+//! Pattern: none (declares modules and re-exports only) — [`FileManagerWidget`] and [`FilePicker`] are what a host places. The workbench
 //! knows no store and no program core, only [`FileSource`], and every word comes from [`FileLabels`].
 //! The state machine [`FilesState`] works without a window. A workbench does not run alone (ADR 0056):
 //! it has no window function, and gives its host what is current as a plain [`FilesContext`].

@@ -1,6 +1,6 @@
 //! What the person can do, as callbacks.
 //!
-//! Pattern: Observer — the widget decides what each one does: change the state
+//! Pattern: none of the table fits (plain closures, no listener trait) — the widget decides what each one does: change the state
 //! and draw again.
 
 use std::sync::Arc;

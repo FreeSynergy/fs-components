@@ -1,6 +1,6 @@
 //! Reading a whole spec.
 //!
-//! Pattern: Facade over the small readers — `parse` is the one entry point; everything it does
+//! Pattern: none (pure functions; `parse` is the one entry point over the small readers) — everything it does
 //! not understand becomes a named refusal, never an ignored property.
 
 use serde_json::Value;

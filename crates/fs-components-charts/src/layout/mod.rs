@@ -1,6 +1,6 @@
 //! Layout: validated spec and clean data to a [`Scene`](crate::scene::Scene), without a GUI.
 //!
-//! Pattern: Facade — this file only declares modules and re-exports; `build` lays out a mark with the module of its kind (`bar`, `line`, `point`, `arc`, by `match`); the
+//! Pattern: none — this file only declares modules and re-exports; `build` lays out a mark with the module of its kind (`bar`, `line`, `point`, `arc`, by `match`); the
 //! axes, legend and notes are shared. Every number in the scene can be tested exactly.
 
 mod arc;

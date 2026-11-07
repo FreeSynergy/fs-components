@@ -1,7 +1,7 @@
 //! `file-preview`: what can safely be shown of a file, and the facts about it.
 //!
-//! Pattern: Facade + Adapter over plain Blinc
-//! elements. The widget has no words and no colours of its own and reads nothing: the caller hands over
+//! Pattern: none — this file only declares modules and re-exports; the widget in `view.rs` is an
+//! Adapter over plain Blinc elements. The widget has no words and no colours of its own and reads nothing: the caller hands over
 //! bytes it read, and what cannot be shown safely is not handed to Blinc. Marks and the note stand
 //! outside the scroller, so they are seen wherever it was left.
 

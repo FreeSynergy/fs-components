@@ -1,6 +1,6 @@
 //! The file manager as elements.
 //!
-//! Pattern: Facade — the view functions read a snapshot of the state and report through callbacks.
+//! Pattern: none (declares modules and re-exports only) — the view functions read a snapshot of the state and report through callbacks.
 
 mod actions;
 mod band;

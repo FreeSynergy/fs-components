@@ -6,7 +6,7 @@
 //! 0005, 0037); [`launch`] makes a bare app (ADR 0056: an app is a workbench over the whole screen; this one has no menu and no other parts, so it is for trying and for the simplest program; a real app uses `fs-components-app`), [`snapshot`] a picture drawn without a
 //! window. Every text it shows comes from the caller ([`Labels`]).
 //!
-//! Pattern: Facade — this file only declares modules and re-exports the public API.
+//! Pattern: none — this file only declares modules and re-exports the public API.
 
 #![deny(missing_docs)]
 #![warn(clippy::pedantic)]

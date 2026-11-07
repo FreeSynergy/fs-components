@@ -1,5 +1,5 @@
 //! A change reaches the screen through the same path a window uses (a frame), not by building the
-//! element again. Pattern: model change, one frame, look at the tree.
+//! element again. Tests: model change, one frame, look at the tree.
 
 mod chat_support;
 mod common;

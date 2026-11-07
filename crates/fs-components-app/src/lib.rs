@@ -5,7 +5,7 @@
 //! difference between widget and app is the shell). It brings no words and no colours of its own: labels come from the
 //! program, colours from the theme. Programs see no Blinc type except [`Element`] (ADR 0009).
 //!
-//! Pattern: Facade — this file only declares modules and re-exports the public API.
+//! Pattern: none — this file only declares modules and re-exports the public API.
 
 #![deny(missing_docs)]
 #![warn(clippy::pedantic)]

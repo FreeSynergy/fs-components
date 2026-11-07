@@ -1,6 +1,6 @@
 //! Keys to commands (optional).
 //!
-//! Pattern: Command + Strategy, as in `sortable-list`. A key typed into the filter field never
+//! Pattern: Value object, as `sortable-list/bindings`: plain data, the keys and the step each one names. A key typed into the filter field never
 //! reaches these (the key guard ignores keys while a text input has the keyboard).
 
 use crate::keys::{Key, KeyEvent};

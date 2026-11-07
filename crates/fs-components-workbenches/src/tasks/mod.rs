@@ -1,7 +1,7 @@
 //! The tasks workbench: one set of tasks as a list or by status, one task read, edited, created or
 //! deleted, and moved from one status to another.
 //!
-//! Pattern: Facade — [`TasksWidget`] is what a host places. The workbench knows no store and no
+//! Pattern: none (declares modules and re-exports only) — [`TasksWidget`] is what a host places. The workbench knows no store and no
 //! program core, only [`TaskSource`], and every word comes from [`TaskLabels`]. The state machine
 //! [`TasksState`] works without a window. A workbench does not run alone (ADR 0056): it has no
 //! window function, and gives its host what is current as a plain [`TasksContext`].

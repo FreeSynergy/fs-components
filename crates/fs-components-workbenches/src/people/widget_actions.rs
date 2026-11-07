@@ -1,6 +1,6 @@
 //! The callbacks of the widget.
 //!
-//! Pattern: Observer — the callbacks the view calls when the person acts (plain closures, no operation enum); each changes the shared state under a short lock,
+//! Pattern: none of the table fits (plain closures, no listener trait) — the callbacks the view calls when the person acts (plain closures, no operation enum); each changes the shared state under a short lock,
 //! then asks for a redraw. No lock is held when the redraw is asked for.
 
 use std::sync::Arc;

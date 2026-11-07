@@ -18,6 +18,12 @@ impl Approvals {
         self.lock().held.remove(&entry_key(place, message, call))
     }
 
+    /// Is Enter or Space held on the answer row of this question? A click that arrives meanwhile
+    /// is a repeat of that key.
+    pub fn is_held(&self, place: &str, message: &str, call: &str) -> bool {
+        self.lock().held.contains(&entry_key(place, message, call))
+    }
+
     /// Is a press under way?
     pub fn has_press(&self) -> bool {
         self.lock().press.is_some()

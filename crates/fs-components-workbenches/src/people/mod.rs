@@ -1,6 +1,6 @@
 //! The people workbench: a list of people, one person read, edited, created or deleted.
 //!
-//! Pattern: Facade — [`PeopleWidget`] is what a program places. Like the reader the workbench is
+//! Pattern: none (declares modules and re-exports only) — [`PeopleWidget`] is what a program places. Like the reader the workbench is
 //! open (ADR 0037): it knows no store and no program core, only [`PeopleSource`], and every word
 //! comes from [`PeopleLabels`]. The state machine [`PeopleState`] works without a window.
 

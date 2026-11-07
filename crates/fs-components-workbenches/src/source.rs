@@ -1,6 +1,6 @@
 //! Where the reader gets its documents.
 //!
-//! Pattern: Strategy (and Repository-like interface) — the workbench depends on this trait only.
+//! Pattern: Strategy — the workbench depends on this trait only.
 //! It does not know a store, a wiki or a file system; whoever uses the workbench implements it
 //! (an Adapter over their data). Paths are opaque names with `/` between the parts.
 

@@ -1,6 +1,6 @@
 //! The style sheet of all widgets of this crate.
 //!
-//! Pattern: Facade — joins the sheets of the single widgets.
+//! Pattern: none — one pure function that joins the sheets of the single widgets.
 
 use crate::{
     agent_tree, avatar_group, breadcrumb, calendar_view, file_preview, file_tile, lightbox,
