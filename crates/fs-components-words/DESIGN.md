@@ -43,7 +43,7 @@ Order of work: pattern, then signatures (`TextId`, `Args`, `Value`, `Said`, `Wor
 
 ## State
 
-Version 0.2.0 workspace. Done: `TextId`, `Args`/`Value`, `Said`, `Words` (also for `Box` and `&`), `PluralRules` with `EnglishPlural` and `PolishPlural`, template language, `Catalog` (from a static table or text lines, checked per line), `English`, `Fallback`, example `examples/say.rs`, tests in `tests/` (placeholders, plural, fallback_catalog, robust: depth, extreme values, foreign `Words`).
+Version 0.3.0 workspace (untagged). Done: `TextId`, `Args`/`Value`, `Said`, `Words` (also for `Box` and `&`), `PluralRules` with `EnglishPlural` and `PolishPlural`, template language, `Catalog` (from a static table or text lines, checked per line), `English`, `Fallback`, example `examples/say.rs`, tests in `tests/` (placeholders, plural, fallback_catalog, robust: depth, extreme values, foreign `Words`).
 
 **Unsupported (not built):**
 - Number, date and time formatting per language: `{name}` shows a number plainly, a date as `YYYY-MM-DD`, a time as `HH:MM` (UTC). The kinds are there for a language to take over later.
