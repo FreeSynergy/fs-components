@@ -136,6 +136,9 @@ impl FilesState {
         let Some(entry) = self.selected_entry().cloned() else {
             return;
         };
+        if !self.may_carry(kind) || self.typing() {
+            return;
+        }
         if kind == CarryKind::Copy && entry.kind == EntryKind::Folder {
             return;
         }
@@ -147,9 +150,23 @@ impl FilesState {
         }
     }
 
+    /// Does the source allow this kind of carrying? Moving and copying change things; bringing
+    /// back to another place needs the trash and its restore-to.
+    fn may_carry(&self, kind: CarryKind) -> bool {
+        let caps = &self.capabilities;
+        match kind {
+            CarryKind::Move | CarryKind::Copy => caps.change,
+            CarryKind::Restore => caps.trash && caps.restore_to,
+        }
+    }
+
     /// Can what is carried be put down here?
     pub fn can_put_down(&self) -> bool {
-        self.carrying.is_some() && !self.in_trash()
+        self.carrying
+            .as_ref()
+            .is_some_and(|c| self.may_carry(c.kind))
+            && !self.in_trash()
+            && !self.typing()
     }
 
     /// Put what is carried down in the current folder.
@@ -177,6 +194,9 @@ impl FilesState {
 
     /// Bring what is selected back from the trash to where it was.
     pub fn restore_selected(&mut self) {
+        if !self.capabilities.trash || self.typing() {
+            return;
+        }
         if let Some(entry) = self.selected_entry().filter(|e| e.trashed) {
             let command = Command::Restore(entry.key.clone());
             self.run(command, NameRule::Refuse, None);

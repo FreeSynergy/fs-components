@@ -240,7 +240,8 @@ pub struct FileLabels {
     pub purged: String,
     /// Default: `<what> files are gone for good.`.
     pub emptied: String,
-    /// Default: `These stay in the trash, they could not be deleted: <what>`.
+    /// Said instead of `emptied` when some files could not be deleted (a whole sentence, with the
+    /// names of those). Default: `Not every file could be deleted. These stay in the trash: <what>`.
     pub emptied_failed: String,
     /// Default: `Uploaded as <what>.`.
     pub uploaded: String,

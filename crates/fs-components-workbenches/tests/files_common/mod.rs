@@ -37,6 +37,8 @@ pub struct Shelf {
     pub downloads: Mutex<Vec<(String, String, bool)>>,
     pub page_size: Mutex<usize>,
     pub unreadable: Mutex<Vec<String>>,
+    /// Trashed things that cannot be purged.
+    pub stays: Mutex<Vec<String>>,
 }
 
 fn not_found() -> FileError {

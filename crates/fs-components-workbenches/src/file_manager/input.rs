@@ -24,9 +24,14 @@ impl FilesState {
         });
     }
 
-    /// Would starting another input now throw something typed away?
-    fn typing(&self) -> bool {
-        matches!(&self.ask, Ask::Input(input) if input.dirty())
+    /// Is something being typed that another act would throw away? An input with a change in it,
+    /// or the question about a taken name that stands in front of one.
+    pub(in crate::file_manager) fn typing(&self) -> bool {
+        match &self.ask {
+            Ask::Input(input) => input.dirty(),
+            Ask::NameTaken(question) => question.back.as_ref().is_some_and(InputAsk::dirty),
+            _ => false,
+        }
     }
 
     /// Ask for the name of a new folder here.

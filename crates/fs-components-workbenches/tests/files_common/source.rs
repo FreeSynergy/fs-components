@@ -227,9 +227,15 @@ impl FileSource for Shelf {
         self.check()?;
         let mut things = self.things.lock().unwrap();
         let before = things.len();
-        things.retain(|_, t| !t.trashed);
+        let stays = self.stays.lock().unwrap().clone();
+        things.retain(|k, t| !t.trashed || stays.contains(k));
+        let failed = things
+            .iter()
+            .filter(|(_, t)| t.trashed)
+            .map(|(_, t)| t.name.clone())
+            .collect();
         self.wrote();
-        Ok(EmptyReport::new(before - things.len(), Vec::new()))
+        Ok(EmptyReport::new(before - things.len(), failed))
     }
 
     fn rescan(&self, _folder: Option<&str>) -> Result<RescanSummary, FileError> {

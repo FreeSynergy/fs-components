@@ -31,8 +31,10 @@ pub(super) fn item_presses(state: &FilesState, actions: &FileActions) -> Vec<Pre
     if state.variant() == Variant::Picker {
         return out;
     }
+    // While a name or path is being typed, what would throw it away is not offered.
+    let typing = state.typing();
     if entry.trashed {
-        if caps.trash {
+        if caps.trash && !typing {
             out.push(plain(
                 "restore",
                 &labels.restore,
@@ -52,7 +54,7 @@ pub(super) fn item_presses(state: &FilesState, actions: &FileActions) -> Vec<Pre
         if folder {
             out.push(plain("open", &labels.open, FilesState::open_selected));
         }
-        if caps.change {
+        if caps.change && !typing {
             out.push(plain("rename", &labels.rename, FilesState::begin_rename));
             let carry = actions.with(|s| s.carry(CarryKind::Move));
             out.push((
@@ -79,7 +81,7 @@ pub(super) fn item_presses(state: &FilesState, actions: &FileActions) -> Vec<Pre
             ));
         }
     }
-    if caps.trash {
+    if caps.trash && !typing {
         let word = if entry.trashed {
             &labels.purge
         } else if folder {

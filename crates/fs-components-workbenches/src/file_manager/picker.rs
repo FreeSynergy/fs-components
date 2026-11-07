@@ -76,6 +76,7 @@ impl FilesState {
     /// Can what is selected be chosen (show the button)?
     pub fn can_choose(&self) -> bool {
         self.variant == Variant::Picker
+            && !self.typing()
             && self
                 .selected_entry()
                 .is_some_and(|e| e.kind == EntryKind::File)

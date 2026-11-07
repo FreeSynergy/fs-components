@@ -152,7 +152,7 @@ fn tool_presses(state: &FilesState, actions: &FileActions) -> Vec<Press> {
         }
     }
     if state.in_trash() {
-        if caps.trash {
+        if caps.trash && !state.typing() {
             out.push((
                 "empty-trash",
                 labels.empty_trash.clone(),

@@ -40,7 +40,7 @@ impl FilesState {
         let Some(entry) = self.selected_entry().cloned() else {
             return;
         };
-        if !self.capabilities.trash {
+        if !self.capabilities.trash || self.typing() {
             return;
         }
         let name = self.named(&entry);
@@ -57,7 +57,7 @@ impl FilesState {
 
     /// The first press of Empty trash: counts, and says how many. An empty trash does not ask.
     pub fn ask_empty_trash(&mut self) {
-        if !self.capabilities.trash || !self.in_trash() {
+        if !self.capabilities.trash || !self.in_trash() || self.typing() {
             return;
         }
         match self.source.trash_count() {
@@ -69,8 +69,10 @@ impl FilesState {
                 });
             }
             Ok(_) => {
-                self.notice = Some(Notice::Info(self.labels.trash_empty.clone()));
+                // read again first: what that finds out (the selected file is gone) is not said over
+                // the better news
                 self.after_change();
+                self.notice = Some(Notice::Info(self.labels.trash_empty.clone()));
             }
             Err(e) => self.failed(&e),
         }
@@ -155,11 +157,8 @@ impl FilesState {
                 let text = if report.failed.is_empty() {
                     FileLabels::fill(&self.labels.emptied, &report.purged.to_string())
                 } else {
-                    format!(
-                        "{} {}",
-                        FileLabels::fill(&self.labels.emptied, &report.purged.to_string()),
-                        FileLabels::fill(&self.labels.emptied_failed, &report.failed.join(", "))
-                    )
+                    // one whole sentence of its own, not two pieces put together
+                    FileLabels::fill(&self.labels.emptied_failed, &report.failed.join(", "))
                 };
                 self.notice = Some(Notice::Info(text));
             }
