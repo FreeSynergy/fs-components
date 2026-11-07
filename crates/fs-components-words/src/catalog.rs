@@ -8,13 +8,15 @@ use std::collections::HashMap;
 use std::error::Error;
 use std::fmt;
 
-use crate::template::{Part, parse, render};
+use crate::template::{Part, all_have_other, parse, render};
 use crate::{Args, PluralRules, Said, TextId, Words};
 
 /// A language: parsed templates by identifier (`None` = malformed), and its plural rule.
 pub struct Catalog {
     rules: Box<dyn PluralRules>,
     texts: HashMap<String, Option<Vec<Part>>>,
+    /// Identifiers a static table gave more than once (the later entry won).
+    repeated: Vec<String>,
 }
 
 /// A line of a text table that cannot be used.
@@ -57,13 +59,17 @@ impl Catalog {
     /// A malformed template is not refused here; asking for it gives a missing mark, and
     /// [`Catalog::validate`] lists it (call that in one test per program).
     pub fn from_table(rules: impl PluralRules + 'static, table: &[(&str, &str)]) -> Self {
-        let texts = table
-            .iter()
-            .map(|(k, v)| ((*k).to_owned(), parse(v)))
-            .collect();
+        let mut texts = HashMap::new();
+        let mut repeated = Vec::new();
+        for (k, v) in table {
+            if texts.insert((*k).to_owned(), parse(v)).is_some() {
+                repeated.push((*k).to_owned());
+            }
+        }
         Self {
             rules: Box::new(rules),
             texts,
+            repeated,
         }
     }
 
@@ -75,6 +81,7 @@ impl Catalog {
     /// A line without `=`, with an empty or repeated identifier, or with a malformed template.
     pub fn from_text(rules: impl PluralRules + 'static, text: &str) -> Result<Self, CatalogError> {
         let mut texts = HashMap::new();
+        let text = text.strip_prefix('\u{feff}').unwrap_or(text);
         for (i, raw) in text.lines().enumerate() {
             let line = raw.trim_start();
             if line.is_empty() || line.starts_with('#') {
@@ -94,20 +101,26 @@ impl Catalog {
         Ok(Self {
             rules: Box::new(rules),
             texts,
+            repeated: Vec::new(),
         })
     }
 
-    /// The identifiers (sorted) whose template is malformed, blank or nested too deeply.
-    /// Empty means every template can be used.
+    /// The identifiers (sorted, each once) that are faulty: a template that is malformed, always
+    /// blank or nested too deeply; a plural without an `other` branch; an identifier that a
+    /// static table gave twice. Empty means the table is sound.
     pub fn validate(&self) -> Vec<TextId> {
+        let faulty =
+            |parts: &Option<Vec<Part>>| parts.as_deref().is_none_or(|p| !all_have_other(p));
         let mut bad: Vec<_> = self
             .texts
             .iter()
-            .filter(|(_, parts)| parts.is_none())
-            .map(|(id, _)| TextId::new(id.as_str()))
+            .filter(|(_, parts)| faulty(parts))
+            .map(|(id, _)| id.clone())
+            .chain(self.repeated.iter().cloned())
             .collect();
         bad.sort();
-        bad
+        bad.dedup();
+        bad.into_iter().map(TextId::new).collect()
     }
 }
 

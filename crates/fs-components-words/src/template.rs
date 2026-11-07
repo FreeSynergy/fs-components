@@ -29,7 +29,28 @@ pub(crate) fn parse(src: &str) -> Option<Vec<Part>> {
         return None;
     }
     let chars: Vec<char> = src.chars().collect();
-    Parser { c: &chars, i: 0 }.parts(0)
+    let parts = Parser { c: &chars, i: 0 }.parts(0)?;
+    may_show(&parts).then_some(parts)
+}
+
+/// Can this template print something that is not blank? One that never can is faulty.
+fn may_show(parts: &[Part]) -> bool {
+    parts.iter().any(|p| match p {
+        Part::Lit(s) => !s.trim().is_empty(),
+        Part::Arg(_) | Part::Hash => true,
+        Part::Plural { branches, .. } => branches.iter().any(|(_, body)| may_show(body)),
+    })
+}
+
+/// Does every plural in the template have an `other` branch (as ICU asks)?
+pub(crate) fn all_have_other(parts: &[Part]) -> bool {
+    parts.iter().all(|p| match p {
+        Part::Plural { branches, .. } => {
+            branches.iter().any(|(c, _)| *c == PluralCategory::Other)
+                && branches.iter().all(|(_, body)| all_have_other(body))
+        }
+        _ => true,
+    })
 }
 
 /// Fill a parsed template. `None` if a value is missing or of the wrong kind, or no branch fits.
