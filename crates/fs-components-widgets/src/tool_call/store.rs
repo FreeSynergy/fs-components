@@ -89,15 +89,22 @@ impl ToolCalls {
                 .iter()
                 .find(|(m, c)| *m == message && c.id == call.id && c.state == ToolState::Settled);
             if let Some((_, done)) = kept {
-                fresh.index.insert(k, fresh.calls.len());
-                fresh.calls.push((message, done.clone()));
+                // named twice in the list: one entry
+                if !fresh.index.contains_key(&k) {
+                    fresh.index.insert(k, fresh.calls.len());
+                    fresh.calls.push((message, done.clone()));
+                }
                 continue;
             }
             let id = call.id.clone();
             let applied = fresh.apply_in(&message, call);
             if matches!(applied, Applied::Stale | Applied::AlreadySettled) {
                 // a stale copy: what is held stays
-                if let Some((_, old)) = held.iter().find(|(m, c)| *m == message && c.id == id) {
+                let known = fresh.index.contains_key(&(message.clone(), id.clone()));
+                if let Some((_, old)) = held
+                    .iter()
+                    .find(|(m, c)| !known && *m == message && c.id == id)
+                {
                     fresh.index.insert((message.clone(), id), fresh.calls.len());
                     fresh.calls.push((message, old.clone()));
                 }

@@ -219,7 +219,7 @@ impl ToolCallView {
     }
 
     /// Report an answer, if it still fits: the call must still be a question, of the revision and
-    /// digest the person saw, and offer this option. Otherwise nothing is reported.
+    /// digest the person saw, and offer this option, meaning what the decision says it means. Otherwise nothing is reported.
     pub fn answer(&self, decision: Decision) -> Outcome {
         let (outcome, handler) = {
             let inner = self.lock();
@@ -231,7 +231,9 @@ impl ToolCallView {
                         && c.revision == decision.revision
                         && c.digest == decision.digest
                         && (!c.digest.is_empty() || decision.choice == ToolChoice::Refuse)
-                        && c.options.iter().any(|o| o.id == decision.option)
+                        && c.options
+                            .iter()
+                            .any(|o| o.id == decision.option && o.choice == decision.choice)
                 });
             let fits = fits && inner.verify.as_ref().is_none_or(|v| v(&decision));
             let outcome = if fits {
