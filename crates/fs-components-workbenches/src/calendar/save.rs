@@ -19,6 +19,8 @@ impl CalendarState {
         if !edit.draft.changed() {
             let key = edit.key.clone();
             self.editing = None;
+            // What was said while the changes stood (a refusal to leave) is over with them.
+            self.notice = None;
             if let Some(key) = key {
                 self.show(&key);
             }
