@@ -182,6 +182,9 @@ impl FilesState {
         match (outcome.action, &row.pending) {
             (Action::Retry, Some(id)) => self.begin_resume(id.clone(), &row.shown.name),
             (Action::Dismiss, Some(id)) => {
+                if self.typing() {
+                    return;
+                }
                 self.ask = Ask::Confirm(Confirm::DropUpload {
                     id: id.clone(),
                     name: row.shown.name.clone(),
@@ -219,7 +222,7 @@ impl FilesState {
                 self.report = Some(Arc::new(summary));
                 self.side = Side::Report;
                 self.detail_open = true;
-                self.after_change();
+                self.after_folder_change();
                 self.notice = Some(Notice::Info(self.labels.rescan_done.clone()));
             }
             Err(e) => self.failed(&e),

@@ -40,7 +40,7 @@ impl FilesState {
         let Some(entry) = self.selected_entry().cloned() else {
             return;
         };
-        if !self.capabilities.trash {
+        if !self.capabilities.trash || self.typing() {
             return;
         }
         let name = self.named(&entry);
@@ -57,7 +57,7 @@ impl FilesState {
 
     /// The first press of Empty trash: counts, and says how many. An empty trash does not ask.
     pub fn ask_empty_trash(&mut self) {
-        if !self.capabilities.trash || !self.in_trash() {
+        if !self.capabilities.trash || !self.in_trash() || self.typing() {
             return;
         }
         match self.source.trash_count() {
@@ -89,6 +89,7 @@ impl FilesState {
             return;
         };
         let source = self.source.clone();
+        let folder_went = matches!(confirm, Confirm::DeleteFolder { .. });
         let done = match &confirm {
             Confirm::Trash { key, name } => source
                 .trash(key)
@@ -120,7 +121,11 @@ impl FilesState {
             Ok(said) => {
                 self.selected = None;
                 self.detail_open = false;
-                self.after_change();
+                if folder_went {
+                    self.after_folder_change();
+                } else {
+                    self.after_change();
+                }
                 self.notice = Some(Notice::Info(said));
             }
             Err(e) => self.failed(&e),

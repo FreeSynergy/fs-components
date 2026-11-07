@@ -252,3 +252,32 @@ fn the_picker_changes_nothing_and_a_marked_file_is_a_second_act() {
     assert_eq!(picked.key, "m");
     assert!(picked.marked);
 }
+
+#[test]
+fn another_press_never_throws_away_what_was_typed() {
+    let (shelf, mut s) = state(Shelf::new().folder("d", None).file("a"));
+    s.select("a");
+    s.begin_new_folder();
+    s.set_input("typed");
+    for press in [
+        (|s: &mut FilesState| s.ask_delete()) as fn(&mut FilesState),
+        |s| s.carry(CarryKind::Move),
+        |s| s.begin_rename(),
+        |s| s.begin_download(),
+        |s| s.open_folder(Some("d")),
+    ] {
+        press(&mut s);
+        match s.ask() {
+            Ask::Input(input) => assert_eq!(input.value, "typed"),
+            other => panic!("{other:?}"),
+        }
+    }
+    s.open_folder(None);
+    s.discard_input();
+    assert_eq!(
+        *s.ask(),
+        Ask::Nothing,
+        "the band asked: this was the second act"
+    );
+    assert_eq!(shelf.writes(), 0);
+}

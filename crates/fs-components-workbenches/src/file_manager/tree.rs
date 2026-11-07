@@ -6,7 +6,7 @@
 
 use fs_components_widgets::TreeNode;
 
-use super::error::FileError;
+use super::error::{FileError, FileProblem};
 use super::labels::FileLabels;
 use super::model::FolderInfo;
 use super::side::Place;
@@ -47,7 +47,36 @@ impl FilesState {
         if let Some(key) = key {
             self.opened.insert(key.to_string());
         }
-        self.reload_tree();
+        let missing: Vec<String> = self
+            .opened
+            .iter()
+            .filter(|key| !self.children.contains_key(&Some((*key).clone())))
+            .cloned()
+            .collect();
+        for key in missing {
+            self.read_children(Some(key));
+        }
+    }
+
+    /// Read the folders in one folder; a failure keeps what is known and says why.
+    fn read_children(&mut self, key: Option<String>) {
+        match self.source.subfolders(key.as_deref(), TREE_LIMIT) {
+            Ok(children) => {
+                self.children.insert(key, children);
+            }
+            Err(e) if e.problem == FileProblem::NotFound => {
+                if let Some(key) = key {
+                    self.children.remove(&Some(key.clone()));
+                    self.opened.remove(&key);
+                }
+            }
+            Err(e) => {
+                self.tree_problem = Some(FileLabels::fill(
+                    &self.labels.tree_failed,
+                    &self.problem_text(&e),
+                ));
+            }
+        }
     }
 
     /// Read again what is known of the tree; a failure keeps it and says why.
@@ -58,34 +87,14 @@ impl FilesState {
         let mut wanted: Vec<Option<String>> = vec![None];
         wanted.extend(self.opened.iter().cloned().map(Some));
         self.tree_problem = None;
-        let mut gone = Vec::new();
         for key in wanted {
-            match self.source.subfolders(key.as_deref(), TREE_LIMIT) {
-                Ok(children) => {
-                    self.children.insert(key, children);
-                }
-                Err(e) if e.problem == super::error::FileProblem::NotFound => {
-                    if let Some(key) = key {
-                        self.children.remove(&Some(key.clone()));
-                        gone.push(key);
-                    }
-                }
-                Err(e) => {
-                    self.tree_problem = Some(FileLabels::fill(
-                        &self.labels.tree_failed,
-                        &self.problem_text(&e),
-                    ));
-                }
-            }
-        }
-        for key in gone {
-            self.opened.remove(&key);
+            self.read_children(key);
         }
         self.leave_folder_if_gone();
     }
 
     /// The current folder may be gone: then the top is shown, and that is said.
-    fn leave_folder_if_gone(&mut self) {
+    pub(super) fn leave_folder_if_gone(&mut self) {
         let Place::Folder(Some(key)) = &self.place else {
             return;
         };

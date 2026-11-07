@@ -85,7 +85,16 @@ impl FilesState {
                 if let (Command::Upload(path, _), Some(done)) = (&command, &sent) {
                     self.upload_done(path, done);
                 }
-                self.after_change();
+                let folders = matches!(
+                    &command,
+                    Command::Rename(entry, _) | Command::Move(entry, _)
+                        if entry.kind == EntryKind::Folder
+                );
+                if folders {
+                    self.after_folder_change();
+                } else {
+                    self.after_change();
+                }
                 self.notice = Some(Notice::Info(said));
             }
             Err(e) => self.not_run(command, rule, from, &e),
@@ -141,7 +150,7 @@ impl FilesState {
         let Some(entry) = self.selected_entry().cloned() else {
             return;
         };
-        if kind == CarryKind::Copy && entry.kind == EntryKind::Folder {
+        if (kind == CarryKind::Copy && entry.kind == EntryKind::Folder) || self.typing() {
             return;
         }
         self.notice = None;

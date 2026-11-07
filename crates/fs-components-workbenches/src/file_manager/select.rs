@@ -10,6 +10,7 @@ use fs_components_widgets::file_preview::{
 };
 use fs_components_widgets::transfer_list::format_bytes;
 
+use super::context::Variant;
 use super::error::FileProblem;
 use super::labels::FileLabels;
 use super::model::{EntryKind, FileEntry};
@@ -186,7 +187,8 @@ impl FilesState {
 
     fn content_of(&self, entry: &FileEntry, released: bool) -> PreviewContent {
         let labels = &self.labels;
-        if entry.kind == EntryKind::Folder {
+        // The picker has no preview: it reads nothing.
+        if entry.kind == EntryKind::Folder || self.variant == Variant::Picker {
             return PreviewContent::Nothing;
         }
         if entry.trashed {

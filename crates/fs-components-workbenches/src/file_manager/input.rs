@@ -24,9 +24,16 @@ impl FilesState {
         });
     }
 
-    /// Would starting another input now throw something typed away?
-    fn typing(&self) -> bool {
-        matches!(&self.ask, Ask::Input(input) if input.dirty())
+    /// Would asking something else now throw what was typed away? Then that is refused, and the band
+    /// asks whether to throw it away: that stays the person's second act.
+    pub(super) fn typing(&mut self) -> bool {
+        if let Ask::Input(input) = &mut self.ask
+            && input.dirty()
+        {
+            input.discard_asked = true;
+            return true;
+        }
+        false
     }
 
     /// Ask for the name of a new folder here.
@@ -164,7 +171,7 @@ impl FilesState {
         match self.source.create_folder(here.as_deref(), name) {
             Ok(folder) => {
                 self.ask = Ask::Nothing;
-                self.after_change();
+                self.after_folder_change();
                 self.notice = Some(Notice::Info(FileLabels::fill(
                     &self.labels.created,
                     &folder.name,

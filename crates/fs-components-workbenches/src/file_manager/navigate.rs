@@ -182,11 +182,18 @@ impl FilesState {
         self.reload_tree();
     }
 
-    /// After a change: the list, the tree and the thing selected are read again; what is gone leaves.
+    /// After a change: the list and the thing selected are read again; what is gone leaves. The tree is
+    /// not: each query costs in proportion to the whole store (`fs-store`), see "Limits" in `DESIGN.md`.
     pub(super) fn after_change(&mut self) {
+        self.leave_folder_if_gone();
         let count = self.rows.len().max(PAGE);
         self.reload(count);
-        self.reload_tree();
         self.refresh_selected();
+    }
+
+    /// After a change to folders: the tree too.
+    pub(super) fn after_folder_change(&mut self) {
+        self.reload_tree();
+        self.after_change();
     }
 }
