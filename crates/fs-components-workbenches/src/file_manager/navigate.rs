@@ -183,7 +183,7 @@ impl FilesState {
     }
 
     /// After a change: the list and the thing selected are read again; what is gone leaves. The tree is
-    /// not: each query costs in proportion to the whole store (`fs-store`), see "Limits" in `DESIGN.md`.
+    /// not: each query costs in proportion to the whole store (`fs-objects`), see "Limits" in `DESIGN.md`.
     pub(super) fn after_change(&mut self) {
         self.leave_folder_if_gone();
         let count = self.rows.len().max(PAGE);
