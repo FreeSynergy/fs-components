@@ -23,6 +23,7 @@ pub mod keys;
 pub mod lightbox;
 pub mod list_view;
 pub mod live;
+pub mod map_view;
 pub mod message_composer;
 pub mod message_list;
 pub mod participant;
