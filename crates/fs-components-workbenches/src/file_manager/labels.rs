@@ -290,4 +290,10 @@ impl FileLabels {
     pub fn fill(text: &str, what: &str) -> String {
         text.replacen("{}", what, 1)
     }
+
+    /// `text` with the placeholder `{name}` replaced by `value`: a sentence that names what goes
+    /// into it, so a translation may move it.
+    pub fn fill_named(text: &str, name: &str, value: &str) -> String {
+        text.replace(&format!("{{{name}}}"), value)
+    }
 }

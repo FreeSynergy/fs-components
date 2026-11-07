@@ -97,6 +97,11 @@ impl Harness {
         self.tree.compute_layout(self.size.0, self.size.1);
     }
 
+    /// Is there an element with exactly this id?
+    pub fn has_id(&self, id: &str) -> bool {
+        self.tree.query_by_id(id).is_some()
+    }
+
     /// Is there an element `<name>-<what>`?
     pub fn has(&self, what: &str) -> bool {
         self.tree.query_by_id(&self.id(what)).is_some()

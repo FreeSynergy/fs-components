@@ -11,7 +11,7 @@ use blinc_layout::div::{Div, div};
 use blinc_layout::text;
 use blinc_layout::widgets::scroll::{Scroll, ScrollPhysics};
 use fs_components_widgets::list_view::fit_cell;
-use fs_components_widgets::transfer_list::{Labels as TransferLabels, TransferList};
+use fs_components_widgets::transfer_list::{Action, Labels as TransferLabels, TransferList};
 
 use super::actions::{FileActions, button};
 use crate::file_manager::labels::FileLabels;
@@ -38,9 +38,12 @@ pub(super) fn transfers_panel(
     let labels = state.labels();
     let shown = state.transfers().iter().map(|r| r.shown.clone()).collect();
     let apply = Arc::clone(&actions.apply);
-    let list = TransferList::new(shown)
-        .labels(TransferLabels::default())
-        .on_outcome(Arc::new(move |outcome| {
+    let mut list = TransferList::new(shown).labels(TransferLabels::default());
+    if state.typing() {
+        // a retry asks for a path, and nothing being typed is thrown away: it would do nothing
+        list = list.without(Action::Retry);
+    }
+    let list = list.on_outcome(Arc::new(move |outcome| {
             let outcome = outcome.clone();
             apply(&move |s: &mut FilesState| s.transfer_outcome(&outcome));
         }));

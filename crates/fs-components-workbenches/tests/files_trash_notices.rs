@@ -44,7 +44,7 @@ fn what_could_not_be_deleted_is_one_sentence_of_its_own_with_the_names() {
     let text = said(&s);
     assert_eq!(
         text,
-        FileLabels::fill(&FileLabels::default().emptied_failed, "b.txt")
+        "Not every file could be deleted. These stay in the trash: b.txt"
     );
-    assert!(!text.contains("{}"), "{text}");
+    assert!(!text.contains('{'), "{text}");
 }

@@ -248,6 +248,16 @@ fn a_failure_never_hides_behind_the_cap() {
 }
 
 #[test]
+fn an_action_the_caller_cannot_carry_out_is_not_offered() {
+    let _g = serial();
+    let list = TransferList::new(mixed()).without(Action::Retry);
+    let tree = layout(list.build(), 520.0, 600.0);
+    assert!(tree.query_by_id("fs-tl-b-retry").is_none(), "retry offered");
+    assert!(tree.query_by_id("fs-tl-b-dismiss").is_some());
+    assert!(tree.query_by_id("fs-tl-a-cancel").is_some());
+}
+
+#[test]
 fn the_list_takes_no_keys_of_its_own() {
     let _g = serial();
     let got: Arc<Mutex<Vec<Outcome>>> = Arc::default();

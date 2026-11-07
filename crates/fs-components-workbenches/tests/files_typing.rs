@@ -11,7 +11,7 @@ use std::sync::Arc;
 use files_common::harness::Harness;
 use files_common::{Shelf, widget};
 use fs_components_workbenches::file_manager::{
-    Ask, CarryKind, FileLabels, FilePicker, FilesState, Variant,
+    Ask, CarryKind, FileLabels, FilePicker, FilesState, PendingUpload, Variant,
 };
 
 fn typing_state() -> (Arc<Shelf>, FilesState) {
@@ -69,4 +69,26 @@ fn a_picker_carries_and_puts_down_nothing() {
     });
     assert_eq!(shelf.writes(), 0);
     assert_eq!(shelf.thing("a").unwrap().folder, None);
+}
+
+#[test]
+fn the_transfers_do_not_offer_a_retry_while_a_name_is_typed() {
+    let shelf = Shelf::new().file("a");
+    shelf
+        .pending
+        .lock()
+        .unwrap()
+        .push(PendingUpload::new("u1", "big.iso", 500));
+    let (_, w) = widget(shelf);
+    w.with_state(FilesState::open_transfers);
+    let mut h = Harness::new(w, 1300.0, 700.0);
+    let key = h.widget.with_state(|s| s.transfers()[0].shown.key.clone());
+    let retry = format!("fs-tl-{key}-retry");
+    assert!(h.has_id(&retry), "the retry is there when nothing is typed");
+    h.widget.with_state(|s| {
+        s.begin_new_folder();
+        s.set_input("typed name");
+    });
+    h.rebuild();
+    assert!(!h.has_id(&retry), "a retry that does nothing is offered");
 }

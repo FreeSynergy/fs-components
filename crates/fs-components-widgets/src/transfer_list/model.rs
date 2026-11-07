@@ -143,6 +143,7 @@ pub struct TransferList {
     pub(super) labels: Labels,
     pub(super) on_outcome: Option<OnOutcome>,
     pub(super) max_rows: usize,
+    pub(super) without: Vec<Action>,
 }
 
 impl TransferList {
@@ -153,6 +154,7 @@ impl TransferList {
             labels: Labels::default(),
             on_outcome: None,
             max_rows: 100,
+            without: Vec::new(),
         }
     }
 
@@ -167,6 +169,14 @@ impl TransferList {
     #[must_use]
     pub fn on_outcome(mut self, handler: OnOutcome) -> Self {
         self.on_outcome = Some(handler);
+        self
+    }
+
+    /// Do not offer this action: the caller cannot carry it out now, and a button that does nothing
+    /// is worse than none.
+    #[must_use]
+    pub fn without(mut self, action: Action) -> Self {
+        self.without.push(action);
         self
     }
 

@@ -137,7 +137,7 @@ impl Default for FileLabels {
             restored: s("Restored as {}."),
             purged: s("{} is gone for good."),
             emptied: s("{} files are gone for good."),
-            emptied_failed: s("Not every file could be deleted. These stay in the trash: {}"),
+            emptied_failed: s("Not every file could be deleted. These stay in the trash: {names}"),
             uploaded: s("Uploaded as {}."),
             downloaded: s("Wrote {}."),
             dropped: s("Threw away the upload {}."),

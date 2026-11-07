@@ -158,7 +158,11 @@ impl FilesState {
                     FileLabels::fill(&self.labels.emptied, &report.purged.to_string())
                 } else {
                     // one whole sentence of its own, not two pieces put together
-                    FileLabels::fill(&self.labels.emptied_failed, &report.failed.join(", "))
+                    FileLabels::fill_named(
+                        &self.labels.emptied_failed,
+                        "names",
+                        &report.failed.join(", "),
+                    )
                 };
                 self.notice = Some(Notice::Info(text));
             }
