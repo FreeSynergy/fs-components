@@ -1,0 +1,135 @@
+//! Template syntax: parse a sentence template into parts and fill it with `Args`.
+//!
+//! Pattern: Interpreter — a small language (`{name}`, `{n, plural, one {# x} other {# y}}`,
+//! `\` escapes) evaluated over its parsed tree. Values are inserted as data and never parsed again.
+
+use crate::format::show;
+use crate::{Args, PluralCategory, PluralRules, Value};
+
+/// One piece of a parsed template.
+#[derive(Debug)]
+pub(crate) enum Part {
+    Lit(String),
+    Arg(String),
+    Hash,
+    Plural {
+        name: String,
+        branches: Vec<(PluralCategory, Vec<Part>)>,
+    },
+}
+
+/// Parse a template; `None` if it is malformed.
+pub(crate) fn parse(src: &str) -> Option<Vec<Part>> {
+    let chars: Vec<char> = src.chars().collect();
+    Parser { c: &chars, i: 0 }.parts(false)
+}
+
+/// Fill a parsed template. `None` if a value is missing or of the wrong kind, or no branch fits.
+pub(crate) fn render(
+    parts: &[Part],
+    args: &Args,
+    rules: &dyn PluralRules,
+    hash: Option<u64>,
+    out: &mut String,
+) -> Option<()> {
+    for part in parts {
+        match part {
+            Part::Lit(s) => out.push_str(s),
+            Part::Arg(name) => out.push_str(&show(args.get(name)?)),
+            Part::Hash => out.push_str(&hash?.to_string()),
+            Part::Plural { name, branches } => {
+                let Value::Count(n) = args.get(name)? else {
+                    return None;
+                };
+                let cat = rules.category(*n);
+                let pick = |c| branches.iter().find(|(b, _)| *b == c);
+                let (_, body) = pick(cat).or_else(|| pick(PluralCategory::Other))?;
+                render(body, args, rules, Some(*n), out)?;
+            }
+        }
+    }
+    Some(())
+}
+
+struct Parser<'a> {
+    c: &'a [char],
+    i: usize,
+}
+
+fn flush(lit: &mut String, out: &mut Vec<Part>) {
+    if !lit.is_empty() {
+        out.push(Part::Lit(std::mem::take(lit)));
+    }
+}
+
+impl Parser<'_> {
+    fn next(&mut self) -> Option<char> {
+        let ch = self.c.get(self.i).copied();
+        self.i += 1;
+        ch
+    }
+
+    /// Parts up to the end (top level) or up to the closing `}` of a branch.
+    fn parts(&mut self, in_branch: bool) -> Option<Vec<Part>> {
+        let (mut out, mut lit) = (Vec::new(), String::new());
+        loop {
+            let Some(ch) = self.next() else {
+                flush(&mut lit, &mut out);
+                return if in_branch { None } else { Some(out) };
+            };
+            match ch {
+                '\\' => lit.push(self.next()?),
+                '{' => {
+                    flush(&mut lit, &mut out);
+                    out.push(self.placeholder()?);
+                }
+                '}' if in_branch => {
+                    flush(&mut lit, &mut out);
+                    return Some(out);
+                }
+                '}' => return None,
+                '#' if in_branch => {
+                    flush(&mut lit, &mut out);
+                    out.push(Part::Hash);
+                }
+                c => lit.push(c),
+            }
+        }
+    }
+
+    /// Read up to (and past) one of `stops`; returns the text and the stop.
+    fn until(&mut self, stops: &[char]) -> Option<(String, char)> {
+        let mut s = String::new();
+        loop {
+            let ch = self.next()?;
+            if stops.contains(&ch) {
+                return Some((s.trim().to_owned(), ch));
+            }
+            s.push(ch);
+        }
+    }
+
+    /// After `{`: `name}` or `name, plural, sel {..} sel {..}}`.
+    fn placeholder(&mut self) -> Option<Part> {
+        let (name, stop) = self.until(&[',', '}'])?;
+        if name.is_empty() || name.contains(['{', '\\', '#']) {
+            return None;
+        }
+        if stop == '}' {
+            return Some(Part::Arg(name));
+        }
+        let (kind, _) = self.until(&[','])?;
+        if kind != "plural" {
+            return None;
+        }
+        let mut branches = Vec::new();
+        loop {
+            let (sel, stop) = self.until(&['{', '}'])?;
+            if stop == '}' {
+                return (sel.is_empty() && !branches.is_empty())
+                    .then_some(Part::Plural { name, branches });
+            }
+            branches.push((PluralCategory::from_name(&sel)?, self.parts(true)?));
+        }
+    }
+}

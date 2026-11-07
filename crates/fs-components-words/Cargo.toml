@@ -1,0 +1,9 @@
+[package]
+name = "fs-components-words"
+description = "FreeSynergy translatable text (ADR 0057): Words trait, Fallback, Catalog; std only"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]

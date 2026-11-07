@@ -1001,6 +1001,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "fs-components-words"
+version = "0.2.0"
+
+[[package]]
 name = "fs-components-workbenches"
 version = "0.2.0"
 dependencies = [
