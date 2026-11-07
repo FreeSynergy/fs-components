@@ -196,4 +196,19 @@ impl Harness {
         }
         false
     }
+
+    /// Press Tab until the list itself has the keyboard; `false` if it never does.
+    pub fn tab_to_list(&mut self) -> bool {
+        let name = self.widget.element_name().to_string();
+        let Some(list) = self.tree.query_by_id(&name) else {
+            return false;
+        };
+        for _ in 0..60 {
+            self.key(9);
+            if self.router.focused() == Some(list) {
+                return true;
+            }
+        }
+        false
+    }
 }

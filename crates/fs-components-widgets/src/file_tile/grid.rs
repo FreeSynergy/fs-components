@@ -225,7 +225,10 @@ impl TileGrid {
             } else if bottom > offset + view {
                 position.apply_offset(bottom - view);
             }
-            if let Some(on_select) = &on_select {
+            // The tile already chosen is not reported again: a caller reads that as "open it".
+            if selected.as_deref() != Some(tiles[target].key.as_str())
+                && let Some(on_select) = &on_select
+            {
                 on_select(&tiles[target].key);
             }
             true
