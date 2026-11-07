@@ -1,6 +1,6 @@
 //! `calendar-view`: a narrow view, the scroll position kept, no room, and pictures.
 //!
-//! Pattern: Input tests + pixel tests (the pixel tests pass silently without a graphics adapter, see
+//! Tests: Input tests + pixel tests (the pixel tests pass silently without a graphics adapter, see
 //! `common`). No window is opened. A hang here is a deadlock.
 
 mod common;

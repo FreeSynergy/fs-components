@@ -1,7 +1,7 @@
 //! `list-view`: the keys start from the selected row and a refusal moves nothing; a long text is
 //! cut with an ellipsis; rebuilding does not grow the reactive graph.
 //!
-//! Pattern: input tests over the router a window uses. No window is opened.
+//! Tests: input tests over the router a window uses. No window is opened.
 
 mod common;
 

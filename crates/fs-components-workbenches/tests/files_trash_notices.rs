@@ -1,6 +1,6 @@
 //! What is said after the trash was emptied, or found empty.
 //!
-//! Pattern: State tests over a source in memory.
+//! Tests: State tests over a source in memory.
 
 #[path = "files_common/mod.rs"]
 mod files_common;

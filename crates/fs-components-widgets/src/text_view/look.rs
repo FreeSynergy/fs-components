@@ -1,6 +1,6 @@
 //! What the theme says about text.
 //!
-//! Pattern: Value object snapshot — read once per build from the theme, passed down; nothing
+//! Pattern: none — read once per build from the theme, passed down; nothing
 //! here is a literal colour or size.
 
 use blinc_core::Color;

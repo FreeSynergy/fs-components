@@ -1,7 +1,7 @@
 //! The chat's questions and the stop: armed answers bound to what was drawn, a dock that cannot
 //! scroll away, a stop that is always reachable at every size.
 //!
-//! Pattern: the real element in a tree driven like a window drives it (frames), a clock by hand.
+//! Tests: the real element in a tree driven like a window drives it (frames), a clock by hand.
 
 mod chat_common;
 

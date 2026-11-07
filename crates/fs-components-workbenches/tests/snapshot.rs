@@ -1,6 +1,6 @@
 //! The picture: drawn offscreen, with the real view.
 //!
-//! Pattern: Pixel tests — skipped (with a message) where there is no graphics adapter. They look
+//! Tests: Pixel tests — skipped (with a message) where there is no graphics adapter. They look
 //! at what is on the picture, not only that something is.
 
 mod common;

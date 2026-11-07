@@ -1,6 +1,6 @@
 //! The neutral text model: plain text of every block kind.
 //!
-//! Pattern: Table-driven tests.
+//! Tests: Table-driven tests.
 
 use fs_components_widgets::{Align, Block, Inline, ListItem, Mark, MarkKind};
 

@@ -1,6 +1,6 @@
 //! Dashed lines, made of pieces.
 //!
-//! Pattern: Pure function. Blinc 0.6 has no dash code in its GPU stroke (`Stroke::dash` is read
+//! Pattern: none. Blinc 0.6 has no dash code in its GPU stroke (`Stroke::dash` is read
 //! by nothing), so a dashed line is cut into its dashes here and each dash is an ordinary path.
 //! The pattern runs on along the whole polyline, round corners included.
 

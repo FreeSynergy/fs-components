@@ -1,6 +1,6 @@
 //! The second slot, writes in flight and discarding offers: more of the backup state machine.
 //!
-//! Pattern: State machine tests through the reader and a built widget.
+//! Tests: State machine tests through the reader and a built widget.
 
 mod common;
 

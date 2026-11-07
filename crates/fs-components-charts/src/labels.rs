@@ -1,6 +1,6 @@
 //! All words and marks a chart writes that neither the spec nor the data contain.
 //!
-//! Pattern: Value object, given by the caller (as `Labels` of the reader). A chart never decides
+//! Pattern: none — plain data given by the caller (as `Labels` of the reader). A chart never decides
 //! a language: number marks, month names, time patterns and the sentences of the notes and of the
 //! text alternative come from here. `Default` is English, the language of the code (ADR 0011).
 

@@ -1,6 +1,6 @@
 //! What the tasks workbench and its source talk about.
 //!
-//! Pattern: Value objects — neutral rows, columns, sections of labelled fields and a draft. Nothing
+//! Pattern: none — neutral rows, columns, sections of labelled fields and a draft. Nothing
 //! here knows what a task is made of.
 
 /// What a source can do; an action it cannot do is not offered.

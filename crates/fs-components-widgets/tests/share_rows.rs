@@ -1,6 +1,6 @@
 //! The share dialog's rows: duplicate keys, many permissions, unknown and unlisted pairs.
 //!
-//! Pattern: Pixel and layout tests in process (no window).
+//! Tests: Pixel and layout tests in process (no window).
 
 mod common;
 

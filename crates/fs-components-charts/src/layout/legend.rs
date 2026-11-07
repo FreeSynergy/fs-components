@@ -1,6 +1,6 @@
 //! The legend of a colour channel: a title and one entry per series.
 //!
-//! Pattern: Template. The symbol of an entry matches the mark (square for areas, bars and arcs,
+//! Pattern: none. The symbol of an entry matches the mark (square for areas, bars and arcs,
 //! short line with the series' dash for lines, the series' shape for points), so a series can be
 //! found by pattern as well as by colour.
 

@@ -1,6 +1,6 @@
 //! What the composer is given and what it reports.
 //!
-//! Pattern: Value objects (the optional draft store is the shared `DraftStore`). The
+//! Pattern: none — plain data (the optional draft store is the shared `DraftStore`). The
 //! composer knows no messenger: sending is an outcome, attachments are a list the host hands in.
 
 /// One attachment shown beside the text. The host owns the file; the composer only lists it.

@@ -1,6 +1,6 @@
 //! `task-card`: one task as a small card, for a column or a list.
 //!
-//! Pattern: Value object + Adapter — the data is what the caller says (a title, lines, tags,
+//! Pattern: Adapter — the data is what the caller says (a title, lines, tags,
 //! marks), neutral: the widget has no words and no colours of its own, and does not know what a
 //! task is. It is a plain element with no click of its own, so it may be drawn inside a live area
 //! and inside a row that already takes clicks.

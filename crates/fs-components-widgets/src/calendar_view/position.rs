@@ -1,6 +1,6 @@
 //! Where the axis and the agenda are scrolled to.
 //!
-//! Pattern: Memento — a handle the owner keeps, so a rebuild keeps the place: the axis starts at the
+//! Pattern: State — a handle the owner keeps, so a rebuild keeps the place: the axis starts at the
 //! hour asked for the first time and then stays where the person left it; a list goes back to the
 //! top when it shows another span. Nothing here hands out a lock.
 

@@ -1,6 +1,6 @@
 //! `calendar-view`: overlapping items split sideways into lanes. Pure, no window.
 //!
-//! Pattern: Table tests over the layout function.
+//! Tests: Table tests over the layout function.
 
 use fs_components_widgets::calendar_view::{Segment, lanes};
 

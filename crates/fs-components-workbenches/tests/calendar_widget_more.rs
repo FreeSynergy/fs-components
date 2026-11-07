@@ -1,6 +1,6 @@
 //! `CalendarWidget`: no room, the reactive graph over rebuilds, a scrolled axis, and pictures.
 //!
-//! Pattern: input tests + pixel tests (skipped with a message without a graphics adapter). No window is
+//! Tests: input tests + pixel tests (skipped with a message without a graphics adapter). No window is
 //! opened. A hang here is a deadlock, not slowness.
 
 #[path = "calendar_common/mod.rs"]

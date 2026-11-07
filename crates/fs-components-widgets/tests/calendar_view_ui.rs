@@ -1,6 +1,6 @@
 //! `calendar-view`: the real element, clicked over the router and hit test a window uses.
 //!
-//! Pattern: Input tests. No window is opened. A hang here is a deadlock.
+//! Tests: Input tests. No window is opened. A hang here is a deadlock.
 
 mod common;
 

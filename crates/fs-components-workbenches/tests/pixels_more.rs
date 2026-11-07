@@ -1,6 +1,6 @@
 //! More pixel tests: marked table cells and the search field.
 //!
-//! Pattern: Pixel tests — skipped (with a message) where there is no graphics adapter or no fonts.
+//! Tests: Pixel tests — skipped (with a message) where there is no graphics adapter or no fonts.
 
 mod common;
 

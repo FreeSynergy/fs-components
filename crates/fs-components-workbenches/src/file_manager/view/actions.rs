@@ -1,6 +1,6 @@
 //! What the person can do, as callbacks.
 //!
-//! Pattern: Command-like callbacks (Observer) — the widget decides what each does: change the state and
+//! Pattern: Observer — the widget decides what each does: change the state and
 //! draw again. A view asks for the callback of a transition by naming it.
 
 use std::sync::Arc;

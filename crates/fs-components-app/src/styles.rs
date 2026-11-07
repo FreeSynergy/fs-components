@@ -1,6 +1,6 @@
 //! The style sheet of the shell.
 //!
-//! Pattern: Template — only theme variables, so a theme can change everything. Sizes a surface must
+//! Pattern: none — only theme variables, so a theme can change everything. Sizes a surface must
 //! know in pixels are constants, because the shell tells the surface its size.
 
 /// Height of the title bar in pixels.

@@ -1,6 +1,6 @@
 //! `CalendarWidget`: the real element, clicked in-process over the router and hit test a window uses.
 //!
-//! Pattern: input tests. No window is opened. A hang here is a deadlock, not slowness.
+//! Tests: input tests. No window is opened. A hang here is a deadlock, not slowness.
 
 #[path = "calendar_common/mod.rs"]
 mod calendar_common;

@@ -1,6 +1,6 @@
 //! The message list: learning measured heights, older messages at the front.
 //!
-//! Pattern: layouts of the same view a window draws; the scroll is moved through the handle.
+//! Tests: layouts of the same view a window draws; the scroll is moved through the handle.
 
 mod chat_support;
 mod common;

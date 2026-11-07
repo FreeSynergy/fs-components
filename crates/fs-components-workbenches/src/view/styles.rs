@@ -1,6 +1,6 @@
 //! The style sheet of the reader.
 //!
-//! Pattern: Template — only theme variables; widget sheets are added by the shell.
+//! Pattern: none — only theme variables; widget sheets are added by the shell.
 
 /// CSS for the reader layout.
 pub(crate) fn styles() -> String {

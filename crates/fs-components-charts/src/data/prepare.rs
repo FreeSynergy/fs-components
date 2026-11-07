@@ -1,6 +1,6 @@
 //! From spec rows to the data a mark draws.
 //!
-//! Pattern: Pipeline (read, aggregate, drop-and-count). The policy follows Vega-Lite's default
+//! Pattern: Facade (read, aggregate, drop-and-count). The policy follows Vega-Lite's default
 //! `invalid` mode: a bar, point or arc with an invalid position is left out; a line or area is
 //! *broken* there. A category that is `null` is a category. Nothing is dropped without a count.
 

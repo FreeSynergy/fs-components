@@ -1,6 +1,6 @@
 //! Field paths: how a name in the spec finds a value in a row.
 //!
-//! Pattern: Strategy-free helper — Vega-Lite reads `a.b` as the nested `a` then `b`, and `a\.b`
+//! Pattern: none — Vega-Lite reads `a.b` as the nested `a` then `b`, and `a\.b`
 //! as one key with a dot. We follow that, and refuse bracket paths.
 
 use serde_json::{Map, Value};

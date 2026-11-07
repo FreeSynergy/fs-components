@@ -1,6 +1,6 @@
 //! A reader for one JSON object that knows which keys were read.
 //!
-//! Pattern: Iterator-like cursor over a map — every `take` marks a key as understood; `finish`
+//! Pattern: State over a map — every `take` marks a key as understood; `finish`
 //! refuses the first key nobody read. This is what turns "silently ignored" into a named refusal.
 
 use serde_json::{Map, Value};

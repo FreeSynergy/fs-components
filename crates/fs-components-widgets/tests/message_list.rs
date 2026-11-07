@@ -1,6 +1,6 @@
 //! The message list: sender marks, delivery, tool calls, references, pictures.
 //!
-//! Pattern: pixel tests and an in-process mouse over the same view a window draws.
+//! Tests: pixel tests and an in-process mouse over the same view a window draws.
 
 mod chat_support;
 mod common;

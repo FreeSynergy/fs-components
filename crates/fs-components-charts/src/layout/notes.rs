@@ -1,6 +1,6 @@
 //! The words around a chart: title, and the notes about data that could not be drawn.
 //!
-//! Pattern: Template over the `Report`. Nothing is dropped silently: every dropped, broken or
+//! Pattern: Adapter over the `Report`. Nothing is dropped silently: every dropped, broken or
 //! odd value is counted in a sentence under the chart, in the caller's words.
 
 use super::axis_items::fit;

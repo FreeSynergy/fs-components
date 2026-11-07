@@ -1,6 +1,6 @@
 //! Fake document sources for the tests.
 //!
-//! Pattern: Strategy (test doubles) — `Fake` is read-only, `Editable` keeps texts in memory with
+//! Tests: Strategy (test doubles) — `Fake` is read-only, `Editable` keeps texts in memory with
 //! a revision counter per text, like a store would.
 
 #![allow(dead_code)] // each test file uses a different subset

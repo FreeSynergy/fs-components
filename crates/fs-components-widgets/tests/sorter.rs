@@ -1,6 +1,6 @@
 //! The move logic of the sortable list, without any drawing.
 //!
-//! Pattern: Pure state-machine tests, including a long pseudo-random run that checks nothing is
+//! Tests: Pure state-machine tests, including a long pseudo-random run that checks nothing is
 //! ever lost or doubled.
 
 use fs_components_widgets::keys::{Key, KeyEvent};

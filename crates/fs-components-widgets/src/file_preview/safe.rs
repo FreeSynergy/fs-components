@@ -1,6 +1,6 @@
 //! What may be shown of bytes nobody has checked.
 //!
-//! Pattern: Specification — pure functions over bytes. A text is shown only if it is text: no NUL, and
+//! Pattern: none — pure functions over bytes. A text is shown only if it is text: no NUL, and
 //! valid UTF-8 (a character cut by the end of a part read does not count against it). Control and
 //! direction characters are replaced, so a name or a line cannot dress up as something else. Lines and
 //! their length are bounded, because Blinc measures long text slowly. A picture is handed to Blinc only

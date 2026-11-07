@@ -1,6 +1,6 @@
 //! The person: read, or the form while editing.
 //!
-//! Pattern: Strategy by state — a person, the form, a failure or nothing. Actions the source cannot
+//! Pattern: State — a person, the form, a failure or nothing. Actions the source cannot
 //! do are not offered.
 
 use blinc_cn::cn;

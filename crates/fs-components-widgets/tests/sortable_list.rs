@@ -1,6 +1,6 @@
 //! The sortable list drawn, clicked and typed at, in process (no window).
 //!
-//! Pattern: Pixel tests plus an in-process mouse and keyboard over the real router and hit test.
+//! Tests: Pixel tests plus an in-process mouse and keyboard over the real router and hit test.
 
 mod common;
 

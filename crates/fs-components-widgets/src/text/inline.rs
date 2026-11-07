@@ -1,6 +1,6 @@
 //! Inline text with marks.
 //!
-//! Pattern: Value object — plain data. Marks are stand-off ranges over the text (like the text
+//! Pattern: none — plain data. Marks are stand-off ranges over the text (like the text
 //! layers of the wiki), counted in characters, so the model has no opinion about encodings.
 
 /// What a mark does to the characters it covers.

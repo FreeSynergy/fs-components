@@ -1,6 +1,6 @@
 //! Where the detail page of a workbench is scrolled to.
 //!
-//! Pattern: Memento — a handle the widget keeps. What is shown on the page has a name; when that changes
+//! Pattern: State — a handle the widget keeps. What is shown on the page has a name; when that changes
 //! the page starts at the top. Blinc keys a plain scroll by its call site, so without this a new item
 //! would open wherever the last one was left.
 

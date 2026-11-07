@@ -1,6 +1,6 @@
 //! Where things go: pure functions, testable without a window.
 //!
-//! Pattern: Strategy-free pure layout — the spans of the views, an item cut into the part on one day,
+//! Pattern: none — the spans of the views, an item cut into the part on one day,
 //! and overlapping parts split sideways into lanes (the docs: split sideways, never stack).
 
 use super::day::{Day, MINUTES_PER_DAY};

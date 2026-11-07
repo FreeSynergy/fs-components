@@ -1,6 +1,6 @@
 //! The real shell, laid out and driven like a window drives it, without opening one.
 //!
-//! Pattern: Facade over Blinc's tree, router and overlay stack, in the order of its event loop
+//! Tests: a helper over Blinc's tree, router and overlay stack, in the order of its event loop
 //! (`blinc_app/src/windowed/event_loop`): the overlay layer beside the program's element, a rebuild
 //! through the incremental update, dismissals drained each frame.
 

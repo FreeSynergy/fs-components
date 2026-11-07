@@ -1,6 +1,6 @@
 //! Blocks: the parts a document is made of.
 //!
-//! Pattern: Composite — lists and quotes hold blocks again. Anything a producer cannot express
+//! Pattern: none — lists and quotes hold blocks again. Anything a producer cannot express
 //! becomes [`Block::Plain`]: the text is shown as it is, never dropped.
 
 use super::inline::Inline;

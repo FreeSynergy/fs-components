@@ -1,6 +1,6 @@
 //! Editing, creating and deleting: the same rules as the reader's editing.
 //!
-//! Pattern: State machine tests, no window.
+//! Tests: State machine tests, no window.
 
 #[path = "people_common/mod.rs"]
 mod people_common;

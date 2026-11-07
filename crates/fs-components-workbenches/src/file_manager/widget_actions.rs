@@ -1,6 +1,6 @@
 //! The callbacks of the widget.
 //!
-//! Pattern: Command-like callbacks (Observer) — each changes the shared state under a short lock, then
+//! Pattern: Command — each changes the shared state under a short lock, then
 //! asks for a redraw; no lock is held for either. Typing is remembered but does not redraw: the text
 //! field keeps its own cursor. A file chosen in the picker is told to the host with no lock held.
 

@@ -1,7 +1,7 @@
 //! Answering an offered backup: nothing the person has not answered is touched, nothing typed is
 //! lost, a wrong or stale backup is reported.
 //!
-//! Pattern: State machine tests through the reader and a built widget.
+//! Tests: State machine tests through the reader and a built widget.
 
 mod common;
 

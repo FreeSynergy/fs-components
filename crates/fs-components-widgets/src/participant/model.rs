@@ -1,6 +1,6 @@
 //! The neutral sender and the words for its kind.
 //!
-//! Pattern: Value objects. The kind is data from the caller; the component never guesses it from
+//! Pattern: none. The kind is data from the caller; the component never guesses it from
 //! a name or a text. `Sender::new` starts as `Unknown`: being a person must be said.
 
 /// What kind of participant wrote something.

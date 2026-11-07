@@ -1,6 +1,6 @@
 //! Drawing offscreen.
 //!
-//! Pattern: Pixel tests — skipped (with a message) where there is no graphics adapter. No window
+//! Tests: Pixel tests — skipped (with a message) where there is no graphics adapter. No window
 //! is opened.
 
 use std::path::PathBuf;

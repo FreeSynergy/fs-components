@@ -1,6 +1,6 @@
 //! Test support for the chat components: message makers and a generated long conversation.
 //!
-//! Pattern: Factory.
+//! Tests: helpers that build the sources and scenes.
 #![allow(dead_code)]
 
 use fs_components_widgets::message_list::{ChatMessage, MessageSource, SourceError};

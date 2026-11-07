@@ -1,6 +1,6 @@
 //! Every block kind can be built into an element, also with odd marks.
 //!
-//! Pattern: Smoke tests against the real theme (no window needed).
+//! Tests: Smoke tests against the real theme (no window needed).
 
 use std::sync::Arc;
 

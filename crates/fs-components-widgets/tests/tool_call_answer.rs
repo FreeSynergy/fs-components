@@ -1,6 +1,6 @@
 //! What `answer` accepts, and how the store takes a list.
 //!
-//! Pattern: Model tests.
+//! Tests: Model tests.
 
 mod common;
 

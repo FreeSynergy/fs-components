@@ -1,6 +1,6 @@
 //! Heights of all messages: prefix sums over a Fenwick tree.
 //!
-//! Pattern: Value object over a data structure (binary indexed tree). Messages not yet seen carry
+//! Pattern: State over a data structure (binary indexed tree). Messages not yet seen carry
 //! an estimate; once drawn they carry an estimate from their text, and once laid out, the
 //! measured height. Sums run in `f64` so 100 000 messages add up exactly.
 

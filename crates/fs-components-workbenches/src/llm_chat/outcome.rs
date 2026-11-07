@@ -1,6 +1,6 @@
 //! What a person did that the host must answer.
 //!
-//! Pattern: Value object, flattened from the parts. Nothing here is a decision: a question's
+//! Pattern: none. Nothing here is a decision: a question's
 //! answer and the stop are reported, the host (the engine) decides and carries them out.
 
 use fs_components_widgets::tool_call::Decision;

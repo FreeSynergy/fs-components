@@ -1,6 +1,6 @@
 //! The chat workbench: the full and the compact form, send, agents, refresh through a frame.
 //!
-//! Pattern: the real element driven in process like a window drives it (frames, not rebuilds), and
+//! Tests: the real element driven in process like a window drives it (frames, not rebuilds), and
 //! offscreen pictures.
 
 mod chat_common;

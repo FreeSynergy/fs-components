@@ -1,6 +1,6 @@
 //! The buttons above an item or a form.
 //!
-//! Pattern: Strategy by state — asking and confirming are two actions in different places: what lies
+//! Pattern: State — asking and confirming are two actions in different places: what lies
 //! where Delete or Cancel was keeps what is there, and the deed is across the bar, so a second press at
 //! the same point can never be it. Save and Cancel do not lie where Edit was.
 

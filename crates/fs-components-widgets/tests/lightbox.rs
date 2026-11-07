@@ -1,6 +1,6 @@
 //! The lightbox: stepping logic, pictures really drawn, buttons and keys in process.
 //!
-//! Pattern: Model tests, pixel tests on offscreen drawings, an in-process mouse and keyboard.
+//! Tests: Model tests, pixel tests on offscreen drawings, an in-process mouse and keyboard.
 
 mod common;
 

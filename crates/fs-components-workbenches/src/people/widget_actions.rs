@@ -1,6 +1,6 @@
 //! The callbacks of the widget.
 //!
-//! Pattern: Command-like callbacks (Observer) — each changes the shared state under a short lock,
+//! Pattern: Command — each changes the shared state under a short lock,
 //! then asks for a redraw. No lock is held when the redraw is asked for.
 
 use std::sync::Arc;

@@ -1,6 +1,6 @@
 //! Which rows of a long lane are drawn.
 //!
-//! Pattern: pure function — a lane of 100 000 items draws a bounded window around the focus; the
+//! Pattern: none — a lane of 100 000 items draws a bounded window around the focus; the
 //! rows before and after are counted in a line, never dropped.
 
 use std::ops::Range;

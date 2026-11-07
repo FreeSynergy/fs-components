@@ -2,7 +2,7 @@
 //!
 //! The text area drops a final newline (the reader puts it back when saving).
 //!
-//! Pattern: State machine tests through the widget (no window needed for the text area logic).
+//! Tests: State machine tests through the widget (no window needed for the text area logic).
 
 mod common;
 

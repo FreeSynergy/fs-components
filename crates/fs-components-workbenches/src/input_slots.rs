@@ -1,6 +1,6 @@
 //! The input states of one edit, shared by the workbenches with a form.
 //!
-//! Pattern: Memento — one input state per field for the whole edit, so a redraw (a failed save, a
+//! Pattern: State — one input state per field for the whole edit, so a redraw (a failed save, a
 //! pressed choice, a field added) keeps text and cursor. The lock of the slots is let go before an
 //! input's own lock is taken. A new `edit` id forgets what the previous edit held.
 

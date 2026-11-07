@@ -1,6 +1,6 @@
 //! A calendar source for the tests of the workbench.
 //!
-//! Pattern: Strategy (test double) — items in memory with a revision per item, like a store would; it
+//! Tests: a test double — items in memory with a revision per item, like a store would; it
 //! stands for "any source", not for a program's core (that is tested in `fs-calendar`).
 #![allow(dead_code)] // each test file uses a different subset
 

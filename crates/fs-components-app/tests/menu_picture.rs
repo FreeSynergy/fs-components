@@ -1,7 +1,7 @@
 //! The menus as pictures, drawn offscreen with the real view, opened through the router. No window is
 //! opened.
 //!
-//! Pattern: Pixel tests — skipped (with a message) where there is no graphics adapter. Pictures stay
+//! Tests: Pixel tests — skipped (with a message) where there is no graphics adapter. Pictures stay
 //! in `FS_COMP_SHOTS` if that is set.
 
 #[path = "menu_common/mod.rs"]

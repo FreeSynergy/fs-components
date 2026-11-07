@@ -1,6 +1,6 @@
 //! What a program says about its menus: labels and entries, nothing about how they look.
 //!
-//! Pattern: Value object for the menus + Command — an entry is named by a stable id, and one handler
+//! Pattern: Command — an entry is named by a stable id, and one handler
 //! of the program receives that id.
 
 use std::sync::Arc;

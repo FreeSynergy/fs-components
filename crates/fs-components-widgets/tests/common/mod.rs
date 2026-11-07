@@ -1,6 +1,6 @@
 //! Test support: draw an element offscreen (no window), look at the pixels, keep the picture.
 //!
-//! Pattern: Facade over Blinc's offscreen renderer. One picture at a time per process (Blinc
+//! Tests: a helper over Blinc's offscreen renderer. One picture at a time per process (Blinc
 //! keeps theme and reactive state in process-wide singletons). Pictures are written only when the
 //! environment variable `FS_COMP_SHOTS` names a directory; scratch files of a test live in a
 //! [`Scratch`] that removes itself.

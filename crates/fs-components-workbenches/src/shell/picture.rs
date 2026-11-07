@@ -1,6 +1,6 @@
 //! What to draw in a picture, and what comes back.
 //!
-//! Pattern: Value objects (Builder-like `Picture::new` plus assigning fields) — plain data.
+//! Pattern: none — plain data (`Picture::new` plus assigning fields).
 
 use std::sync::Arc;
 

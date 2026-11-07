@@ -1,7 +1,7 @@
 //! The arrow keys at the edge of the list: a key that leads nowhere does not open the folder
 //! that is selected.
 //!
-//! Pattern: input tests through the router a window uses. A hang here is a deadlock.
+//! Tests: input tests through the router a window uses. A hang here is a deadlock.
 
 #[path = "files_common/mod.rs"]
 mod files_common;

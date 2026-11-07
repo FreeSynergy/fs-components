@@ -1,6 +1,6 @@
 //! A double-click neither deletes nor discards, through the router and hit test a window uses.
 //!
-//! Pattern: input tests, with and without a redraw between the presses. No window is opened.
+//! Tests: input tests, with and without a redraw between the presses. No window is opened.
 
 #[path = "calendar_common/mod.rs"]
 mod calendar_common;

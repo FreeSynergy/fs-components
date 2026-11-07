@@ -1,7 +1,7 @@
 //! The menus of the real shell, reached and chosen with the keyboard the way a window passes keys to
 //! Blinc's navigation. No window is opened.
 //!
-//! Pattern: Input tests. A hang here is a deadlock, not slowness.
+//! Tests: Input tests. A hang here is a deadlock, not slowness.
 
 #[path = "menu_common/mod.rs"]
 mod menu_common;

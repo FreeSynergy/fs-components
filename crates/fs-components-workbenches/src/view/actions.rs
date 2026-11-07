@@ -1,6 +1,6 @@
 //! What the person can do, as callbacks.
 //!
-//! Pattern: Command-like callbacks (Observer) — the shell decides what each one does: change the
+//! Pattern: Observer — the shell decides what each one does: change the
 //! state and redraw (window), or nothing (picture).
 
 use std::sync::Arc;

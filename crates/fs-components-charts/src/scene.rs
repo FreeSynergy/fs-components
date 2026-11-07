@@ -1,6 +1,6 @@
 //! The scene: what a chart looks like, as plain shapes with colour *roles*, not colours.
 //!
-//! Pattern: Intermediate representation (Builder output). Layout produces a [`Scene`]; the view
+//! Pattern: none — plain data, the output of the layout. Layout produces a [`Scene`]; the view
 //! draws it with the theme's colours. A plugin could return the same description and let the host
 //! draw it (charts.md, "interface proposal"). Pure data: tested with exact numbers, no GUI.
 

@@ -1,6 +1,6 @@
 //! A text that does not fit its cell.
 //!
-//! Pattern: pure function over the framework's text measurer — Blinc has no ellipsis of its own, so
+//! Pattern: none — a pure function over the framework's text measurer — Blinc has no ellipsis of its own, so
 //! a long text is cut with one here rather than at the cell's edge. Measured at the size a plain
 //! text has; a theme with another size only shifts where the cut falls.
 

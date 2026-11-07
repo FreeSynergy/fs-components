@@ -1,6 +1,6 @@
 //! A list.
 //!
-//! Pattern: Composite renderer — an item holds blocks, which may hold lists again.
+//! Pattern: Adapter — an item holds blocks, which may hold lists again.
 
 use blinc_layout::div::{Div, div};
 use blinc_layout::text;

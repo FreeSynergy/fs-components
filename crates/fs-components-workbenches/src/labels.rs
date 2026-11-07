@@ -1,6 +1,6 @@
 //! The words the reader shows.
 //!
-//! Pattern: Value object — the workbench does not know its data or its audience, so every text it
+//! Pattern: none — the workbench does not know its data or its audience, so every text it
 //! shows comes from the caller (translation, ADR 0053, is the caller's). `{}` in a text is
 //! replaced by the thing it talks about. The defaults are neutral English.
 

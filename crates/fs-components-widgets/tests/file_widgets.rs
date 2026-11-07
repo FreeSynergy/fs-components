@@ -1,6 +1,6 @@
 //! Breadcrumb, file-tile and file-preview: the pure rules, the elements, a press and the keys.
 //!
-//! Pattern: Model tests and an in-process mouse over the real hit test.
+//! Tests: Model tests and an in-process mouse over the real hit test.
 
 mod common;
 

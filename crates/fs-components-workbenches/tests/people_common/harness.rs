@@ -1,6 +1,6 @@
 //! The real element, laid out and driven like a window drives it, without opening one.
 //!
-//! Pattern: Facade over Blinc's tree and router, with a full rebuild (`Harness::rebuild`) and a
+//! Tests: a helper over Blinc's tree and router, with a full rebuild (`Harness::rebuild`) and a
 //! frame for live areas (`Harness::frame`) as the window's event loop does them.
 
 use std::sync::{Arc, Mutex, MutexGuard, PoisonError};

@@ -1,6 +1,6 @@
 //! A message as the list sees it: neutral data, and the trait the host fills it from.
 //!
-//! Pattern: Value objects + Strategy/Repository (`MessageSource`). No messenger type appears: a
+//! Pattern: Strategy (`MessageSource`). No messenger type appears: a
 //! host maps its own messages to [`ChatMessage`]. The list is told nothing about transport or
 //! streaming; text that grows is the host changing its source and calling `refresh`.
 

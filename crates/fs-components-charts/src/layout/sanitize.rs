@@ -1,6 +1,6 @@
 //! The last guard: nothing with a coordinate that is not a usable number reaches the drawing.
 //!
-//! Pattern: Filter. A NaN or infinite coordinate (from a domain too narrow to divide by, an
+//! Pattern: none. A NaN or infinite coordinate (from a domain too narrow to divide by, an
 //! overflow) would panic Blinc's tessellator or draw garbage; the shape is left out and counted in
 //! `Scene::omitted`, so the chart says so under the plot instead of staying blank.
 

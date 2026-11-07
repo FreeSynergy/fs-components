@@ -1,6 +1,6 @@
 //! Test scenes for the chat: a clock by hand and a busy conversation.
 //!
-//! Pattern: Factory.
+//! Tests: helpers that build the sources and scenes.
 #![allow(dead_code)]
 
 use std::sync::Arc;

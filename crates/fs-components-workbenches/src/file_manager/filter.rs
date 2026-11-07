@@ -1,6 +1,6 @@
 //! The filter by size and date, as it is typed.
 //!
-//! Pattern: Value object + Specification — what is typed stays text until Apply; a size or a date that
+//! Pattern: State — what is typed stays text until Apply; a size or a date that
 //! cannot be read is said, and the list stays as it was. Sizes take a plain number or KB, MB, GB (powers
 //! of 1000; what `format_bytes` writes is powers of 1024 and also reads as KiB, MiB, GiB).
 

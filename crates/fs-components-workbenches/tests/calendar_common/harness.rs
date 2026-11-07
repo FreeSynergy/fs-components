@@ -1,6 +1,6 @@
 //! The real element, laid out and driven like a window drives it, without opening one.
 //!
-//! Pattern: Facade over Blinc's tree and router, with a full rebuild as the window's event loop does
+//! Tests: a helper over Blinc's tree and router, with a full rebuild as the window's event loop does
 //! it. Hold no other picture in the same binary without [`serial`]: Blinc's first set-up panics when two
 //! threads race, and `draw_to_png` holds the process-wide picture lock.
 

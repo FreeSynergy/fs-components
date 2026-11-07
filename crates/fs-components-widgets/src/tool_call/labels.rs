@@ -1,6 +1,6 @@
 //! The words of a tool call. They come from the caller; English by default.
 //!
-//! Pattern: Value object.
+//! Pattern: none.
 
 use super::model::{ToolEnd, ToolKind, ToolRisk, ToolState};
 

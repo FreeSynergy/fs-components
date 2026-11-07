@@ -1,6 +1,6 @@
 //! Where the calendar workbench gets its items.
 //!
-//! Pattern: Strategy + Value objects — the workbench depends on this trait only (an Adapter over a
+//! Pattern: Strategy — the workbench depends on this trait only (an Adapter over a
 //! program's core implements it). The trait is synchronous and called on the interface thread, like
 //! `DocumentSource` and `PeopleSource`; this is provisional (see DESIGN.md).
 

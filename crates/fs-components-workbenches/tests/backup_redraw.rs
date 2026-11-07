@@ -1,6 +1,6 @@
 //! A failing backup is shown: the timer thread redraws the page when the message changes.
 //!
-//! Pattern: Observer test through the framework's pending-rebuild queue.
+//! Tests: Observer test through the framework's pending-rebuild queue.
 
 mod common;
 

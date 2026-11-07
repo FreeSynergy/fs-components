@@ -1,6 +1,6 @@
 //! The outer layout: sidebar and content side by side.
 //!
-//! Pattern: Template — fixed skeleton; the areas are passed in.
+//! Pattern: none — fixed skeleton; the areas are passed in.
 
 use blinc_layout::div::{Div, div};
 use blinc_layout::prelude::ElementBuilder;

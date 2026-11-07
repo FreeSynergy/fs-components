@@ -1,6 +1,6 @@
 //! A consumer can tell a click on a row from a key, and can name the content type.
 //!
-//! Pattern: in-process input over the window's router; broadcast guard checked with two lists.
+//! Tests: in-process input over the window's router; broadcast guard checked with two lists.
 
 mod common;
 

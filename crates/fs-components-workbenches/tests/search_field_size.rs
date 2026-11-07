@@ -1,6 +1,6 @@
 //! The size of a search field reaches the picture.
 //!
-//! Pattern: Pixel test — skipped (with a message) where there is no graphics adapter. No window is
+//! Tests: Pixel test — skipped (with a message) where there is no graphics adapter. No window is
 //! opened. The numbers depend on the theme, so only the order is checked.
 
 use blinc_layout::div::div;

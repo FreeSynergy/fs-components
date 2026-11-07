@@ -1,7 +1,7 @@
 //! `PeopleWidget`: the real element, clicked and typed into in-process over the router and hit test
 //! a window uses, and drawn offscreen.
 //!
-//! Pattern: input tests + pixel tests (skipped with a message without a graphics adapter). No window
+//! Tests: input tests + pixel tests (skipped with a message without a graphics adapter). No window
 //! is opened. A hang here is a deadlock, not slowness.
 
 #[path = "people_common/mod.rs"]

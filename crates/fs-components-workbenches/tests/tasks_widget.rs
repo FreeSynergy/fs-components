@@ -1,6 +1,6 @@
 //! The workbench driven through Blinc's router and the keys a window sends. No window is opened.
 //!
-//! Pattern: input tests. A hang here is a deadlock: run with a timeout.
+//! Tests: input tests. A hang here is a deadlock: run with a timeout.
 
 #[path = "tasks_common/mod.rs"]
 mod tasks_common;

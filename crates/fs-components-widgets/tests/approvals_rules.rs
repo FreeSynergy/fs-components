@@ -1,7 +1,7 @@
 //! The answer guard's rules: refusal re-arms, Refuse is never starved, long commands, digests,
 //! tombstones.
 //!
-//! Pattern: the real element in a tree driven like a window drives it (events with their
+//! Tests: the real element in a tree driven like a window drives it (events with their
 //! rectangles, frames), a clock by hand.
 
 mod chat_support;

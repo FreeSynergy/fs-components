@@ -1,6 +1,6 @@
 //! The share dialog: the picture, clicks, keys and typing in process.
 //!
-//! Pattern: Model tests, pixel tests, an in-process mouse and keyboard.
+//! Tests: Model tests, pixel tests, an in-process mouse and keyboard.
 
 mod common;
 

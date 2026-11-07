@@ -1,6 +1,6 @@
 //! The categories of a discrete channel: which values, in which order.
 //!
-//! Pattern: Value object built by a Strategy per sort mode. The order is Vega-Lite's: ascending
+//! Pattern: Strategy. The order is Vega-Lite's: ascending
 //! by default (numbers before text, `null` last), or as the data came, or descending, or an
 //! explicit list, or by the total of the other axis.
 

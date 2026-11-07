@@ -1,6 +1,6 @@
 //! One value of a field, read the way its type says.
 //!
-//! Pattern: Value object + Strategy by field type — `read` is the one place where a JSON value
+//! Pattern: Strategy — `read` is the one place where a JSON value
 //! becomes a number, a category, an instant, or a *named* reason why it cannot be drawn.
 
 use serde_json::Value;

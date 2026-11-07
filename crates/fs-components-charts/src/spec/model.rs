@@ -1,6 +1,6 @@
 //! The validated spec: only what the subset accepts, typed.
 //!
-//! Pattern: Value objects — plain data, built by `parse`, read by the layers after it.
+//! Pattern: none — plain data, built by `parse`, read by the layers after it.
 
 use serde_json::{Map, Value};
 

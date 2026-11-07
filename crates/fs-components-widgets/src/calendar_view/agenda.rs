@@ -1,6 +1,6 @@
 //! The agenda: the items of the span as a list by day, days without items left out.
 //!
-//! Pattern: Adapter + windowing. A day's heading reports the day; an item reports the item. An item over
+//! Pattern: Adapter. A day's heading reports the day; an item reports the item. An item over
 //! several days appears on each.
 
 use std::sync::Arc;

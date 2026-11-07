@@ -1,6 +1,6 @@
 //! What the workbench gives back to its host.
 //!
-//! Pattern: Value objects — a workbench always gives a context back and does not run alone (ADR 0056,
+//! Pattern: none — a workbench always gives a context back and does not run alone (ADR 0056,
 //! point 4). Provisional shape: what is current, as plain values. Nothing here is a handle.
 
 /// How the things in a folder are shown.

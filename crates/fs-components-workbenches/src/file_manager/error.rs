@@ -1,6 +1,6 @@
 //! What can go wrong in a file source.
 //!
-//! Pattern: plain error value with a kind — the workbench decides by the kind (a taken name asks a
+//! Pattern: none — the workbench decides by the kind (a taken name asks a
 //! question, a changed file offers a rescan), people read the message. The three named kinds are the
 //! problem types of the contract; they are shown as such, not as "something failed".
 

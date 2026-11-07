@@ -1,6 +1,6 @@
 //! A people source for the tests of the workbench.
 //!
-//! Pattern: Strategy (test double) — people in memory with a revision per person, like a store
+//! Tests: a test double — people in memory with a revision per person, like a store
 //! would; it stands for "any source", not for a program's core (that is tested in `fs-people`).
 #![allow(dead_code)] // each test file uses a different subset
 

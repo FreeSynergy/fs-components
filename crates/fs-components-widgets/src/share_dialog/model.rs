@@ -1,6 +1,6 @@
 //! The shapes the dialog works with.
 //!
-//! Pattern: Value objects — neutral. The dialog does not know what a person, a group or a
+//! Pattern: none — neutral. The dialog does not know what a person, a group or a
 //! permission is: a choice has a key, a name and two texts; a permission has a key and a label.
 
 /// Someone or something that can be chosen.

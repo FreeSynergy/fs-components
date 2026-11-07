@@ -1,6 +1,6 @@
 //! The composer: exact text, send as an outcome, nothing lost, attachments, drafts.
 //!
-//! Pattern: state tests, pixel tests, an in-process mouse. Typing itself (and the input method)
+//! Tests: state tests, pixel tests, an in-process mouse. Typing itself (and the input method)
 //! needs a real window; `typed` is what the text area calls.
 
 mod common;

@@ -1,6 +1,6 @@
 //! The words of the message list. They come from the caller; English by default.
 //!
-//! Pattern: Value object.
+//! Pattern: none.
 
 use crate::participant::KindLabels;
 use crate::tool_call::Labels as ToolLabels;

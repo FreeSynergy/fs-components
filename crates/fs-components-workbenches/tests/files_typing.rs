@@ -1,7 +1,7 @@
 //! What is typed is not thrown away by another act, and a source that cannot change anything is not
 //! asked to (the picker changes nothing).
 //!
-//! Pattern: State tests over a source in memory, and the buttons of the bar through the harness.
+//! Tests: State tests over a source in memory, and the buttons of the bar through the harness.
 
 #[path = "files_common/mod.rs"]
 mod files_common;

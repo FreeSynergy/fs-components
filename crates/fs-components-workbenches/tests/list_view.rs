@@ -1,6 +1,6 @@
 //! `list-view` with very many rows, drawn offscreen with `fs_components_render::draw_to_png`.
 //!
-//! Pattern: Pixel tests — skipped (with a message) where there is no graphics adapter. They live
+//! Tests: Pixel tests — skipped (with a message) where there is no graphics adapter. They live
 //! here because this crate has the widget and the renderer as dependencies. No window is opened.
 
 use std::path::PathBuf;

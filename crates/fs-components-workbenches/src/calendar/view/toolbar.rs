@@ -1,6 +1,6 @@
 //! The bar above the calendar: where to go, what to see, what to make.
 //!
-//! Pattern: Template — what the state allows is offered. The compact variant has no view buttons, and
+//! Pattern: none — what the state allows is offered. The compact variant has no view buttons, and
 //! only what a source can do is there.
 
 use blinc_cn::cn;

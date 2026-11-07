@@ -1,6 +1,6 @@
 //! What the theme says about a chart: colours, series palette, text sizes.
 //!
-//! Pattern: Value object snapshot — read once per draw from `ThemeState`; nothing here is a
+//! Pattern: none — read once per draw from `ThemeState`; nothing here is a
 //! literal colour. Series colours are chosen from the theme's accents by `color::pick`, which
 //! keeps them apart for all kinds of colour vision and legible against the surface.
 

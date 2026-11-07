@@ -1,6 +1,6 @@
 //! The menus in the state of the shell, without a window and without Blinc's runtime.
 //!
-//! Pattern: State tests — transitions only. A hang here is a deadlock, not slowness.
+//! Tests: State tests — transitions only. A hang here is a deadlock, not slowness.
 
 use std::sync::{Arc, Mutex};
 

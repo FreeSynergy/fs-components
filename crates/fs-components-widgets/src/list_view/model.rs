@@ -1,6 +1,6 @@
 //! What the caller gives the list: columns, rows and what to do with a chosen row.
 //!
-//! Pattern: Strategy + Value objects — [`RowSource`] is all the widget asks of its data; [`Column`]
+//! Pattern: Strategy — [`RowSource`] is all the widget asks of its data; [`Column`]
 //! and [`Row`] are plain data, so the file manager and the people program use the same list.
 
 use std::sync::Arc;

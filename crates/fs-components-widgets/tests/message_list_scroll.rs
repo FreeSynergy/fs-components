@@ -1,6 +1,6 @@
 //! The message list over long conversations: virtualisation, following, streaming, learning heights.
 //!
-//! Pattern: model tests and layouts of the same view a window draws; the scroll is moved through
+//! Tests: model tests and layouts of the same view a window draws; the scroll is moved through
 //! the handle (the wheel itself needs a real window).
 
 mod chat_support;

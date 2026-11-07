@@ -1,6 +1,6 @@
 //! Turning the rows of a spec into the values a chart draws (pure, no GUI).
 //!
-//! Pattern: Pipeline — `column` reads each field by its type, `aggregate` groups, `prepare`
+//! Pattern: Facade — `column` reads each field by its type, `aggregate` groups, `prepare`
 //! drops what cannot be drawn and *counts* it, so nothing disappears silently.
 
 mod aggregate;

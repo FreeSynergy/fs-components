@@ -1,6 +1,6 @@
 //! The words of the agent tree. They come from the caller; English by default.
 //!
-//! Pattern: Value object.
+//! Pattern: none.
 
 use crate::participant::KindLabels;
 

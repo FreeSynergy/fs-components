@@ -1,6 +1,6 @@
 //! The people of a group and how many of them fit.
 //!
-//! Pattern: Value objects — plain data, no Blinc type; the view reads it.
+//! Pattern: none — plain data, no Blinc type; the view reads it.
 
 /// How present a person is (only shown when the caller knows it).
 #[non_exhaustive]

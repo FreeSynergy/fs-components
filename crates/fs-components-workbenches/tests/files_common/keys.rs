@@ -1,6 +1,6 @@
 //! The keys of the harness: the window's order for a key, and Tab to an element.
 //!
-//! Pattern: Facade over Blinc's tree and router, as `harness` is.
+//! Tests: a helper over Blinc's tree and router, as `harness` is.
 
 use blinc_core::events::event_types::KEY_DOWN;
 

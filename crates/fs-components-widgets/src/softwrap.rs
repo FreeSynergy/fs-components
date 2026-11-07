@@ -1,6 +1,6 @@
 //! Long unbroken text, made breakable.
 //!
-//! Pattern: pure function. Blinc breaks lines at spaces; an unbroken run of thousands of characters
+//! Pattern: none. Blinc breaks lines at spaces; an unbroken run of thousands of characters
 //! is slow to measure and runs out of the box. A zero-width space every few characters lets it wrap
 //! and keeps the text readable (it is only for drawing; the data is never changed).
 

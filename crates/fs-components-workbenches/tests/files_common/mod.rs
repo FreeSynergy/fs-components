@@ -1,6 +1,6 @@
 //! A file source for the tests of the workbench.
 //!
-//! Pattern: Strategy (test double) — folders and files in memory; it stands for "any source", not for a
+//! Tests: a test double — folders and files in memory; it stands for "any source", not for a
 //! program's core (that is tested in `fs-files`, over the real core and real folders).
 #![allow(dead_code)] // each test file uses a different subset
 

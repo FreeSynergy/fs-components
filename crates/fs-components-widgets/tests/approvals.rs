@@ -1,7 +1,7 @@
 //! Answers to questions: armed only after a moment, bound to what was drawn, once, never by a held
 //! key or a click aimed at something else. Nothing is answered by the component itself.
 //!
-//! Pattern: the real element in a tree driven like a window (frames, not rebuilds), a clock moved by
+//! Tests: the real element in a tree driven like a window (frames, not rebuilds), a clock moved by
 //! hand.
 
 mod chat_support;

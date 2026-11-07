@@ -1,6 +1,6 @@
 //! Stacking: where each value starts and ends when values of one group pile up.
 //!
-//! Pattern: Pure function over `(group, rank, value)`. Positive values pile up from zero and
+//! Pattern: none — a pure function over `(group, rank, value)`. Positive values pile up from zero and
 //! negative values pile down from zero, separately; with `Normalize` Vega-Lite uses the absolute
 //! values (checked against 6.5.0), so every pile is 0..1. The order of a pile is by the natural
 //! rank of the series, not by `sort`: ascending from zero for a horizontal bar and a pie,

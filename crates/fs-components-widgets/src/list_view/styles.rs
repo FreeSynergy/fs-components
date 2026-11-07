@@ -1,6 +1,6 @@
 //! The style sheet of the list.
 //!
-//! Pattern: Template — only theme variables, so a theme can change everything.
+//! Pattern: none — only theme variables, so a theme can change everything.
 
 /// CSS of the list.
 pub const STYLES: &str = r"

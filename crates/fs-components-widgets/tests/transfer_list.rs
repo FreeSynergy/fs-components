@@ -1,6 +1,6 @@
 //! Transfer list: the model, the picture and the buttons.
 //!
-//! Pattern: Model tests, pixel tests, and an in-process mouse over the real hit test.
+//! Tests: Model tests, pixel tests, and an in-process mouse over the real hit test.
 
 mod common;
 

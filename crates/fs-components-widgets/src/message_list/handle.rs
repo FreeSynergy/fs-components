@@ -1,6 +1,6 @@
 //! The handle of a message list.
 //!
-//! Pattern: Facade + Observer + Memento — a clonable handle over the shared state (heights,
+//! Pattern: Facade + Observer + State — a clonable handle over the shared state (heights,
 //! follow flag, what is open) and the scroll position; no method returns a lock guard. The host
 //! changes its source and calls [`MessageList::refresh`]; what a person does comes back as an
 //! [`Outcome`]. Nothing is decided here.

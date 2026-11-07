@@ -1,6 +1,6 @@
 //! The data of a sortable list.
 //!
-//! Pattern: Value objects — neutral: an item has a key the caller understands and a label; the
+//! Pattern: none — neutral: an item has a key the caller understands and a label; the
 //! widget does not know what the item is.
 
 /// One item. Keys should be unique across all lanes.

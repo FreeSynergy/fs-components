@@ -1,6 +1,6 @@
 //! What the people workbench and its source talk about.
 //!
-//! Pattern: Value objects — neutral rows, sections of labelled fields and a draft of labelled
+//! Pattern: none — neutral rows, sections of labelled fields and a draft of labelled
 //! fields. Nothing here knows what a person is made of.
 
 /// What a source can do; an action it cannot do is not offered.

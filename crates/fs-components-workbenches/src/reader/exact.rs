@@ -1,6 +1,6 @@
 //! Exact text: what the text area cannot hold.
 //!
-//! Pattern: pure functions — compare and describe texts that differ only in line ends and blank
+//! Pattern: none — compare and describe texts that differ only in line ends and blank
 //! lines at the end.
 
 /// Equal apart from line ends and blank lines at the end.

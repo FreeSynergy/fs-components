@@ -1,7 +1,7 @@
 //! The tasks workbench at the smallest window, with the room a surface really has there. No window is
 //! opened; the wheel, the mouse and the keys go through the router.
 //!
-//! Pattern: input tests. A hang here is a deadlock.
+//! Tests: input tests. A hang here is a deadlock.
 
 #[path = "tasks_common/mod.rs"]
 mod tasks_common;

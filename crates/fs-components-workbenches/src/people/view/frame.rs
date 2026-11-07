@@ -1,6 +1,6 @@
 //! The outer layout: search and list on the left, the person on the right.
 //!
-//! Pattern: Template — fixed skeleton; the areas are passed in. Sizes are worked out here because
+//! Pattern: none — fixed skeleton; the areas are passed in. Sizes are worked out here because
 //! the list must be told its height in pixels.
 
 use blinc_layout::div::{Div, div};

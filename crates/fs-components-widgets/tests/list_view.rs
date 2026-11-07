@@ -2,7 +2,7 @@
 //! the router and hit test a window uses. Pictures with many rows are in the tests of
 //! `fs-components-workbenches`, which has the renderer as a dependency.
 //!
-//! Pattern: Model tests + input tests. No window is opened.
+//! Tests: Model tests + input tests. No window is opened.
 
 mod common;
 

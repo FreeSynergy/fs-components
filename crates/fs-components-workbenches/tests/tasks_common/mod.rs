@@ -1,6 +1,6 @@
 //! A task source for the tests of the workbench.
 //!
-//! Pattern: Strategy (test double) — tasks in memory with a revision each, like a store would; it
+//! Tests: a test double — tasks in memory with a revision each, like a store would; it
 //! stands for "any source", not for a program's core (that is tested in `fs-tasks`).
 #![allow(dead_code)] // each test file uses a different subset
 

@@ -1,6 +1,6 @@
 //! `breadcrumb`: the way to where the person is, each step a thing to press.
 //!
-//! Pattern: Value objects + pure plan ([`plan`]) + Adapter over plain Blinc elements. The widget has
+//! Pattern: Adapter over plain Blinc elements, with a pure plan ([`plan`]). The widget has
 //! no words and no colours of its own and does not know what a step means. A step is a plain element
 //! and a tab stop, so it may be drawn inside a live area and the window turns Enter and Space on it
 //! into its click. The last step is where the person is: it is not a thing to press.

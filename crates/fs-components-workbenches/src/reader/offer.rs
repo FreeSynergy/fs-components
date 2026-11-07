@@ -1,6 +1,6 @@
 //! Answering an offered backup: look for it, restore it, discard it, clear what an edit wrote.
 //!
-//! Pattern: State transitions on `Reader` (see `backup.rs` for the timing and the writes).
+//! Pattern: State — transitions on `Reader` (see `backup.rs` for the timing and the writes).
 
 use super::backup::pending_key;
 use super::draft::Draft;

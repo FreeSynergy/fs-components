@@ -1,6 +1,6 @@
 //! What the person can do, as callbacks.
 //!
-//! Pattern: Command-like callbacks (Observer) — the widget decides what each one does: change the
+//! Pattern: Observer — the widget decides what each one does: change the
 //! state and draw again.
 
 use std::sync::Arc;

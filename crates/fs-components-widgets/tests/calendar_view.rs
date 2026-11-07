@@ -1,6 +1,6 @@
 //! `calendar-view`: dates, spans, parts on a day and lanes. Pure, no window.
 //!
-//! Pattern: Table tests over the layout functions.
+//! Tests: Table tests over the layout functions.
 
 use fs_components_widgets::calendar_view::{
     Segment, month_days, segment_on, span_of, step_from, week_of,

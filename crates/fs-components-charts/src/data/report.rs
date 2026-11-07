@@ -1,6 +1,6 @@
 //! What was dropped or broken, counted: the visible side of a real data problem.
 //!
-//! Pattern: Value object (Notification-like) — the data stage never fails on bad values and never
+//! Pattern: none — plain data (a notification): the data stage never fails on bad values and never
 //! hides them; it hands this report to the layout (a note in the chart) and to the text alternative.
 
 use super::cell::Invalid;

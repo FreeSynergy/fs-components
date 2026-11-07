@@ -1,6 +1,6 @@
 //! The tool call: update in place, the kind first, questions as outcomes, pictures.
 //!
-//! Pattern: Model tests, pixel tests, an in-process mouse.
+//! Tests: Model tests, pixel tests, an in-process mouse.
 
 mod common;
 

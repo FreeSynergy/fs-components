@@ -1,6 +1,6 @@
 //! `calendar-view`: a long agenda costs what a short one costs.
 //!
-//! Pattern: Input test over the router a window uses. No window is opened. A hang here is a deadlock.
+//! Tests: Input test over the router a window uses. No window is opened. A hang here is a deadlock.
 
 mod common;
 

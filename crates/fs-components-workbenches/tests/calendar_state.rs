@@ -1,6 +1,6 @@
 //! The state machine of the calendar workbench: going elsewhere.
 //!
-//! Pattern: State machine tests, no window.
+//! Tests: State machine tests, no window.
 
 #[path = "calendar_common/mod.rs"]
 mod calendar_common;

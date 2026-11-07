@@ -1,6 +1,6 @@
 //! The state of the shell, without a window.
 //!
-//! Pattern: State tests — transitions only.
+//! Tests: State tests — transitions only.
 
 use std::sync::Arc;
 

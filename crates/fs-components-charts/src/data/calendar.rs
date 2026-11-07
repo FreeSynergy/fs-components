@@ -1,6 +1,6 @@
 //! Calendar arithmetic on the proleptic Gregorian calendar, in whole days.
 //!
-//! Pattern: Value-object functions — pure integer maths, no time zones, no machine clock. A time
+//! Pattern: none — pure integer maths, no time zones, no machine clock. A time
 //! zone is only ever an offset that the data itself carries.
 
 /// Days from 1970-01-01 to the given civil date (negative before).

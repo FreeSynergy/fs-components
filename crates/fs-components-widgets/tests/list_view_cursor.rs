@@ -1,6 +1,6 @@
 //! `list-view`: where the keys start when data or the selection changed, and refused clicks.
 //!
-//! Pattern: input tests over the router a window uses. No window is opened.
+//! Tests: input tests over the router a window uses. No window is opened.
 
 mod common;
 

@@ -1,6 +1,6 @@
 //! Which rows are in view, and how wide the columns are.
 //!
-//! Pattern: pure functions — the arithmetic of the list, testable without a window.
+//! Pattern: none — the arithmetic of the list, testable without a window.
 
 use std::ops::Range;
 

@@ -1,6 +1,6 @@
 //! What the workbench gives back to the program around it (ADR 0056).
 //!
-//! Pattern: State machine test, no window.
+//! Tests: State machine test, no window.
 
 #[path = "calendar_common/mod.rs"]
 mod calendar_common;

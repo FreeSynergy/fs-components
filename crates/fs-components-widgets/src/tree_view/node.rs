@@ -1,6 +1,6 @@
 //! A node of the tree.
 //!
-//! Pattern: Composite — a node holds nodes.
+//! Pattern: none — a node holds nodes.
 
 /// One node: a key the caller understands, a label to show, and children.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]

@@ -1,6 +1,6 @@
 //! A mouse and a keyboard for the harness, sending what a window sends.
 //!
-//! Pattern: Facade over Blinc's router and keyboard navigation.
+//! Tests: a helper over Blinc's router and keyboard navigation.
 
 use blinc_layout::event_router::MouseButton;
 use blinc_layout::tree::LayoutNodeId;

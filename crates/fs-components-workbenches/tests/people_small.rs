@@ -1,7 +1,7 @@
 //! The people workbench at the smallest window, with the room a surface really has there, and a
 //! double-click on Cancel. No window is opened; the wheel and the mouse go through the router.
 //!
-//! Pattern: input tests. A hang here is a deadlock.
+//! Tests: input tests. A hang here is a deadlock.
 
 #[path = "people_common/mod.rs"]
 mod people_common;

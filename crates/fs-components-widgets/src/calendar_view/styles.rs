@@ -1,6 +1,6 @@
 //! The style sheet of the calendar view.
 //!
-//! Pattern: Template — only theme variables, so a theme can change everything. The six category
+//! Pattern: none — only theme variables, so a theme can change everything. The six category
 //! colours are the theme's status colours; which item has which is the caller's matter.
 
 /// CSS of the calendar view.

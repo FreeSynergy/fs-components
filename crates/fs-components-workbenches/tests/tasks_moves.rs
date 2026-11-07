@@ -1,6 +1,6 @@
 //! Moves in the state machine of the tasks workbench, without a window.
 //!
-//! Pattern: State tests over a source in memory.
+//! Tests: State tests over a source in memory.
 
 #[path = "tasks_common/mod.rs"]
 mod tasks_common;

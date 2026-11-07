@@ -1,6 +1,6 @@
 //! What every mark layout reads: the spec, the cleaned data, the words, the series.
 //!
-//! Pattern: Parameter object — one borrowed bundle instead of five arguments everywhere.
+//! Pattern: none — one borrowed bundle instead of five arguments everywhere.
 
 use super::cats::Cats;
 use super::describe;

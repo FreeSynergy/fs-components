@@ -1,6 +1,6 @@
 //! Helpers for the pixel tests: scratch folder, a source with one document, pixel lookups.
 //!
-//! Pattern: Test helpers.
+//! Tests: Test helpers.
 
 #![allow(dead_code)]
 

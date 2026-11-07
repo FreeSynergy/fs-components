@@ -1,6 +1,6 @@
 //! One element per block.
 //!
-//! Pattern: Strategy by block kind — a `match` on [`Block`] picks the drawing function; the
+//! Pattern: Adapter — a `match` on [`Block`] picks the drawing function; the
 //! fallback ([`Block::Plain`]) draws text as it is, so nothing is lost.
 
 use blinc_layout::div::{Div, div};

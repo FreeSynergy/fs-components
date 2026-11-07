@@ -1,6 +1,6 @@
 //! A first guess of how tall a message is, before it has been laid out.
 //!
-//! Pattern: pure function. Only a start: the measured height replaces it as soon as the message
+//! Pattern: none. Only a start: the measured height replaces it as soon as the message
 //! has been laid out. Counts characters per line, so it needs no text measuring.
 
 #![allow(clippy::cast_precision_loss)]

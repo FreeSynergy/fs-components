@@ -1,6 +1,6 @@
 //! One tile.
 //!
-//! Pattern: Value object + Adapter — the data is what the caller says; the widget has no words and no
+//! Pattern: Adapter — the data is what the caller says; the widget has no words and no
 //! colours of its own and does not know what a file is. A tile is a plain element with no click of its
 //! own; the grid is what takes the click, so no press reaches two targets.
 

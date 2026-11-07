@@ -1,6 +1,6 @@
 //! The reader's transitions, without a window.
 //!
-//! Pattern: State machine tests — every transition on its own.
+//! Tests: State machine tests — every transition on its own.
 
 mod common;
 

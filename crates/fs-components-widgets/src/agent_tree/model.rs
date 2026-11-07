@@ -1,6 +1,6 @@
 //! Agents and subagents as data, and what a person can do with the tree.
 //!
-//! Pattern: Value objects. Neutral: no messenger, no model. An agent is a marked participant: its
+//! Pattern: none. Neutral: no messenger, no model. An agent is a marked participant: its
 //! kind (`SenderKind`) comes with it and is drawn on every row.
 
 use crate::participant::SenderKind;

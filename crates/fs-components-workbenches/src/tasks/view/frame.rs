@@ -1,6 +1,6 @@
 //! The outer layout: the toolbar above, the work area and the task beside each other.
 //!
-//! Pattern: Template — fixed skeleton; the areas are passed in. Sizes are worked out here because the
+//! Pattern: none — fixed skeleton; the areas are passed in. Sizes are worked out here because the
 //! list must be told its height in pixels. At narrow widths the toolbar takes more lines and the
 //! work area stands above the task, so everything stays reachable.
 

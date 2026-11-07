@@ -1,6 +1,6 @@
 //! The agent tree: attention, collapse, depth, size, pictures.
 //!
-//! Pattern: model tests on the pure forest, then layouts and pixels of the same view a window draws.
+//! Tests: model tests on the pure forest, then layouts and pixels of the same view a window draws.
 
 mod common;
 

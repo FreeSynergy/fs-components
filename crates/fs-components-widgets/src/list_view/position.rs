@@ -1,6 +1,6 @@
 //! Where the list is scrolled to.
 //!
-//! Pattern: Memento — a handle the owner keeps, so that the scroll position and the row under the
+//! Pattern: State — a handle the owner keeps, so that the scroll position and the row under the
 //! keyboard survive a rebuild of the list. Nothing here hands out a lock.
 
 use std::sync::atomic::{AtomicUsize, Ordering};

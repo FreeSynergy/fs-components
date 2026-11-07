@@ -1,6 +1,6 @@
 //! The words the transfer list shows.
 //!
-//! Pattern: Value object — every text comes from the caller (translation is the caller's); `{}`
+//! Pattern: none — every text comes from the caller (translation is the caller's); `{}`
 //! is replaced by the thing the text talks about. Defaults are neutral English.
 
 /// Texts of the transfer list.

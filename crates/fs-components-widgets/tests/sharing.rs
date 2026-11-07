@@ -1,6 +1,6 @@
 //! The share dialog's state, without any drawing.
 //!
-//! Pattern: Model tests, pixel tests, an in-process mouse and keyboard.
+//! Tests: Model tests, pixel tests, an in-process mouse and keyboard.
 
 use fs_components_widgets::share_dialog::{Grant, Outcome, Refusal, Sharing};
 use fs_components_widgets::{Choice, Permission};

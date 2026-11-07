@@ -1,6 +1,6 @@
 //! Search, views, order, tools.
 //!
-//! Pattern: Strategy by state — what the source or the variant cannot do is not offered, and in the
+//! Pattern: none — what the source or the variant cannot do is not offered, and in the
 //! trash other things are offered. At narrow widths the tools hide behind one button, so the rest stays
 //! usable; their height is worked out from their words, since what wraps must still fit.
 

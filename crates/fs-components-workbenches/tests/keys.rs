@@ -1,7 +1,7 @@
 //! The reader's keys, through a built widget: Alt+Left goes back, Ctrl+S saves, Esc does nothing
 //! (it must never throw a draft away), and a host can switch the keys off.
 //!
-//! Pattern: Event tests — the key event is broadcast to the built tree like the window runner does.
+//! Tests: Event tests — the key event is broadcast to the built tree like the window runner does.
 
 mod common;
 

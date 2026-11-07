@@ -1,6 +1,6 @@
 //! The shelf as a file source.
 //!
-//! Pattern: Strategy (test double) — see the parent module.
+//! Tests: a test double — see the parent module.
 
 use std::sync::Arc;
 

@@ -1,6 +1,6 @@
 //! The test diary as a calendar source.
 //!
-//! Pattern: Strategy (test double), see the parent module.
+//! Tests: a test double, see the parent module.
 
 use fs_components_workbenches::SourceError;
 use fs_components_workbenches::calendar::{

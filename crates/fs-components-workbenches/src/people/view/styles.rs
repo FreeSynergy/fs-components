@@ -1,6 +1,6 @@
 //! The style sheet of the people workbench.
 //!
-//! Pattern: Template — only theme variables; widget sheets are joined here.
+//! Pattern: none — only theme variables; widget sheets are joined here.
 
 /// The style sheet of the workbench and the widgets it uses; add it to the theme of the window that
 /// holds a [`PeopleWidget`](crate::people::PeopleWidget).

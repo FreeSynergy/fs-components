@@ -1,6 +1,6 @@
 //! What the guard keeps of a drawn question.
 //!
-//! Pattern: Value objects.
+//! Pattern: none.
 
 use blinc_layout::selector::ScrollRef;
 use blinc_layout::widgets::scroll::SharedScrollPhysics;

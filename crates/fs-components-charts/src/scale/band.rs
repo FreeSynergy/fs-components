@@ -1,6 +1,6 @@
 //! Band and point scales for categories.
 //!
-//! Pattern: Value object. A band scale gives each category a slot of one step with a gap
+//! Pattern: Strategy. A band scale gives each category a slot of one step with a gap
 //! (`padding_inner`) and space at both ends (`padding_outer`), centred. A point scale is a band
 //! scale with no width, as Vega-Lite uses for categories on a line or a point mark.
 

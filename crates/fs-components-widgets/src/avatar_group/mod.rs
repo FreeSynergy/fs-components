@@ -5,9 +5,8 @@
 //! are safe for any name, and the rule that the people who do not fit are counted, never dropped.
 
 mod model;
+mod styles;
 mod view;
 
 pub use model::{AvatarGroup, MAX_SHOWN, Person, Presence, Size, initials};
-
-/// CSS of the avatar group (none of its own: the theme's avatar rules apply).
-pub const STYLES: &str = "";
+pub use styles::STYLES;

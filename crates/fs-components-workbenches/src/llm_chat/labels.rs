@@ -1,6 +1,6 @@
 //! All words of the chat. They come from the caller; English by default.
 //!
-//! Pattern: Value object (composite of the widgets' labels).
+//! Pattern: none — plain data, the widgets' labels put together.
 
 use fs_components_widgets::KindLabels;
 use fs_components_widgets::{agent_tree, message_composer, message_list, tool_call};

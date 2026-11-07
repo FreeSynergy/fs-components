@@ -1,6 +1,6 @@
 //! What can go wrong in the shell.
 //!
-//! Pattern: Value object — a plain error enum.
+//! Pattern: none — a plain error enum.
 
 use std::fmt;
 

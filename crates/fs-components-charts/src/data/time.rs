@@ -1,6 +1,6 @@
 //! Reading dates and times written in ISO 8601, as the data wrote them.
 //!
-//! Pattern: Value object + parser — an instant in milliseconds on the UTC line, plus the offset
+//! Pattern: Newtype — an instant in milliseconds on the UTC line, plus the offset
 //! the text carried. A text without offset is a *wall-clock* time: it is never converted with
 //! the machine's zone, so a chart looks the same on every computer.
 

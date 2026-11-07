@@ -1,6 +1,6 @@
 //! The default words of the file manager, in neutral English.
 //!
-//! Pattern: Value object (data only).
+//! Pattern: none (data only).
 
 use super::labels::FileLabels;
 

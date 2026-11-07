@@ -1,6 +1,6 @@
 //! Which messages to build for a scroll position.
 //!
-//! Pattern: pure function — arithmetic over [`Heights`], testable without a window.
+//! Pattern: none — arithmetic over [`Heights`], testable without a window.
 
 use std::ops::Range;
 

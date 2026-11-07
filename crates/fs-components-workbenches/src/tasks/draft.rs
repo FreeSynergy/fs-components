@@ -1,6 +1,6 @@
 //! A task as a form.
 //!
-//! Pattern: Value objects — labelled fields that remember what they started as, so a source writes
+//! Pattern: none — labelled fields that remember what they started as, so a source writes
 //! only what the person changed and whatever a form does not show stays as it is.
 
 /// One thing a choice field offers.

@@ -1,7 +1,7 @@
 //! What the input tests of the menus have in common: a program with two menus and a surface that
 //! counts presses.
 //!
-//! Pattern: Test fixture.
+//! Tests: Test fixture.
 
 #![allow(dead_code)]
 

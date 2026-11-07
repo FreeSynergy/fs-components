@@ -1,6 +1,6 @@
 //! Editing and exporting through the document source.
 //!
-//! Pattern: State machine tests — begin, type, save, cancel, export, and what they refuse.
+//! Tests: State machine tests — begin, type, save, cancel, export, and what they refuse.
 
 mod common;
 

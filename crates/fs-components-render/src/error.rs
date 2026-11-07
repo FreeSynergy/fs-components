@@ -1,6 +1,6 @@
 //! What can go wrong when drawing a picture.
 //!
-//! Pattern: Value object — a plain error enum; the variants let a test tell "no graphics adapter
+//! Pattern: none — a plain error enum; the variants let a test tell "no graphics adapter
 //! on this machine" from a real failure.
 
 use std::fmt;

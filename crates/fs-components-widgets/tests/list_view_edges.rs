@@ -1,7 +1,7 @@
 //! A key at the edge of a list or a grid leads nowhere: it does not report the row already chosen
 //! (which callers read as "open it").
 //!
-//! Pattern: input tests over the router a window uses. No window is opened.
+//! Tests: input tests over the router a window uses. No window is opened.
 
 mod common;
 

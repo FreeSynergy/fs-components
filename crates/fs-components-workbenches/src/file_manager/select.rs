@@ -1,6 +1,6 @@
 //! The thing selected, and what is shown of it.
 //!
-//! Pattern: State + Specification — nothing is selected by itself. What the preview shows is decided
+//! Pattern: State — nothing is selected by itself. What the preview shows is decided
 //! here: a marked file is not read until the person asks (ADR 0029); a file in the trash cannot be read;
 //! a file that changed outside is shown as refused, not hidden; text and pictures go through the checks
 //! of `file-preview`. A press on the folder already selected opens it: so a double-click goes one level.

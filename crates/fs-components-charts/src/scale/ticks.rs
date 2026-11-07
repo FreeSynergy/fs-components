@@ -8,7 +8,7 @@
 //! judge. The results are checked against Vega-Lite 6.5.0 in `tests/golden`, and the step could be
 //! replaced by any other way of choosing round steps.
 //!
-//! Pattern: Value object (`Step`) + pure functions. A step is kept as `mult` and `pow` so that
+//! Pattern: none — a `Step` and pure functions. A step is kept as `mult` and `pow` so that
 //! ticks like 0.3 are computed as 3 / 10, the closest double to the decimal, not 0.1 + 0.1 + 0.1.
 
 /// A tick step `mult * 10^pow`, `mult` in {1, 2, 5, 10}.

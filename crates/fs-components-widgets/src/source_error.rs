@@ -1,6 +1,6 @@
 //! The error of a source (documents, drafts): a kind and a reason.
 //!
-//! Pattern: plain error value with a kind. It lives in the widgets crate so that the draft store, which
+//! Pattern: none. It lives in the widgets crate so that the draft store, which
 //! the reader and the message composer share, needs no workbench.
 
 /// What went wrong, roughly.

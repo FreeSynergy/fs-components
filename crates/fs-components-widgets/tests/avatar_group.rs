@@ -1,6 +1,6 @@
 //! Avatar group: the model, and the picture.
 //!
-//! Pattern: Model tests plus pixel tests on an offscreen drawing (no window).
+//! Tests: Model tests plus pixel tests on an offscreen drawing (no window).
 
 mod common;
 

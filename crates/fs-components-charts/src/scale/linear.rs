@@ -1,6 +1,6 @@
 //! The linear scale: a domain of numbers mapped to a range of pixels.
 //!
-//! Pattern: Value object. The mapping halves its terms so that a domain such as
+//! Pattern: Strategy. The mapping halves its terms so that a domain such as
 //! [-1.7e308, 1.7e308] does not overflow; the domain rules are those of Vega-Lite: `zero`
 //! includes 0, `nice` extends to round values (count 10), an explicit domain is taken as given.
 

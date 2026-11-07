@@ -1,6 +1,6 @@
 //! Why a spec was refused.
 //!
-//! Pattern: Value object — an error carries the JSON path of the offending place and a message
+//! Pattern: none — an error carries the JSON path of the offending place and a message
 //! that names the feature, so a person can fix the spec (or know it is outside the subset).
 
 use std::fmt;

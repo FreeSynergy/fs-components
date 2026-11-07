@@ -2,7 +2,7 @@
 //! in the same process (the picture sets the reactive state up without the notifier a window
 //! runner installs).
 //!
-//! Pattern: State test through the widget and the framework's pending-rebuild queue.
+//! Tests: State test through the widget and the framework's pending-rebuild queue.
 
 mod common;
 

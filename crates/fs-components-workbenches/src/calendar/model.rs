@@ -1,6 +1,6 @@
 //! What the calendar workbench and its source talk about.
 //!
-//! Pattern: Value objects — capabilities and sections of labelled fields. Nothing here
+//! Pattern: none — capabilities and sections of labelled fields. Nothing here
 //! knows what an event is made of.
 
 use fs_components_widgets::{CalendarItem, Day, ViewRange};

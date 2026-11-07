@@ -1,6 +1,6 @@
 //! The style sheet of the text view.
 //!
-//! Pattern: Template — only theme variables (`var(--…)`), no literal colours or font names.
+//! Pattern: none — only theme variables (`var(--…)`), no literal colours or font names.
 
 /// CSS for the text view; added to the theme by the shell.
 pub const STYLES: &str = r"

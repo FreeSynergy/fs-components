@@ -1,6 +1,6 @@
 //! The workbench at every width, a failed Show more, and Show more from the keyboard.
 //!
-//! Pattern: input tests over the router and the navigation keys a window uses. No window is opened.
+//! Tests: input tests over the router and the navigation keys a window uses. No window is opened.
 
 #[path = "people_common/mod.rs"]
 mod people_common;

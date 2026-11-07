@@ -2,7 +2,7 @@
 //! bundle gets `styles()`, the widget is built with a size, and the two columns must be as wide
 //! as the reader says (sidebar 320 px), not collapsed.
 //!
-//! Pattern: Pixel test of a host — skipped (with a message) where there is no graphics adapter.
+//! Tests: Pixel test of a host — skipped (with a message) where there is no graphics adapter.
 
 mod common;
 

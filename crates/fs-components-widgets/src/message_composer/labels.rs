@@ -1,6 +1,6 @@
 //! The words of the composer. They come from the caller; English by default.
 //!
-//! Pattern: Value object.
+//! Pattern: none.
 
 /// Every word the composer draws.
 #[non_exhaustive]

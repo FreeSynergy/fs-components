@@ -1,6 +1,6 @@
 //! The state machine without a window: marked files, destructive acts, restore, filter, transfers, picker.
 //!
-//! Pattern: State tests over a source in memory. What only the real core can show is in `fs-files`.
+//! Tests: State tests over a source in memory. What only the real core can show is in `fs-files`.
 
 #[path = "files_common/mod.rs"]
 mod files_common;

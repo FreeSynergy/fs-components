@@ -1,6 +1,6 @@
 //! What the calendar view shows and what it reports.
 //!
-//! Pattern: Value objects — neutral items and the words the caller gives; the widget does not know
+//! Pattern: none — neutral items and the words the caller gives; the widget does not know
 //! what an item stands for.
 
 use std::sync::Arc;

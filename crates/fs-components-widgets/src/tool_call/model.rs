@@ -1,6 +1,6 @@
 //! What an agent does, as data: one tool call.
 //!
-//! Pattern: Value objects + State. Neutral: no messenger type, no model, no API. The shapes follow
+//! Pattern: State. Neutral: no messenger type, no model, no API. The shapes follow
 //! the fields a messenger can give (id, name, kind, state, summary, risk, outcome, detail,
 //! result, options, revision) without depending on them. Unset kinds and risks read as unknown
 //! and are drawn as unknown.

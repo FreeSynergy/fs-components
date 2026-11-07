@@ -1,6 +1,6 @@
 //! The real element, laid out and driven like a window drives it, without opening one.
 //!
-//! Pattern: Facade over Blinc's tree and router, with a full rebuild (`Harness::rebuild`) and a frame
+//! Tests: a helper over Blinc's tree and router, with a full rebuild (`Harness::rebuild`) and a frame
 //! for live areas (`Harness::frame`) as the window's event loop does them. Keys take the window's
 //! order: navigation first, then the router's focused dispatch, then the broadcast.
 

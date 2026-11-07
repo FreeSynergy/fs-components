@@ -1,6 +1,6 @@
 //! The words the file manager shows.
 //!
-//! Pattern: Value object — the workbench does not know its audience, so every text comes from the
+//! Pattern: none — the workbench does not know its audience, so every text comes from the
 //! caller (translation, ADR 0053, is the caller's). `{}` is replaced by what the text talks about. The
 //! defaults are neutral English; the file `labels_default.rs` keeps them.
 

@@ -1,6 +1,6 @@
 //! The rows read so far, a few pages of them.
 //!
-//! Pattern: Decorator-like cache over the [`RowSource`] — the elements in view ask for one row at a
+//! Pattern: Decorator over the [`RowSource`] — the elements in view ask for one row at a
 //! time, the source is asked for a page. Old pages are dropped, so scrolling through a very long
 //! list keeps only a few in memory. The lock never leaves this file and no call to the source
 //! happens under it.

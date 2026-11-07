@@ -1,6 +1,6 @@
 //! Pixel tests of cells and glyphs: what is on the picture, not only that something is.
 //!
-//! Pattern: Pixel tests — skipped (with a message) where there is no graphics adapter.
+//! Tests: Pixel tests — skipped (with a message) where there is no graphics adapter.
 
 mod common;
 

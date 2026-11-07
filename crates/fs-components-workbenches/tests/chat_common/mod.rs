@@ -1,7 +1,7 @@
 //! Support for the chat tests: a source the test can change, a tree driven like a window drives it,
 //! and a picture.
 //!
-//! Pattern: Facade over Blinc's tree and router (as in `people_common`), Factory for the source.
+//! Tests: a helper over Blinc's tree and router (as in `people_common`), Factory for the source.
 #![allow(dead_code)]
 
 use std::path::PathBuf;

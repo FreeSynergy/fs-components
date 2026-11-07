@@ -1,6 +1,6 @@
 //! The style sheet of the chat.
 //!
-//! Pattern: Composite of templates — the widgets' sheet plus the chat's own, theme variables only.
+//! Pattern: none — the widgets' sheet plus the chat's own, theme variables only.
 
 /// The style sheet of the chat and of the widgets it uses; add it to the theme of the window.
 pub fn styles() -> String {

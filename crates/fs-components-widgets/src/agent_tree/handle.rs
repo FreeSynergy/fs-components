@@ -1,6 +1,6 @@
 //! The handle of an agent tree.
 //!
-//! Pattern: Facade + Observer + Memento — a clonable handle over the forest, what is closed and
+//! Pattern: Facade + Observer + State — a clonable handle over the forest, what is closed and
 //! the scroll position; no method returns a lock guard. The host feeds agents (`apply`), a
 //! person's clicks come back as an [`Outcome`]. The tree decides and stops nothing.
 

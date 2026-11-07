@@ -1,6 +1,6 @@
 //! What the file source and the workbench talk about.
 //!
-//! Pattern: Value objects — plain data, with nothing of a store or a program core in it. A key is a
+//! Pattern: none — plain data, with nothing of a store or a program core in it. A key is a
 //! text the source understands; nothing in the workbench looks inside it.
 
 use std::any::Any;

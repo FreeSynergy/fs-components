@@ -1,6 +1,6 @@
 //! Plain text of blocks (for search snippets and for tests).
 //!
-//! Pattern: Visitor-like fold — one function walks the composite and collects the text.
+//! Pattern: none — one function walks the composite and collects the text.
 
 use super::block::Block;
 

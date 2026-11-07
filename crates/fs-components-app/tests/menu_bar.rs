@@ -1,6 +1,6 @@
 //! When the title bar has menus, and what it does with what it is given. No window is opened.
 //!
-//! Pattern: Input tests. A hang here is a deadlock, not slowness.
+//! Tests: Input tests. A hang here is a deadlock, not slowness.
 
 #[path = "menu_common/mod.rs"]
 mod menu_common;

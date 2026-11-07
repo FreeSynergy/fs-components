@@ -1,6 +1,6 @@
 //! A held key never answers, and a disarmed question asks for one redraw, not one per drawing.
 //!
-//! Pattern: the real element in a tree driven like a window drives it, a clock by hand.
+//! Tests: the real element in a tree driven like a window drives it, a clock by hand.
 
 mod chat_support;
 mod common;

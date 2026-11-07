@@ -1,6 +1,6 @@
 //! What a transfer is and what the person can do with it.
 //!
-//! Pattern: Value objects + State (the state decides which actions are offered). No Blinc type.
+//! Pattern: State (the state decides which actions are offered). No Blinc type.
 
 use std::sync::Arc;
 

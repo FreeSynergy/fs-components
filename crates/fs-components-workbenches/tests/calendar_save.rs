@@ -1,6 +1,6 @@
 //! Saving in the calendar workbench: what is said when nothing was changed.
 //!
-//! Pattern: State machine tests, no window.
+//! Tests: State machine tests, no window.
 
 #[path = "calendar_common/mod.rs"]
 mod calendar_common;

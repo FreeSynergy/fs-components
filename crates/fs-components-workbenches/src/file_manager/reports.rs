@@ -1,6 +1,6 @@
 //! What a source can do, and what it says after a larger act.
 //!
-//! Pattern: Value objects — capabilities decide what is offered; the reports are plain data to show.
+//! Pattern: none — capabilities decide what is offered; the reports are plain data to show.
 
 /// What a source can do; what it cannot is not offered.
 #[allow(clippy::struct_excessive_bools)]

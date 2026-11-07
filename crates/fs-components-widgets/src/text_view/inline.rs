@@ -1,6 +1,6 @@
 //! Inline text: one element per run of text.
 //!
-//! Pattern: Strategy by content — text without marks is one Blinc rich-text element (exact
+//! Pattern: Adapter — text without marks is one Blinc rich-text element (exact
 //! wrapping); text with marks goes through `flow.rs`, because Blinc measures a rich text in one
 //! font weight and draws bold and italic spans in another face, so lines with marks run past the
 //! edge or overlap (see DESIGN.md, Blinc notes).

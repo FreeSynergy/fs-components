@@ -1,6 +1,6 @@
 //! What can go wrong when drawing.
 //!
-//! Pattern: plain error enum.
+//! Pattern: none.
 
 /// The shell could not draw.
 #[derive(Debug)]

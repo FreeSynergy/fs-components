@@ -1,7 +1,7 @@
 //! Backup of drafts: survives a dropped widget, is offered and never applied by itself, is
 //! cleared by a save or a chosen discard, and failures are shown.
 //!
-//! Pattern: State machine tests through the reader and the widget.
+//! Tests: State machine tests through the reader and the widget.
 
 mod common;
 

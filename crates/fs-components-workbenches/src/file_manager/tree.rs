@@ -1,6 +1,6 @@
 //! The folder tree: what is known of it, and which folders are open.
 //!
-//! Pattern: State + Composite — the children of a folder are read when it is opened, and at most
+//! Pattern: State — the children of a folder are read when it is opened, and at most
 //! [`TREE_LIMIT`] of them, because Blinc's tree is built whole. The way to the current folder is open.
 //! A folder cannot be opened by hand without going there: `tree-view` reports only a choice.
 

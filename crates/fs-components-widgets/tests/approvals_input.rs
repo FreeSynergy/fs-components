@@ -1,7 +1,7 @@
 //! The answer guard against the real order of a window's input: the pointer routed to the pressed
 //! button wherever it is, keys sent to everybody, questions that move under the pointer.
 //!
-//! Pattern: the real element in a tree driven like a window drives it (events with their
+//! Tests: the real element in a tree driven like a window drives it (events with their
 //! rectangles, frames), a clock by hand.
 
 mod chat_support;

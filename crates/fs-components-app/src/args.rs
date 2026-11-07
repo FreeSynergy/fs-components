@@ -1,6 +1,6 @@
 //! What the command lines of all programs share.
 //!
-//! Pattern: Value parser — a pure function; each program keeps its own list of options.
+//! Pattern: none — a pure function; each program keeps its own list of options.
 
 /// The largest side the graphics can draw on (wgpu's guaranteed texture size); more panics there.
 const MAX_SIDE: u32 = 8192;

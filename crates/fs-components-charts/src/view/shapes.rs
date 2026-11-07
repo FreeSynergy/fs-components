@@ -1,6 +1,6 @@
 //! Paths for symbols and sectors.
 //!
-//! Pattern: Pure geometry helpers — points in, `Path` out; no state.
+//! Pattern: none — points in, `Path` out; no state.
 
 use blinc_core::Path;
 

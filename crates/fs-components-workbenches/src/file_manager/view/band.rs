@@ -1,6 +1,6 @@
 //! The band at the bottom: the question on the table, the line being typed, what is being carried.
 //!
-//! Pattern: Strategy by state. The second act of something destructive is here, and only here, far from
+//! Pattern: State. The second act of something destructive is here, and only here, far from
 //! where the first press was, at every width. The way out comes first, so a press that lands on the
 //! first button keeps things as they are.
 

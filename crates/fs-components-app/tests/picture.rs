@@ -1,6 +1,6 @@
 //! The shell as a picture, drawn offscreen with the real view. No window is opened.
 //!
-//! Pattern: Pixel tests — skipped (with a message) where there is no graphics adapter. Each surface
+//! Tests: Pixel tests — skipped (with a message) where there is no graphics adapter. Each surface
 //! fills its area with one theme colour, so the test sees which surface is drawn and how big it is.
 
 use std::path::PathBuf;

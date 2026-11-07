@@ -1,6 +1,6 @@
 //! Long unbroken text must not freeze the interface thread.
 //!
-//! Pattern: layout of the real element; no wall-clock assertion (the machine is loaded), the test
+//! Tests: layout of the real element; no wall-clock assertion (the machine is loaded), the test
 //! prints the time and asserts that the text is drawn inside its box.
 
 mod chat_support;
