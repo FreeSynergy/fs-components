@@ -151,6 +151,14 @@ fn a_picture_passes_only_with_a_header_that_says_it_is_small_enough() {
     assert!(picture_fits(&jpeg, 100));
     assert!(!picture_fits(&jpeg, 55));
     assert!(!picture_fits(&jpeg[..6], 100), "cut off before the size");
+    // markers without a length (TEM, RSTn) and fill bytes do not swallow the next marker
+    for lead in [&[0xFF, 0x01][..], &[0xFF, 0xD0], &[0xFF, 0xFF]] {
+        let mut odd = vec![0xFF, 0xD8];
+        odd.extend_from_slice(lead);
+        odd.extend_from_slice(&[0xFF, 0xC0, 0, 17, 8, 0, 50, 0, 60, 3, 0, 0, 0, 0, 0, 0]);
+        assert!(picture_fits(&odd, 100), "{lead:?}");
+        assert!(!picture_fits(&odd, 55), "{lead:?}");
+    }
     assert_eq!(
         picture_address("image/png", b"Man"),
         "data:image/png;base64,TWFu"

@@ -90,6 +90,21 @@ fn size_of_jpeg(bytes: &[u8]) -> Option<(u32, u32)> {
             return None;
         }
         let marker = bytes[at + 1];
+        match marker {
+            // fill: the next 0xFF may be the marker
+            0xFF => {
+                at += 1;
+                continue;
+            }
+            // TEM, RSTn and SOI stand alone, with no length after them
+            0x01 | 0xD0..=0xD8 => {
+                at += 2;
+                continue;
+            }
+            // EOI: the picture ends without a frame
+            0xD9 => return None,
+            _ => {}
+        }
         let frame = matches!(marker, 0xC0..=0xCF) && !matches!(marker, 0xC4 | 0xC8 | 0xCC);
         if frame {
             let number = |i: usize| u32::from(bytes[i]) << 8 | u32::from(bytes[i + 1]);

@@ -80,9 +80,15 @@ pub(super) fn agenda(
             &window,
             |index: &usize| *index,
             move |index: usize| {
-                let element = match lines[index] {
-                    Line::Heading(day) => heading(&drawing, day, inner),
-                    Line::Item(item, day) => row(&drawing, &items[item], day, inner),
+                // The window is shared across builds: a build that is still alive may be asked for
+                // a line a later build has more of. Beyond what this build has, there is nothing.
+                let element = match lines.get(index) {
+                    Some(&Line::Heading(day)) => heading(&drawing, day, inner),
+                    Some(&Line::Item(item, day)) => match items.get(item) {
+                        Some(found) => row(&drawing, found, day, inner),
+                        None => div(),
+                    },
+                    None => div(),
                 };
                 element
                     .absolute()
