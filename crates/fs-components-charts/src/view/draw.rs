@@ -1,6 +1,6 @@
 //! Drawing a scene on a Blinc draw context.
 //!
-//! Pattern: Adapter — our `Scene` items in, calls on Blinc's `DrawContext` out (Blinc behind our components); one function per shape; the only code that talks to Blinc's
+//! Pattern: Adapter + Visitor — our `Scene` items in, calls on Blinc's `DrawContext` out (Blinc behind our components); `one` walks the items with a `match`, outside the data (a Visitor without a trait), with a helper per shape; the only code that talks to Blinc's
 //! drawing API. Colours come from the `Look`, text widths from `Measure`.
 
 use blinc_core::{

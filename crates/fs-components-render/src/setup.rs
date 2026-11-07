@@ -1,6 +1,6 @@
 //! Theme and fonts, the same for a window and a picture.
 //!
-//! Pattern: Factory — one function builds the theme bundle (the component library's sheet plus
+//! Pattern: Facade over Blinc's theme and font set-up — one function builds the theme bundle (the component library's sheet plus
 //! the caller's sheet, which uses theme variables only).
 
 use std::sync::Once;

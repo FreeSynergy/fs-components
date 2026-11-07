@@ -1,6 +1,6 @@
 //! Arcs: a pie or donut, angles proportional to the values, from 12 o'clock, clockwise.
 //!
-//! Pattern: Strategy (one mark layout). Values of one series are added up; the series are placed
+//! Pattern: none (the layout of one mark; `build` picks it by `match` on the mark kind, there is no trait). Values of one series are added up; the series are placed
 //! in the natural order of their values (ascending, the first one starts at 12 o'clock and the
 //! pile runs clockwise), whatever `color.sort` says: that only moves colours and legend (checked
 //! against Vega-Lite 6.5.0, `tests/golden/g02`, `g04*`). A total of zero draws no

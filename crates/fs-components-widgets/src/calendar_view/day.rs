@@ -1,6 +1,6 @@
 //! A calendar day and a wall-clock moment.
 //!
-//! Pattern: none of the table fits (value types, `Day` and `Moment`, with their arithmetic) — days count from 1970-01-01 in the proleptic Gregorian calendar,
+//! Pattern: Value object (`Day` and `Moment`, immutable and compared by value, with their arithmetic) — days count from 1970-01-01 in the proleptic Gregorian calendar,
 //! so arithmetic never passes through a clock time and daylight saving cannot move it. The widget
 //! crate takes no date library for this; these few lines are all it needs.
 

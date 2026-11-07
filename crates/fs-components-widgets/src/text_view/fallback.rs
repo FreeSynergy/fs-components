@@ -1,6 +1,6 @@
 //! Fonts for characters the default font does not have.
 //!
-//! Pattern: Strategy — Blinc draws a character from one default font, and from one
+//! Pattern: Facade over `fontdb` and `ttf-parser` — Blinc draws a character from one default font, and from one
 //! emoji font that has only a bundled subset; everything else is an empty box. For the scripts and
 //! symbol ranges where that happens, this module looks through the fonts installed on the system
 //! (`fontdb`, `ttf-parser`) and names the family that has the character, so that the text view

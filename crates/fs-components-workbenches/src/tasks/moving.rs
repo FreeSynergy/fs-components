@@ -1,6 +1,6 @@
 //! Moving a task to another column.
 //!
-//! Pattern: State + Command — a move is one transition with one value as its answer, whichever way
+//! Pattern: State — a move is one transition with one value as its answer, whichever way
 //! it came (a button, the keyboard, a frontend's gesture). The source decides; the state only reads
 //! again and says what happened. A move that failed leaves the task where the source has it. A press
 //! on the column the task is in does nothing, so a double-click cannot move it twice. While the list

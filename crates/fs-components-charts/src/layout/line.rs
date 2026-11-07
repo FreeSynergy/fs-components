@@ -1,6 +1,6 @@
 //! Lines and areas: one path per series, broken where a value is invalid.
 //!
-//! Pattern: Strategy (one mark layout for two marks). Points of a series are joined in order of
+//! Pattern: none (the layout of two marks; `build` picks it by `match` on the mark kind, there is no trait). Points of a series are joined in order of
 //! their x position; a point without a usable x or y ends the path (Vega-Lite's default `invalid`
 //! mode for paths). A series that is one point alone is drawn as a symbol so it does not vanish.
 //! Areas with a colour stack, series 0 on top.

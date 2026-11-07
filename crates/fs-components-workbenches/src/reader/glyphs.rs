@@ -1,6 +1,6 @@
 //! Telling the person when characters cannot be drawn.
 //!
-//! Pattern: Observer — the text view looks fonts up per character; here the
+//! Pattern: State, part of `Reader` (nothing subscribes) — the text view looks fonts up per character; here the
 //! characters of the document shown, and of the titles in the list, are looked up (cached) and
 //! two things are announced, because a box on the screen says nothing about why: characters no
 //! installed font has, and characters in titles of the list (the Blinc tree cannot set a run in

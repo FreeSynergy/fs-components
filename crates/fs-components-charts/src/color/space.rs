@@ -1,6 +1,6 @@
 //! Colour spaces: sRGB, linear light, CIE Lab, and WCAG contrast.
 //!
-//! Pattern: none of the table fits (pure colour maths over the alias `Rgb`; standard formulas: IEC 61966-2-1 for sRGB, CIE
+//! Pattern: none (pure colour maths over the alias `Rgb`; standard formulas: IEC 61966-2-1 for sRGB, CIE
 //! 1976 for Lab with the D65 white point, WCAG 2.x for relative luminance and contrast).
 
 /// A colour in sRGB, each channel 0..=1.

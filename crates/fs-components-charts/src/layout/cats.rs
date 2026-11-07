@@ -1,6 +1,6 @@
 //! The categories of a discrete channel: which values, in which order.
 //!
-//! Pattern: none of the table fits (pure functions: the categories in an order). The order is Vega-Lite's: ascending
+//! Pattern: none (pure functions for one concept: the categories in an order). The order is Vega-Lite's: ascending
 //! by default (numbers before text, `null` last), or as the data came, or descending, or an
 //! explicit list, or by the total of the other axis.
 

@@ -1,7 +1,7 @@
 //! The calls of one place, kept by (message, id): an update replaces, it never appends a second
 //! entry; the same id in two messages is two calls.
 //!
-//! Pattern: Repository (in memory) + State. The rules mirror what a host promises: a lower
+//! Pattern: State (a keyed in-memory store; no store trait, so not a Repository). The rules mirror what a host promises: a lower
 //! revision than held is stale; a settled call is final (not even a whole new list revives it).
 
 use std::collections::{HashMap, HashSet};

@@ -1,6 +1,6 @@
 //! Writing numbers and times for axis labels with the caller's marks.
 //!
-//! Pattern: Strategy by value kind. A number gets as many decimals as its tick step needs
+//! Pattern: none (pure functions for one concept: writing numbers and times). A number gets as many decimals as its tick step needs
 //! (step 0.5: one decimal), thousands are grouped; a very large or small number falls back to
 //! exponent form instead of printing 300 digits.
 

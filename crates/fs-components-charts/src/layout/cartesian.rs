@@ -1,6 +1,6 @@
 //! The layout of marks on two axes: scales, margins, then the marks and axes in place.
 //!
-//! Pattern: Builder with a fixed-point loop for the margins. The room an axis needs depends on its
+//! Pattern: Facade (one function keeps the order: scales, margins by a fixed-point loop, marks, axes). The room an axis needs depends on its
 //! labels, which depend on the length of the axis; the loop runs until the margins stop changing
 //! (at most four rounds).
 

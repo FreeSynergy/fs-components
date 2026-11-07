@@ -1,6 +1,6 @@
 //! From validated spec and clean data to a scene: the layout.
 //!
-//! Pattern: Builder with a fixed-point loop for the margins. The room an axis needs depends on its
+//! Pattern: Facade (one function keeps the order: scales, margins by a fixed-point loop, marks, axes, legend, notes). The room an axis needs depends on its
 //! labels, which depend on the length of the axis; the loop runs until the margins stop changing
 //! (at most four rounds). Pure: the text measure is given, nothing here knows Blinc.
 

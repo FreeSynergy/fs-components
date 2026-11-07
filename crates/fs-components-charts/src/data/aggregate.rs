@@ -1,6 +1,6 @@
 //! Grouping rows and reducing a group to one number.
 //!
-//! Pattern: Strategy by aggregate — one small function per operation; the grouping key is every
+//! Pattern: none (pure functions; the aggregate is chosen by `match`, there is no trait) — one small function per operation; the grouping key is every
 //! channel that is *not* aggregated, as in Vega-Lite.
 
 use std::collections::HashMap;

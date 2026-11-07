@@ -1,6 +1,6 @@
 //! Points: one symbol per datum.
 //!
-//! Pattern: Strategy (one mark layout). Vega-Lite's point is an open circle of area 30 with a 2 px
+//! Pattern: none (the layout of one mark; `build` picks it by `match` on the mark kind, there is no trait). Vega-Lite's point is an open circle of area 30 with a 2 px
 //! line, at 0.7 opacity for plots that are not aggregated. With several series the symbol also
 //! changes shape, so series differ without colour too (an addition for colour-blind readers).
 

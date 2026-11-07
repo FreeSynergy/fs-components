@@ -1,6 +1,6 @@
 //! One element per block.
 //!
-//! Pattern: Adapter — our [`Block`] model in, Blinc elements out (Blinc behind our components); a `match` on [`Block`] picks the drawing function; the
+//! Pattern: Adapter + Visitor — our [`Block`] model in, Blinc elements out (Blinc behind our components); a `match` on [`Block`], outside the data, picks the drawing function (a Visitor without a trait); the
 //! fallback ([`Block::Plain`]) draws text as it is, so nothing is lost.
 
 use blinc_layout::div::{Div, div};

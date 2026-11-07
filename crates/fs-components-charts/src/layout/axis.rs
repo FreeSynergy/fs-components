@@ -1,6 +1,6 @@
 //! One positional axis: its scale, its ticks and their labels.
 //!
-//! Pattern: Strategy by field type (continuous number, time, categories) behind one `Axis` type.
+//! Pattern: Value object (`Axis`, built once from the field type: continuous number, time, categories; the scale is an enum chosen by `match`, there is no trait).
 //! The scale is chosen as Vega-Lite chooses it: numbers get a linear scale that includes zero and
 //! is niced, times a time scale without zero or nice, categories a band scale for bars and a
 //! point scale for everything else.

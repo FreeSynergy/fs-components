@@ -1,6 +1,6 @@
 //! Simulating colour vision deficiency, to check that series can be told apart.
 //!
-//! Pattern: Strategy by deficiency. Full-severity matrices of Machado, Oliveira and Fernandes
+//! Pattern: none (pure functions; one matrix per `Deficiency`, chosen by `match`, there is no trait). Full-severity matrices of Machado, Oliveira and Fernandes
 //! (2009), applied in linear light. Used to *choose* a palette and to *test* the choice.
 
 use super::space::{Rgb, from_linear_rgb, lab, lab_of_linear, linear};

@@ -1,6 +1,6 @@
 //! The agents as a forest, flattened for drawing without recursion.
 //!
-//! Pattern: Repository (in memory, by key) + one pure pass that flattens it. Nothing recurses, so a tree
+//! Pattern: none of the table fits (a keyed forest with `apply`, and one pure pass that flattens it; no store trait, so not a Repository). Nothing recurses, so a tree
 //! ten thousand deep cannot overflow the stack. Nothing is dropped: an agent whose parent is
 //! unknown, or that sits in a cycle, is shown as a top agent.
 

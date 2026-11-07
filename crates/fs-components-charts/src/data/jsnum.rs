@@ -1,6 +1,6 @@
 //! Reading a JSON value as a number the way a JavaScript `Number(value)` does.
 //!
-//! Pattern: Strategy by JSON kind. Vega-Lite takes the values of a number field as they are and
+//! Pattern: none (pure functions; the JSON kind is chosen by `match`). Vega-Lite takes the values of a number field as they are and
 //! lets JavaScript turn them into numbers, so `true` is 1, `[5]` is 5, `"0x10"` is 16 and `""` is
 //! 0 (checked against Vega-Lite 6.5.0, see `tests/golden`); `null`, `"abc"`, `[1, 2]` and objects
 //! are not numbers and the row is invalid. Only finite results count.

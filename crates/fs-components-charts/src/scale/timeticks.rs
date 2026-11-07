@@ -1,6 +1,6 @@
 //! Calendar ticks for a time axis, in the zone the data was written in.
 //!
-//! Pattern: Strategy by unit. Ticks sit on the wall clock of a *fixed offset* (the data's own),
+//! Pattern: none (pure functions and the values `Unit` and `Interval`; the unit is chosen by `match`). Ticks sit on the wall clock of a *fixed offset* (the data's own),
 //! never on the machine's zone, so they do not move with DST or with the reader's location.
 //! The interval is chosen like a person would: the nearest of 1/5/15/30 s, min, 1/3/6/12 h,
 //! 1/2 days, week, 1/3 months, then years in steps of 1, 2, 5, 10, ...

@@ -1,7 +1,7 @@
 //! What a program says about its menus: labels and entries, nothing about how they look.
 //!
-//! Pattern: Command — an entry is named by a stable id, and one handler
-//! of the program receives that id.
+//! Pattern: Value object — `MenuEntry` and `Menu` are values, compared by value; an entry is named by a stable id
+//! and one handler of the program receives that id. There is no operation enum, so this is not a Command.
 
 use std::sync::Arc;
 

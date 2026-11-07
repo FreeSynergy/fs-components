@@ -1,6 +1,6 @@
 //! Choosing the series colours from the theme's own colours.
 //!
-//! Pattern: Strategy (greedy farthest-point selection). Candidates are the theme's accent colours
+//! Pattern: none (one pure function: greedy farthest-point selection). Candidates are the theme's accent colours
 //! and lighter and darker versions of them; those with too little contrast against the surface are
 //! left out. Each pick is the candidate whose *worst* difference to the colours already picked (as
 //! seen by normal vision, protanopia, deuteranopia and tritanopia) is the largest, and only while

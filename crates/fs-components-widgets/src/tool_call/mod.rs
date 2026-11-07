@@ -1,6 +1,6 @@
 //! `tool-call`: what an agent is doing, one card per call, updated in place by id.
 //!
-//! Pattern: Adapter + Observer + Repository (in memory). The kind of the call (reads, writes,
+//! Pattern: Adapter + Observer + State (the calls are kept in `ToolCalls`). The kind of the call (reads, writes,
 //! runs a command, connected tool) is the first thing on the card, before the name and before any
 //! detail. A question shows its options; a click is reported as an [`Outcome`] and decides
 //! nothing. Stopping an agent is not here: that is the engine's job, the host shows its control.

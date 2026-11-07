@@ -1,6 +1,6 @@
 //! One value of a field, read the way its type says.
 //!
-//! Pattern: none of the table fits (a tagged value, `Cell`, and the one reader that makes it) — `read` is the one place where a JSON value
+//! Pattern: Value object (`Cell` is a tagged value, valid on construction; `read` is the one place that makes it) — `read` is the one place where a JSON value
 //! becomes a number, a category, an instant, or a *named* reason why it cannot be drawn.
 
 use serde_json::Value;

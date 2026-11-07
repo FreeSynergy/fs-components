@@ -1,6 +1,6 @@
 //! Bars: one rectangle per datum, from a baseline, stacked when there is a colour.
 //!
-//! Pattern: Strategy (one mark layout). The category axis has a band scale; the value axis a
+//! Pattern: none (the layout of one mark; `build` picks it by `match` on the mark kind, there is no trait). The category axis has a band scale; the value axis a
 //! linear scale that includes zero. A negative value hangs below the zero line. Values of one
 //! category pile up (positive up, negative down); in a vertical bar the first series is on top, in
 //! a horizontal bar it is at the zero end, as in Vega-Lite 6.5.0; with

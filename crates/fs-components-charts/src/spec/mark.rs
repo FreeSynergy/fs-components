@@ -1,6 +1,6 @@
 //! Reading `mark`.
 //!
-//! Pattern: Registry of mark kinds — the names the subset knows, and a named refusal for the
+//! Pattern: none (one pure function; the names are matched, not looked up) — the names the subset knows, and a named refusal for the
 //! Vega-Lite marks it does not.
 
 use serde_json::Value;

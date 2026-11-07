@@ -1,6 +1,6 @@
 //! From a flat listing to a tree.
 //!
-//! Pattern: Builder — folds the paths (parts separated by `/`) into nested [`TreeNode`]s. A
+//! Pattern: none (one pure function) — folds the paths (parts separated by `/`) into nested [`TreeNode`]s. A
 //! document's key is its path; a folder's key is its path plus a trailing `/`, which no path has.
 
 use fs_components_widgets::TreeNode;
