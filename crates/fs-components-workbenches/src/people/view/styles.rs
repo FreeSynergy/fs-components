@@ -32,5 +32,6 @@ const LAYOUT: &str = r"
 .fs-people-value { min-width: 0; }
 .fs-people-notice { padding: var(--space-2) var(--space-3); background: var(--warning-bg); color: var(--text-primary); }
 .fs-people-failed { padding: var(--space-4); background: var(--error-bg); border-radius: var(--radius-default); }
+.fs-people-face { flex-shrink: 0; margin-right: var(--space-3); }
 .fs-people-input { padding-bottom: var(--space-2); }
 ";

@@ -4,9 +4,12 @@
 //! do are not offered.
 
 use blinc_cn::cn;
+use blinc_cn::components::avatar::{AvatarSize, avatar};
 use blinc_cn::components::button::ButtonVariant;
 use blinc_layout::div::{Div, div};
 use blinc_layout::text;
+use blinc_theme::{ColorToken, ThemeState};
+use fs_components_widgets::avatar_group_initials;
 
 use super::actions::{Act, PeopleActions};
 use super::form::form;
@@ -187,11 +190,25 @@ fn bar(state: &PeopleState, name: &str, actions: &PeopleActions) -> Div {
 }
 
 fn person(sheet: &PersonSheet, page: Div) -> Div {
-    let head = div().class("fs-people-head").flex_row().child(
-        div()
-            .class("fs-people-title")
-            .child(text(&sheet.title).class("fs-people-title-text")),
-    );
+    let theme = ThemeState::get();
+    let mut face = avatar()
+        .size(AvatarSize::ExtraLarge)
+        .fallback_bg(theme.color(ColorToken::Primary))
+        .fallback_color(theme.color(ColorToken::TextInverse))
+        .fallback(avatar_group_initials(&sheet.title))
+        .alt(sheet.title.clone());
+    if let Some(image) = &sheet.image {
+        face = face.src(image.clone());
+    }
+    let head = div()
+        .class("fs-people-head")
+        .flex_row()
+        .child(div().class("fs-people-face").child(face))
+        .child(
+            div()
+                .class("fs-people-title")
+                .child(text(&sheet.title).class("fs-people-title-text")),
+        );
     let mut page = page.child(with_marks(head, &sheet.marks));
     for section in &sheet.sections {
         page = page.child(section_element(section));

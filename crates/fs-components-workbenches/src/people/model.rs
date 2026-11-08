@@ -115,15 +115,26 @@ pub struct PersonSheet {
     pub marks: Vec<String>,
     /// The details.
     pub sections: Vec<PersonSection>,
+    /// A picture of the person: a `data:` URI, a local file or a URL. Without one the sheet shows the
+    /// initials of the title.
+    pub image: Option<String>,
 }
 
 impl PersonSheet {
+    /// This sheet with a picture of the person.
+    #[must_use]
+    pub fn with_image(mut self, image: impl Into<String>) -> Self {
+        self.image = Some(image.into());
+        self
+    }
+
     /// A sheet.
     pub fn new(title: impl Into<String>, sections: Vec<PersonSection>) -> Self {
         Self {
             title: title.into(),
             marks: Vec::new(),
             sections,
+            image: None,
         }
     }
 }
