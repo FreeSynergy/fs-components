@@ -1051,8 +1051,8 @@ dependencies = [
 
 [[package]]
 name = "fs-interfaces"
-version = "0.51.0"
-source = "git+https://github.com/FreeSynergy/fs-interfaces?rev=8f917eb540cb90a8e6cfe646b826652729e3d950#8f917eb540cb90a8e6cfe646b826652729e3d950"
+version = "0.52.0"
+source = "git+https://github.com/FreeSynergy/fs-interfaces?rev=9a288a6#9a288a6e7a1e5400cacca1a893fcc5c519bfe3b2"
 dependencies = [
  "capnp",
  "idna",
