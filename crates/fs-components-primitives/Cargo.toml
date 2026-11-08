@@ -10,3 +10,5 @@ rust-version.workspace = true
 blinc_core = "0.6"
 blinc_layout = "0.6"
 blinc_cn = "0.6"
+blinc_theme = "0.6"
+fs-interfaces = { git = "https://github.com/FreeSynergy/fs-interfaces", rev = "8f917eb540cb90a8e6cfe646b826652729e3d950", features = ["values"] }

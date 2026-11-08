@@ -16,6 +16,8 @@ use crate::field_look::paired;
 use crate::input_slots::InputSlots;
 use crate::people::edit::PersonEdit;
 use crate::people::labels::PeopleLabels;
+use crate::people::model::FieldCheck;
+use fs_components_primitives::{ContactOnChange, email_input, phone_input};
 
 /// The form for `edit`, added to `page`.
 pub(super) fn form(
@@ -42,19 +44,39 @@ pub(super) fn form(
             let problem = problems(field.key.as_str());
             let data = slots.line(edit.id, &field.key, &field.value);
             let (typed, key) = (Arc::clone(&actions.typed), field.key.clone());
+            let on_change: ContactOnChange = {
+                let (typed, key) = (Arc::clone(&typed), key.clone());
+                Arc::new(move |value: &str| typed(&key, value))
+            };
             section = section.child(
                 div()
                     .id(format!("{name}-field-{}", field.key))
                     .class("fs-people-input")
                     .w_full()
-                    .child(with_problem(
-                        paired(input(&data))
-                            .size(InputSize::Small)
-                            .label(field.label.clone())
-                            .w_full()
-                            .on_change(move |value| typed(&key, value)),
-                        problem,
-                    )),
+                    .child(match field.check {
+                        FieldCheck::Email => email_input(
+                            &data,
+                            &field.label,
+                            &labels.email_placeholder,
+                            problem,
+                            on_change,
+                        ),
+                        FieldCheck::Phone => phone_input(
+                            &data,
+                            &field.label,
+                            &labels.phone_placeholder,
+                            problem,
+                            on_change,
+                        ),
+                        _ => with_problem(
+                            paired(input(&data))
+                                .size(InputSize::Small)
+                                .label(field.label.clone())
+                                .w_full()
+                                .on_change(move |value| typed(&key, value)),
+                            problem,
+                        ),
+                    }),
             );
         }
         if group.can_add {

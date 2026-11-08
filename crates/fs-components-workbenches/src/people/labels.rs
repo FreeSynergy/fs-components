@@ -60,6 +60,10 @@ pub struct PeopleLabels {
     pub not_saved: String,
     /// Shown instead of saving while a field holds something invalid.
     pub fix_fields: String,
+    /// Shown in an empty e-mail field.
+    pub email_placeholder: String,
+    /// Shown in an empty phone field.
+    pub phone_placeholder: String,
     /// `{}` = the reason.
     pub not_deleted: String,
     /// `{}` = the reason.
@@ -102,6 +106,8 @@ impl Default for PeopleLabels {
             no_changes: s("Nothing was changed."),
             not_saved: s("Not saved: {}"),
             fix_fields: s("Some fields are not valid. Correct them first."),
+            email_placeholder: s("name@example.org"),
+            phone_placeholder: s("+49 30 1234567"),
             not_deleted: s("Not deleted: {}"),
             cannot_edit: s("Cannot edit this: {}"),
             unreadable: s("This could not be read: {}"),
