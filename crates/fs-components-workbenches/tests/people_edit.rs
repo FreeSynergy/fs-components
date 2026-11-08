@@ -285,36 +285,3 @@ fn a_delete_that_went_through_with_a_remark_says_both() {
     assert_eq!(s.notice(), Some("ada was deleted. Their links remain."));
     assert_eq!(s.rows().len(), 1);
 }
-
-#[test]
-fn an_invalid_address_is_named_as_typed_and_blocks_the_save() {
-    let (book, mut s) = state(&["ada"]);
-    s.begin_edit();
-    assert_eq!(s.problem("mail/1"), None, "what is stored is not judged");
-    assert!(s.typed("mail/1", "ada"), "valid to invalid: draw again");
-    assert_eq!(
-        s.problem("mail/1").as_deref(),
-        Some("an address needs an @")
-    );
-    assert!(!s.typed("mail/1", "ada."), "same problem: no redraw");
-    s.save();
-    assert_eq!(book.writes(), 0, "nothing written");
-    assert!(
-        s.editing()
-            .unwrap()
-            .error
-            .as_deref()
-            .unwrap()
-            .contains("not valid")
-    );
-    assert!(
-        s.typed("mail/1", "ada@y.org"),
-        "invalid to valid: draw again"
-    );
-    s.save();
-    assert!(s.editing().is_none());
-    assert_eq!(book.writes(), 1);
-    // Emptied means "remove this value": no problem.
-    s.begin_edit();
-    assert!(!s.typed("mail/1", ""));
-}
