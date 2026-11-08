@@ -181,6 +181,18 @@ pub struct ListRequest {
     pub sort: SortOrder,
 }
 
+impl ListRequest {
+    /// A request for `scope`, with a search term, a filter and an order.
+    pub fn new(scope: Scope, term: impl Into<String>, filter: ListFilter, sort: SortOrder) -> Self {
+        Self {
+            scope,
+            term: term.into(),
+            filter,
+            sort,
+        }
+    }
+}
+
 /// Where the next page of a listing starts. Opaque: only a source looks inside.
 #[derive(Clone)]
 pub struct PageMark(pub Arc<dyn Any + Send + Sync>);
