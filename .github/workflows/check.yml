@@ -11,5 +11,6 @@ jobs:
   check:
     uses: FreeSynergy/fs-release/.github/workflows/check.yml@main
     with:
-      # Software Vulkan (lavapipe) for the tests that open a graphics adapter.
-      apt-packages: "mesa-vulkan-drivers libvulkan1"
+      # Software Vulkan (lavapipe) for the tests that open a graphics adapter, and the fonts the tests measure
+      # text with (the width tests need the metrics of the machines the code is written on).
+      apt-packages: "mesa-vulkan-drivers libvulkan1 fonts-dejavu-core fonts-noto-core"
