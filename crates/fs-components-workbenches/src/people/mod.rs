@@ -18,8 +18,8 @@ mod widget_actions;
 pub use edit::PersonEdit;
 pub use labels::PeopleLabels;
 pub use model::{
-    DraftField, DraftGroup, PeopleCapabilities, PersonDraft, PersonField, PersonRow, PersonSection,
-    PersonSheet,
+    DraftField, DraftGroup, FieldCheck, PeopleCapabilities, PersonDraft, PersonField, PersonRow,
+    PersonSection, PersonSheet,
 };
 pub use shown::{Outcome, Shown, Variant};
 pub use source::PeopleSource;

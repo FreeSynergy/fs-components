@@ -46,8 +46,14 @@ impl PeopleWidget {
                 locked(&add_s).add_field(group);
                 rebuild();
             }),
-            // Typing is remembered but does not redraw: the text field keeps its own cursor.
-            typed: Arc::new(move |field, text| locked(&typed_s).set_field(field, text)),
+            // Typing is remembered. It redraws only when the problem shown under the field changes
+            // (valid to invalid and back): the text field keeps its own text and cursor.
+            typed: Arc::new(move |field, text| {
+                let changed = locked(&typed_s).typed(field, text);
+                if changed {
+                    rebuild();
+                }
+            }),
         }
     }
 }

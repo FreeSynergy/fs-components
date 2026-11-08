@@ -4,7 +4,7 @@
 //! program's core implements it). The trait is synchronous and called on the interface thread,
 //! like `DocumentSource`; this is provisional (see DESIGN.md).
 
-use super::model::{PeopleCapabilities, PersonDraft, PersonRow, PersonSheet};
+use super::model::{FieldCheck, PeopleCapabilities, PersonDraft, PersonRow, PersonSheet};
 use crate::error::SourceError;
 
 /// A source of people.
@@ -24,6 +24,13 @@ pub trait PeopleSource: Send + Sync {
     /// # Errors
     /// [`SourceError`]; [`ErrorKind::NotFound`](crate::ErrorKind::NotFound) if there is none.
     fn read(&self, key: &str) -> Result<PersonSheet, SourceError>;
+
+    /// Whether `text` is valid for a field holding `check`: `None` if it is (or if the text is empty,
+    /// which means "remove this value"), else what is wrong, in the source's words. Asked on every
+    /// key, so it must be quick.
+    fn check(&self, _check: FieldCheck, _text: &str) -> Option<String> {
+        None
+    }
 
     /// One person, as a form.
     ///

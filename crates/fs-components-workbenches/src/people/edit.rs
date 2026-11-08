@@ -95,6 +95,25 @@ impl PeopleState {
         }
     }
 
+    /// What is wrong with the text of the field `key` now, in the source's words.
+    pub fn problem(&self, key: &str) -> Option<String> {
+        let found = self
+            .editing
+            .as_ref()?
+            .draft
+            .fields()
+            .find(|f| f.key == key)?;
+        self.source.check(found.check, &found.value)
+    }
+
+    /// The person typed in this field. Whether the problem shown under it changed: only then must
+    /// the form be drawn again.
+    pub fn typed(&mut self, field: &str, text: &str) -> bool {
+        let before = self.problem(field);
+        self.set_field(field, text);
+        before != self.problem(field)
+    }
+
     /// The person typed in this field.
     pub fn set_field(&mut self, field: &str, text: &str) {
         let Some(edit) = &mut self.editing else {
@@ -139,6 +158,17 @@ impl PeopleState {
         let Some(edit) = &self.editing else {
             return;
         };
+        let invalid = edit
+            .draft
+            .fields()
+            .any(|f| self.source.check(f.check, &f.value).is_some());
+        if invalid {
+            let message = self.labels.fix_fields.clone();
+            if let Some(edit) = &mut self.editing {
+                edit.error = Some(message);
+            }
+            return;
+        }
         if !edit.draft.changed() {
             let key = edit.key.clone();
             self.editing = None;

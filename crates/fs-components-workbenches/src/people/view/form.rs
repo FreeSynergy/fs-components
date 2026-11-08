@@ -6,7 +6,7 @@
 use std::sync::Arc;
 
 use blinc_cn::components::button::ButtonVariant;
-use blinc_cn::components::input::{InputSize, input};
+use blinc_cn::components::input::{InputBuilder, InputSize, input};
 use blinc_layout::div::{Div, div};
 use blinc_layout::text;
 
@@ -24,6 +24,7 @@ pub(super) fn form(
     name: &str,
     actions: &PeopleActions,
     slots: &InputSlots,
+    problems: &dyn Fn(&str) -> Option<String>,
     mut page: Div,
 ) -> Div {
     if !edit.draft.marks.is_empty() {
@@ -38,6 +39,7 @@ pub(super) fn form(
     for group in &edit.draft.groups {
         let mut section = div().class("fs-people-section").flex_col().w_full();
         for field in &group.fields {
+            let problem = problems(field.key.as_str());
             let data = slots.line(edit.id, &field.key, &field.value);
             let (typed, key) = (Arc::clone(&actions.typed), field.key.clone());
             section = section.child(
@@ -45,13 +47,14 @@ pub(super) fn form(
                     .id(format!("{name}-field-{}", field.key))
                     .class("fs-people-input")
                     .w_full()
-                    .child(
+                    .child(with_problem(
                         paired(input(&data))
                             .size(InputSize::Small)
                             .label(field.label.clone())
                             .w_full()
                             .on_change(move |value| typed(&key, value)),
-                    ),
+                        problem,
+                    )),
             );
         }
         if group.can_add {
@@ -67,4 +70,12 @@ pub(super) fn form(
         page = page.child(section);
     }
     page
+}
+
+/// The field with what is wrong with it under it, drawn as an error of the field.
+fn with_problem(field: InputBuilder, problem: Option<String>) -> InputBuilder {
+    match problem {
+        Some(message) => field.error(message),
+        None => field,
+    }
 }

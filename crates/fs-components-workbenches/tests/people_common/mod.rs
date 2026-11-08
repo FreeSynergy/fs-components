@@ -9,8 +9,8 @@ use std::sync::Mutex;
 
 use fs_components_workbenches::SourceError;
 use fs_components_workbenches::people::{
-    DraftField, DraftGroup, PeopleCapabilities, PeopleSource, PersonDraft, PersonField, PersonRow,
-    PersonSection, PersonSheet,
+    DraftField, DraftGroup, FieldCheck, PeopleCapabilities, PeopleSource, PersonDraft, PersonField,
+    PersonRow, PersonSection, PersonSheet,
 };
 
 /// Name and e-mail per key, with a revision.
@@ -149,6 +149,12 @@ impl PeopleSource for Book {
         ))
     }
 
+    /// The rule of this book: an address holds an `@`.
+    fn check(&self, check: FieldCheck, text: &str) -> Option<String> {
+        (check == FieldCheck::Email && !text.is_empty() && !text.contains('@'))
+            .then(|| "an address needs an @".to_string())
+    }
+
     fn draft(&self, key: &str) -> Result<PersonDraft, SourceError> {
         let people = self.people.lock().unwrap();
         let (name, mail, revision) = people
@@ -167,7 +173,10 @@ impl PeopleSource for Book {
                     "mail",
                     "E-mail",
                     true,
-                    vec![DraftField::new("mail/1", "E-mail", mail.clone())],
+                    vec![
+                        DraftField::new("mail/1", "E-mail", mail.clone())
+                            .with_check(FieldCheck::Email),
+                    ],
                 ),
             ],
         ))

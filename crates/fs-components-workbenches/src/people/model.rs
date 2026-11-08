@@ -128,6 +128,20 @@ impl PersonSheet {
     }
 }
 
+/// What a field holds, so the form can check it as the person types and a shell can choose the
+/// keyboard and the shape of the field. The check itself is the source's (it owns the rule).
+#[non_exhaustive]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum FieldCheck {
+    /// Any text.
+    #[default]
+    Text,
+    /// An e-mail address.
+    Email,
+    /// An international phone number.
+    Phone,
+}
+
 /// One field of a draft.
 #[non_exhaustive]
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -143,6 +157,8 @@ pub struct DraftField {
     pub original: String,
     /// Added in this edit: it has no counterpart in the source yet.
     pub added: bool,
+    /// What it holds; the source is asked whether the text is valid.
+    pub check: FieldCheck,
 }
 
 impl DraftField {
@@ -155,7 +171,15 @@ impl DraftField {
             original: value.clone(),
             value,
             added: false,
+            check: FieldCheck::Text,
         }
+    }
+
+    /// This field, holding `check`.
+    #[must_use]
+    pub fn with_check(mut self, check: FieldCheck) -> Self {
+        self.check = check;
+        self
     }
 
     /// Has the person changed it?

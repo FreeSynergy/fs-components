@@ -58,7 +58,15 @@ pub(in crate::people) fn detail(
     };
     let page = div().class("fs-people-page").flex_col().w_full();
     let page = if let Some(edit) = state.editing() {
-        form(edit, state.labels(), name, actions, slots, page)
+        form(
+            edit,
+            state.labels(),
+            name,
+            actions,
+            slots,
+            &|key| state.problem(key),
+            page,
+        )
     } else {
         match state.shown() {
             Shown::Person { sheet, .. } => person(sheet, page),
