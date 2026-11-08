@@ -79,7 +79,7 @@ fn cancel_puts_the_item_back_exactly() {
     assert_eq!(s.command(Command::Cancel), Outcome::Cancelled);
     assert_eq!(keys_of(&s, 0), ["a", "b", "c"]);
     assert_eq!(keys_of(&s, 1), ["x"]);
-    assert!(keys_of(&s, 2).is_empty());
+    assert_eq!(keys_of(&s, 2), [] as [std::string::String; 0]);
     assert_eq!(s.grabbed(), None);
     assert_eq!(s.cursor_key(), Some("b"));
     // Escape with nothing held is not consumed
@@ -237,16 +237,16 @@ fn nothing_is_lost_or_doubled_in_a_long_random_run() {
     let mut seed = 12345u64;
     for _ in 0..20_000 {
         seed = seed
-            .wrapping_mul(6364136223846793005)
-            .wrapping_add(1442695040888963407);
+            .wrapping_mul(6_364_136_223_846_793_005)
+            .wrapping_add(1_442_695_040_888_963_407);
         s.command(all[(seed >> 33) as usize % all.len()]);
-        let mut seen: Vec<String> = s
+        let mut keys: Vec<String> = s
             .lanes()
             .iter()
             .flat_map(|l| l.items.iter().map(|i| i.key.clone()))
             .collect();
-        seen.sort();
-        assert_eq!(seen, ["1", "2", "3", "4", "5", "6", "7"]);
+        keys.sort();
+        assert_eq!(keys, ["1", "2", "3", "4", "5", "6", "7"]);
         // the closed lane never takes an item of another lane
         assert!(keys_of(&s, 3).iter().all(|k| k == "6" || k == "7"));
     }

@@ -150,7 +150,7 @@ fn a_hundred_thousand_rows_lay_out_quickly_and_stay_finite() {
         &Fixed,
         &Metrics::default(),
     );
-    let layout = t.elapsed() - parse;
+    let layout = t.elapsed().checked_sub(parse).unwrap();
     let n = s
         .items
         .iter()

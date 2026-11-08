@@ -15,7 +15,7 @@ const BAR: &str = r#""x":{"field":"k","type":"nominal"},"y":{"field":"v","type":
 #[test]
 fn empty_data_gives_nothing_to_draw_and_no_issue() {
     let p = prepare(&spec("bar", "[]", BAR)).unwrap();
-    assert!(p.data.is_empty());
+    assert_eq!(p.data, [] as [fs_components_charts::data::Datum; 0]);
     assert_eq!((p.report.rows, p.report.kept, p.report.dropped), (0, 0, 0));
     assert!(p.report.is_clean());
 }

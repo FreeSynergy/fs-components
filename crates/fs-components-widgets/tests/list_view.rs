@@ -82,7 +82,7 @@ fn columns_share_what_the_fixed_ones_leave() {
         [100.0, 0.0, 0.0],
         "never negative"
     );
-    assert!(column_widths(&[], 500.0).is_empty());
+    assert_eq!(column_widths(&[], 500.0), [] as [f32; 0]);
 }
 
 #[test]

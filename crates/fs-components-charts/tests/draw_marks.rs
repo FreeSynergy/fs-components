@@ -4,6 +4,7 @@ mod common;
 
 use common::{near, out_dir, render, view};
 use fs_components_charts::scene::{Item, Paint};
+use std::collections::HashSet;
 
 const LINE: &str = r#"{
   "title": "Visitors per day",
@@ -40,7 +41,8 @@ fn a_line_over_dates_passes_through_its_points() {
     assert_eq!(path.len(), 7);
     // every vertex lies on drawn line colour
     for p in &path[1..path.len() - 1] {
-        let hit = (-2..=2).any(|dy| near(pic.pixel(p[0], p[1] + dy as f32), pic.series[0], 40));
+        let hit =
+            (-2i8..=2).any(|dy| near(pic.pixel(p[0], p[1] + f32::from(dy)), pic.series[0], 40));
         assert!(hit, "no line pixel near vertex {p:?}");
     }
     // x grows with the date: seven days over the plot width with equal steps
@@ -87,8 +89,8 @@ fn stacked_areas_put_series_zero_on_top_and_fill_between() {
     // inside series 1's polygon, away from its edge, the pixel carries colour of series 1 (blended)
     let p = &polys.iter().find(|p| p.0 == 1).unwrap().1;
     let (mx, my) = (
-        (p[0][0] + p[1][0]) / 2.0,
-        (p[0][1] + p[p.len() - 1][1]) / 2.0 + 2.0,
+        f32::midpoint(p[0][0], p[1][0]),
+        f32::midpoint(p[0][1], p[p.len() - 1][1]) + 2.0,
     );
     assert!(
         !near(pic.pixel(mx, my), pic.bg, 20),
@@ -126,7 +128,6 @@ fn points_have_a_symbol_per_series_and_a_legend() {
         .collect();
     // six data points and three legend symbols
     assert_eq!(markers.len(), 9);
-    use std::collections::HashSet;
     let shapes: HashSet<_> = markers.iter().map(|m| format!("{:?}", m.1)).collect();
     assert_eq!(shapes.len(), 3, "three series, three shapes: {shapes:?}");
     // the first point is an open circle: ink on the ring, the surface in the middle

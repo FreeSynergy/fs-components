@@ -51,7 +51,7 @@ fn subnormal_and_nearly_equal_numbers_give_finite_charts() {
         for mark in ["point", "line", "area"] {
             let s = lay(&doc(mark, &rows, enc));
             no_garbage(&s);
-            assert!(!s.items.is_empty());
+            assert_ne!(s.items, [] as [fs_components_charts::scene::Item; 0]);
         }
     }
     let fixed = r#""x":{"field":"x","type":"quantitative","scale":{"domain":[1,1.0000000000000002]}},"y":{"field":"y","type":"quantitative"}"#;
@@ -197,6 +197,7 @@ fn schema_5_asks_for_200_pixels() {
 }
 
 #[test]
+#[allow(clippy::float_cmp)] // opacity is a constant, never computed: exact comparison is the point
 fn opacity_is_that_of_vega_lite() {
     use fs_components_charts::scene::Item;
     // bars and areas opaque (also when not stacked), unaggregated points 0.7 (Vega-Lite 6.5.0)

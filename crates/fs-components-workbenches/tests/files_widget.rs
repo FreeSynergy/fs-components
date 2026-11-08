@@ -61,7 +61,7 @@ fn purge_and_empty_trash_are_two_acts_at_every_width_and_say_how_many() {
             for key in ["a", "b", "c"] {
                 shelf.change(key, |t| t.trashed = true);
             }
-            w.with_state(|s| s.open_trash());
+            w.with_state(fs_components_workbenches::file_manager::FilesState::open_trash);
             let mut h = Harness::new(w, width, 700.0);
             h.click("a");
             second_act_is_elsewhere(&mut h, width, "delete", redraw);
@@ -176,7 +176,7 @@ fn the_toolbar_is_inside_the_window_at_every_width() {
             );
             assert!(bottom <= 700.0, "{width} {what}: {top}..{bottom}");
             let row = h.widget.element_name();
-            assert!(!row.is_empty());
+            assert_ne!(row, "");
         }
     }
 }
@@ -258,7 +258,8 @@ fn search_keeps_the_field_redraws_the_list_only_and_a_failure_keeps_the_rows() {
     assert!(h.has("a"));
     assert!(!h.has("b"), "the live area followed");
     shelf.break_it(Some("the store is gone"));
-    h.widget.with_state(|s| s.retry());
+    h.widget
+        .with_state(fs_components_workbenches::file_manager::FilesState::retry);
     h.rebuild();
     assert!(h.has("a"), "the rows stay");
     assert!(h.has("list-problem") && h.has("retry"));

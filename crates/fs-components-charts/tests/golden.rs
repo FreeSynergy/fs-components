@@ -65,13 +65,13 @@ fn ours(s: &Scene, kind: &str) -> Vec<Row> {
                 out.push(vec![fx(*x), fy(*y), f64::from(*w) / pw, f64::from(*h) / ph]);
             }
             ("arc", Item::Sector { start, end, .. }) => {
-                out.push(vec![f64::from(*start), f64::from(*end)])
+                out.push(vec![f64::from(*start), f64::from(*end)]);
             }
             ("point", Item::Marker { at, .. }) if inside(s, at[0], at[1]) => {
-                out.push(vec![fx(at[0]), fy(at[1])])
+                out.push(vec![fx(at[0]), fy(at[1])]);
             }
             ("line", Item::Path { points, .. }) => {
-                out.extend(points.iter().map(|p| vec![fx(p[0]), fy(p[1])]))
+                out.extend(points.iter().map(|p| vec![fx(p[0]), fy(p[1])]));
             }
             ("area", Item::Polygon { points, .. }) => {
                 let n = points.len() / 2;
@@ -156,6 +156,7 @@ fn run(name: &str) -> Result<(), String> {
 }
 
 /// The tick labels of both axes against Vega-Lite's, in a box that gives the spec's plot size.
+#[allow(clippy::many_single_char_names)] // g, l, m, w, h are the spec, labels, metrics and size, as in the sibling runners
 fn run_labels(name: &str) -> Result<(), String> {
     use fs_components_charts::scene::{Paint, TextSize};
     let path = Path::new(env!("CARGO_MANIFEST_DIR"))

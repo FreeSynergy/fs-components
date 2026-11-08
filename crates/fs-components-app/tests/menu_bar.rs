@@ -46,7 +46,7 @@ fn new_menus_reach_the_bar_through_an_old_element() {
     ];
     h.app
         .set_menus(changed, move |id| {
-            chosen.lock().unwrap().push(id.to_owned())
+            chosen.lock().unwrap().push(id.to_owned());
         })
         .unwrap();
     assert_eq!(open_menu(&h), None, "new menus close the open one");

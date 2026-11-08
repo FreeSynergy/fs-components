@@ -11,7 +11,8 @@ fn series_doc(mark: &str, n: usize, enc_extra: &str) -> String {
         .map(|i| {
             format!(
                 r#"{{"x":{i},"y":{:.3},"k":"c{i}"}}"#,
-                (i as f64 * 0.01).sin() * 100.0 + (i % 7) as f64
+                (f64::from(u32::try_from(i).unwrap()) * 0.01).sin() * 100.0
+                    + f64::from(u32::try_from(i % 7).unwrap())
             )
         })
         .collect();

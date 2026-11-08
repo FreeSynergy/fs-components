@@ -139,7 +139,7 @@ fn begin_edit_during_an_edit_keeps_the_draft() {
 fn a_save_refreshes_search_results() {
     let (_s, mut r) = reader();
     r.search("needle");
-    assert!(r.hits().is_empty());
+    assert_eq!(r.hits(), []);
     r.begin_edit();
     r.set_draft("a needle");
     r.save();

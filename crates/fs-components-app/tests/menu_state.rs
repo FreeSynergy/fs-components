@@ -41,7 +41,7 @@ fn menus() -> Vec<Menu> {
 #[test]
 fn a_shell_starts_without_menus_and_no_menu_can_open() {
     let mut shell = Shell::new("T", screens()).unwrap();
-    assert!(shell.menus().is_empty());
+    assert_eq!(shell.menus(), []);
     assert!(!shell.open(0));
     assert_eq!(shell.open_menu(), None);
     assert!(shell.handler_for("open").is_none());

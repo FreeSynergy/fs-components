@@ -37,7 +37,7 @@ fn a_backup_failure_asks_the_page_to_redraw() {
         "sanity: refresh queues a rebuild"
     );
     let _ = take_pending_subtree_rebuilds();
-    widget.with_reader(|r| r.begin_edit());
+    widget.with_reader(fs_components_workbenches::Reader::begin_edit);
     let _ = take_pending_subtree_rebuilds();
     // The store breaks after the edit began: only the timer thread can notice.
     store.fail.store(true, std::sync::atomic::Ordering::Relaxed);

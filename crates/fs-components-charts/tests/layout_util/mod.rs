@@ -53,8 +53,7 @@ pub fn finite(s: &Scene) -> bool {
         Item::Rect { x, y, w, h, .. } => ok(&[*x, *y, *w, *h]),
         Item::Line { from, to, .. } => ok(from) && ok(to),
         Item::Path { points, .. } | Item::Polygon { points, .. } => points.iter().all(|p| ok(p)),
-        Item::Marker { at, .. } => ok(at),
-        Item::Text { at, .. } => ok(at),
+        Item::Marker { at, .. } | Item::Text { at, .. } => ok(at),
         Item::Sector {
             centre, start, end, ..
         } => ok(centre) && ok(&[*start, *end]),

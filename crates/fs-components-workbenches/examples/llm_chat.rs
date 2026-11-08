@@ -6,6 +6,7 @@
 //! --example llm_chat` opens a window; `-- --compact` shows the compact form; `-- --seconds N`; `--feed-ms N` sets the pace of the feed (default 250); a question appears after about 6 s
 //! closes it after N seconds (default: stays open).
 
+use std::fmt::Write as _;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
@@ -126,7 +127,7 @@ fn main() {
                     .digest(b"x".to_vec());
                 *demo.1.lock().unwrap() = vec![Pending::new("1000", call)];
             }
-            text.push_str(&format!("word{i} "));
+            let _ = write!(text, "word{i} ");
             let mut m = demo.0.lock().unwrap();
             let last = m.last_mut().unwrap();
             *last = message(key, "Helper", SenderKind::Ai, &text)

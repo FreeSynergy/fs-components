@@ -248,9 +248,9 @@ fn the_picker_changes_nothing_and_a_marked_file_is_a_second_act() {
     });
     assert_eq!(picker.picked().unwrap().key, "a", "not yet");
     picker.with_state(FilesState::really);
-    let picked = picker.picked().unwrap();
-    assert_eq!(picked.key, "m");
-    assert!(picked.marked);
+    let chosen = picker.picked().unwrap();
+    assert_eq!(chosen.key, "m");
+    assert!(chosen.marked);
 }
 
 #[test]

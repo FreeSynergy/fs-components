@@ -242,12 +242,12 @@ fn pictures_of_reading_editing_and_a_failure_differ() {
     let Some(read) = draw(&w, "people-read.png") else {
         return;
     };
-    w.with_state(|s| s.begin_edit());
+    w.with_state(fs_components_workbenches::people::PeopleState::begin_edit);
     let form = draw(&w, "people-form.png").unwrap();
     assert_ne!(read, form);
     w.with_state(|s| s.set_field("name", "changed"));
     *book.refuse.lock().unwrap() = Some("the store refuses this card".into());
-    w.with_state(|s| s.save());
+    w.with_state(fs_components_workbenches::people::PeopleState::save);
     let failed = draw(&w, "people-failed.png").unwrap();
     assert_ne!(form, failed);
 }

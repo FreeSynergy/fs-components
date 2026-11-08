@@ -124,7 +124,7 @@ fn unmapped_text_keeps_its_lines_blank_lines_and_indentation() {
         // Rows with dark text in the page area: first line, (blank), indented, last: 3 bands, the
         // gap between the first two is a blank line.
         let rows: Vec<u32> = (80..300)
-            .filter(|&y| (340..690).any(|x| common::draw::dark(img.get_pixel(x, y))))
+            .filter(|&y| (340..690).any(|x| common::draw::dark(*img.get_pixel(x, y))))
             .collect();
         let mut bands: Vec<(u32, u32)> = Vec::new();
         for y in rows {
@@ -139,7 +139,7 @@ fn unmapped_text_keeps_its_lines_blank_lines_and_indentation() {
         assert!(gap1 > gap2 + 8, "{name}: the blank line is gone: {bands:?}");
         let left = |band: (u32, u32)| {
             (340..690)
-                .find(|&x| (band.0..=band.1).any(|y| common::draw::dark(img.get_pixel(x, y))))
+                .find(|&x| (band.0..=band.1).any(|y| common::draw::dark(*img.get_pixel(x, y))))
                 .unwrap()
         };
         assert!(

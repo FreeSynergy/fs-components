@@ -1,4 +1,10 @@
 //! Repro: surface texture is smaller than the size handed to the renderer (window resize race).
+// Pixel and size arithmetic on small bounded values: the casts cannot lose anything that matters in a test.
+#![allow(
+    clippy::cast_possible_truncation,
+    clippy::cast_sign_loss,
+    clippy::cast_precision_loss
+)]
 mod common;
 use std::sync::{Arc, Mutex};
 

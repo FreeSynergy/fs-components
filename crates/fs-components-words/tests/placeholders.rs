@@ -51,8 +51,8 @@ fn missing_text_shows_the_id() {
 
 #[test]
 fn empty_id_and_empty_template_are_never_empty_text() {
-    assert!(!say(&[], "", &Args::new()).text().is_empty());
-    assert!(!say(&[("e", "")], "e", &Args::new()).text().is_empty());
+    assert_ne!(say(&[], "", &Args::new()).text(), "");
+    assert_ne!(say(&[("e", "")], "e", &Args::new()).text(), "");
 }
 
 #[test]

@@ -103,12 +103,12 @@ fn pictures_of_the_views_and_of_reading_editing_and_a_failure_differ() {
     w.with_state(|s| s.select("ada"));
     let read = draw(&w, "calendar-wb-read.png").unwrap();
     assert_ne!(week, read);
-    w.with_state(|s| s.begin_edit());
+    w.with_state(fs_components_workbenches::calendar::CalendarState::begin_edit);
     let form = draw(&w, "calendar-wb-form.png").unwrap();
     assert_ne!(read, form);
     w.with_state(|s| s.set_field("title", "changed"));
     *diary.refuse.lock().unwrap() = Some("the store refuses this".into());
-    w.with_state(|s| s.save());
+    w.with_state(fs_components_workbenches::calendar::CalendarState::save);
     let failed = draw(&w, "calendar-wb-failed.png").unwrap();
     assert_ne!(form, failed);
 }
@@ -118,7 +118,7 @@ fn an_item_on_the_scrolled_axis_is_clicked_where_it_is_drawn() {
     let (_, w) = widget();
     w.with_state(|s| s.set_view(ViewRange::Week));
     let mut h = Harness::new(w, 1300.0, 800.0);
-    assert!(h.widget.with_state(|s| s.view()) == ViewRange::Week);
+    assert_eq!(h.widget.with_state(|s| s.view()), ViewRange::Week);
     // The axis starts at seven: nine o'clock is two hours down, not nine.
     let (_, y) = h.centre(ADA);
     assert!(y < 300.0, "the bounds follow the scroll: {y}");
@@ -142,7 +142,8 @@ fn a_mark_stays_in_view_and_a_new_item_starts_at_the_top() {
         scrolled < form_at_rest - 50.0,
         "the form did scroll: {form_at_rest} {scrolled}"
     );
-    h.widget.with_state(|s| s.cancel_edit());
+    h.widget
+        .with_state(fs_components_workbenches::calendar::CalendarState::cancel_edit);
     h.widget.with_state(|s| s.select("bob"));
     h.rebuild();
     assert!(h.has("pinned"));
@@ -200,7 +201,8 @@ fn a_very_long_title_leaves_the_page_in_reach_and_a_long_sentence_is_cut() {
         .get_absolute_bounds(h.tree.query_by_id(&format!("{name}-page")).unwrap())
         .unwrap();
     assert!(page.y < 300.0, "the page starts in view: {page:?}");
-    h.widget.with_state(|s| s.ask_delete());
+    h.widget
+        .with_state(fs_components_workbenches::calendar::CalendarState::ask_delete);
     let question = h.widget.with_state(|s| s.notice().unwrap().to_string());
     assert!(question.chars().count() < 200, "{}", question.len());
 }

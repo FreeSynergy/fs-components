@@ -81,14 +81,14 @@ fn search_and_clear() {
     assert_eq!(r.hits().len(), 1);
     assert_eq!(r.hits()[0].path, "dir/b");
     r.search("");
-    assert!(r.hits().is_empty());
+    assert_eq!(r.hits(), []);
 }
 
 #[test]
 fn a_failed_search_is_reported_not_hidden() {
     let mut r = reader();
     r.search("boom");
-    assert!(r.hits().is_empty());
+    assert_eq!(r.hits(), []);
     assert!(r.problem().unwrap().contains("the index is gone"));
     r.search("dir");
     assert_eq!(r.problem(), None);

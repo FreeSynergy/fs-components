@@ -157,7 +157,10 @@ fn typing_into_the_filter_field_narrows_the_list() {
     );
     // while typing, Space must not choose a row
     input.key_broadcast(&mut tree, 32);
-    assert!(d.chosen().is_empty());
+    assert_eq!(
+        d.chosen(),
+        [] as [fs_components_widgets::share_dialog::Grant; 0]
+    );
 }
 
 #[test]

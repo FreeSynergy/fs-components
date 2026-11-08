@@ -24,10 +24,9 @@ fn templates_that_always_print_nothing_are_faulty() {
         assert_eq!(e.line(), 2, "{empty:?}");
     }
     // One branch that can show something is enough.
-    assert!(
-        en(&[("t", "{n, plural, one {} other {x}}")])
-            .validate()
-            .is_empty()
+    assert_eq!(
+        en(&[("t", "{n, plural, one {} other {x}}")]).validate(),
+        [] as [fs_components_words::TextId; 0]
     );
 }
 
@@ -35,7 +34,7 @@ fn templates_that_always_print_nothing_are_faulty() {
 fn a_byte_order_mark_at_the_start_is_ignored() {
     let c = Catalog::from_text(EnglishPlural, "\u{feff}t = hello\nu = x\n").unwrap();
     assert_eq!(c.say(&"t".into(), &Args::new()).text(), "hello");
-    assert!(c.validate().is_empty());
+    assert_eq!(c.validate(), [] as [fs_components_words::TextId; 0]);
 }
 
 #[test]

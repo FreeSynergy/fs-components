@@ -66,13 +66,13 @@ pub fn paragraphs(n: usize) -> Vec<Block> {
 }
 
 /// Dark text pixel (backgrounds and borders of the table are light).
-pub fn dark(p: &image::Rgba<u8>) -> bool {
+pub fn dark(p: image::Rgba<u8>) -> bool {
     p[0] < 120 && p[1] < 120 && p[2] < 120
 }
 
 /// First row (y) with dark text inside the x range, from `from_y` on.
 pub fn ink_top(img: &image::RgbaImage, xs: std::ops::Range<u32>, from_y: u32) -> Option<u32> {
-    (from_y..img.height()).find(|&y| xs.clone().any(|x| dark(img.get_pixel(x, y))))
+    (from_y..img.height()).find(|&y| xs.clone().any(|x| dark(*img.get_pixel(x, y))))
 }
 
 /// X ranges that contain dark text between `y0..y1`, separated by more than 14 empty columns.
@@ -93,7 +93,7 @@ pub fn ink_spans_gap(
     y1: u32,
     gap: u32,
 ) -> Vec<(u32, u32)> {
-    let has = |x: u32| (y0..y1).any(|y| dark(img.get_pixel(x, y)));
+    let has = |x: u32| (y0..y1).any(|y| dark(*img.get_pixel(x, y)));
     let mut spans: Vec<(u32, u32)> = Vec::new();
     for x in xs {
         if has(x) {
@@ -123,5 +123,5 @@ pub fn fonts_work(tmp: &Scratch) -> bool {
         return false;
     }
     let img = pixels(&file);
-    img.pixels().filter(|p| dark(p)).count() > 100
+    img.pixels().filter(|p| dark(**p)).count() > 100
 }

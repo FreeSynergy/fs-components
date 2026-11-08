@@ -60,7 +60,7 @@ pub fn app_with(title: &str, screens: &[&str], presses: &Arc<AtomicUsize>) -> (A
     let log: Log = Arc::default();
     let chosen = Arc::clone(&log);
     app.set_menus(menus(), move |id| {
-        chosen.lock().unwrap().push(id.to_owned())
+        chosen.lock().unwrap().push(id.to_owned());
     })
     .unwrap();
     (app, log)

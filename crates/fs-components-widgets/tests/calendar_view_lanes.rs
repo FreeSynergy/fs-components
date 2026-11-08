@@ -49,5 +49,8 @@ fn nothing_is_lost_in_a_crowd() {
     seen.sort_unstable();
     seen.dedup();
     assert_eq!(seen.len(), 50, "each in a lane of its own");
-    assert!(lanes(&[], 30).is_empty());
+    assert_eq!(
+        lanes(&[], 30),
+        [] as [fs_components_widgets::calendar_view::Placed; 0]
+    );
 }

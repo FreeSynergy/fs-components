@@ -28,6 +28,7 @@ impl Input {
 
     /// What a window does: the event carries the pointer, the pointer relative to the element and
     /// the element's rectangle (the pressed element gets the release wherever the pointer is).
+    #[allow(clippy::unused_self)] // a method so tests read as one window object, even where it holds no state
     fn send(
         &mut self,
         tree: &mut RenderTree,
@@ -146,6 +147,7 @@ impl Input {
     }
 
     /// Release a key to every handler (a window that cannot tell who has focus).
+    #[allow(clippy::unused_self)] // a method so tests read as one window object, even where it holds no state
     pub fn key_release_broadcast(&mut self, tree: &mut RenderTree, code: u32) {
         tree.broadcast_key_event(
             blinc_core::events::event_types::KEY_UP,
@@ -159,6 +161,7 @@ impl Input {
 
     /// Send one key event of `event_type` (`KEY_DOWN` or `KEY_UP`) to the element with this id, as a
     /// window does to the focused element.
+    #[allow(clippy::unused_self)] // a method so tests read as one window object, even where it holds no state
     pub fn key_event_to(&mut self, tree: &mut RenderTree, id: &str, event_type: u32, code: u32) {
         let node = tree
             .query_by_id(id)

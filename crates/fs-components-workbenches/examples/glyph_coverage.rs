@@ -14,7 +14,7 @@ fn main() {
         for e in std::fs::read_dir(d).unwrap().flatten() {
             let p = e.path();
             if p.is_dir() {
-                stack.push(p)
+                stack.push(p);
             } else if p.extension().is_some_and(|x| x == "md") {
                 for c in std::fs::read_to_string(&p).unwrap_or_default().chars() {
                     *chars.entry(c).or_default() += 1;

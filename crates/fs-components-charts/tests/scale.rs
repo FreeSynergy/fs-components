@@ -24,8 +24,8 @@ fn ticks_are_round_and_exact_decimals() {
     assert_eq!(ticks(0.0, 10.0, 5), vec![0.0, 2.0, 4.0, 6.0, 8.0, 10.0]);
     assert_eq!(ticks(-1.0, 1.0, 4), vec![-1.0, -0.5, 0.0, 0.5, 1.0]);
     assert_eq!(ticks(3.0, 3.0, 5), vec![3.0]);
-    assert!(ticks(0.0, f64::INFINITY, 5).is_empty());
-    assert!(ticks(5.0, 1.0, 5).is_empty());
+    assert_eq!(ticks(0.0, f64::INFINITY, 5), [] as [f64; 0]);
+    assert_eq!(ticks(5.0, 1.0, 5), [] as [f64; 0]);
 }
 
 #[test]
@@ -79,7 +79,7 @@ fn linear_maps_and_survives_huge_domains() {
     assert!(huge.d0.is_finite() && huge.d1.is_finite(), "{huge:?}");
     assert!((huge.map(0.0) - 50.0).abs() < 1e-9);
     assert!(huge.map(1.7e308).is_finite());
-    assert!(!huge.ticks(5).is_empty());
+    assert_ne!(huge.ticks(5), [] as [f64; 0]);
     let flat = Linear::new(3.0, 3.0, 0.0, 10.0);
     assert_eq!(flat.map(3.0), 5.0, "a one-point domain sits in the middle");
 }
@@ -191,7 +191,7 @@ fn time_intervals_and_labels_follow_the_boundaries() {
 fn a_zero_or_reversed_time_span_gives_no_trouble() {
     let iv = pick(0.0, 5);
     assert_eq!(iv.unit, Unit::Millisecond);
-    assert!(
+    assert_eq!(
         time_ticks(
             10.0,
             5.0,
@@ -200,7 +200,7 @@ fn a_zero_or_reversed_time_span_gives_no_trouble() {
                 step: 1
             },
             0
-        )
-        .is_empty()
+        ),
+        [] as [f64; 0]
     );
 }

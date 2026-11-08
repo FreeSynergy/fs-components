@@ -18,6 +18,7 @@ use fs_components_workbenches::file_manager::{
 
 /// A thing in the shelf.
 #[derive(Clone, Debug)]
+#[allow(clippy::struct_excessive_bools)] // independent test-fixture flags, not a state machine
 pub struct Thing {
     pub name: String,
     pub folder: Option<String>,
@@ -149,6 +150,7 @@ impl Shelf {
         })
     }
 
+    #[allow(clippy::maybe_infinite_iter)] // the search ends at the first free number; the fixture never fills them all
     pub(super) fn free_name(
         &self,
         folder: Option<&str>,

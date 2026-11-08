@@ -91,6 +91,7 @@ pub fn say(key: &str, who: &str, kind: SenderKind, text: &str) -> ChatMessage {
     ChatMessage::new(key, sender, vec![Block::Paragraph(Inline::plain(text))])
 }
 
+#[allow(clippy::unnecessary_wraps)] // the chat takes an `Option<StopControl>`; tests pass it straight in
 pub fn stop(state: StopState) -> Option<StopControl> {
     Some(StopControl::new("Stop all agents", state))
 }
@@ -164,6 +165,7 @@ impl Driven {
         (b.x, b.y, b.width, b.height)
     }
 
+    #[allow(clippy::many_single_char_names)] // n, e, x, y: node, event, pointer position
     fn dispatch(&mut self, n: blinc_layout::tree::LayoutNodeId, e: u32, x: f32, y: f32) {
         match self.tree.get_absolute_bounds(n) {
             Some(b) => self.tree.dispatch_event_with_local(
@@ -210,10 +212,10 @@ impl Driven {
 
 /// Draw the chat to a picture (kept in `FS_COMP_SHOTS` when set).
 pub fn shot(chat: &LlmChat, w: u32, h: u32, name: &str) -> image::RgbaImage {
+    static N: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
     // the same lock as `Driven`: Blinc's singletons must not be touched by two tests at once (the
     // cause of a panic inside blinc_core in 6 of 15 runs); drop any `Driven` before calling this
     let _one = ONE.lock().unwrap_or_else(PoisonError::into_inner);
-    static N: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
     let n = N.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
     let dir = std::env::temp_dir().join(format!("fs-llm-{}-{n}", std::process::id()));
     std::fs::create_dir_all(&dir).unwrap();

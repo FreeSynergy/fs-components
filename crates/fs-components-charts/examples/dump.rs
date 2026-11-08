@@ -7,9 +7,9 @@ fn main() {
     let sc = c.scene(
         400.0,
         300.0,
-        &Default::default(),
+        &fs_components_charts::Labels::default(),
         &fs_components_charts::layout::Fixed,
-        &Default::default(),
+        &fs_components_charts::layout::Metrics::default(),
     );
     println!("plot {:?}", sc.plot);
     for i in &sc.items {

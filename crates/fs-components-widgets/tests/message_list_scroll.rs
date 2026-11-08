@@ -2,6 +2,12 @@
 //!
 //! Tests: model tests and layouts of the same view a window draws; the scroll is moved through
 //! the handle (the wheel itself needs a real window).
+// Pixel and size arithmetic on small bounded values: the casts cannot lose anything that matters in a test.
+#![allow(
+    clippy::cast_possible_truncation,
+    clippy::cast_sign_loss,
+    clippy::cast_precision_loss
+)]
 
 mod chat_support;
 mod common;
@@ -23,8 +29,8 @@ fn heights_agree_with_a_plain_sum() {
     let mut seed = 12345u64;
     for _ in 0..3000 {
         seed = seed
-            .wrapping_mul(6364136223846793005)
-            .wrapping_add(1442695040888963407);
+            .wrapping_mul(6_364_136_223_846_793_005)
+            .wrapping_add(1_442_695_040_888_963_407);
         let i = (seed >> 33) as usize % 1000;
         let v = 20.0 + ((seed >> 20) % 300) as f32;
         h.set(i, v, true);

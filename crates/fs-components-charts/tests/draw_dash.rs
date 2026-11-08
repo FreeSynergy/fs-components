@@ -1,5 +1,11 @@
 //! Dashed lines really are dashed on the picture (Blinc 0.6 draws no dashes by itself), and the
 //! cutting into dashes is exact.
+// Pixel and size arithmetic on small bounded values: the casts cannot lose anything that matters in a test.
+#![allow(
+    clippy::cast_possible_truncation,
+    clippy::cast_sign_loss,
+    clippy::cast_precision_loss
+)]
 
 mod common;
 

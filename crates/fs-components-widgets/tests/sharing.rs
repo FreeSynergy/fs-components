@@ -82,7 +82,7 @@ fn the_filter_hides_rows_but_never_drops_a_choice() {
     s.set_filter("李");
     assert_eq!(s.visible(), [3]);
     s.set_filter("nothing like this");
-    assert!(s.visible().is_empty());
+    assert_eq!(s.visible(), [] as [usize; 0]);
     assert_eq!(s.move_cursor(1), Outcome::Refused(Refusal::Empty));
     assert_eq!(s.cursor_key(), None);
     // ada is hidden but still chosen and still confirmed
@@ -187,7 +187,10 @@ fn a_pair_that_is_not_offered_can_be_removed() {
     ]);
     assert_eq!(s.unlisted().len(), 1);
     assert_eq!(s.toggle("gone"), Outcome::Changed);
-    assert!(s.unlisted().is_empty());
+    assert_eq!(
+        s.unlisted(),
+        [] as [&fs_components_widgets::share_dialog::Grant; 0]
+    );
     assert_eq!(keys_of(s.chosen()), [("ada", Some("edit"))]);
     assert_eq!(
         s.toggle("gone"),

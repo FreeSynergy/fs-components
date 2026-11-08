@@ -119,9 +119,10 @@ fn emphasis_and_strong_look_different_from_plain_text() {
     }
     let make = |kind: Option<MarkKind>| {
         // "Plain" still goes through the flow path (an empty mark), so the comparison is fair.
-        let marks = kind
-            .map(|k| vec![Mark::new(k, 0, 5)])
-            .unwrap_or_else(|| vec![Mark::new(MarkKind::Strong, 3, 3)]);
+        let marks = kind.map_or_else(
+            || vec![Mark::new(MarkKind::Strong, 3, 3)],
+            |k| vec![Mark::new(k, 0, 5)],
+        );
         vec![Block::Paragraph(Inline::new("Words in the text", marks))]
     };
     let draw = |name: &str, kind: Option<MarkKind>| {

@@ -37,6 +37,7 @@ pub fn unknown(key: &str, name: &str) -> ChatMessage {
 pub struct Generated(pub usize);
 
 impl Generated {
+    #[allow(clippy::unused_self)] // mirrors the real source's `message(&self, i)` so tests swap one for the other
     pub fn message(&self, i: usize) -> ChatMessage {
         let kind = [
             SenderKind::Person,

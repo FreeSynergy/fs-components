@@ -62,13 +62,10 @@ fn no_items_never_panics_and_new_items_keep_the_place() {
     assert_eq!(huge.last(), Outcome::Shown("m199999".into()));
 }
 
-fn bounds_of(
-    img: &image::RgbaImage,
-    hit: impl Fn(&[u8; 4]) -> bool,
-) -> (u32, u32, u32, u32, usize) {
+fn bounds_of(img: &image::RgbaImage, hit: impl Fn([u8; 4]) -> bool) -> (u32, u32, u32, u32, usize) {
     let (mut x0, mut y0, mut x1, mut y1, mut n) = (u32::MAX, u32::MAX, 0, 0, 0);
     for (x, y, p) in img.enumerate_pixels() {
-        if hit(&p.0) {
+        if hit(p.0) {
             x0 = x0.min(x);
             y0 = y0.min(y);
             x1 = x1.max(x);
@@ -79,11 +76,11 @@ fn bounds_of(
     (x0, y0, x1, y1, n)
 }
 
-fn is_red(p: &[u8; 4]) -> bool {
+fn is_red(p: [u8; 4]) -> bool {
     p[0] > 150 && p[1] < 90 && p[2] < 90
 }
 
-fn is_blue(p: &[u8; 4]) -> bool {
+fn is_blue(p: [u8; 4]) -> bool {
     p[2] > 150 && p[0] < 90 && p[1] < 120
 }
 

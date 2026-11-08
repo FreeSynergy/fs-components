@@ -13,6 +13,7 @@ fn doc(mark: &str, rows: &str, enc: &str) -> String {
 const CAT: &str = r#""x":{"field":"k","type":"nominal"},"y":{"field":"v","type":"quantitative"}"#;
 const TIME: &str = r#""x":{"field":"d","type":"temporal"},"y":{"field":"v","type":"quantitative"}"#;
 
+#[allow(clippy::cast_precision_loss)] // picture sizes are a few hundred pixels, exact in f32
 fn ink_of(json: &str, name: &str, w: u32, h: u32, dark: bool) -> usize {
     let (dir, _tmp) = out_dir(name);
     let pic = render(&view(json), w, h, dark, &dir, name);
@@ -57,7 +58,7 @@ fn broken_lines_and_dropped_bars_are_visible_with_their_note() {
         .collect();
     assert_eq!(paths.len(), 2);
     let (a, b) = (paths[0][1], paths[1][0]);
-    let mid = [(a[0] + b[0]) / 2.0, (a[1] + b[1]) / 2.0];
+    let mid = [f32::midpoint(a[0], b[0]), f32::midpoint(a[1], b[1])];
     assert!(
         pic.ink([mid[0] - 2.0, mid[1] - 8.0, 4.0, 16.0], pic.bg) < 40,
         "no line bridges the gap"

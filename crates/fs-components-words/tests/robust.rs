@@ -74,7 +74,10 @@ fn from_text_keeps_an_escaped_trailing_space_and_refuses_duplicates() {
 fn validate_lists_every_faulty_template() {
     let c = en(&[("good", "fine {x}"), ("bad2", "{x"), ("bad1", "}")]);
     assert_eq!(c.validate(), vec![TextId::new("bad1"), TextId::new("bad2")]);
-    assert!(en(&[("a", "ok")]).validate().is_empty());
+    assert_eq!(
+        en(&[("a", "ok")]).validate(),
+        [] as [fs_components_words::TextId; 0]
+    );
     assert_eq!(
         English::new(&[("z", "{")]).validate(),
         vec![TextId::new("z")]

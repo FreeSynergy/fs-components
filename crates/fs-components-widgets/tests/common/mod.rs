@@ -5,6 +5,12 @@
 //! environment variable `FS_COMP_SHOTS` names a directory; scratch files of a test live in a
 //! [`Scratch`] that removes itself.
 #![allow(dead_code)]
+// Pixel arithmetic on small, bounded picture sizes and colour channels: the casts cannot lose anything that matters here.
+#![allow(
+    clippy::cast_possible_truncation,
+    clippy::cast_sign_loss,
+    clippy::cast_precision_loss
+)]
 
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
@@ -145,6 +151,7 @@ fn draw_frames(tree: &RenderTree, w: u32, h: u32, name: &str, frames: u32) -> Rg
 }
 
 /// Number of pixels in `rect` (x, y, w, h) that differ clearly from `background`.
+#[allow(clippy::many_single_char_names)] // x0/y0/w/h/n/x/y: pixel coordinates of one rectangle scan
 pub fn ink(img: &RgbaImage, rect: (u32, u32, u32, u32), background: [u8; 4]) -> usize {
     let (x0, y0, w, h) = rect;
     let mut n = 0;

@@ -103,7 +103,7 @@ fn show_more_is_reached_by_tab_and_works_with_enter() {
 fn a_picture_at_a_narrow_width_with_the_question_open() {
     let _one = people_common::harness::serial();
     let (_, w) = widget(Book::with(&["ada", "bob"]));
-    w.with_state(|s| s.ask_delete());
+    w.with_state(fs_components_workbenches::people::PeopleState::ask_delete);
     let path = std::env::var_os("FS_COMP_SHOTS").map_or_else(
         || std::env::temp_dir().join(format!("fs-narrow-{}.png", std::process::id())),
         |dir| std::path::PathBuf::from(dir).join("people-narrow.png"),

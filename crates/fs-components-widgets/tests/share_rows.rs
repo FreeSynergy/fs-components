@@ -106,7 +106,10 @@ fn a_pair_that_is_not_offered_is_shown_and_can_be_removed_by_click() {
     let mut tree = layout(d.build(), 620.0, 560.0);
     assert!(tree.query_by_id("unl-row-gone").is_some());
     Input::new().click(&mut tree, "unl-pick-gone");
-    assert!(d.chosen().is_empty());
+    assert_eq!(
+        d.chosen(),
+        [] as [fs_components_widgets::share_dialog::Grant; 0]
+    );
 }
 
 #[test]

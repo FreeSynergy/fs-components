@@ -24,7 +24,7 @@ fn way(count: usize) -> Vec<Crumb> {
 
 #[test]
 fn a_long_way_keeps_the_first_and_the_last_and_says_something_is_left_out() {
-    assert!(plan(&[], 800.0).is_empty());
+    assert_eq!(plan(&[], 800.0), [] as [std::option::Option<usize>; 0]);
     assert_eq!(plan(&way(1), 800.0), vec![Some(0)]);
     assert_eq!(plan(&way(3), 800.0), vec![Some(0), Some(1), Some(2)]);
     let narrow = plan(&way(30), 300.0);
@@ -94,7 +94,7 @@ fn a_very_long_grid_has_only_the_tiles_in_view_and_a_press_chooses_one() {
     let position = ListPosition::new();
     let grid = TileGrid::new(Arc::new(tiles), (160.0, 120.0), &position, "g")
         .on_select(Arc::new(move |key: &str| {
-            seen.lock().unwrap().push(key.to_string())
+            seen.lock().unwrap().push(key.to_string());
         }))
         .build(800.0, 400.0);
     let mut tree = layout(grid, 800.0, 400.0);

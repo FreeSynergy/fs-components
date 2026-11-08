@@ -47,7 +47,7 @@ impl FileSource for Shelf {
         let entries: Vec<_> = all.iter().skip(start).take(size).cloned().collect();
         let next = (start + size < all.len()).then(|| PageMark(Arc::new(start + size)));
         let mut page = EntryPage::new(entries, next);
-        page.unreadable = self.unreadable.lock().unwrap().clone();
+        page.unreadable.clone_from(&self.unreadable.lock().unwrap());
         Ok(page)
     }
 

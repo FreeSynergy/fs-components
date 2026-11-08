@@ -4,7 +4,14 @@
 //! temporary directory that is removed when the test ends.
 
 #![allow(dead_code)]
+// Pixel arithmetic on small, bounded picture sizes and colour channels: the casts cannot lose anything that matters here.
+#![allow(
+    clippy::cast_possible_truncation,
+    clippy::cast_sign_loss,
+    clippy::cast_precision_loss
+)]
 
+use std::fmt::Write as _;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
@@ -35,16 +42,13 @@ impl Drop for TempDir {
 
 /// Where a picture goes.
 pub fn out_dir(tag: &str) -> (PathBuf, Option<TempDir>) {
-    match std::env::var_os("CHARTS_PNG_DIR") {
-        Some(d) => {
-            let p = PathBuf::from(d);
-            std::fs::create_dir_all(&p).expect("png dir");
-            (p, None)
-        }
-        None => {
-            let t = TempDir::new(tag);
-            (t.0.clone(), Some(t))
-        }
+    if let Some(d) = std::env::var_os("CHARTS_PNG_DIR") {
+        let p = PathBuf::from(d);
+        std::fs::create_dir_all(&p).expect("png dir");
+        (p, None)
+    } else {
+        let t = TempDir::new(tag);
+        (t.0.clone(), Some(t))
     }
 }
 
@@ -148,11 +152,10 @@ pub fn render(
         .child(view.build(width as f32, height as f32));
     let mut tree = RenderTree::from_element(&ui);
     let vars = ThemeState::get().to_css_variable_map();
-    let css: String = bundle
-        .css_sources
-        .iter()
-        .map(|s| format!("{s}\n"))
-        .collect();
+    let css = bundle.css_sources.iter().fold(String::new(), |mut acc, s| {
+        let _ = writeln!(acc, "{s}");
+        acc
+    });
     tree.set_stylesheet(Stylesheet::parse_with_variables(&css, &vars).expect("css"));
     tree.apply_stylesheet_layout_overrides();
     tree.apply_stylesheet_base_styles();
