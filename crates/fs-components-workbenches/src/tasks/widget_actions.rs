@@ -78,8 +78,14 @@ impl TasksWidget {
                 let this = self.clone();
                 Arc::new(move |field, value| this.apply(|s| s.set_field(field, value)))
             },
-            // Typing is remembered but does not redraw: the text field keeps its own cursor.
-            typed: Arc::new(move |field, text| locked(&typed).set_field(field, text)),
+            // Typing is remembered. It redraws only when the problem shown under the field changes
+            // (valid to invalid and back): the text field keeps its own text and cursor.
+            typed: Arc::new(move |field, text| {
+                let changed = locked(&typed).typed(field, text);
+                if changed {
+                    rebuild();
+                }
+            }),
         }
     }
 

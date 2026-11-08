@@ -33,6 +33,12 @@ pub trait TaskSource: Send + Sync {
     /// [`SourceError`]; [`ErrorKind::NotFound`](crate::ErrorKind::NotFound) if there is none.
     fn read(&self, key: &str) -> Result<TaskSheet, SourceError>;
 
+    /// Whether `text` is valid for the field `key`: `None` if it is (or if it is empty, which means
+    /// "no value"), else what is wrong, in the source's words. Asked on every key, so it must be quick.
+    fn check(&self, _key: &str, _text: &str) -> Option<String> {
+        None
+    }
+
     /// One task, as a form.
     ///
     /// # Errors

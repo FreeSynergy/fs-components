@@ -45,7 +45,7 @@ pub(in crate::tasks) fn detail(
     }
     let page = div().class("fs-tasks-page").flex_col().w_full();
     let page = if let Some(edit) = state.editing() {
-        form(edit, name, actions, slots, page)
+        form(edit, name, actions, slots, &|key| state.problem(key), page)
     } else {
         match state.shown() {
             Shown::Task { sheet, .. } => task(state, sheet, name, actions, page),

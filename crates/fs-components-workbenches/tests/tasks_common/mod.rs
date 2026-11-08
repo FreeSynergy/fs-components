@@ -139,6 +139,11 @@ impl TaskSource for Shelf {
         self.capabilities
     }
 
+    /// The rule of this shelf: a title may not hold a `!`.
+    fn check(&self, key: &str, text: &str) -> Option<String> {
+        (key == "title" && text.contains('!')).then(|| "no exclamation marks".to_string())
+    }
+
     fn columns(&self) -> Vec<TaskColumn> {
         vec![
             TaskColumn::new("todo", "To do"),

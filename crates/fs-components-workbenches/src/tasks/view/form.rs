@@ -6,7 +6,7 @@
 use std::sync::Arc;
 
 use blinc_cn::components::button::ButtonVariant;
-use blinc_cn::components::input::{InputSize, input};
+use blinc_cn::components::input::{InputBuilder, InputSize, input};
 use blinc_cn::components::textarea::{TextareaSize, textarea};
 use blinc_layout::div::{Div, div};
 use blinc_layout::text;
@@ -24,6 +24,7 @@ pub(super) fn form(
     name: &str,
     actions: &TaskActions,
     slots: &InputSlots,
+    problems: &dyn Fn(&str) -> Option<String>,
     mut page: Div,
 ) -> Div {
     if !edit.draft.marks.is_empty() {
@@ -39,7 +40,14 @@ pub(super) fn form(
         page = page.child(div().class("fs-tasks-failed").child(text(error)));
     }
     for field in &edit.draft.fields {
-        page = page.child(element(field, edit.id, name, actions, slots));
+        page = page.child(element(
+            field,
+            edit.id,
+            name,
+            actions,
+            slots,
+            problems(&field.key),
+        ));
     }
     page
 }
@@ -50,6 +58,7 @@ fn element(
     name: &str,
     actions: &TaskActions,
     slots: &InputSlots,
+    problem: Option<String>,
 ) -> Div {
     let id = format!("{name}-field-{}", field.key);
     let holder = div().class("fs-tasks-input").w_full();
@@ -72,13 +81,14 @@ fn element(
         }
         _ => {
             let data = slots.line(edit, &field.key, &field.value);
-            holder.id(id).child(
+            holder.id(id).child(with_problem(
                 paired(input(&data))
                     .size(InputSize::Small)
                     .label(field.label.clone())
                     .w_full()
                     .on_change(move |value| typed(&key, value)),
-            )
+                problem,
+            ))
         }
     }
 }
@@ -105,4 +115,12 @@ fn choices(field: &DraftField, options: &[FieldOption], id: &str, actions: &Task
         ));
     }
     row
+}
+
+/// The field with what is wrong with it under it, drawn as an error of the field.
+fn with_problem(field: InputBuilder, problem: Option<String>) -> InputBuilder {
+    match problem {
+        Some(message) => field.error(message),
+        None => field,
+    }
 }
