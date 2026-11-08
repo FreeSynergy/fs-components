@@ -27,22 +27,25 @@ pub(in crate::tasks) fn detail(
     slots: &InputSlots,
     scroller: &PageScroll,
 ) -> Div {
-    let mut column = div().class("fs-tasks-detail").flex_col().w_full();
+    let editing = state.editing().is_some();
+    // Editing: the buttons stand on top as always, but come last in the tree, so Tab walks the
+    // fields in reading order, then Save, then Cancel. The column and the bar are drawn in reverse.
+    let mut column = div().class("fs-tasks-detail").w_full();
+    column = if editing {
+        column.flex_col_reverse()
+    } else {
+        column.flex_col()
+    };
     // The compact variant offers nothing to press: no empty band.
-    if state.editing().is_some() || state.can_edit() || state.can_delete() {
-        column = column.child(bar(state, name, actions));
-    }
-    if let Some(notice) = state.notice() {
-        column = column.child(
-            div()
-                .id(format!("{name}-notice"))
-                .class("fs-tasks-notice")
-                .child(text(notice)),
-        );
-    }
-    if let Some(deed) = deed(state, name, actions) {
-        column = column.child(deed);
-    }
+    let bar =
+        (editing || state.can_edit() || state.can_delete()).then(|| bar(state, name, actions));
+    let notice = state.notice().map(|notice| {
+        div()
+            .id(format!("{name}-notice"))
+            .class("fs-tasks-notice")
+            .child(text(notice))
+    });
+    let deed = deed(state, name, actions);
     let page = div().class("fs-tasks-page").flex_col().w_full();
     let page = if let Some(edit) = state.editing() {
         form(edit, name, actions, slots, &|key| state.problem(key), page)
@@ -55,6 +58,20 @@ pub(in crate::tasks) fn detail(
             _ => page.child(text(&state.labels().nothing_selected)),
         }
     };
+    if editing {
+        // Tree order; drawn from the bottom up.
+        column = column
+            .child(page)
+            .children(deed)
+            .children(notice)
+            .children(bar);
+    } else {
+        column = column
+            .children(bar)
+            .children(notice)
+            .children(deed)
+            .child(page);
+    }
     let what = match state.editing() {
         Some(edit) => format!("edit-{}", edit.id),
         None => state.selected().unwrap_or_default().to_string(),
@@ -69,7 +86,7 @@ pub(in crate::tasks) fn detail(
                 .scroller(&what)
                 .w_full()
                 .h_full()
-                .content(column.id(format!("{name}-page")).child(page)),
+                .content(column.id(format!("{name}-page"))),
         )
 }
 
@@ -119,15 +136,17 @@ fn bar(state: &TasksState, name: &str, actions: &TaskActions) -> Div {
                 &actions.cancel,
             )
         };
+        // Tree order Save, Cancel, spacer; drawn in reverse: spacer, Cancel, Save.
         return bar
-            .child(div().class("fs-tasks-spacer"))
-            .child(cancel_or_keep)
+            .flex_row_reverse()
             .child(button(
                 id("save"),
                 &labels.save,
                 ButtonVariant::Primary,
                 &actions.save,
-            ));
+            ))
+            .child(cancel_or_keep)
+            .child(div().class("fs-tasks-spacer"));
     }
     if state.can_edit() {
         bar = bar.child(button(

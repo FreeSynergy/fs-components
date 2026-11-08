@@ -112,6 +112,18 @@ impl TasksState {
     pub fn typed(&mut self, field: &str, text: &str) -> bool {
         let before = self.problem(field);
         self.set_field(field, text);
+        let invalid = self.editing.as_ref().is_some_and(|edit| {
+            edit.draft
+                .fields
+                .iter()
+                .any(|f| f.changed() && self.source.check(&f.key, &f.value).is_some())
+        });
+        if !invalid
+            && let Some(edit) = &mut self.editing
+            && edit.error.as_deref() == Some(self.labels.fix_fields.as_str())
+        {
+            edit.error = None;
+        }
         before != self.problem(field)
     }
 
