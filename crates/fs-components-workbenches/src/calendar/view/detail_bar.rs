@@ -19,6 +19,17 @@ pub(super) fn bar(state: &CalendarState, name: &str, actions: &CalendarActions, 
     if let Some(edit) = state.editing() {
         // Across the bar from Edit and Delete, so the second press of a double-click on Edit lands on
         // nothing. The deed of a discard is across from what lies under the pointer after Cancel.
+        // Tree order Save, Cancel, spacer, Discard; drawn in reverse (Tab walks Save before Cancel).
+        bar = bar.flex_row_reverse();
+        bar = bar
+            .child(button(
+                id("save"),
+                &labels.save,
+                ButtonVariant::Primary,
+                &actions.save,
+            ))
+            .child(cancel_or_keep(state, name, actions))
+            .child(div().flex_1());
         if edit.discard_asked {
             bar = bar.child(button(
                 id("discard"),
@@ -27,15 +38,7 @@ pub(super) fn bar(state: &CalendarState, name: &str, actions: &CalendarActions, 
                 &actions.confirm_discard,
             ));
         }
-        return bar
-            .child(div().flex_1())
-            .child(cancel_or_keep(state, name, actions))
-            .child(button(
-                id("save"),
-                &labels.save,
-                ButtonVariant::Primary,
-                &actions.save,
-            ));
+        return bar;
     }
     if back {
         bar = bar.child(button(

@@ -34,19 +34,21 @@ pub(super) fn detail(
     back: bool,
     width: f32,
 ) -> Div {
-    let mut column = div()
-        .flex_col()
-        .w_full()
-        .h_full()
-        .min_h(0.0)
-        .child(bar(state, name, actions, back));
-    if let Some(notice) = state.notice() {
-        column = column.child(div().class("fs-calendar-notice").child(text(notice)));
-    }
+    let editing = state.editing().is_some();
+    // Editing: the buttons stand on top as always, but come last in the tree, so Tab walks the fields
+    // in reading order, then Save, then Cancel. The column and the bar are drawn in reverse.
+    let column = div().w_full().h_full().min_h(0.0);
+    let column = if editing {
+        column.flex_col_reverse()
+    } else {
+        column.flex_col()
+    };
+    let bar = bar(state, name, actions, back);
+    let notice = state
+        .notice()
+        .map(|notice| div().class("fs-calendar-notice").child(text(notice)));
     // Marks and the reason of a failed save stay in view, however far the page is scrolled.
-    if let Some(pinned) = pinned(state, name, width) {
-        column = column.child(pinned);
-    }
+    let pinned = pinned(state, name, width);
     let page = div()
         .id(format!("{name}-page"))
         .class("fs-calendar-page")
@@ -70,13 +72,25 @@ pub(super) fn detail(
         state.selected(),
         state.editing().map(|edit| edit.id)
     );
-    column.child(
-        div()
-            .flex_1()
-            .min_h(0.0)
-            .w_full()
-            .child(page_scroll.scroller(&what).w_full().h_full().content(page)),
-    )
+    let scrolled = div()
+        .flex_1()
+        .min_h(0.0)
+        .w_full()
+        .child(page_scroll.scroller(&what).w_full().h_full().content(page));
+    if editing {
+        // Tree order; drawn from the bottom up.
+        column
+            .child(scrolled)
+            .children(pinned)
+            .children(notice)
+            .child(bar)
+    } else {
+        column
+            .child(bar)
+            .children(notice)
+            .children(pinned)
+            .child(scrolled)
+    }
 }
 
 /// What must not scroll away: the title and marks of an item, the marks and failure of an edit.
