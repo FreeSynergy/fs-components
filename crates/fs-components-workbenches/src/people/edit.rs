@@ -103,6 +103,9 @@ impl PeopleState {
             .draft
             .fields()
             .find(|f| f.key == key)?;
+        if !found.changed() {
+            return None; // what is stored is not judged, only what the person writes
+        }
         self.source.check(found.check, &found.value)
     }
 
@@ -162,7 +165,7 @@ impl PeopleState {
         let invalid = edit
             .draft
             .fields()
-            .any(|f| self.source.check(f.check, &f.value).is_some());
+            .any(|f| f.changed() && self.source.check(f.check, &f.value).is_some());
         if invalid {
             let message = self.labels.fix_fields.clone();
             if let Some(edit) = &mut self.editing {
