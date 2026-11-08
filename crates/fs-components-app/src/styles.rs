@@ -52,4 +52,8 @@ pub(crate) const STYLES: &str = r"
 .fs-app-status-more { cursor: pointer; }
 .fs-app-status-problem { background: var(--error-bg); color: var(--text-primary); }
 .fs-app-empty { padding: var(--space-6); color: var(--text-secondary); }
+/* Blinc 0.6.0 measures text without the letter spacing the cn style sheet gives inputs (tracking-tight) but
+   draws with it: the text came out narrower than its measured width and the cursor stood behind it,
+   further the longer the text. No tracking in text fields until Blinc measures what it draws. */
+.cn-input, .cn-textarea { letter-spacing: 0; }
 ";

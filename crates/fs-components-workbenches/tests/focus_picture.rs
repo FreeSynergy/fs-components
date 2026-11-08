@@ -32,6 +32,11 @@ fn the_focused_field_with_text() {
         ..Default::default()
     })
     .expect("graphics");
+    if std::env::var_os("FS_SHARED_FONTS").is_some() {
+        // The measurer over the registry the renderer draws with, as `blinc_layout` documents.
+        blinc_layout::init_text_measurer_with_registry(app.font_registry());
+        h.rebuild();
+    }
     let texture = app.device().create_texture(&wgpu::TextureDescriptor {
         label: Some("focus"),
         size: wgpu::Extent3d {
