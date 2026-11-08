@@ -148,6 +148,7 @@ impl PeopleState {
             let mut field =
                 DraftField::new(format!("{}/+{id}", group.key), group.label.clone(), "");
             field.added = true;
+            field.check = group.check;
             group.fields.push(field);
         }
     }

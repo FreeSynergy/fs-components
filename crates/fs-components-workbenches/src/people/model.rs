@@ -200,6 +200,8 @@ pub struct DraftGroup {
     pub can_add: bool,
     /// The fields.
     pub fields: Vec<DraftField>,
+    /// What a field added to this group holds.
+    pub check: FieldCheck,
 }
 
 impl DraftGroup {
@@ -215,7 +217,18 @@ impl DraftGroup {
             label: label.into(),
             can_add,
             fields,
+            check: FieldCheck::Text,
         }
+    }
+
+    /// This group, whose fields hold `check` (also those added later).
+    #[must_use]
+    pub fn with_check(mut self, check: FieldCheck) -> Self {
+        for field in &mut self.fields {
+            field.check = check;
+        }
+        self.check = check;
+        self
     }
 }
 
