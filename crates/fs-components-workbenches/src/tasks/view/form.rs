@@ -13,6 +13,7 @@ use blinc_layout::text;
 
 use super::actions::{Act, TaskActions, button};
 use super::detail::with_marks;
+use crate::field_look::paired;
 use crate::input_slots::InputSlots;
 use crate::tasks::draft::{DraftField, FieldKind, FieldOption};
 use crate::tasks::edit::TaskEdit;
@@ -72,7 +73,7 @@ fn element(
         _ => {
             let data = slots.line(edit, &field.key, &field.value);
             holder.id(id).child(
-                input(&data)
+                paired(input(&data))
                     .size(InputSize::Small)
                     .label(field.label.clone())
                     .w_full()

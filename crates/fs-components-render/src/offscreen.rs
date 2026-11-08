@@ -104,7 +104,13 @@ where
 
 /// What the window runner sets up before the first frame: theme and reactive state.
 fn init_runtime(css: &str) {
-    blinc_theme::ThemeState::init(bundle(css), blinc_theme::ColorScheme::Light);
+    // `FS_RENDER_SCHEME=dark` draws with the dark scheme, to look at both without a window.
+    let scheme = if std::env::var("FS_RENDER_SCHEME").is_ok_and(|v| v == "dark") {
+        blinc_theme::ColorScheme::Dark
+    } else {
+        blinc_theme::ColorScheme::Light
+    };
+    blinc_theme::ThemeState::init(bundle(css), scheme);
     if !BlincContextState::is_initialized() {
         BlincContextState::init(
             global_graph(),

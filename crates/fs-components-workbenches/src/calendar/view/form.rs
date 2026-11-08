@@ -15,6 +15,7 @@ use super::actions::CalendarActions;
 use crate::calendar::draft::{DraftField, FieldKind};
 use crate::calendar::edit::ItemEdit;
 use crate::calendar::labels::CalendarLabels;
+use crate::field_look::paired;
 use crate::input_slots::InputSlots;
 
 /// The form for `edit`, added to `page`.
@@ -98,7 +99,7 @@ fn element(
         _ => {
             let data = slots.line(edit, &field.key, &field.value);
             holder.id(id).child(
-                input(&data)
+                paired(input(&data))
                     .size(InputSize::Small)
                     .label(field.label.clone())
                     .w_full()

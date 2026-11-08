@@ -12,6 +12,7 @@ use blinc_layout::text;
 
 use super::actions::PeopleActions;
 use super::detail::{button, with_marks};
+use crate::field_look::paired;
 use crate::input_slots::InputSlots;
 use crate::people::edit::PersonEdit;
 use crate::people::labels::PeopleLabels;
@@ -45,7 +46,7 @@ pub(super) fn form(
                     .class("fs-people-input")
                     .w_full()
                     .child(
-                        input(&data)
+                        paired(input(&data))
                             .size(InputSize::Small)
                             .label(field.label.clone())
                             .w_full()
