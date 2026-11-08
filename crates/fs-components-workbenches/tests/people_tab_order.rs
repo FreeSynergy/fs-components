@@ -30,11 +30,11 @@ fn the_form_has_a_tab_stop_for_each_field_and_each_button() {
     let name = h.widget.element_name();
     let wanted: Vec<String> = [
         "search",
-        "cancel",
-        "save",
         "field-name",
         "field-mail/1",
         "add-mail",
+        "save",
+        "cancel",
     ]
     .iter()
     .map(|what| format!("{name}-{what}"))

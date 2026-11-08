@@ -46,17 +46,16 @@ pub(in crate::people) fn detail(
     slots: &InputSlots,
     scroller: &PageScroll,
 ) -> Div {
-    let mut column = div()
-        .class("fs-people-detail")
-        .flex_col()
-        .w_full()
-        .child(bar(state, name, actions));
-    if let Some(notice) = state.notice() {
-        column = column.child(div().class("fs-people-notice").child(text(notice)));
-    }
-    if let Some(deed) = deed(state, name, actions) {
-        column = column.child(deed);
-    }
+    let editing = state.editing().is_some();
+    // Editing: the buttons stand on top as always, but come last in the tree, so Tab walks the fields
+    // in reading order, then Save, then Cancel (a form's usual order). The column is drawn in reverse
+    // for that; so is the bar.
+    let mut column = div().class("fs-people-detail").w_full();
+    column = if editing {
+        column.flex_col_reverse()
+    } else {
+        column.flex_col().child(bar(state, name, actions))
+    };
     let page = div().class("fs-people-page").flex_col().w_full();
     let page = if let Some(edit) = state.editing() {
         form(edit, state.labels(), name, actions, slots, page)
@@ -69,17 +68,28 @@ pub(in crate::people) fn detail(
             _ => page.child(text(&state.labels().nothing_selected)),
         }
     };
+    let notice = state
+        .notice()
+        .map(|notice| div().class("fs-people-notice").child(text(notice)));
+    let deed = deed(state, name, actions);
+    if editing {
+        // Tree order; drawn from the bottom up.
+        column = column.child(page);
+        column = column.children(deed);
+        column = column.children(notice);
+        column = column.child(bar(state, name, actions));
+    } else {
+        column = column.children(notice).children(deed).child(page);
+    }
     let what = match state.editing() {
         Some(edit) => format!("edit-{}", edit.id),
         None => state.selected().unwrap_or_default().to_string(),
     };
-    div().flex_1().min_h(0.0).w_full().child(
-        scroller
-            .scroller(&what)
-            .w_full()
-            .h_full()
-            .content(column.child(page)),
-    )
+    div()
+        .flex_1()
+        .min_h(0.0)
+        .w_full()
+        .child(scroller.scroller(&what).w_full().h_full().content(column))
 }
 
 /// The second action of a question, on a line of its own below the bar: a second press at the place of
@@ -128,15 +138,17 @@ fn bar(state: &PeopleState, name: &str, actions: &PeopleActions) -> Div {
                 &actions.cancel,
             )
         };
+        // Tree order Save, Cancel, spacer; drawn in reverse: spacer, Cancel, Save.
         return bar
-            .child(div().class("fs-people-spacer"))
-            .child(cancel_or_keep)
+            .flex_row_reverse()
             .child(button(
                 id("save"),
                 &labels.save,
                 ButtonVariant::Primary,
                 &actions.save,
-            ));
+            ))
+            .child(cancel_or_keep)
+            .child(div().class("fs-people-spacer"));
     }
     if state.can_edit() {
         bar = bar.child(button(
