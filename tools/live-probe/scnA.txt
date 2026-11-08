@@ -1,0 +1,15 @@
+c "move 1232 108" 0.5
+c "click 1232 108" 1.5
+c "move 1036 270" 0.5
+c "click 1036 277" 1.5
+c "type Hello" 2
+shot A1
+c "click 1227 108" 2
+shot A2
+c "move 943 741" 0.8
+c "click 943 741" 1.5
+shot A3
+c "move 600 400" 1
+c "click 1036 277" 1
+c "type X" 1.5
+shot A4

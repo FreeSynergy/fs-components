@@ -1,0 +1,7 @@
+c "move 1232 108" 0.5
+c "click 1232 108" 1.5
+c "move 943 741" 0.8
+c "click 943 741" 1.5
+shot B1
+c "move 600 400" 1
+shot B2
