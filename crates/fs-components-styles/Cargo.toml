@@ -1,0 +1,9 @@
+[package]
+name = "fs-components-styles"
+description = "FreeSynergy styles: tokens, effects and an icon set per style (Admin, Simple, Apple, Windows); no Blinc, plain data"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
