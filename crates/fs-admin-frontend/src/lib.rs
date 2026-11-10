@@ -18,7 +18,9 @@ pub mod detail;
 pub mod form;
 pub mod list;
 pub mod messages;
+pub mod screen;
 pub mod session;
+mod session_done;
 pub mod view;
 
 pub use backend::{Backend, BackendError, Outcome, Record, Values};
@@ -28,4 +30,5 @@ pub use detail::{Entry, entries};
 pub use form::FormModel;
 pub use list::{Column, Direction, ListModel};
 pub use messages::{Message, MessageKind, Messages};
-pub use session::{Screen, Session};
+pub use screen::Screen;
+pub use session::Session;

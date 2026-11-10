@@ -14,7 +14,11 @@ pub fn fields_panel(look: &Look, say: &dyn Say, entries: &[Entry]) -> Div {
     let (s, pal) = (look.style, look.palette());
     let mut panel = panel(look);
     for e in entries {
-        let mut values = div().flex_col().gap_px(s.spacing.xs).flex_grow_value(1.0).min_w(0.0);
+        let mut values = div()
+            .flex_col()
+            .gap_px(s.spacing.xs)
+            .flex_grow_value(1.0)
+            .min_w(0.0);
         if e.values.is_empty() {
             values = values.child(look.text(say.say("value.none"), s.text.body, pal.text_weak));
         }
@@ -27,12 +31,11 @@ pub fn fields_panel(look: &Look, say: &dyn Say, entries: &[Entry]) -> Div {
                 .flex_row()
                 .gap_px(s.spacing.m)
                 .w_full()
-                .child(
-                    div()
-                        .w(s.text.body * 12.0)
-                        .flex_shrink_0()
-                        .child(look.text(say.say(&e.field.label), s.text.body, pal.text_weak)),
-                )
+                .child(div().w(s.text.body * 12.0).flex_shrink_0().child(look.text(
+                    say.say(&e.field.label),
+                    s.text.body,
+                    pal.text_weak,
+                )))
                 .child(values),
         );
     }

@@ -47,10 +47,11 @@ impl Slot {
         say: &Arc<dyn Say>,
         field: &FieldDescription,
         text: &str,
+        id: &str,
         suggest: Option<&Arc<dyn Suggest>>,
         on: OnText,
     ) -> Self {
-        let body = Self::body(look, say, field, text, suggest, &on);
+        let body = Self::body(look, say, field, (text, id), suggest, &on);
         Self { body, on }
     }
 
@@ -58,7 +59,7 @@ impl Slot {
         look: Look,
         say: &Arc<dyn Say>,
         field: &FieldDescription,
-        text: &str,
+        (text, id): (&str, &str),
         suggest: Option<&Arc<dyn Suggest>>,
         on: &OnText,
     ) -> Body {
@@ -66,6 +67,7 @@ impl Slot {
             let on = Arc::clone(on);
             let mut input = FieldInput::new(kind, look, Arc::clone(say))
                 .value(text)
+                .name(id)
                 .on_change(move |t| on(t));
             if let Some(s) = suggest {
                 input = input.suggest(Arc::clone(s));
@@ -77,7 +79,9 @@ impl Slot {
         }
         let data = text_input_data();
         {
-            let mut d = data.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+            let mut d = data
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
             d.cursor = text.chars().count();
             text.clone_into(&mut d.value);
         }
@@ -86,7 +90,14 @@ impl Slot {
 }
 
 /// The plain input element; `on` hears every change.
-pub fn plain(look: &Look, say: &dyn Say, field: &FieldDescription, data: &SharedTextInputData, name: &str, on: OnText) -> impl Element + use<> {
+pub fn plain(
+    look: &Look,
+    say: &dyn Say,
+    field: &FieldDescription,
+    data: &SharedTextInputData,
+    name: &str,
+    on: OnText,
+) -> impl Element + use<> {
     let (s, pal) = (look.style, look.palette());
     text_input(data)
         .id(name)
@@ -105,19 +116,28 @@ pub fn plain(look: &Look, say: &dyn Say, field: &FieldDescription, data: &Shared
 }
 
 /// The choice as a row of buttons; the chosen one is marked. `pick` hears the key.
-pub fn choice(look: &Look, say: &dyn Say, field: &FieldDescription, chosen: &str, name: &str, pick: &OnText) -> impl Element + use<> {
+pub fn choice(
+    look: &Look,
+    say: &dyn Say,
+    field: &FieldDescription,
+    chosen: &str,
+    name: &str,
+    pick: &OnText,
+) -> impl Element + use<> {
     let s = look.style;
     let mut row = div().flex_row().flex_wrap().gap_px(s.spacing.xs).w_full();
     for key in &field.choices {
         let (k, on) = (key.clone(), Arc::clone(pick));
-        row = row.child(
-            cn_button(
-                &say.say(&format!("{}.{key}", field.label)),
-                if key == chosen { ButtonVariant::Primary } else { ButtonVariant::Secondary },
-                &format!("{name}-{key}"),
-                move || on(&k),
-            ),
-        );
+        row = row.child(cn_button(
+            &say.say(&format!("{}.{key}", field.label)),
+            if key == chosen {
+                ButtonVariant::Primary
+            } else {
+                ButtonVariant::Secondary
+            },
+            &format!("{name}-{key}"),
+            move || on(&k),
+        ));
     }
     row
 }
