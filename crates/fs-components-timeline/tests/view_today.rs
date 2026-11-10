@@ -8,24 +8,9 @@ mod host;
 #[path = "../../fs-components-widgets/tests/common/mod.rs"]
 mod ui;
 
-use fs_components_styles::StyleId;
 use fs_components_timeline::*;
-use host::{H, W};
+use host::{H, W, plan_with_today};
 use ui::{Input, background, draw_tree, frame, ink, layout, serial, size_of};
-
-fn plan_with_today(items: Vec<Item>, today: Day, zoom: Zoom) -> Timeline {
-    let mut st = TimelineState::new(Some(today));
-    st.zoom = zoom;
-    Timeline::new(
-        st,
-        std::sync::Arc::new(VecSource {
-            items,
-            dependencies: vec![],
-        }),
-        std::sync::Arc::new(fs_components_fields::KeysAsText),
-        fs_components_fields::Look::new(StyleId::Admin, false),
-    )
-}
 
 #[test]
 fn today_ten_years_after_the_items_costs_no_time_and_shows_an_edge_mark() {

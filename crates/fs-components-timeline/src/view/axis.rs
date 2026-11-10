@@ -30,9 +30,9 @@ fn label(t: &Timeline, tick: &Tick) -> String {
     }
 }
 
-/// What the canvas draws: lines (x) and labels (x, y, text).
+/// What the canvas draws: lines (x, top) and labels (x, y, text).
 struct Marks {
-    lines: Vec<f32>,
+    lines: Vec<(f32, f32)>,
     labels: Vec<(f32, f32, String)>,
 }
 
@@ -47,7 +47,8 @@ fn marks(t: &Timeline, zoom: Zoom, (first, last): (Day, Day), scale: &Scale) -> 
         let x = scale.x_of(tick.day);
         m.labels.push((x + pad, y, label(t, tick)));
         if line {
-            m.lines.push(x);
+            // A line starts under the row of its own label, not through the row above it.
+            m.lines.push((x, y));
         }
     };
     if zoom == Zoom::Month {
@@ -74,9 +75,9 @@ fn pen(
     text: Color,
     caption: f32,
 ) {
-    for x in &m.lines {
+    for (x, top) in &m.lines {
         ctx.fill_rect(
-            CRect::new(*x, 0.0, 1.0, size.1),
+            CRect::new(*x, *top, 1.0, size.1 - *top),
             CornerRadius::default(),
             Brush::Solid(line),
         );

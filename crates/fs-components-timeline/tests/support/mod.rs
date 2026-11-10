@@ -68,3 +68,17 @@ pub fn timeline(style: StyleId, with_deps: bool) -> (Timeline, Arc<Log>) {
 pub fn last(log: &Log) -> String {
     log.0.lock().unwrap().last().cloned().unwrap_or_default()
 }
+
+pub fn plan_with_today(items: Vec<Item>, today: Day, zoom: Zoom) -> Timeline {
+    let mut st = TimelineState::new(Some(today));
+    st.zoom = zoom;
+    Timeline::new(
+        st,
+        std::sync::Arc::new(VecSource {
+            items,
+            dependencies: vec![],
+        }),
+        std::sync::Arc::new(fs_components_fields::KeysAsText),
+        fs_components_fields::Look::new(StyleId::Admin, false),
+    )
+}

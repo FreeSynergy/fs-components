@@ -94,6 +94,8 @@ pub fn timeline(t: &Timeline, width: f32, height: f32) -> Div {
     }
     whole.child(
         scroll()
+            .id("tl-scroll")
+            .bind(&t.scroll)
             .both_directions()
             .w(width)
             .h((height - bar).max(0.0))

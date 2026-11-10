@@ -4,8 +4,10 @@
 //! state, tells the host through [`TimelineEvents`], and asks the live area to draw again (only
 //! the timeline is built again, never per frame).
 
+use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 
+use blinc_layout::selector::ScrollRef;
 use fs_components_fields::{Look, Say};
 use fs_components_widgets::Key;
 use fs_components_widgets::live::Live;
@@ -23,6 +25,9 @@ pub struct Timeline {
     pub(crate) say: Arc<dyn Say>,
     pub(crate) look: Look,
     live: Live,
+    pub(crate) scroll: ScrollRef,
+    /// Width of the view as built last, in pixels (as `f32` bits).
+    width: Arc<AtomicU32>,
 }
 
 impl Timeline {
@@ -40,6 +45,8 @@ impl Timeline {
             say,
             look,
             live: Live::new(),
+            scroll: ScrollRef::new(),
+            width: Arc::new(AtomicU32::new(0)),
         }
     }
 
@@ -77,8 +84,50 @@ impl Timeline {
 
     /// Set the zoom level.
     pub fn set_zoom(&self, zoom: Zoom) -> Step {
+        let old = self.lock().zoom;
         let step = self.lock().set_zoom(zoom);
+        if step != Step::Ignored {
+            // The axis keeps its first day whatever the zoom, so the same day stays at the left of
+            // the view: the offset scales with the pixels per day. Left alone it would stay as it
+            // was and, when the content shrinks, point past its end.
+            let (x, y) = self.scroll.offset();
+            let scaled = x * zoom.px_per_day() / old.px_per_day();
+            self.scroll
+                .set_scroll_offset(scaled.min(self.max_scroll_x_at(zoom)), y);
+        }
         self.apply(step)
+    }
+
+    /// How far the view is scrolled to the right, in pixels.
+    pub fn scroll_x(&self) -> f32 {
+        self.scroll.scroll_x()
+    }
+
+    /// Scroll the view to `x` pixels from the left of the axis.
+    pub fn set_scroll_x(&self, x: f32) {
+        let y = self.scroll.scroll_y();
+        self.scroll.set_scroll_offset(x.max(0.0), y);
+    }
+
+    /// The largest `scroll_x` the content allows at the current zoom, from the items and the width
+    /// of the view as built last (zero before the first build).
+    pub fn max_scroll_x(&self) -> f32 {
+        let zoom = self.lock().zoom;
+        self.max_scroll_x_at(zoom)
+    }
+
+    fn max_scroll_x_at(&self, zoom: Zoom) -> f32 {
+        let today = self.lock().today;
+        let (first, last) = crate::layout::range(
+            &self.source.items(),
+            7,
+            today.unwrap_or(crate::model::Day(0)),
+        );
+        let scale = crate::layout::Scale {
+            origin: first,
+            px: zoom.px_per_day(),
+        };
+        (scale.x_of(last.add_days(1)) - f32::from_bits(self.width.load(Ordering::Relaxed))).max(0.0)
     }
 
     /// A key press; true when the timeline used it.
@@ -100,6 +149,7 @@ impl Timeline {
         width: f32,
         height: f32,
     ) -> impl blinc_layout::prelude::ElementBuilder + use<> {
+        self.width.store(width.to_bits(), Ordering::Relaxed);
         let (me, keys) = (self.clone(), self.clone());
         let inner = self.live.region("timeline", move || {
             crate::view::timeline(&me, width, height)

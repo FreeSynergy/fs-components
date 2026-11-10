@@ -39,7 +39,8 @@ Rows are items in order; a bar is tinted with its progress share filled; a miles
 - Dragging or resizing bars, creating dependencies by hand (read-only plan; the host edits).
 - Start-to-start / finish-to-finish dependency kinds, critical path, lags (only finish to start).
 - Sticky axis and sticky title column (one scroll box holds all; titles sit inside the bars), grouped/collapsible rows, baselines.
-- Setting the scroll position (no jump to today), zoom to fit, pinch zoom.
+- Zoom to fit, pinch zoom. (`set_scroll_x` / `scroll_x` / `max_scroll_x` exist; a zoom change keeps the day at the left of the view and keeps the offset inside the content.)
+- Many rows: the redraw cost grows faster than the number of items (120 items 83 ms, 480 items 856 ms in release); filed in the Blinc tracker, no virtualising here.
 - Weekend shading, working-day calendars, hours and minutes (days are the unit).
 - Locale formats: day numbers and years are plain numbers; month names come from `Say`.
 - Arrows are not hit-testable (the canvas does not take pointer events); no highlight of the arrows of the chosen item.
