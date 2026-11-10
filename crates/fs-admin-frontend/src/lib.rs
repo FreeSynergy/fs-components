@@ -22,6 +22,7 @@ pub mod screen;
 pub mod session;
 mod session_done;
 pub mod view;
+pub mod window;
 
 pub use backend::{Backend, BackendError, Outcome, Record, Values};
 pub use clock::{Clock, ManualClock, SystemClock};

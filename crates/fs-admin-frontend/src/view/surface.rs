@@ -95,6 +95,13 @@ impl AdminSurface {
         self.live.refresh_now();
     }
 
+    /// Whether a form is open with text that was not sent.
+    pub fn has_unsaved(&self) -> bool {
+        lock(&self.env.session)
+            .form()
+            .is_some_and(crate::FormModel::is_dirty)
+    }
+
     /// Draw the page again now.
     pub fn refresh(&self) {
         self.live.refresh_now();
