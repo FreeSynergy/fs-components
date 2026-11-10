@@ -98,7 +98,7 @@ pub(super) fn wrapping_button(
         ButtonVariant::Outline => "cn-button--outline",
         ButtonVariant::Ghost => "cn-button--ghost",
         ButtonVariant::Link => "cn-button--link",
-        _ => "cn-button--secondary",
+        ButtonVariant::Secondary => "cn-button--secondary",
     };
     let inner = layout_button::Button::with_content(move |_| {
         div()
