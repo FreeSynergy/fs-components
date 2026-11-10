@@ -23,7 +23,7 @@ impl BoardState {
                     to.and_then(|i| cols.get(i))
                         .map_or(Step::Ignored, |c| self.hover(cols, &c.key.clone()))
                 }
-                Key::Activate | Key::Space => self.drop_held(),
+                Key::Activate | Key::Space => self.drop_held(can_move),
                 Key::Escape => self.cancel(),
                 _ => Step::Ignored,
             };
@@ -70,12 +70,12 @@ impl BoardState {
             }
         };
         match target {
-            Some((c, r)) => {
+            Some((c, r)) if self.cursor.as_deref() != Some(cols[c].cards[r].key.as_str()) => {
                 self.cursor = Some(cols[c].cards[r].key.clone());
                 self.notice = None;
                 Step::Changed
             }
-            None => Step::Ignored,
+            _ => Step::Ignored,
         }
     }
 }

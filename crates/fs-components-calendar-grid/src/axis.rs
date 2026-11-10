@@ -25,7 +25,12 @@ pub fn day_segments(items: &[GridItem], day: Day) -> Vec<Segment> {
         .map(|(index, i)| Segment {
             index,
             start: i.start.minute,
-            end: i.end.minute.max(i.start.minute).min(MINUTES_PER_DAY),
+            // An item that ends on a later day (at midnight, or it would be a span) fills the day.
+            end: if i.end.day > i.start.day {
+                MINUTES_PER_DAY
+            } else {
+                i.end.minute.max(i.start.minute).min(MINUTES_PER_DAY)
+            },
         })
         .collect()
 }

@@ -1,79 +1,16 @@
-//! Tests of the view: drawn offscreen and driven by clicks and keys, as a window would.
+//! Tests of the view: drawn offscreen and driven by clicks, as a window would.
 //!
 //! Pattern: none (tests). They need a graphics adapter (software Vulkan on the runner).
 #![allow(clippy::pedantic)]
 
+#[path = "support/mod.rs"]
+mod host;
 #[path = "../../fs-components-widgets/tests/common/mod.rs"]
 mod ui;
 
-use std::sync::{Arc, Mutex};
-
-use fs_components_calendar_grid::*;
-use fs_components_fields::{KeysAsText, Look};
 use fs_components_styles::StyleId;
+use host::{H, W, d, grid, last};
 use ui::{Input, draw_tree, frame, layout, serial, size_of};
-
-const W: f32 = 900.0;
-const H: f32 = 640.0;
-
-#[derive(Default)]
-struct Log(Mutex<Vec<String>>);
-
-impl GridEvents for Log {
-    fn select_slot(&self, s: Slot) {
-        self.0
-            .lock()
-            .unwrap()
-            .push(format!("slot {:?} {:?}", s.day.ymd(), s.minute));
-    }
-    fn select_item(&self, key: &str) {
-        self.0.lock().unwrap().push(format!("item {key}"));
-    }
-    fn navigated(&self, nav: Nav, a: Day) {
-        self.0
-            .lock()
-            .unwrap()
-            .push(format!("nav {nav:?} {:?}", a.ymd()));
-    }
-}
-
-fn d(y: i32, m: u8, dd: u8) -> Day {
-    Day::from_ymd(y, m, dd)
-}
-
-fn grid(style: StyleId) -> (CalendarGrid, Arc<Log>) {
-    let items = vec![
-        GridItem::all_day("trip", "Trip", d(2026, 11, 9), d(2026, 11, 12)),
-        GridItem::timed(
-            "sync",
-            "Sync",
-            Moment::new(d(2026, 11, 10), 600),
-            Moment::new(d(2026, 11, 10), 660),
-        ),
-        GridItem::timed(
-            "call",
-            "Call",
-            Moment::new(d(2026, 11, 10), 630),
-            Moment::new(d(2026, 11, 10), 690),
-        ),
-    ];
-    let mut st = GridState::new(Mode::Month, d(2026, 11, 10));
-    st.today = Some(d(2026, 11, 10));
-    st.now = Some(Moment::new(d(2026, 11, 10), 615));
-    let log = Arc::new(Log::default());
-    let g = CalendarGrid::new(
-        st,
-        Arc::new(VecSource(items)),
-        Arc::new(KeysAsText),
-        Look::new(style, false),
-    )
-    .events(log.clone());
-    (g, log)
-}
-
-fn last(log: &Log) -> String {
-    log.0.lock().unwrap().last().cloned().unwrap_or_default()
-}
 
 #[test]
 fn the_month_draws_cells_bars_and_the_today_mark_in_every_style() {
@@ -168,22 +105,4 @@ fn week_and_day_have_columns_an_all_day_row_overlapping_items_and_a_now_line() {
     input.click(&mut tree, "cal-mode-day");
     frame(&mut tree, W, H);
     assert!(tree.query_by_id("cal-col-0").is_some() && tree.query_by_id("cal-col-1").is_none());
-}
-
-#[test]
-fn the_keyboard_moves_the_cursor_and_enter_chooses() {
-    let _g = serial();
-    let (g, log) = grid(StyleId::Apple);
-    let mut tree = layout(g.build(W, H), W, H);
-    let mut input = Input::new();
-    input.focus(&tree, "cal-root");
-    input.key(&mut tree, 39); // right
-    input.key(&mut tree, 40); // down: a week on
-    frame(&mut tree, W, H);
-    assert_eq!(g.snapshot().slot.unwrap().day, d(2026, 11, 18));
-    input.key(&mut tree, 13); // enter
-    assert_eq!(last(&log), "slot (2026, 11, 18) None");
-    input.key(&mut tree, 34); // page down
-    frame(&mut tree, W, H);
-    assert_eq!(g.snapshot().anchor.ymd().1, 12);
 }

@@ -91,3 +91,73 @@ fn the_keyboard_picks_up_moves_and_puts_down() {
     frame(&mut tree, W, H);
     assert!(b.snapshot().held.is_none());
 }
+
+#[test]
+fn a_move_is_refused_when_the_host_stopped_supporting_it_while_a_card_was_held() {
+    let _g = serial();
+    let h = host(&Operation::ALL);
+    let b = board(&h, StyleId::Admin);
+    let _tree = layout(b.build(W, H), W, H);
+    b.grab("a");
+    b.hover("doing");
+    h.ops.lock().unwrap().retain(|o| *o != Operation::Move);
+    assert_eq!(b.drop_held(), Step::Refused("locked"));
+    assert!(h.log.lock().unwrap().is_empty(), "nothing was moved");
+    assert!(b.snapshot().held.is_none());
+}
+
+#[test]
+fn a_click_on_a_locked_control_does_not_put_the_held_card_down_in_its_column() {
+    let _g = serial();
+    let h = host(&[Operation::Move]);
+    let b = board(&h, StyleId::Admin);
+    let mut tree = layout(b.build(W, H), W, H);
+    let mut input = Input::new();
+    b.grab("a");
+    frame(&mut tree, W, H);
+    input.click(&mut tree, "kb-rename-doing");
+    frame(&mut tree, W, H);
+    assert!(b.snapshot().held.is_some(), "still held");
+    assert_eq!(cards_in(&h, "doing"), Vec::<String>::new());
+}
+
+/// A source whose `supports` calls back into the board, as a host that reads the board's state would.
+struct Reentrant {
+    board: std::sync::OnceLock<KanbanBoard>,
+}
+
+impl BoardSource for Reentrant {
+    fn columns(&self) -> Vec<Column> {
+        vec![Column::new("todo", "To do")]
+    }
+    fn supports(&self, _: Operation) -> bool {
+        if let Some(b) = self.board.get() {
+            let _ = b.snapshot();
+        }
+        true
+    }
+}
+
+#[test]
+fn the_host_may_call_the_board_from_supports_without_a_deadlock() {
+    let _g = serial();
+    let src = std::sync::Arc::new(Reentrant {
+        board: std::sync::OnceLock::new(),
+    });
+    let b = KanbanBoard::new(
+        src.clone(),
+        std::sync::Arc::new(fs_components_fields::KeysAsText),
+        fs_components_fields::Look::new(StyleId::Admin, false),
+    );
+    src.board.set(b.clone()).ok();
+    let (tx, rx) = std::sync::mpsc::channel();
+    std::thread::spawn(move || {
+        b.grab("nothing");
+        b.cancel();
+        tx.send(()).ok();
+    });
+    assert!(
+        rx.recv_timeout(std::time::Duration::from_secs(5)).is_ok(),
+        "the board held its lock while asking the host"
+    );
+}

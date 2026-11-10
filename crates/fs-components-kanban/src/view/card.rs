@@ -35,7 +35,7 @@ pub fn card(b: &KanbanBoard, st: &BoardState, c: &Card, column_key: &str, width:
     let held = st.held.as_ref().is_some_and(|h| h.key == c.key);
     let cursor = st.cursor.as_deref() == Some(c.key.as_str());
     let high = card_height(c, s) + if selected { buttons_height(b) } else { 0.0 };
-    let (me, key) = (b.clone(), c.key.clone());
+    let (me, key, column) = (b.clone(), c.key.clone(), column_key.to_owned());
     let (hover, hk) = (b.clone(), column_key.to_owned());
     // The click target is a transparent layer above the content, not its parent: the buttons of the
     // card come after it as its siblings, so a click on a button does not reach the card's handler
@@ -47,7 +47,7 @@ pub fn card(b: &KanbanBoard, st: &BoardState, c: &Card, column_key: &str, width:
         .cursor(blinc_layout::element::CursorStyle::Pointer)
         .on_click(move |_| {
             if me.snapshot().held.is_some() {
-                me.drop_held();
+                me.drop_on(&column);
             } else {
                 me.select(&key);
             }

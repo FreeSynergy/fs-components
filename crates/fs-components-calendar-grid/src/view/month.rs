@@ -22,7 +22,7 @@ pub fn month(grid: &CalendarGrid, items: &[GridItem], width: f32, height: f32) -
     let (cw, ch) = (width / 7.0, ((height - head) / 6.0).max(s.heights.row));
     let number_h = s.text.caption * 1.8 + s.spacing.xs;
     let bar_h = (s.text.caption * 1.6).ceil();
-    let lanes_fit = (((ch - number_h) / (bar_h + 2.0)).floor() as usize).max(1);
+    let capacity = (((ch - number_h) / (bar_h + 2.0)).floor() as usize).max(1);
     let (_, month, _) = state.anchor.ymd();
     let mut root = div().relative().w(width).h(ch * 6.0 + head).id("cal-month");
     for col in 0..7 {
@@ -63,6 +63,7 @@ pub fn month(grid: &CalendarGrid, items: &[GridItem], width: f32, height: f32) -
     }
     for (row, bars) in span_rows(items, &days, 7, false).iter().enumerate() {
         let top = head + row as f32 * ch + number_h;
+        let lanes_fit = capacity;
         let mut hidden = [0usize; 7];
         for b in bars {
             if b.lane >= lanes_fit {
@@ -86,16 +87,19 @@ pub fn month(grid: &CalendarGrid, items: &[GridItem], width: f32, height: f32) -
             );
         }
         for (c, n) in hidden.iter().enumerate().filter(|(_, n)| **n > 0) {
+            // The mark stands in the number row at the right of the cell: it never leaves the cell.
             let r = Rect {
-                x: c as f32 * cw + 2.0,
-                y: top + lanes_fit as f32 * (bar_h + 2.0),
-                w: cw - 4.0,
+                x: c as f32 * cw + cw / 2.0,
+                y: top - number_h + s.spacing.xs,
+                w: cw / 2.0 - 4.0,
                 h: bar_h,
             };
             root = root.child(
                 at(r)
                     .id(format!("cal-more-{row}-{c}"))
                     .pointer_events_none()
+                    .flex_row()
+                    .justify_end()
                     .child(look.text(format!("+{n}"), s.text.caption, pal.text_weak)),
             );
         }

@@ -70,7 +70,7 @@ fn grab_hover_drop_makes_a_move_request() {
     assert_eq!(st.hover(&c, "done"), Step::Changed);
     assert_eq!(st.hover(&c, "nowhere"), Step::Ignored);
     assert_eq!(
-        st.drop_held(),
+        st.drop_held(true),
         Step::Move(MoveRequest {
             key: "a".into(),
             from: "todo".into(),
@@ -85,11 +85,11 @@ fn dropping_where_it_was_picked_up_is_no_move_and_cancel_gives_up() {
     let c = cols();
     let mut st = BoardState::default();
     st.grab(&c, true, "a");
-    assert_eq!(st.drop_held(), Step::Changed);
+    assert_eq!(st.drop_held(true), Step::Changed);
     st.grab(&c, true, "a");
     st.hover(&c, "done");
     assert_eq!(st.cancel(), Step::Changed);
-    assert_eq!(st.drop_held(), Step::Ignored);
+    assert_eq!(st.drop_held(true), Step::Ignored);
 }
 
 #[test]

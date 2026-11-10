@@ -43,7 +43,13 @@ pub fn control(
     } else {
         d = d
             .child(look.text(b.say.say("kanban.soon"), s.text.caption, pal.text_weak))
-            .attr("data-locked", "true");
+            .attr("data-locked", "true")
+            // A locked control does nothing, and the column below it must not take its click.
+            .on_click(move |_| {
+                if in_column {
+                    me.swallow();
+                }
+            });
     }
     d
 }

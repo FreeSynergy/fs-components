@@ -55,6 +55,12 @@ pub fn range(items: &[Item], pad: i64, fallback: Day) -> (Day, Day) {
     (first.add_days(-pad), last.add_days(pad))
 }
 
+/// Like [`range`], widened to include `day` (today), so its line is always on the axis.
+pub fn range_including(items: &[Item], pad: i64, day: Option<Day>) -> (Day, Day) {
+    let (first, last) = range(items, pad, day.unwrap_or(Day(0)));
+    day.map_or((first, last), |d| (first.min(d), last.max(d)))
+}
+
 /// The rectangle of item number `row`. A milestone is a square centred on its day.
 pub fn item_rect(item: &Item, row: usize, scale: &Scale, g: Rows) -> Rect {
     let y = row as f32 * g.row + (g.row - g.bar) / 2.0;

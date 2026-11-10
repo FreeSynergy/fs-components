@@ -41,6 +41,7 @@ Texts are translation keys through `Say` (`fs-components-fields`): `calendar.pre
 - Agenda/list view, year view, week numbers.
 - Initial scroll position of the time axis (starts at 00:00; the Blinc scroll offset is not set).
 - Locale formats: hour labels are `HH:00` and the year/"+N" are plain numbers; month and weekday names come from `Say`.
+- Days of 23 or 25 hours (daylight saving): the axis is always 24 hours of 60 minutes, and an item's minutes are the caller's wall-clock minutes; the host must cut or place such days itself.
 - Recurrence, time zones, working-hours shading: the host expands and localises.
 - Per-style icon shapes, glass/backdrop effects (only colours, radii, spacing, fonts of the style).
 - Buttons are `blinc_cn` buttons; their height is cn's, not the style's.

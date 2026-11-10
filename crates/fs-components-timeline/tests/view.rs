@@ -99,3 +99,21 @@ fn clicking_an_item_and_using_the_keyboard_choose_items() {
     assert_eq!(t.snapshot().zoom, Zoom::Month);
     assert_eq!(last(&log), "zoom month");
 }
+
+#[test]
+fn the_today_line_is_there_when_today_is_far_from_the_items() {
+    let _g = serial();
+    let src = VecSource {
+        items: host::items(),
+        dependencies: vec![],
+    };
+    let far = host::d(2027, 2, 1);
+    let t = Timeline::new(
+        TimelineState::new(Some(far)),
+        std::sync::Arc::new(src),
+        std::sync::Arc::new(fs_components_fields::KeysAsText),
+        fs_components_fields::Look::new(StyleId::Admin, false),
+    );
+    let tree = layout(t.build(W, H), W, H);
+    assert!(tree.query_by_id("tl-today").is_some());
+}

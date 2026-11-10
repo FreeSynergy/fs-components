@@ -92,9 +92,25 @@ impl CalendarGrid {
 
     /// A key press; true when the grid used it.
     pub fn key(&self, key: Key) -> bool {
-        let outcome = self.lock().key(key);
+        let (outcome, before, after) = {
+            let mut s = self.lock();
+            let before = (s.anchor, s.days()[0]);
+            let outcome = s.key(key);
+            (outcome, before, (s.anchor, s.days()[0]))
+        };
         if let KeyOutcome::Chosen(slot) = outcome {
             self.events.select_slot(slot);
+        }
+        // Tell the host of a new range as the buttons do: Page keys and Home always, arrows when they
+        // carried the cursor into another range.
+        let paged = matches!(key, Key::PageUp | Key::PageDown | Key::Home);
+        if after.0 != before.0 && (paged || after.1 != before.1) {
+            let nav = match key {
+                Key::Home => Nav::Today,
+                _ if after.0 < before.0 => Nav::Previous,
+                _ => Nav::Next,
+            };
+            self.events.navigated(nav, after.0);
         }
         if outcome != KeyOutcome::Ignored {
             self.live.refresh();

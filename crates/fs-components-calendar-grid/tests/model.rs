@@ -175,3 +175,16 @@ fn the_vec_source_gives_what_touches_the_range() {
     assert_eq!(got.len(), 1);
     assert_eq!(got[0].key, "in");
 }
+
+#[test]
+fn an_item_ending_at_midnight_of_the_next_day_fills_the_rest_of_its_day() {
+    let day = d(2026, 11, 10);
+    let night = GridItem::timed(
+        "n",
+        "Night",
+        Moment::new(day, 1320),
+        Moment::new(day.add_days(1), 0),
+    );
+    let seg = day_segments(&[night], day);
+    assert_eq!((seg[0].start, seg[0].end), (1320, 1440), "not length zero");
+}

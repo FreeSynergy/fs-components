@@ -64,7 +64,9 @@ impl KanbanBoard {
     /// Run `f` on the state with the columns, then carry out what it came to.
     fn act(&self, f: impl FnOnce(&mut BoardState, &[Column], bool) -> Step) -> Step {
         let cols = self.source.columns();
-        let step = f(&mut self.lock(), &cols, self.can_move());
+        // Ask the host before taking the lock: `supports` may call back into the board.
+        let can_move = self.can_move();
+        let step = f(&mut self.lock(), &cols, can_move);
         match &step {
             Step::Select(key) => self.events.select_card(key),
             Step::Move(m) => {
@@ -96,7 +98,7 @@ impl KanbanBoard {
 
     /// Put the held card down.
     pub fn drop_held(&self) -> Step {
-        self.act(|s, _, _| s.drop_held())
+        self.act(|s, _, m| s.drop_held(m))
     }
 
     /// Give the held card up.
@@ -106,11 +108,7 @@ impl KanbanBoard {
 
     /// Hold over `column` and put down there: a click on a column while a card is held.
     pub fn drop_on(&self, column: &str) -> Step {
-        if self.lock().held.is_none() {
-            return Step::Ignored;
-        }
-        self.hover(column);
-        self.drop_held()
+        self.act(|s, c, m| s.drop_at(c, m, column))
     }
 
     /// Move a card one column left (-1) or right (1): the move buttons.

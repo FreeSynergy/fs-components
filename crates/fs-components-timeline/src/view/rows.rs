@@ -90,7 +90,7 @@ pub fn item(
                 at(Rect {
                     x: r.h + s.spacing.xs,
                     y: 0.0,
-                    w: 400.0,
+                    w: title_width(&it.title, s.text.caption, s.spacing.s),
                     h: r.h,
                 })
                 .flex_row()
@@ -114,4 +114,9 @@ pub fn today_line(t: &Timeline, x: f32, total_h: f32) -> Div {
     .id("tl-today")
     .bg(Look::color(pal.error))
     .pointer_events_none()
+}
+
+/// Room for a title of `caption`-size text: an upper bound of the glyph widths (0.6 of the size each).
+fn title_width(title: &str, caption: f32, pad: f32) -> f32 {
+    title.chars().count() as f32 * caption * 0.6 + pad
 }

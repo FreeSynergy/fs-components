@@ -170,3 +170,19 @@ fn keys_walk_the_rows_and_zoom() {
     assert_eq!(s.key(&it, Key::Other(65)), Step::Ignored);
     assert_eq!(s.key(&[], Key::Down), Step::Ignored, "no rows");
 }
+
+#[test]
+fn today_far_outside_the_items_is_inside_the_range() {
+    use fs_components_timeline::layout::range_including;
+    let it = items();
+    let far = d(2027, 3, 1);
+    let (a, b) = range_including(&it, 7, Some(far));
+    assert_eq!((a, b), (d(2026, 10, 26), far));
+    let past = d(2026, 5, 1);
+    assert_eq!(range_including(&it, 7, Some(past)).0, past);
+    assert_eq!(range_including(&it, 7, None), range(&it, 7, d(2026, 1, 1)));
+    assert_eq!(
+        range_including(&[], 7, Some(far)),
+        (far.add_days(-7), far.add_days(7))
+    );
+}

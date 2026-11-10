@@ -9,15 +9,14 @@ use blinc_layout::widgets::scroll::scroll;
 
 use super::{arrows, axis, rows, toolbar};
 use crate::handle::Timeline;
-use crate::layout::{Rect, Rows, Scale, item_rect, range};
-use crate::model::Day;
+use crate::layout::{Rect, Rows, Scale, item_rect, range_including};
 use crate::route::route;
 
 /// The timeline filling `width` x `height`.
 pub fn timeline(t: &Timeline, width: f32, height: f32) -> Div {
     let (s, st) = (t.look.style, t.snapshot());
     let items = t.source.items();
-    let (first, last) = range(&items, 7, st.today.unwrap_or(Day(0)));
+    let (first, last) = range_including(&items, 7, st.today);
     let scale = Scale {
         origin: first,
         px: st.zoom.px_per_day(),

@@ -102,8 +102,10 @@ impl BoardState {
     }
 
     /// Put the held card down where it is; a move when the column differs.
-    pub fn drop_held(&mut self) -> Step {
+    /// `can_move` is asked again here: the host may have stopped supporting moves since the pick-up.
+    pub fn drop_held(&mut self, can_move: bool) -> Step {
         match self.held.take() {
+            Some(_) if !can_move => self.refuse("locked"),
             Some(h) if h.from != h.over => Step::Move(MoveRequest {
                 key: h.key,
                 from: h.from,
@@ -112,6 +114,15 @@ impl BoardState {
             Some(_) => Step::Changed,
             None => Step::Ignored,
         }
+    }
+
+    /// Hold over `column` and put down there, in one step.
+    pub fn drop_at(&mut self, cols: &[Column], can_move: bool, column: &str) -> Step {
+        if self.held.is_none() {
+            return Step::Ignored;
+        }
+        self.hover(cols, column);
+        self.drop_held(can_move)
     }
 
     /// Give the held card up.
