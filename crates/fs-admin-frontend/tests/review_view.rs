@@ -168,10 +168,11 @@ fn review_12_findings_are_two_separate_texts_and_only_required_fields_have_the_m
     ui::frame(&mut tree, W, H);
     input.click(&mut tree, "save");
     assert!(until(&mut tree, 3, |t| t
-        .query_by_id("finding-name-problem")
+        .query_by_id("finding-name-0-problem.missing-problem")
         .is_some()));
     assert!(
-        tree.query_by_id("finding-name-label").is_some(),
+        tree.query_by_id("finding-name-0-problem.missing-label")
+            .is_some(),
         "label and problem are not joined"
     );
     assert!(tree.query_by_id("required-name").is_some());

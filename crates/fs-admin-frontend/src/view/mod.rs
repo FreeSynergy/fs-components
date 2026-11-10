@@ -4,10 +4,12 @@
 
 mod chrome;
 mod detail;
+mod findings;
 mod form;
 mod inputs;
 mod kinds;
 mod list;
+mod redraw;
 mod screens;
 mod surface;
 mod value;

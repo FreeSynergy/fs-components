@@ -4,75 +4,14 @@
 //! like a program would).
 #![allow(dead_code, clippy::pedantic)]
 
+mod contact;
+
 use std::sync::{Arc, Mutex};
 
 use fs_admin_frontend::{Backend, BackendError, ManualClock, Outcome, Record, Values};
-use fs_types::{
-    BasicRules, BasicType, CommandDescription, CommandKind, FieldDescription, RecordIssue,
-    TypeDescription,
-};
+use fs_types::{BasicRules, CommandKind, RecordIssue, TypeDescription};
 
-pub fn contact() -> TypeDescription {
-    let id = FieldDescription::new("id", BasicType::Reference)
-        .target("Contact")
-        .required()
-        .label("contact.id");
-    TypeDescription::new("Contact", "fs-test", "RFC 9553 Card", "contact")
-        .field(
-            FieldDescription::new("name", BasicType::Text)
-                .required()
-                .label("contact.name"),
-        )
-        .field(
-            FieldDescription::new("emails", BasicType::Email)
-                .multiple()
-                .label("contact.emails"),
-        )
-        .field(FieldDescription::new("phone", BasicType::Phone).label("contact.phone"))
-        .field(FieldDescription::new("note", BasicType::MultilineText).label("contact.note"))
-        .command(
-            CommandDescription::new("create", CommandKind::Create, "command.create")
-                .input(
-                    FieldDescription::new("name", BasicType::Text)
-                        .required()
-                        .label("contact.name"),
-                )
-                .input(
-                    FieldDescription::new("emails", BasicType::Email)
-                        .multiple()
-                        .label("contact.emails"),
-                ),
-        )
-        .command(
-            CommandDescription::new("change", CommandKind::Change, "command.change")
-                .input(id.clone())
-                .input(
-                    FieldDescription::new("name", BasicType::Text)
-                        .required()
-                        .label("contact.name"),
-                )
-                .input(
-                    FieldDescription::new("emails", BasicType::Email)
-                        .multiple()
-                        .label("contact.emails"),
-                ),
-        )
-        .command(
-            CommandDescription::new("find", CommandKind::Find, "command.find")
-                .input(FieldDescription::new("text", BasicType::Text).label("command.find.text")),
-        )
-        .command(
-            CommandDescription::new("delete", CommandKind::Delete, "command.delete")
-                .input(id.clone()),
-        )
-        .command(
-            CommandDescription::new("domains", CommandKind::Suggest, "command.domains").result(
-                FieldDescription::new("domains", BasicType::Text)
-                    .multiple()
-                    .label("command.domains"),
-            ),
-        )
-}
+pub use contact::contact;
 
 pub fn values(pairs: &[(&str, &[&str])]) -> Values {
     pairs
@@ -203,6 +142,12 @@ impl Backend for Memory {
                     ]));
                 }
                 3 => return Err(BackendError::Rejected(vec![issue("emails", 0)])),
+                4 => {
+                    return Err(BackendError::Rejected(vec![
+                        issue("nope", 0),
+                        issue("nada", 1),
+                    ]));
+                }
                 _ => {}
             }
         }

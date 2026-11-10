@@ -122,3 +122,26 @@ fn review_11_removing_a_slot_moves_the_marks_of_the_slots_after_it() {
         "editing slot 0 does not clear the refusal of slot 1"
     );
 }
+
+#[test]
+fn third_3_a_refusal_on_a_slot_that_is_not_there_points_at_the_last_slot_and_does_not_block_sending()
+ {
+    let fields = contact().find_command("create").unwrap().input.clone();
+    let mut form = FormModel::new(
+        &fields,
+        &values(&[("name", &["x"]), ("emails", &["a@b.test"])]),
+    );
+    let issue = |index| fs_types::RecordIssue {
+        field: "emails".into(),
+        index,
+        problem: RecordProblem::Value(TypeProblem::Character),
+    };
+    form.refuse(vec![issue(7), issue(7)]);
+    let shown = form.visible_issues();
+    assert_eq!(shown.len(), 1, "the same finding is shown once");
+    assert_eq!(shown[0].index, 0);
+    assert!(
+        form.submit().is_ok(),
+        "the program's refusal does not stop a new try"
+    );
+}

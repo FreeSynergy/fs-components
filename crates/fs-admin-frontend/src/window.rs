@@ -93,7 +93,13 @@ pub fn admin_window(
             QUIT => {
                 // Nothing is kept unsaved but an open form. With text in one the window stays and says why (an error
                 // message that stays until closed); a dialog that asks "leave anyway?" comes later.
-                match surfaces.iter().find(|(_, s)| s.has_unsaved()) {
+                // the surface that is shown comes first, then the others in order
+                let here = current();
+                let unsaved = surfaces
+                    .iter()
+                    .filter(|(_, s)| s.has_unsaved())
+                    .min_by_key(|(id, _)| Some(id) != here.as_ref());
+                match unsaved {
                     Some((id, s)) => {
                         // the surface that has the text, not the one that happens to be shown
                         shell.select(id);
