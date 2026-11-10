@@ -206,6 +206,7 @@ impl Inner {
                 self.refs[j].set_value(part.clone());
             }
         }
+        let mut at = i;
         // Part `i` gave up text to a later one (an `@` typed into the local part): go on there.
         if settled.get(i) != typed.get(i) && i + 1 < self.refs.len() {
             let last = (i + 1..settled.len().min(self.refs.len()))
@@ -213,9 +214,10 @@ impl Inner {
                 .find(|j| typed.get(*j) != settled.get(*j))
                 .unwrap_or(i + 1);
             self.refs[last].focus();
+            at = last;
         }
         self.touched.store(true, Ordering::Relaxed);
-        self.last.store(i, Ordering::Relaxed);
+        self.last.store(at, Ordering::Relaxed);
         self.live.refresh_now();
         if let Some(f) = &self.on_change {
             f(&field.join(&settled));

@@ -188,6 +188,29 @@ fn typing_an_at_into_the_first_part_moves_the_rest_to_the_domain() {
 }
 
 #[test]
+fn an_at_typed_into_the_first_part_suggests_for_the_domain_at_once() {
+    let _g = serial();
+    let list = SuggestFromList {
+        field: "email",
+        segment: 1,
+        seen: vec!["example.org".into()],
+    };
+    let f = FieldInput::new(
+        Kind::Email,
+        Look::new(StyleId::Admin, false),
+        Arc::new(KeysAsText),
+    )
+    .name("m")
+    .suggest(Arc::new(list));
+    let mut tree = layout(f.build(), 600.0, 200.0);
+    let mut input = Input::new();
+    type_into(&mut tree, &mut input, "m-local", "ada@ex");
+    common::frame(&mut tree, 600.0, 200.0);
+    assert_eq!(f.parts(), ["ada", "ex"]);
+    assert!(tree.query_by_id("m-suggest-0").is_some());
+}
+
+#[test]
 fn a_wrong_value_shows_its_sentence_only_after_a_change_and_a_suggestion_fills_the_part() {
     let _g = serial();
     let look = Look::new(StyleId::Windows, false);

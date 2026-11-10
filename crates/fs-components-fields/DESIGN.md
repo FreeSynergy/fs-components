@@ -32,5 +32,5 @@ The four components of each basic type (ADR 0066, item 4): **input**, **display*
 
 ## Handtest errors of the input (2026-11-10)
 
-- AltGr+Q gives "2": cause found in Blinc (`blinc_platform_desktop` `convert_key` folds `@` into `Key::Num2`, `blinc_app` `keyboard.rs` writes `2` back for it). Recorded in the Blinc clone as a git-bug entry with the proof; this crate stays independent of it (see `settle`).
-- White text while typing and sluggishness: see `todo/handoff-programming.md` for the state of the probes.
+- AltGr+Q gives "2": cause found in Blinc (`blinc_platform_desktop` `convert_key` folds `@` into `Key::Num2`, `blinc_app` `keyboard.rs` writes `2` back for it). Recorded in the Blinc clone as a git-bug entry with the proof; this crate cannot repair it: `settle` acts only on an `@` that arrives (typed with a layout that gives it, or pasted). **AltGr and layout keys are Unsupported until Blinc is fixed**: typing `ada@x.org` on a German layout silently gives the local part `ada2x.org`, and `+` becomes `=` in the phone country part (`tools/live-probe/scnD-keys.txt`).
+- White text while typing and sluggishness: **open, not reproduced, not fixed here.** The only measurement is the headless test `a_key_costs_little` (under 50 ms per key), which does not reproduce the slowness seen by hand; the live probe (`tools/live-probe`) did not show white text. Blinc's own focus/hover theme is a possible cause (see the focus row above). Thread B measures typing latency in Blinc.

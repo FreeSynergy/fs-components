@@ -3,7 +3,8 @@
 //! Pattern: Strategy (one [`BasicField`] implementation); the rule is `EmailAddress` of the contract
 //! crate, the type only splits the text so that the person sees two parts and the `@` is a fixed
 //! sign between them. A pasted whole address, or an `@` typed into the first part, is split by
-//! [`BasicField::settle`], so the keyboard never has to produce the sign.
+//! [`BasicField::settle`], so the keyboard need not produce the sign. An `@` that Blinc already
+//! turned into `2` (AltGr+Q) is lost before it arrives: `settle` cannot see it (Unsupported).
 
 use fs_components_styles::Glyph;
 use fs_interfaces::values::{ContactValue, EmailAddress};
