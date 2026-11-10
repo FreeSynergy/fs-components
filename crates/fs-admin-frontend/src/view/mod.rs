@@ -1,0 +1,19 @@
+//! The views of the generated Admin frontend.
+//!
+//! Pattern: none — declares the modules and re-exports.
+
+mod chrome;
+mod detail;
+mod findings;
+mod form;
+mod inputs;
+mod kinds;
+mod list;
+mod redraw;
+mod screens;
+mod surface;
+mod value;
+
+pub use kinds::{WITHOUT_COMPONENT, kind_of};
+pub use list::rows as list_rows;
+pub use surface::{AboutInfo, AdminSurface};

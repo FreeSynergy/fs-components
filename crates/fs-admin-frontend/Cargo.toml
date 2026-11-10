@@ -1,0 +1,25 @@
+[package]
+name = "fs-admin-frontend"
+description = "FreeSynergy generated Admin frontend (ADR 0066): list, detail, form and commands made from a type description, in the Fiori style, inside the window shell of ADR 0065"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+fs-types = { git = "https://github.com/FreeSynergy/fs-interfaces", tag = "v0.0.11" }
+blinc_core.workspace = true
+blinc_layout.workspace = true
+blinc_cn.workspace = true
+blinc_theme.workspace = true
+fs-components-styles = { path = "../fs-components-styles" }
+fs-components-fields = { path = "../fs-components-fields" }
+fs-components-widgets = { path = "../fs-components-widgets" }
+fs-components-app = { path = "../fs-components-app" }
+fs-components-primitives = { path = "../fs-components-primitives" }
+
+[dev-dependencies]
+blinc_app.workspace = true
+wgpu = "26"
+blinc_animation.workspace = true
+image = { version = "0.25", default-features = false, features = ["png"] }
