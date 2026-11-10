@@ -72,6 +72,7 @@ pub struct MapView {
     markers: Vec<Marker>,
     on_change: Option<OnChange>,
     on_pick: Option<OnPick>,
+    attribution: Option<String>,
 }
 
 impl MapView {
@@ -85,6 +86,7 @@ impl MapView {
             markers: Vec::new(),
             on_change: None,
             on_pick: None,
+            attribution: None,
         }
     }
 
@@ -99,6 +101,14 @@ impl MapView {
     #[must_use]
     pub fn markers(mut self, markers: Vec<Marker>) -> Self {
         self.markers = markers;
+        self
+    }
+
+    /// Who made the data (a licence asks for it: "© OpenStreetMap contributors"): shown in the lower right corner
+    /// while it is `Some` and not empty.
+    #[must_use]
+    pub fn attribution(mut self, attribution: Option<String>) -> Self {
+        self.attribution = attribution.filter(|a| !a.trim().is_empty());
         self
     }
 
@@ -158,7 +168,20 @@ impl MapView {
         for placed in scene.markers.iter().take(MOST_PICKABLE) {
             root = root.child(self.pickable(placed));
         }
-        root.child(self.controls(width))
+        let root = root.child(self.controls(width));
+        match &self.attribution {
+            Some(by) => root.child(
+                div()
+                    .id(format!("{}-attribution", self.name))
+                    .class("fs-map-attribution")
+                    .absolute()
+                    .right(0.0)
+                    .bottom(0.0)
+                    .max_w((width - CONTROL).max(0.0))
+                    .child(text(by.clone()).no_cursor()),
+            ),
+            None => root,
+        }
     }
 
     fn pickable(&self, placed: &crate::scene::PlacedMarker) -> Div {

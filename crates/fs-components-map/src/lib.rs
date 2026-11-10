@@ -19,7 +19,9 @@
 mod choose;
 mod command;
 mod draw;
+mod guard;
 mod keys;
+mod loader;
 mod look;
 mod mercator;
 mod model;
@@ -33,6 +35,8 @@ mod widget;
 
 pub use choose::{AREA_BUDGET, DOT_BUDGET, LINE_BUDGET};
 pub use command::{MapCommand, PAN_STEP, ZOOM_STEP, command_for_key};
+pub use guard::{MAX_FEATURES, MAX_RING_CELLS, MAX_TILE_BYTES};
+pub use loader::{Limits, MOST_IN_FLIGHT, MOST_KEPT, MOST_LOADING};
 pub use mercator::{
     MAX_LAT, MAX_ZOOM, MIN_ZOOM, TILE_SIZE, clamp_lat, clamp_zoom, crosses_antimeridian, project,
     span_degrees, unproject, world_size, wrap_lon,
@@ -48,5 +52,6 @@ pub use widget::{CONTROL, MOST_PICKABLE, MapView, MapViewLabels, OnChange, OnPic
 /// CSS of the map view: only theme variables.
 pub const STYLES: &str = r"
 .fs-map-controls { z-index: 2; }
+.fs-map-attribution { z-index: 2; padding: 1px 6px; border-radius: var(--radius-default); background: var(--surface-elevated); color: var(--text-secondary); font-size: var(--text-xs); }
 .fs-map-control { display: flex; align-items: center; justify-content: center; border-radius: var(--radius-default); background: var(--surface-elevated); color: var(--text-primary); border-width: 1px; border-color: var(--border); cursor: pointer; font-size: var(--text-lg); }
 ";

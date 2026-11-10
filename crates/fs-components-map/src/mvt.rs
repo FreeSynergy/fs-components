@@ -7,6 +7,7 @@
 use geo_types::Geometry;
 use mvt_reader::Reader;
 
+use crate::guard::scan;
 use crate::model::{Area, Dot, Label, Line, Paint, TileGeometry, Tone};
 
 /// Why a tile could not be read.
@@ -121,26 +122,37 @@ fn add_polygon(p: &geo_types::Polygon<f32>, st: &Style, out: &mut TileGeometry) 
     }
 }
 
-/// Decode one tile (uncompressed MVT) with the extent the tile says (4096 when the layers give none).
+/// The extent of a layer that gives none.
+const DEFAULT_EXTENT: u32 = 4096;
+
+/// Decode one tile (uncompressed MVT). The tile is looked at first (`guard`): one over a limit of bytes, of features or
+/// of what `mvt-reader` would reserve is refused. The result has the extent of the widest layer; the coordinates of a
+/// layer with another extent are scaled to it, so every layer lies on the tile where it belongs.
 ///
 /// # Errors
-/// [`MvtError`] when the bytes are not a vector tile.
+/// [`MvtError`] when the bytes are not a vector tile or are over a limit.
 pub fn decode_tile(bytes: &[u8]) -> Result<TileGeometry, MvtError> {
+    let scanned = scan(bytes)?;
     let reader = Reader::new(bytes.to_vec()).map_err(|e| MvtError(format!("{e:?}")))?;
     let layers = reader
         .get_layer_metadata()
         .map_err(|e| MvtError(format!("{e:?}")))?;
-    let extent = layers
-        .iter()
-        .map(|l| l.extent)
-        .max()
-        .map_or(4096.0, |e| e as f32);
-    let mut out = TileGeometry::new(extent);
+    let extent_of = |l: &mvt_reader::layer::Layer| {
+        scanned
+            .extents
+            .get(l.layer_index)
+            .copied()
+            .flatten()
+            .map_or(DEFAULT_EXTENT, |e| e.max(1)) as f32
+    };
+    let widest = layers.iter().map(extent_of).fold(0.0, f32::max);
+    let mut out = TileGeometry::new(if widest > 0.0 { widest } else { 4096.0 });
     for layer in &layers {
         let st = style(&layer.name);
         let features = reader
             .get_features(layer.layer_index)
             .map_err(|e| MvtError(format!("{e:?}")))?;
+        let before = Marks::of(&out);
         for f in features {
             let name = match f.properties.as_ref().and_then(|p| p.get("name")) {
                 Some(mvt_reader::feature::Value::String(s)) => Some(s.as_str()),
@@ -148,6 +160,49 @@ pub fn decode_tile(bytes: &[u8]) -> Result<TileGeometry, MvtError> {
             };
             add(&f.geometry, &st, name, &mut out);
         }
+        let k = out.extent / extent_of(layer);
+        before.scale_to(&mut out, k);
     }
     Ok(out)
+}
+
+/// How much of a tile there was before a layer was added, to scale only what the layer added.
+struct Marks {
+    areas: usize,
+    lines: usize,
+    dots: usize,
+    labels: usize,
+}
+
+impl Marks {
+    fn of(t: &TileGeometry) -> Self {
+        Self {
+            areas: t.areas.len(),
+            lines: t.lines.len(),
+            dots: t.dots.len(),
+            labels: t.labels.len(),
+        }
+    }
+
+    fn scale_to(&self, t: &mut TileGeometry, k: f32) {
+        if (k - 1.0).abs() < f32::EPSILON {
+            return;
+        }
+        let up = |p: &mut [f32; 2]| {
+            p[0] *= k;
+            p[1] *= k;
+        };
+        t.areas[self.areas..]
+            .iter_mut()
+            .flat_map(|a| a.rings.iter_mut().flatten())
+            .for_each(up);
+        t.lines[self.lines..]
+            .iter_mut()
+            .flat_map(|l| l.points.iter_mut())
+            .for_each(up);
+        t.dots[self.dots..].iter_mut().for_each(|d| up(&mut d.at));
+        t.labels[self.labels..]
+            .iter_mut()
+            .for_each(|l| up(&mut l.at));
+    }
 }
