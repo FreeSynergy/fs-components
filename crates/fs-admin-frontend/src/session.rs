@@ -228,51 +228,6 @@ impl Session {
         self.leave_if_gone();
     }
 
-    /// Open a command. A command on a record needs the selection; a delete asks first. Returns `false` if the
-    /// command is unknown or has no record to work on.
-    pub fn begin(&mut self, name: &str) -> bool {
-        let Some(plan) = self.command(name).cloned() else {
-            return false;
-        };
-        if !self.is_supported(name) {
-            return false; // locked: "coming soon"
-        }
-        let record = match plan.placement {
-            Placement::OnList => None,
-            // The record is the one of the screen that is shown, and only if it is loaded: the selection of the list
-            // may point elsewhere (or nowhere) after a failed reload.
-            Placement::OnRecord => match &self.screen {
-                Screen::Detail(id) if !self.stale && self.list.record(id).is_some() => {
-                    Some(id.clone())
-                }
-                _ => return false,
-            },
-        };
-        if plan.confirm {
-            let Some(record) = record else { return false };
-            self.form = None;
-            self.go(Screen::Confirm {
-                name: plan.name,
-                record,
-            });
-            return true;
-        }
-        let initial = match (&plan.kind, &record) {
-            (CommandKind::Change, Some(id)) => self
-                .list
-                .record(id)
-                .map(|r| r.values.clone())
-                .unwrap_or_default(),
-            _ => Values::new(),
-        };
-        self.form = Some(FormModel::new(&plan.form, &initial));
-        self.go(Screen::Command {
-            name: plan.name,
-            record,
-        });
-        true
-    }
-
     /// Send the open form, or confirm the question. Returns whether the command ran.
     pub fn submit(&mut self) -> bool {
         let (name, record) = match &self.screen {

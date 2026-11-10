@@ -19,7 +19,7 @@ The generated Admin frontend of ADR 0066: from the type description of a program
 | `view/screens.rs`, `view/surface.rs` | Adapter (+ Observer in the surface) | session state to elements; the click handlers they build change the session |
 | `view/redraw.rs` | Observer with a worker thread | messages signal, the worker draws (folding bursts) |
 | `commands.rs` `plan_commands` | none (a small set of pure functions) | placement, confirmation and form fields come from the kind and the input of the description |
-| `screen.rs` `Screen`, `session.rs` and `session_done.rs` `Session` | State | screens are the states, methods are the transitions; `session_done.rs` holds the transitions after a command, the refusals and the rule for old records |
+| `screen.rs` `Screen`, `session.rs` and `session_done.rs` `Session` | State | screens are the states, methods are the transitions; `session_done.rs` holds opening a command, the transitions after it, the refusals, the rule for old records and the support of commands |
 | `messages.rs` `Messages` | Observer with a lifetime per message | ADR 0065 point 4: success goes by itself, an error stays, none follows to another screen |
 | `window.rs` `admin_window` | Facade | one call builds the shell with a screen per type and the standard menus Program / View / Help |
 | `clock.rs` `Clock` | Strategy | lifetimes are testable (`ManualClock`) |
