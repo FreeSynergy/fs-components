@@ -15,56 +15,19 @@ use crate::detail::{Entry, entries};
 use crate::form::FormModel;
 use crate::list::ListModel;
 use crate::messages::{MessageKind, Messages};
-
-/// Which screen the window shows.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub enum Screen {
-    /// The list with its search and the commands for the list.
-    List,
-    /// One record and the commands for it.
-    Detail(String),
-    /// The form of a command; `record` is the record it works on.
-    Command {
-        /// The command.
-        name: String,
-        /// The record it works on, if any.
-        record: Option<String>,
-    },
-    /// "Really?" before a command that deletes.
-    Confirm {
-        /// The command.
-        name: String,
-        /// The record it works on.
-        record: String,
-    },
-    /// What a command answered.
-    Result(String),
-}
-
-impl Screen {
-    /// A key that is the same for the same screen: the scope of its messages and its help address.
-    pub fn key(&self) -> String {
-        match self {
-            Screen::List => "list".to_owned(),
-            Screen::Detail(id) => format!("detail:{id}"),
-            Screen::Command { name, .. } => format!("command:{name}"),
-            Screen::Confirm { name, .. } => format!("confirm:{name}"),
-            Screen::Result(name) => format!("result:{name}"),
-        }
-    }
-}
+use crate::screen::Screen;
 
 /// The frontend of one data type.
 pub struct Session {
-    description: TypeDescription,
-    backend: Arc<dyn Backend>,
-    plans: Vec<CommandPlan>,
-    list: ListModel,
-    query: Values,
-    screen: Screen,
-    form: Option<FormModel>,
-    result: Option<Outcome>,
-    messages: Arc<Messages>,
+    pub(crate) description: TypeDescription,
+    pub(crate) backend: Arc<dyn Backend>,
+    pub(crate) plans: Vec<CommandPlan>,
+    pub(crate) list: ListModel,
+    pub(crate) query: Values,
+    pub(crate) screen: Screen,
+    pub(crate) form: Option<FormModel>,
+    pub(crate) result: Option<Outcome>,
+    pub(crate) messages: Arc<Messages>,
 }
 
 impl Session {
@@ -161,12 +124,12 @@ impl Session {
             .map_or_else(Vec::new, |r| entries(&self.description, r))
     }
 
-    fn go(&mut self, screen: Screen) {
+    pub(crate) fn go(&mut self, screen: Screen) {
         self.messages.enter(&screen.key());
         self.screen = screen;
     }
 
-    fn fail(&self, e: &BackendError) {
+    pub(crate) fn fail(&self, e: &BackendError) {
         let code = match e {
             BackendError::Rejected(_) => "rejected",
             BackendError::NotFound => "not-found",
@@ -296,43 +259,5 @@ impl Session {
                 false
             }
         }
-    }
-
-    fn search(&mut self, query: Values) -> bool {
-        match self.backend.list(&query) {
-            Ok(records) => {
-                self.query = query;
-                self.list.set_records(records);
-                self.form = None;
-                self.go(Screen::List);
-                true
-            }
-            Err(e) => {
-                self.fail(&e);
-                false
-            }
-        }
-    }
-
-    fn done(&mut self, plan: &CommandPlan, record: Option<String>, outcome: Outcome) {
-        self.form = None;
-        self.reload();
-        let target = match plan.kind {
-            CommandKind::Create | CommandKind::Change => outcome
-                .id
-                .clone()
-                .or(record)
-                .filter(|id| self.list.record(id).is_some())
-                .map_or(Screen::List, Screen::Detail),
-            CommandKind::Delete => Screen::List,
-            _ if !plan.result.is_empty() => Screen::Result(plan.name.clone()),
-            _ => record.map_or(Screen::List, Screen::Detail),
-        };
-        if let Screen::Detail(id) = &target {
-            self.list.select(id);
-        }
-        self.result = Some(outcome);
-        self.go(target);
-        self.messages.raise(MessageKind::Success, "done");
     }
 }

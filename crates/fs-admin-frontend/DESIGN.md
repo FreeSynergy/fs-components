@@ -27,7 +27,12 @@ The generated Admin frontend of ADR 0066: from the type description of a program
 | Part | State |
 |---|---|
 | Model: backend trait, form, list, detail, command plans, messages, session | done, 25 tests (against the traits, over a `Backend` in memory) |
+| Views (`view/`): list with sortable head, detail, form (typed components of `fs-components-fields`, plain input for the rest), confirm, result, About, as a `Surface` of the shell | done, 5 tests drawn offscreen and driven with the window's router (click, type, add a slot, save, refuse) |
+| Messages draw the page again on another thread (a transition holds the session lock; found by the click test as a deadlock) | done |
 
 ## Unsupported (named, not faked)
 
-* Views on the screen, shell and People: not yet in this version (see the handoff file).
+* Shell menus of ADR 0065 (Programm / Ansicht / Hilfe), Ctrl+Q and F1: not built; `fs-components-app` menus have no shortcuts.
+* People: waits for the type description of Thread P.
+* Basic types without a component in `fs-components-fields` (text, multi-line text, place, date-time, language, link, image, key, choice, keywords, reference): a plain input stands in (choice: buttons). It belongs in `fs-components-fields`. Buttons are `blinc_cn`'s, their height is not the style's.
+* Sort direction is written as a word, not drawn as an arrow (the icon set has no arrow).

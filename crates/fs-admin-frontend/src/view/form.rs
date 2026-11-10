@@ -69,7 +69,10 @@ pub fn problem_key(p: RecordProblem) -> String {
 fn findings_view(env: &FormEnv) -> Div {
     let (s, pal) = (env.look.style, env.look.palette());
     let session = lock(&env.session);
-    let issues: Vec<RecordIssue> = session.form().map(FormModel::visible_issues).unwrap_or_default();
+    let issues: Vec<RecordIssue> = session
+        .form()
+        .map(FormModel::visible_issues)
+        .unwrap_or_default();
     let mut column = div().flex_col().gap_px(s.spacing.xs).w_full();
     for i in issues {
         let label = session
@@ -104,18 +107,25 @@ pub fn form_body(env: &Arc<FormEnv>, slots: &Arc<Mutex<FormSlots>>) -> Div {
         if field.required {
             label.push_str(" *");
         }
-        let mut column = div().flex_col().gap_px(s.spacing.xs).flex_grow_value(1.0).min_w(0.0);
+        let mut column = div()
+            .flex_col()
+            .gap_px(s.spacing.xs)
+            .flex_grow_value(1.0)
+            .min_w(0.0);
         for (i, value) in values.iter().enumerate() {
             column = column.child(slot_row(env, slots, field, i, value, values.len()));
         }
         if field.multiple {
             let (e, name) = (Arc::clone(env), field.name.clone());
-            column = column.child(
-                cn_button(&env.say.say("action.add"), ButtonVariant::Ghost, &format!("add-{}", field.name), move || {
+            column = column.child(cn_button(
+                &env.say.say("action.add"),
+                ButtonVariant::Ghost,
+                &format!("add-{}", field.name),
+                move || {
                     lock(&e.session).form_mut().map(|f| f.add_value(&name));
                     e.page.refresh_now();
-                }),
-            );
+                },
+            ));
         }
         page = page.child(
             div()
@@ -152,7 +162,14 @@ fn slot_row(
     };
     let input: Box<dyn Element> = match &slot.body {
         Body::Typed(input) => Box::new(input.build()),
-        Body::Plain(data) => Box::new(plain(&env.look, &*env.say, field, data, &name, Arc::clone(&slot.on))),
+        Body::Plain(data) => Box::new(plain(
+            &env.look,
+            &*env.say,
+            field,
+            data,
+            &name,
+            Arc::clone(&slot.on),
+        )),
         Body::Choice => Box::new(choice(&env.look, &*env.say, field, value, &name, &slot.on)),
     };
     let mut row = div()
@@ -163,12 +180,15 @@ fn slot_row(
         .child(div().flex_grow_value(1.0).min_w(0.0).child(input));
     if field.multiple && count > 1 {
         let (e, f) = (Arc::clone(env), field.name.clone());
-        row = row.child(
-            cn_button(&env.say.say("action.remove"), ButtonVariant::Ghost, &format!("remove-{name}"), move || {
+        row = row.child(cn_button(
+            &env.say.say("action.remove"),
+            ButtonVariant::Ghost,
+            &format!("remove-{name}"),
+            move || {
                 lock(&e.session).form_mut().map(|m| m.remove_value(&f, i));
                 e.page.refresh_now();
-            }),
-        );
+            },
+        ));
     }
     row
 }
@@ -184,17 +204,24 @@ fn ensure(env: &Arc<FormEnv>, slots: &Arc<Mutex<FormSlots>>, key: &str) {
                 .collect()
         })
         .unwrap_or_default();
-    let fields = lock(&env.session).form().map(|f| f.fields().to_vec()).unwrap_or_default();
+    let fields = lock(&env.session)
+        .form()
+        .map(|f| f.fields().to_vec())
+        .unwrap_or_default();
     let mut guard = slots.lock().unwrap_or_else(PoisonError::into_inner);
     let now: usize = shape.iter().map(|(_, v)| v.len()).sum();
     if guard.key == key && guard.slots.len() == now && guard.epoch == epoch_of(&shape) {
         return;
     }
-    guard.key = key.to_owned();
+    key.clone_into(&mut guard.key);
     guard.epoch = epoch_of(&shape);
     guard.slots.clear();
     for field in &fields {
-        let values = shape.iter().find(|(n, _)| n == &field.name).map(|(_, v)| v.clone()).unwrap_or_default();
+        let values = shape
+            .iter()
+            .find(|(n, _)| n == &field.name)
+            .map(|(_, v)| v.clone())
+            .unwrap_or_default();
         for (i, value) in values.iter().enumerate() {
             let (e, name) = (Arc::clone(env), field.name.clone());
             let choice = field.basic == fs_types::BasicType::Choice;
@@ -209,7 +236,15 @@ fn ensure(env: &Arc<FormEnv>, slots: &Arc<Mutex<FormSlots>>, key: &str) {
             guard.slots.push((
                 field.name.clone(),
                 i,
-                Slot::new(env.look, &env.say, field, value, env.suggest.as_ref(), on),
+                Slot::new(
+                    env.look,
+                    &env.say,
+                    field,
+                    value,
+                    &format!("{}-{i}", field.name),
+                    env.suggest.as_ref(),
+                    on,
+                ),
             ));
         }
     }
@@ -218,6 +253,9 @@ fn ensure(env: &Arc<FormEnv>, slots: &Arc<Mutex<FormSlots>>, key: &str) {
 /// A number that changes when a slot came or went, so the slots are made again.
 fn epoch_of(shape: &[(String, Vec<String>)]) -> u64 {
     shape.iter().fold(0u64, |h, (n, v)| {
-        h.wrapping_mul(31).wrapping_add(n.len() as u64).wrapping_mul(31).wrapping_add(v.len() as u64)
+        h.wrapping_mul(31)
+            .wrapping_add(n.len() as u64)
+            .wrapping_mul(31)
+            .wrapping_add(v.len() as u64)
     })
 }

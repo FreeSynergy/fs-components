@@ -13,13 +13,11 @@ use fs_components_widgets::list_view::ListPosition;
 use fs_components_widgets::live::Live;
 use fs_components_widgets::{Element, styles};
 
-use super::chrome::{Action, Weight, button, header, message_bar, panel};
-use super::detail::fields_panel;
+use super::chrome::{Action, Weight, button, header, message_bar};
 use super::form::{FormEnv, FormSlots, form_body};
-use super::list::{ListEvents, list_body};
-use crate::commands::{CommandPlan, Placement};
-use crate::detail::entries;
-use crate::session::{Screen, Session};
+use crate::commands::CommandPlan;
+use crate::screen::Screen;
+use crate::session::Session;
 
 /// What the About page says (ADR 0065 point 2).
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -38,22 +36,38 @@ pub struct AboutInfo {
 
 /// The Admin frontend of one data type as a surface of the shell.
 pub struct AdminSurface {
-    env: Arc<FormEnv>,
-    live: Live,
-    slots: Arc<Mutex<FormSlots>>,
-    position: ListPosition,
-    about: Arc<Mutex<Option<AboutInfo>>>,
+    pub(super) env: Arc<FormEnv>,
+    pub(super) live: Live,
+    pub(super) slots: Arc<Mutex<FormSlots>>,
+    pub(super) position: ListPosition,
+    pub(super) about: Arc<Mutex<Option<AboutInfo>>>,
 }
 
-fn lock(s: &Mutex<Session>) -> std::sync::MutexGuard<'_, Session> {
+pub(super) fn lock(s: &Mutex<Session>) -> std::sync::MutexGuard<'_, Session> {
     s.lock().unwrap_or_else(PoisonError::into_inner)
 }
 
 impl AdminSurface {
     /// A surface over `session`, in `look`, with the words of `say`. The messages of the session draw it again.
-    pub fn new(session: Session, look: Look, say: Arc<dyn Say>, suggest: Option<Arc<dyn Suggest>>) -> Self {
+    pub fn new(
+        session: Session,
+        look: Look,
+        say: Arc<dyn Say>,
+        suggest: Option<Arc<dyn Suggest>>,
+    ) -> Self {
         let live = Live::new();
-        session.messages().subscribe(move || live.refresh());
+        // The messages change while the session is locked (a transition); drawing at once would lock it again
+        // (found by the click test: deadlock). So the draw happens on another thread, which waits for the lock,
+        // and once more when a success has run out.
+        session.messages().subscribe(move || {
+            std::thread::spawn(move || {
+                live.refresh_now();
+                std::thread::sleep(std::time::Duration::from_millis(
+                    crate::messages::SUCCESS_MS + 100,
+                ));
+                live.refresh_now();
+            });
+        });
         Self {
             env: Arc::new(FormEnv {
                 session: Arc::new(Mutex::new(session)),
@@ -86,7 +100,7 @@ impl AdminSurface {
         self.live.refresh_now();
     }
 
-    fn act(&self, f: impl Fn(&mut Session) + Send + Sync + 'static) -> Action {
+    pub(super) fn act(&self, f: impl Fn(&mut Session) + Send + Sync + 'static) -> Action {
         let (session, live) = (Arc::clone(&self.env.session), self.live);
         Arc::new(move || {
             f(&mut lock(&session));
@@ -94,7 +108,7 @@ impl AdminSurface {
         })
     }
 
-    fn command_buttons(&self, plans: &[&CommandPlan]) -> Vec<Div> {
+    pub(super) fn command_buttons(&self, plans: &[&CommandPlan]) -> Vec<Div> {
         plans
             .iter()
             .map(|p| {
@@ -107,7 +121,12 @@ impl AdminSurface {
                 let go = self.act(move |s| {
                     s.begin(&name);
                 });
-                div().child(button(&self.env.say.say(&p.label), weight, &format!("cmd-{}", p.name), go))
+                div().child(button(
+                    &self.env.say.say(&p.label),
+                    weight,
+                    &format!("cmd-{}", p.name),
+                    go,
+                ))
             })
             .collect()
     }
@@ -115,7 +134,12 @@ impl AdminSurface {
     fn page(&self, width: f32, height: f32) -> Div {
         let (look, say) = (&self.env.look, &*self.env.say);
         let s = look.style;
-        if let Some(about) = self.about.lock().unwrap_or_else(PoisonError::into_inner).clone() {
+        if let Some(about) = self
+            .about
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .clone()
+        {
             return self.about_page(&about);
         }
         let screen = lock(&self.env.session).screen().clone();
@@ -123,10 +147,28 @@ impl AdminSurface {
             Screen::List => self.list_screen(width, height),
             Screen::Detail(_) => self.detail_screen(),
             Screen::Command { name, .. } => {
-                let title = lock(&self.env.session).command(name).map_or(String::new(), |p| say.say(&p.label));
-                let save = button(&say.say("action.save"), Weight::Primary, "save", self.act(|s| { s.submit(); }));
-                let cancel = button(&say.say("action.cancel"), Weight::Plain, "cancel", self.act(Session::cancel));
-                (title, vec![div().child(save), div().child(cancel)], form_body(&self.env, &self.slots))
+                let title = lock(&self.env.session)
+                    .command(name)
+                    .map_or(String::new(), |p| say.say(&p.label));
+                let save = button(
+                    &say.say("action.save"),
+                    Weight::Primary,
+                    "save",
+                    self.act(|s| {
+                        s.submit();
+                    }),
+                );
+                let cancel = button(
+                    &say.say("action.cancel"),
+                    Weight::Plain,
+                    "cancel",
+                    self.act(Session::cancel),
+                );
+                (
+                    title,
+                    vec![div().child(save), div().child(cancel)],
+                    form_body(&self.env, &self.slots),
+                )
             }
             Screen::Confirm { name, .. } => self.confirm_screen(name),
             Screen::Result(name) => self.result_screen(name),
@@ -142,7 +184,8 @@ impl AdminSurface {
             .class("fs-admin-page")
             .flex_col()
             .gap_px(s.spacing.m)
-            .padding_x_px(s.spacing.xl).padding_y_px(s.spacing.xl)
+            .padding_x_px(s.spacing.xl)
+            .padding_y_px(s.spacing.xl)
             .w(width)
             .h(height)
             .bg(Look::color(look.palette().ground))
@@ -151,123 +194,22 @@ impl AdminSurface {
             .child(body)
     }
 
-    fn list_screen(&self, width: f32, height: f32) -> (String, Vec<Div>, Div) {
-        let (look, say) = (&self.env.look, &*self.env.say);
-        let s = look.style;
-        let session = lock(&self.env.session);
-        let title = say.say(&session.description().label);
-        let actions = self.command_buttons(&session.commands(Placement::OnList));
-        let (open, sort) = (self.opener(), self.sorter());
-        let inner_w = (width - 2.0 * s.spacing.xl).max(0.0);
-        let inner_h = (height - 2.0 * s.spacing.xl - s.heights.control - 3.0 * s.spacing.m).max(0.0);
-        let body = div().flex_col().gap_px(s.spacing.s).w(inner_w).child(list_body(
-            look,
-            say,
-            session.list(),
-            &self.position,
-            (inner_w, inner_h),
-            &ListEvents { open, sort },
-        ));
-        (title, actions, body)
-    }
-
-    fn opener(&self) -> Arc<dyn Fn(&str) + Send + Sync> {
-        let (session, live) = (Arc::clone(&self.env.session), self.live);
-        Arc::new(move |id| {
-            lock(&session).open_detail(id);
-            live.refresh_now();
-        })
-    }
-
-    fn sorter(&self) -> Arc<dyn Fn(usize) + Send + Sync> {
-        let (session, live) = (Arc::clone(&self.env.session), self.live);
-        Arc::new(move |c| {
-            lock(&session).list_mut().cycle_sort(c);
-            live.refresh_now();
-        })
-    }
-
-    fn detail_screen(&self) -> (String, Vec<Div>, Div) {
-        let (look, say) = (&self.env.look, &*self.env.say);
-        let session = lock(&self.env.session);
-        let title = session
-            .detail()
-            .first()
-            .and_then(|e| e.values.first().cloned())
-            .unwrap_or_else(|| say.say(&session.description().label));
-        let mut actions = self.command_buttons(&session.commands(Placement::OnRecord));
-        actions.push(div().child(button(&say.say("action.back"), Weight::Plain, "back", self.act(Session::open_list))));
-        (title, actions, fields_panel(look, say, &session.detail()))
-    }
-
-    fn confirm_screen(&self, name: &str) -> (String, Vec<Div>, Div) {
-        let (look, say) = (&self.env.look, &*self.env.say);
-        let s = look.style;
-        let session = lock(&self.env.session);
-        let label = session.command(name).map_or(String::new(), |p| say.say(&p.label));
-        let yes = button(&label, Weight::Danger, "confirm", self.act(|s| { s.submit(); }));
-        let no = button(&say.say("action.cancel"), Weight::Plain, "cancel", self.act(Session::cancel));
-        let body = panel(look)
-            .child(look.text(say.say("confirm.sure"), s.text.title, look.palette().text))
-            .child(div().flex_row().gap_px(s.spacing.s).child(yes).child(no));
-        (label, Vec::new(), body)
-    }
-
-    fn result_screen(&self, name: &str) -> (String, Vec<Div>, Div) {
-        let (look, say) = (&self.env.look, &*self.env.say);
-        let session = lock(&self.env.session);
-        let (title, fields) = session.command(name).map_or((String::new(), Vec::new()), |p| (say.say(&p.label), p.result.clone()));
-        let values = session.result().map(|o| o.values.clone()).unwrap_or_default();
-        let mut t = fs_types::TypeDescription::new("Result", "result", "result", "result");
-        t.fields = fields;
-        let record = crate::Record { id: String::new(), values };
-        let back = button(&say.say("action.back"), Weight::Plain, "back", self.act(Session::cancel));
-        (title, vec![div().child(back)], fields_panel(look, say, &entries(&t, &record)))
-    }
-
-    fn about_page(&self, about: &AboutInfo) -> Div {
-        let (look, say) = (&self.env.look, &*self.env.say);
-        let (s, pal) = (look.style, look.palette());
-        let me = self.clone_handles();
-        let back = button(&say.say("action.back"), Weight::Plain, "about-back", Arc::new(move || me.set_about(None)));
-        let mut body = panel(look);
-        for (key, value) in [
-            ("about.version", &about.version),
-            ("about.origin", &about.origin),
-            ("about.licence", &about.licence),
-            ("about.repository", &about.repository),
-        ] {
-            body = body.child(
-                div()
-                    .flex_row()
-                    .gap_px(s.spacing.m)
-                    .child(div().w(s.text.body * 12.0).flex_shrink_0().child(look.text(say.say(key), s.text.body, pal.text_weak)))
-                    .child(look.text(value.clone(), s.text.body, pal.text)),
-            );
+    pub(super) fn clone_handles(&self) -> Handles {
+        Handles {
+            about: Arc::clone(&self.about),
+            live: self.live,
         }
-        div()
-            .flex_col()
-            .gap_px(s.spacing.m)
-            .padding_x_px(s.spacing.xl).padding_y_px(s.spacing.xl)
-            .w_full()
-            .bg(Look::color(pal.ground))
-            .child(header(look, &about.name, vec![div().child(back)]))
-            .child(body)
-    }
-
-    fn clone_handles(&self) -> Handles {
-        Handles { about: Arc::clone(&self.about), live: self.live }
     }
 }
 
 /// The parts of the surface a button needs to close the About page.
-struct Handles {
+pub(super) struct Handles {
     about: Arc<Mutex<Option<AboutInfo>>>,
     live: Live,
 }
 
 impl Handles {
-    fn set_about(&self, about: Option<AboutInfo>) {
+    pub(super) fn set_about(&self, about: Option<AboutInfo>) {
         *self.about.lock().unwrap_or_else(PoisonError::into_inner) = about;
         self.live.refresh_now();
     }

@@ -64,12 +64,11 @@ pub fn header(look: &Look, title: &str, actions: Vec<Div>) -> Div {
         .items_center()
         .gap_px(s.spacing.m)
         .w_full()
-        .child(
-            div()
-                .flex_grow_value(1.0)
-                .min_w(0.0)
-                .child(look.text(title, s.text.headline, pal.text)),
-        );
+        .child(div().flex_grow_value(1.0).min_w(0.0).child(look.text(
+            title,
+            s.text.headline,
+            pal.text,
+        )));
     for a in actions {
         row = row.child(a);
     }
@@ -105,14 +104,18 @@ pub fn message_bar(
             .bg(Look::color(pal.panel))
             .w_full()
             .child(look.icon(glyph, None, color))
-            .child(
-                div()
-                    .flex_grow_value(1.0)
-                    .min_w(0.0)
-                    .child(look.text(text, s.text.body, pal.text)),
-            );
+            .child(div().flex_grow_value(1.0).min_w(0.0).child(look.text(
+                text,
+                s.text.body,
+                pal.text,
+            )));
         if m.kind == MessageKind::Error {
-            row = row.child(cn_button(&say.say("action.close"), ButtonVariant::Ghost, &format!("dismiss-{id}"), move || off(id)));
+            row = row.child(cn_button(
+                &say.say("action.close"),
+                ButtonVariant::Ghost,
+                &format!("dismiss-{id}"),
+                move || off(id),
+            ));
         }
         column = column.child(row);
     }
@@ -126,7 +129,8 @@ pub fn panel(look: &Look) -> Div {
         .class("fs-admin-panel")
         .flex_col()
         .gap_px(s.spacing.s)
-        .padding_x_px(s.spacing.m).padding_y_px(s.spacing.m)
+        .padding_x_px(s.spacing.m)
+        .padding_y_px(s.spacing.m)
         .rounded(s.radii.card)
         .border(1.0, Look::color(pal.border))
         .bg(Look::color(pal.panel))

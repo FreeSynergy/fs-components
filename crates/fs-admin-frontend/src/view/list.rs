@@ -8,8 +8,8 @@ use std::sync::Arc;
 
 use blinc_layout::div::{Div, div};
 use fs_components_fields::{Look, Say};
-use fs_components_widgets::list_view::{Column, ColumnWidth, ListPosition, ListView, Row, VecRows};
 use fs_components_widgets::Element;
+use fs_components_widgets::list_view::{Column, ColumnWidth, ListPosition, ListView, Row, VecRows};
 
 use super::kinds::kind_of;
 use crate::list::{Direction, ListModel};
@@ -36,7 +36,11 @@ pub fn rows(model: &ListModel) -> Vec<Row> {
                         let f = k.field();
                         f.cell(&f.split(&text))
                     });
-                    if more > 0 { format!("{shown}  +{more}") } else { shown }
+                    if more > 0 {
+                        format!("{shown}  +{more}")
+                    } else {
+                        shown
+                    }
                 })
                 .collect();
             Row::new(record.id.clone(), cells)
@@ -66,11 +70,18 @@ fn head(look: &Look, say: &dyn Say, model: &ListModel, widths: &[f32], events: &
         if let Some((c, dir)) = model.sort()
             && c == i
         {
-            let word = if dir == Direction::Ascending { "sort.ascending" } else { "sort.descending" };
+            let word = if dir == Direction::Ascending {
+                "sort.ascending"
+            } else {
+                "sort.descending"
+            };
             cell = cell.child(look.text(say.say(word), s.text.caption, pal.accent));
         }
         let sort = Arc::clone(&events.sort);
-        row = row.child(cell.id(&format!("head-{}", column.field.name)).on_click(move |_| sort(i)));
+        row = row.child(
+            cell.id(format!("head-{}", column.field.name))
+                .on_click(move |_| sort(i)),
+        );
     }
     row
 }
