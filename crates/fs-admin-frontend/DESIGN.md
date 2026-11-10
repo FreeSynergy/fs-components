@@ -26,8 +26,8 @@ The generated Admin frontend of ADR 0066: from the type description of a program
 
 ## Provisional decisions (reported to the strategy)
 
-* **The list is the command kind `find`.** The description names commands but not how all records are read; `Backend::list(query)` takes the typed input of `find` (empty = all).
-* **A command works on one record** when its input has a `reference` to the type itself (the field is filled from the record of the detail screen, not shown). Everything else works on the list; a `change` or `delete` without such a reference is not offered. `delete` asks once more. These rules should be written into `types.capnp` comments by Thread T if the strategy agrees.
+* **The list is the command `find`** (`CommandDescription::standard_find`, input `term`, empty = everything, paging with the contract's cursor): `Backend::list(query)` takes the typed input of `find`. Decided by Thread T / the strategy (fs-interfaces v0.0.11, `types.capnp`).
+* **A command works on one record** when it is `change` or `delete` or its input holds a reference to the type itself (`TypeDescription::record_commands`). The id of the record travels in the call (`Backend::change(record, edit)`, `Backend::run(name, Some(record), input)`), not in the input; a reference to the type itself in the input is still filled from the shown record.
 * **Messages carry codes**, never sentences (ADR 0057): `message.<code>`; codes now: `done`, `rejected`, `not-found`, `unavailable`, `unsaved`.
 * Columns: fields that fit one line (not multi-line text, not image), at most six, required ones first when there are more.
 
@@ -35,7 +35,7 @@ The generated Admin frontend of ADR 0066: from the type description of a program
 
 | Part | State |
 |---|---|
-| Model: backend trait, form, list, detail, command plans, messages, session | done, tests against the traits over a `Backend` in memory (`model`, `session`, `review_model`, `review_session`, `fourth_session`, `fifth_session`, `sixth_session`, `third_session`) |
+| Model: backend trait, form, list, detail, command plans, messages, session | done, tests against the traits over a `Backend` in memory (`model`, `session`, `review_model`, `review_session`, `fourth_session`, `fifth_session`, `sixth_session`, `seventh_session`, `third_session`) |
 | Views (`view/`): list with sortable head, detail, form (typed components of `fs-components-fields`, plain input for the rest), confirm, result, About, as a `Surface` of the shell | done, tests drawn offscreen and driven with the window's router (`view`, `review_view`, `third_view`, `fifth_view` (also the locked controls), `window`): click, type, add a slot, save, refuse, quit, redraw |
 | Messages draw the page again on another thread (a transition holds the session lock; found by the click test as a deadlock); bursts are folded, a success runs out by a timer | done |
 
@@ -43,21 +43,20 @@ The generated Admin frontend of ADR 0066: from the type description of a program
 
 * The `Backend` is called **synchronously, with the session locked** (`act` holds the lock while `Backend::run` runs). A program that answers slowly freezes the window for that time; an asynchronous backend is a later change of the trait, not of the screens.
 * Messages tell their listeners **outside** their own lock (a listener may ask or subscribe). The page reads the messages **after** letting go of the session. The surface draws on a worker thread of its own (one per surface; it ends when the session is dropped, which in a running window is when the window closes), because messages change while the session is locked and a draw reads the session.
-* `change` and `delete` without a reference to the type itself are **not offered** (`unoffered_commands` lists them), because they would run without a record id.
+* `change` is an `Edit` (fs-interfaces v0.0.11): the form is the type's own fields (a `change` command has no input fields), `FormModel::submit_changes` builds the `Edit` of only the changed fields (typed, with the basic type; a cleared field has no values), `Edit::check` validates it, `Backend::change` carries it. No JSON, no multi-line text.
 * `submit` returns the changed fields and the required ones; a field emptied by the person is an empty list (cleared).
-* **The rule for `change` is part of the contract** (`Backend::run`, to be written into `types.capnp` by Thread T if the strategy agrees): a field missing from the input is unchanged, an empty list clears it, values replace; required fields are always sent. A program that reads the input as a whole record would delete the optional fields that were not sent. A refusal counts the values as they were sent; the form maps it back to the slots.
+* **The rule for `change`** is the contract's (v0.0.11): a field missing from the edit is unchanged, one with no values is cleared, one with values is replaced. A refusal counts the values as they were sent; the form maps it back to the slots.
 * A command on a record works on the record of the shown detail screen, and only if it is loaded; only an unreachable program (`Unavailable`) makes the records old (`is_stale`; a refusal or a missing thing does not, and a stored search that is refused later is dropped with a `rejected` message). While old: a record screen says "not loaded", offers no record command, the list carries a `list.stale` mark, and every screen that shows records (list, record) reads again when entered; a record that is gone after a successful reading leads to the list with `not-found`. A record screen can also say "not loaded" when `is_stale()` is false: the record was never in the list (a created record whose reading failed and was then repaired by a narrower search).
-* **Locked controls ("coming soon", rule for R of 2026-11-10):** every described command has its control. One the core cannot carry out yet (`Backend::supported` = false, which is also the default of a program that does not answer) is shown locked with `command.soon` and cannot be started (`Session::begin` refuses). The core is asked when the records are read, so the control unlocks the next time they are read, with no change in the frontend. **Provisional:** `supported` is a method of `Backend` until Thread T puts `supported` into the description (`types.capnp`); then a command is supported only if the description and the backend both say so.
+* **Locked controls ("coming soon", rule for R of 2026-11-10):** every described command has its control. One the core cannot carry out yet (`Backend::supported` = false, which is also the default of a program that does not answer) is shown locked with `command.soon` and cannot be started (`Session::begin` refuses). The core is asked when the records are read, so the control unlocks the next time they are read, with no change in the frontend. The control is free only if the description (`CommandDescription::supported`, v0.0.11; unset reads as false) **and** the program (`Backend::supported`, default false) both say so.
 * The same error is told once per occurrence (`fail` closes the earlier one with that code first); while the program stays down every new try tells it again, which is wanted (each try failed).
 * The slot number in a finding is the number as text in the sentence of `finding.slot`; it is not formatted for the reader's locale (noted, not changed).
 * Unsaved text: a search form does not count; values are compared cleaned. Quitting with text shows the surface that has it (the visible one first, then the others in order), closes About and says it once.
-* Commands that are not offered are named on the About page.
 * `open_external` (Help) returns nothing: a failure to open the address cannot be shown.
 * `Session`, `Messages` and `FormModel` have no trait of their own (coding.md section 1): they are values the frontend owns; the boundary to the outside is `Backend`. Reported to the strategy.
 
 ## Translation keys the frontend asks for (through `Say`)
 
-`action.{add,back,cancel,close,remove,save}`, `menu.{program,view,help,quit,about}`, `message.<code>` (`done`, `rejected`, `not-found`, `unavailable`, `unsaved`), `problem.<code>`, `hint.<label>`, `sort.{ascending,descending}`, `finding.slot` (a sentence with the named placeholder `{n}`, the number of the value), `list.{empty,separator,stale}`, `detail.not-loaded`, `confirm.sure`, `command.soon`, `value.none`, `about.{version,origin,licence,repository,unoffered}`, and the keys of the description (labels, `<label>.<choice>`).
+`action.{add,back,cancel,close,remove,save}`, `menu.{program,view,help,quit,about}`, `message.<code>` (`done`, `rejected`, `not-found`, `unavailable`, `unsaved`), `problem.<code>` (also `problem.{wrong-type,nested-path,duplicate-path}`), `hint.<label>`, `sort.{ascending,descending}`, `finding.slot` (a sentence with the named placeholder `{n}`, the number of the value), `list.{empty,separator,stale}`, `detail.not-loaded`, `confirm.sure`, `command.soon`, `value.none`, `about.{version,origin,licence,repository}`, and the keys of the description (labels, `<label>.<choice>`).
 
 ## Unsupported (named, not faked)
 

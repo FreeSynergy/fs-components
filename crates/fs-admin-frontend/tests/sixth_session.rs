@@ -8,7 +8,7 @@
 mod common;
 
 use common::{Memory, clock, contact, record};
-use fs_admin_frontend::{Placement, Screen, Session};
+use fs_admin_frontend::{Backend, Placement, Screen, Session};
 
 fn open() -> (Session, std::sync::Arc<Memory>) {
     let mem = Memory::new(vec![record("urn:1", &[("name", &["Ada"])])]);
@@ -64,9 +64,18 @@ impl fs_admin_frontend::Backend for Silent {
         Ok(vec![record("urn:1", &[("name", &["Ada"])])])
     }
 
+    fn change(
+        &self,
+        _record: &str,
+        _edit: &fs_types::Edit,
+    ) -> Result<fs_admin_frontend::Outcome, fs_admin_frontend::BackendError> {
+        Err(fs_admin_frontend::BackendError::NotFound)
+    }
+
     fn run(
         &self,
         _name: &str,
+        _record: Option<&str>,
         _input: &fs_admin_frontend::Values,
     ) -> Result<fs_admin_frontend::Outcome, fs_admin_frontend::BackendError> {
         Err(fs_admin_frontend::BackendError::NotFound)
@@ -86,4 +95,35 @@ fn a_program_that_does_not_answer_unlocks_nothing() {
     assert!(!s.begin("create") && !s.begin("find"));
     assert!(s.open_detail("urn:1"));
     assert!(!s.begin("change") && !s.begin("delete"));
+}
+
+fn open_with(d: fs_types::TypeDescription) -> (Session, std::sync::Arc<Memory>) {
+    let mem = Memory::new(vec![record("urn:1", &[("name", &["Ada"])])]);
+    (Session::new(d, mem.clone(), clock()), mem)
+}
+
+#[test]
+fn the_control_is_free_only_if_the_description_and_the_program_both_say_so() {
+    // description says "not yet" for delete, the program would do it
+    let mut d = contact();
+    for c in &mut d.commands {
+        if c.name == "delete" {
+            c.supported = false;
+        }
+    }
+    let (mut s, mem) = open_with(d);
+    assert!(mem.supported("delete"), "the program says yes");
+    assert!(!s.is_supported("delete"), "the description says no");
+    assert!(s.open_detail("urn:1"));
+    assert!(!s.begin("delete"));
+    // description yes, program no
+    let (s2, mem2) = open_with(contact());
+    mem2.unsupported.lock().unwrap().insert("change".into());
+    let mut s2 = s2;
+    s2.reload();
+    assert!(!s2.is_supported("change"));
+    // both yes
+    mem2.unsupported.lock().unwrap().clear();
+    s2.reload();
+    assert!(s2.is_supported("change"));
 }

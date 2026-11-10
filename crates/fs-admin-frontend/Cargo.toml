@@ -7,7 +7,7 @@ license.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-fs-types = { git = "https://github.com/FreeSynergy/fs-interfaces", tag = "v0.0.2" }
+fs-types = { git = "https://github.com/FreeSynergy/fs-interfaces", tag = "v0.0.11" }
 blinc_core = "0.6"
 blinc_layout = "0.6"
 blinc_cn = "0.6"

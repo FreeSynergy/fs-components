@@ -238,6 +238,9 @@ impl Session {
         let Some(plan) = self.command(&name).cloned() else {
             return false;
         };
+        if plan.kind == CommandKind::Change {
+            return self.submit_change(&plan, record);
+        }
         let mut input = match self.form.as_mut().map(FormModel::submit) {
             Some(Ok(v)) => v,
             Some(Err(_)) => return false,
@@ -249,7 +252,7 @@ impl Session {
         if plan.kind == CommandKind::Find {
             return self.search(input);
         }
-        match self.backend.run(&name, &input) {
+        match self.backend.run(&name, record.as_deref(), &input) {
             Ok(outcome) => {
                 self.done(&plan, record, outcome);
                 true

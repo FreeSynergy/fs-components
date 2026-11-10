@@ -42,8 +42,6 @@ pub struct AdminSurface {
     pub(super) slots: Arc<Mutex<FormSlots>>,
     pub(super) position: ListPosition,
     pub(super) about: Arc<Mutex<Option<AboutInfo>>>,
-    /// Commands of the description that are not offered, with their label keys (shown in About: not silent).
-    pub(super) unoffered: Arc<Vec<(String, String)>>,
 }
 
 pub(super) fn lock(s: &Mutex<Session>) -> std::sync::MutexGuard<'_, Session> {
@@ -63,17 +61,6 @@ impl AdminSurface {
             move || live.refresh_now(),
             std::time::Duration::from_millis(crate::messages::SUCCESS_MS + 100),
         ));
-        let unoffered = crate::unoffered_commands(session.description())
-            .into_iter()
-            .map(|n| {
-                let label = session
-                    .description()
-                    .find_command(&n)
-                    .map(|c| c.label.clone())
-                    .unwrap_or_default();
-                (n, label)
-            })
-            .collect();
         Self {
             env: Arc::new(FormEnv {
                 session: Arc::new(Mutex::new(session)),
@@ -87,7 +74,6 @@ impl AdminSurface {
             slots: Arc::new(Mutex::new(FormSlots::default())),
             position: ListPosition::default(),
             about: Arc::new(Mutex::new(None)),
-            unoffered: Arc::new(unoffered),
         }
     }
 
@@ -265,7 +251,6 @@ impl Surface for AdminSurface {
             slots: Arc::clone(&self.slots),
             position: self.position.clone(),
             about: Arc::clone(&self.about),
-            unoffered: Arc::clone(&self.unoffered),
         });
         Box::new(self.live.region("page", move || this.page(width, height)))
     }

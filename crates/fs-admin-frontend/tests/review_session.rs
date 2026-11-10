@@ -86,7 +86,7 @@ fn review_10_a_refused_search_marks_the_search_form() {
     let (mut s, mem) = open();
     *mem.reject_search.lock().unwrap() = true;
     s.begin("find");
-    type_in(&mut s, "text", 0, "x");
+    type_in(&mut s, "term", 0, "x");
     assert!(!s.submit());
     assert!(matches!(s.screen(), Screen::Command { .. }));
     assert_eq!(
@@ -100,7 +100,7 @@ fn review_10_a_refused_search_marks_the_search_form() {
 fn review_13_back_from_a_record_keeps_the_search() {
     let (mut s, _) = open();
     s.begin("find");
-    type_in(&mut s, "text", 0, "babbage");
+    type_in(&mut s, "term", 0, "babbage");
     assert!(s.submit());
     assert!(s.open_detail("urn:2"));
     s.back_to_list();
@@ -178,7 +178,7 @@ fn review_a_a_command_on_a_record_uses_the_record_of_the_detail_screen() {
 fn review_b_a_failed_second_reload_is_reported_on_the_screen_that_stays() {
     let (mut s, mem) = open();
     s.begin("find");
-    type_in(&mut s, "text", 0, "babbage");
+    type_in(&mut s, "term", 0, "babbage");
     assert!(s.submit());
     let calls = mem.list_calls.load(std::sync::atomic::Ordering::SeqCst);
     // create: the first reload (narrowed list, the new record is not in it) works, the second (all) is lost
@@ -249,6 +249,6 @@ fn review_h_only_a_real_difference_counts_as_unsaved_and_a_search_form_never_doe
     assert!(s.has_unsaved_form());
     s.cancel();
     s.begin("find");
-    type_in(&mut s, "text", 0, "ada");
+    type_in(&mut s, "term", 0, "ada");
     assert!(!s.has_unsaved_form(), "a search is not work to lose");
 }

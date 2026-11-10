@@ -20,6 +20,9 @@ pub(super) fn problem_key(p: RecordProblem) -> String {
     match p {
         RecordProblem::UnknownField => "problem.unknown-field".to_owned(),
         RecordProblem::Missing => "problem.missing".to_owned(),
+        RecordProblem::WrongType => "problem.wrong-type".to_owned(),
+        RecordProblem::NestedPath => "problem.nested-path".to_owned(),
+        RecordProblem::DuplicatePath => "problem.duplicate-path".to_owned(),
         RecordProblem::NotMultiple => "problem.not-multiple".to_owned(),
         RecordProblem::Value(v) => format!("problem.{}", v.code()),
     }

@@ -33,7 +33,7 @@ fn type_in(s: &mut Session, field: &str, i: usize, text: &str) {
 fn third_1_a_failed_wider_reload_keeps_the_search_that_matches_the_list() {
     let (mut s, mem) = open();
     s.begin("find");
-    type_in(&mut s, "text", 0, "babbage");
+    type_in(&mut s, "term", 0, "babbage");
     assert!(s.submit());
     let calls = mem.list_calls.load(std::sync::atomic::Ordering::SeqCst);
     *mem.fail_list_call.lock().unwrap() = Some(calls + 2);

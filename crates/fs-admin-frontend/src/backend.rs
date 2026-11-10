@@ -9,7 +9,7 @@
 
 use std::collections::BTreeMap;
 
-use fs_types::RecordIssue;
+use fs_types::{Edit, RecordIssue};
 
 /// Typed values by field name, several per field when the field is `multiple`. Texts are what a person typed or the
 /// canonical text the program stores.
@@ -54,25 +54,33 @@ pub trait Backend: Send + Sync {
 
     /// Whether the core can carry out the command `name` now. A command that is described but not yet built answers
     /// `false`: the frontend shows its control locked with "coming soon" and unlocks it when this turns `true`, with no
-    /// change in the frontend. Asked when the records are read. **The default is `false`**: a program that does not
-    /// answer has not said it can do anything, so nothing is unlocked by silence.
-    ///
-    /// Provisional (reported to the strategy and Thread T): the description is to carry `supported` per command
-    /// (`types.capnp`); when it does, a command is supported only if the description and this both say so.
+    /// change in the frontend. The control is free only if the description (`CommandDescription::supported`) and this
+    /// both say so. Asked when the records are read. **The default is `false`**: a program that does not answer has not
+    /// said it can do anything, so nothing is unlocked by silence.
     fn supported(&self, command: &str) -> bool {
         let _ = command;
         false
     }
 
-    /// Carry out the command `name` of the description with `input` (already checked against the description).
-    ///
-    /// **The rule for changing (part of the contract, reported to the strategy):** a command of kind `change` is
-    /// *partial*. A field that is missing from `input` is unchanged; a field with an empty list is cleared; a field
-    /// with values replaces the old values. Required fields are always sent. A program that reads `input` as a whole
-    /// record would delete the optional fields that were not sent. A finding of `Rejected` counts the values of a
-    /// field as they were sent (empty slots are not sent); the form maps it back to its slots.
+    /// The command `change`: apply an [`Edit`] (typed, field by field, no JSON) to the record `record`. Rule (written
+    /// in `types.capnp`): a field that is not in the edit is unchanged, one with no values is cleared, one with values
+    /// is replaced. The edit has been checked against the description (`Edit::check`). A finding of `Rejected` counts
+    /// the values of a field as they were sent (empty slots are not sent); the form maps it back to its slots.
     ///
     /// # Errors
     /// [`BackendError::Rejected`] with the findings, [`BackendError::NotFound`], [`BackendError::Unavailable`].
-    fn run(&self, name: &str, input: &Values) -> Result<Outcome, BackendError>;
+    fn change(&self, record: &str, edit: &Edit) -> Result<Outcome, BackendError>;
+
+    /// Carry out the command `name` of the description with `input` (already checked against the description) on
+    /// `record`, if it is a command of a record (`delete`, or one that takes the record as input). The id travels
+    /// here, not in `input`.
+    ///
+    /// # Errors
+    /// [`BackendError::Rejected`] with the findings, [`BackendError::NotFound`], [`BackendError::Unavailable`].
+    fn run(
+        &self,
+        name: &str,
+        record: Option<&str>,
+        input: &Values,
+    ) -> Result<Outcome, BackendError>;
 }

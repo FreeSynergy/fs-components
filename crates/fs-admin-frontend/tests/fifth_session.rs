@@ -91,7 +91,7 @@ fn fifth_1_cancel_back_to_a_record_that_is_gone_does_the_same() {
 fn fifth_3_a_stored_search_that_is_refused_later_is_dropped_and_does_not_make_the_records_old() {
     let (mut s, mem) = open();
     s.begin("find");
-    s.form_mut().unwrap().set("text", 0, "babbage");
+    s.form_mut().unwrap().set("term", 0, "babbage");
     assert!(s.submit());
     assert!(s.search_active());
     *mem.reject_search.lock().unwrap() = true;

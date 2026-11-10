@@ -9,59 +9,62 @@ mod common;
 use std::sync::Arc;
 
 use common::{clock, contact, values};
-use fs_admin_frontend::{FormModel, MessageKind, Messages, plan_commands};
-use fs_types::{CommandKind, RecordProblem, TypeProblem};
+use fs_admin_frontend::{FormModel, MessageKind, Messages, Placement, plan_commands};
+use fs_types::{RecordProblem, TypeProblem};
 
 // ---- findings of the independent review (2026-11-10) ----
 
 #[test]
-fn review_4_a_change_or_delete_without_a_reference_to_the_record_is_not_offered() {
-    let d = contact().command(fs_types::CommandDescription::new(
-        "rename",
-        CommandKind::Change,
-        "command.rename",
-    ));
-    let d = d.command(fs_types::CommandDescription::new(
-        "drop",
-        CommandKind::Delete,
-        "command.drop",
-    ));
-    let names: Vec<String> = plan_commands(&d).into_iter().map(|p| p.name).collect();
+fn review_4_change_and_delete_need_no_reference_the_id_travels_in_the_call() {
+    let plans = plan_commands(&contact());
+    let by = |n: &str| plans.iter().find(|p| p.name == n).unwrap();
+    assert_eq!(by("change").placement, Placement::OnRecord);
+    assert_eq!(by("delete").placement, Placement::OnRecord);
+    assert!(by("change").bound.is_none() && by("delete").bound.is_none());
     assert!(
-        !names.contains(&"rename".to_owned()) && !names.contains(&"drop".to_owned()),
-        "{names:?}"
+        by("delete").form.is_empty(),
+        "delete asks, it types nothing"
     );
-    let hidden = fs_admin_frontend::unoffered_commands(&d);
+    let form: Vec<&str> = by("change").form.iter().map(|f| f.name.as_str()).collect();
     assert_eq!(
-        hidden,
-        ["rename", "drop"],
-        "and the frontend says which, it is not silent"
+        form,
+        ["name", "emails", "phone", "note"],
+        "change edits the fields of the type"
     );
 }
 
 #[test]
-fn review_6_submit_returns_only_what_changed_and_a_cleared_field_as_empty() {
-    let fields = contact().find_command("change").unwrap().input.clone();
-    let initial = values(&[
-        ("id", &["urn:1"]),
-        ("name", &["Ada"]),
-        ("emails", &["a@b.test", "c@d.test"]),
-    ]);
-    let fields: Vec<_> = fields.into_iter().filter(|f| f.name != "id").collect();
+fn review_6_a_change_is_an_edit_of_only_what_changed_and_a_cleared_field_has_no_values() {
+    let fields = contact().fields;
+    let initial = values(&[("name", &["Ada"]), ("emails", &["a@b.test", "c@d.test"])]);
     let mut form = FormModel::new(&fields, &initial);
-    let first = form.submit().unwrap();
-    assert_eq!(
-        first.keys().collect::<Vec<_>>(),
-        ["name"],
-        "nothing changed: only the required field goes"
+    assert!(
+        form.submit_changes().unwrap().fields.is_empty(),
+        "nothing changed, nothing in the edit"
     );
     form.set("name", 0, "Ada King");
     form.set("emails", 0, "");
     form.remove_value("emails", 0);
     form.set("emails", 0, "");
+    let edit = form.submit_changes().unwrap();
+    let get = |n: &str| edit.fields.iter().find(|f| f.path == [n]).unwrap();
+    assert_eq!(get("name").values, ["Ada King"]);
+    assert!(get("emails").values.is_empty(), "cleared");
+    assert_eq!(edit.fields.len(), 2, "phone and note were not touched");
+    assert_eq!(
+        get("name").basic,
+        fs_types::BasicType::Text,
+        "typed, no JSON"
+    );
+}
+
+#[test]
+fn review_6_a_create_form_still_sends_values_of_what_was_typed() {
+    let fields = contact().find_command("create").unwrap().input.clone();
+    let mut form = FormModel::new(&fields, &values(&[]));
+    form.set("name", 0, "Ada");
     let sent = form.submit().unwrap();
-    assert_eq!(sent["name"], ["Ada King"]);
-    assert_eq!(sent["emails"], Vec::<String>::new(), "cleared");
+    assert_eq!(sent["name"], ["Ada"]);
 }
 
 #[test]

@@ -123,9 +123,7 @@ fn plans_put_record_commands_with_the_record() {
     assert_eq!(by("find").placement, Placement::OnList);
     assert_eq!(by("domains").placement, Placement::OnList);
     assert_eq!(by("change").placement, Placement::OnRecord);
-    assert_eq!(by("change").bound.as_deref(), Some("id"));
-    let form: Vec<&str> = by("change").form.iter().map(|f| f.name.as_str()).collect();
-    assert_eq!(form, ["name", "emails"], "the bound id is not typed");
+    assert_eq!(by("change").bound, None, "the id travels in the call");
     assert!(by("delete").confirm && by("delete").kind == CommandKind::Delete);
     assert!(!by("change").confirm);
 }
