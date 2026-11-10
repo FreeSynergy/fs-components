@@ -8,7 +8,7 @@ use std::sync::Arc;
 use blinc_layout::div::{Div, div};
 use fs_components_fields::Look;
 
-use super::chrome::{Weight, button, header, panel};
+use super::chrome::{Weight, bar_rows, button, header, panel};
 use super::detail::fields_panel;
 use super::list::{ListEvents, list_body};
 use super::surface::{AboutInfo, AdminSurface, lock};
@@ -25,8 +25,18 @@ impl AdminSurface {
         let actions = self.command_buttons(&session.commands(Placement::OnList), &session);
         let (open, sort) = (self.opener(), self.sorter());
         let inner_w = (width - 2.0 * s.spacing.xl).max(0.0);
+        // The bar of actions wraps, so the list gets what is left under the title and all rows of the bar.
+        let labels: Vec<String> = session
+            .commands(Placement::OnList)
+            .iter()
+            .map(|p| say.say(&p.label))
+            .collect();
+        #[allow(clippy::cast_precision_loss)]
+        let bar =
+            bar_rows(look, &labels, inner_w) as f32 * (s.heights.control.max(40.0) + s.spacing.s);
         let inner_h =
-            (height - 2.0 * s.spacing.xl - s.heights.control - 3.0 * s.spacing.m).max(0.0);
+            (height - 2.0 * s.spacing.xl - s.text.headline * 1.4 - bar - 3.0 * s.spacing.m)
+                .max(0.0);
         // The records are old while the last reading failed: the list says so as long as it is true, not only the
         // message (which goes when the person clicks it away).
         let stale = session.is_stale().then(|| {

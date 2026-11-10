@@ -36,7 +36,7 @@ The generated Admin frontend of ADR 0066: from the type description of a program
 | Part | State |
 |---|---|
 | Model: backend trait, form, list, detail, command plans, messages, session | done, tests against the traits over a `Backend` in memory (`model`, `session`, `review_model`, `review_session`, `fourth_session`, `fifth_session`, `sixth_session`, `seventh_session`, `third_session`) |
-| Views (`view/`): list with sortable head, detail, form (typed components of `fs-components-fields`, plain input for the rest), confirm, result, About, as a `Surface` of the shell | done, tests drawn offscreen and driven with the window's router (`view`, `review_view`, `third_view`, `fifth_view` (also the locked controls), `window`): click, type, add a slot, save, refuse, quit, redraw |
+| Views (`view/`): list with sortable head, detail, form (typed components of `fs-components-fields`, plain input for the rest), confirm, result, About, as a `Surface` of the shell | done, tests drawn offscreen and driven with the window's router (`view`, `review_view`, `third_view`, `fifth_view` (also the locked controls), `eighth_view` (the command bar wraps, the title is above it), `window`): click, type, add a slot, save, refuse, quit, redraw |
 | Messages draw the page again on another thread (a transition holds the session lock; found by the click test as a deadlock); bursts are folded, a success runs out by a timer | done |
 
 ## Locks and the backend (review 2026-11-10)

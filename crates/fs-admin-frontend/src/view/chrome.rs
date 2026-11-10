@@ -66,24 +66,54 @@ pub fn button(label: &str, weight: Weight, name: &str, on: Action) -> Box<dyn El
     cn_button(label, variant, name, move || on())
 }
 
-/// The title and the actions to the right of it.
+/// The title, and below it the actions (wrapping).
 pub fn header(look: &Look, title: &str, actions: Vec<Div>) -> Div {
     let (s, pal) = (look.style, look.palette());
-    let mut row = div()
-        .class("fs-admin-header")
+    // Two rows, so the title can never lie over a button: the title on its own line (clipped, never wider than the
+    // page), the actions below it in a row that wraps when they do not fit (the fs-tasks probe: a bar of many commands
+    // ran out of the window and the title overlapped the first button).
+    let mut bar = div()
+        .id("page-actions")
         .flex_row()
+        .flex_wrap()
         .items_center()
-        .gap_px(s.spacing.m)
-        .w_full()
-        .child(div().flex_grow_value(1.0).min_w(0.0).child(look.text(
-            title,
-            s.text.headline,
-            pal.text,
-        )));
+        .gap_px(s.spacing.s)
+        .w_full();
     for a in actions {
-        row = row.child(a);
+        bar = bar.child(a);
     }
-    row
+    div()
+        .class("fs-admin-header")
+        .flex_col()
+        .gap_px(s.spacing.s)
+        .w_full()
+        .min_w(0.0)
+        .child(
+            div()
+                .id("page-title")
+                .w_full()
+                .min_w(0.0)
+                .overflow_clip()
+                .child(look.text(title, s.text.headline, pal.text)),
+        )
+        .child(bar)
+}
+
+/// How many rows the wrapping bar of actions needs in `width` (an estimate from the label lengths: the real widths
+/// come from the buttons), so a page can leave room under it for the list.
+pub fn bar_rows(look: &Look, labels: &[String], width: f32) -> usize {
+    let s = look.style;
+    let (mut rows, mut used) = (1_usize, 0.0_f32);
+    for l in labels {
+        #[allow(clippy::cast_precision_loss)]
+        let w = l.chars().count() as f32 * s.text.body * 0.62 + 2.0 * s.spacing.m;
+        if used > 0.0 && used + w > width {
+            rows += 1;
+            used = 0.0;
+        }
+        used += w + s.spacing.s;
+    }
+    rows
 }
 
 /// The messages of the screen, errors marked by colour and the icon (not by colour alone).
