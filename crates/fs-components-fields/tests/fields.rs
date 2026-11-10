@@ -217,3 +217,33 @@ fn a_wrong_value_shows_its_sentence_only_after_a_change_and_suggestions_complete
     assert!(tree.get_absolute_bounds(chip).is_some());
     assert_eq!(f.parts(), ["", "ex"]);
 }
+
+#[test]
+fn a_key_costs_little_in_our_code_with_the_whole_form_on_screen() {
+    let _g = serial();
+    let look = Look::new(StyleId::Admin, false);
+    let say: Arc<dyn Say> = Arc::new(KeysAsText);
+    let fields: Vec<FieldInput> = Kind::ALL
+        .into_iter()
+        .map(|k| FieldInput::new(k, look, Arc::clone(&say)).name(k.field().key()))
+        .collect();
+    let mut page = blinc_layout::div::div().w(900.0).flex_col();
+    for f in &fields {
+        page = page.child(f.build());
+    }
+    let mut tree = layout(page, 900.0, 700.0);
+    let mut input = Input::new();
+    input.click(&mut tree, "email-local");
+    let start = std::time::Instant::now();
+    let keys = 40;
+    for _ in 0..keys {
+        tree.broadcast_text_input_event('a', false, false, false, false);
+        common::frame(&mut tree, 900.0, 700.0);
+    }
+    let per_key = start.elapsed().as_secs_f64() * 1000.0 / f64::from(keys);
+    println!(
+        "MEASURE one key with 5 fields (debug build): {per_key:.2} ms (handler, redraw of the hint area, layout)"
+    );
+    assert_eq!(fields[0].parts()[0].len(), 40);
+    assert!(per_key < 50.0, "{per_key} ms per key");
+}

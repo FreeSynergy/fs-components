@@ -49,6 +49,7 @@ impl Look {
             .size(size)
             .color(Self::color(color))
             .font_with_fallback(self.style.fonts[0], GenericFont::SansSerif)
+            .line_height(self.style.text.body_line / self.style.text.body)
             .no_wrap()
     }
 

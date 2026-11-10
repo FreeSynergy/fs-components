@@ -31,3 +31,6 @@ Kill a left-over nested KWin by its pid, not with `pkill -f` (that matches your 
 ## Known gaps
 No libei (`org.kde.KWin.EIS.RemoteDesktop`, crate `reis`), no keyboard layout other than US in `type` (for the AltGr/@ bug
 start KWin with `KWIN_XKB_DEFAULT_LAYOUT`/`XKB_DEFAULT_LAYOUT=de` and send raw key codes with `key`), no frame timing.
+
+## Added 2026-11-10 (Thread C)
+`inject repl` also takes `down CODE` and `up CODE` (evdev codes, to hold AltGr = 100 or Shift = 42 while another key goes). `run.sh` takes `LAYOUT=de` (sets `XKB_DEFAULT_LAYOUT` for the nested KWin). `scnD-keys.txt` is the key test on a German layout: with the example `cargo run -p fs-components-fields --example form` as `APP`, it types AltGr+Q, `+`, `#`, Shift+7 into the fields; Blinc gives `2 = 3 ?` (git-bug 809d1e72a4db0575b63bc93f9074433deb6fe4e897b2a003ef87b5eff33a6844 in the Blinc clone). The "known gap" about layouts above is closed.

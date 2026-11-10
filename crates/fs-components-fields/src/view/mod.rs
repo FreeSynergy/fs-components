@@ -9,6 +9,7 @@ mod input;
 mod look;
 mod say;
 mod suggestions;
+mod surface;
 
 pub use cell::cell;
 pub use compact::compact;

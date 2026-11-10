@@ -1,0 +1,23 @@
+# German layout: run with LAYOUT=de (keys are evdev codes; AltGr 100, Shift 42). Expected: @ + # / ; got 2 = 3 ?
+c "move 470 128" 0.5
+c "click 470 128" 1.5
+c "type ada" 1.5
+shot K1
+c "down 100" 0.2
+c "down 16" 0.2
+c "up 16" 0.2
+c "up 100" 1
+shot T2
+c "click 736 293" 1.5
+c "key 27" 0.5
+c "key 43" 0.5
+c "down 42" 0.2
+c "key 8" 0.2
+c "key 10" 0.2
+c "up 42" 0.5
+c "down 100" 0.2
+c "key 16" 0.2
+c "key 9" 0.2
+c "key 5" 0.2
+c "up 100" 1
+shot T3

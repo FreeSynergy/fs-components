@@ -90,6 +90,11 @@ fn run(args: &[String], fake: &OrgKdeKwinFakeInput, queue: &mut wayland_client::
                 fake.keyboard_key(k, 1); flush(queue, s);
                 fake.keyboard_key(k, 0); flush(queue, s);
             }
+            "down" | "up" => {
+                let k: u32 = it.next().unwrap().parse().unwrap();
+                fake.keyboard_key(k, u32::from(cmd == "down"));
+                flush(queue, s);
+            }
             "wait" => sleep(Duration::from_millis(it.next().unwrap().parse().unwrap())),
             other => panic!("unknown {other}"),
         }

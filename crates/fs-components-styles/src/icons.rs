@@ -136,10 +136,10 @@ impl IconSet {
             Join::Round => "round",
         };
         format!(
-            "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"{size}\" height=\"{size}\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"{}\" stroke-width=\"{}\" stroke-linecap=\"{cap}\" stroke-linejoin=\"{join}\"><path d=\"{}\"/></svg>",
+            "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"{size}\" height=\"{size}\" viewBox=\"0 0 24 24\"><path d=\"{}\" fill=\"none\" stroke=\"{}\" stroke-width=\"{}\" stroke-linecap=\"{cap}\" stroke-linejoin=\"{join}\"/></svg>",
+            glyph.path(),
             color.css(),
-            self.stroke,
-            glyph.path()
+            self.stroke
         )
     }
 }
