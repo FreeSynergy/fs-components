@@ -1,0 +1,23 @@
+[package]
+name = "fs-components-timeline"
+description = "FreeSynergy timeline component: horizontal time axis with bars, progress, milestones, dependency arrows, zoom levels, today line; plain data in, Blinc stays behind this API"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+blinc_core = "0.6"
+blinc_layout = "0.6"
+blinc_cn = "0.6"
+fs-components-styles = { path = "../fs-components-styles" }
+fs-components-fields = { path = "../fs-components-fields" }
+fs-components-widgets = { path = "../fs-components-widgets" }
+fs-components-calendar-grid = { path = "../fs-components-calendar-grid" }
+
+[dev-dependencies]
+blinc_theme = "0.6"
+blinc_app = "0.6"
+wgpu = "26"
+blinc_animation = "0.6"
+image = { version = "0.25", default-features = false, features = ["png"] }

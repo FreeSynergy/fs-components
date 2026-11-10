@@ -1,0 +1,46 @@
+# fs-components-timeline - Design
+
+A horizontal time axis with bars, progress, milestones, dependency arrows, three zoom levels and a line for today (ADR 0066: the program gives data, a trait and words; this crate draws). Entry: `Timeline::new(state, source, say, look).events(events).build(width, height)`.
+
+## Data boundary (stable)
+
+| Type | Role |
+|---|---|
+| `Item` (key, title, `Kind::Bar{start,end,progress}` or `Kind::Milestone{day}`, `Tone`), `Dependency{from,to}` | plain data; days inclusive, already localised |
+| `Day`, `Tone` | re-exported from `fs-components-calendar-grid` (same rev; reuse, not a copy) |
+| trait `TimelineSource` | `items()` (one row each) and `dependencies()`; read on every build. `VecSource` for a fixed list |
+| trait `TimelineEvents` | `select_item`, `zoomed`; defaults do nothing (`NoEvents`) |
+| `Zoom` (Day 40 px, Week 12 px, Month 4 px per day) | state of the host's choice, kept in `TimelineState` |
+
+Texts are translation keys through `Say`: `timeline.zoom.day|week|month`, `timeline.month.1..12`. Looks come only from `fs-components-styles` (`Look`; all four styles drawn in a test).
+
+## Pattern map
+
+| Where | Pattern | Why |
+|---|---|---|
+| `model.rs` | Value object | small immutable data |
+| `source.rs` | Strategy + Null object | the host owns data and decides what a choice means |
+| `state.rs` | State | zoom, selection and keys in one set of transitions |
+| `layout.rs`, `route.rs` | none (pure functions) | scale, rectangles, ticks, the path of an arrow; tested without a window |
+| `handle.rs` | Facade + Observer | one clonable handle; change state, tell host, redraw the live area only |
+| `view/*` | View function / Adapter | `arrows.rs` is the only code that talks to Blinc's draw context (Blinc canvas, stroke and fill of paths) |
+| `view/keys.rs` | Adapter | copy of a private helper of `fs-components-widgets` (move to a shared crate when one exists) |
+
+## Behaviour
+
+Rows are items in order; a bar is tinted with its progress share filled; a milestone is a diamond with its title. Arrows run from the right edge of one item to the left edge of the next (elbow); when the next item starts earlier they go round through the gap between the rows. The today line is a thin full-height bar. Up/Down walk the rows (and tell the host), `+`/`-` (also number pad) zoom, a click chooses an item. A change rebuilds the live area only, never per frame.
+
+## Tests
+
+`tests/model.rs`: scale, range, rectangles, progress, ticks per zoom, routes (straight, elbow, round), zoom, keys. `tests/view.rs`: drawn offscreen in all four styles; arrows verified as ink on the canvas against the same plan without dependencies; zoom buttons rescale bars; click and keyboard through Blinc's event router.
+
+## Unsupported (named, not built)
+
+- Dragging or resizing bars, creating dependencies by hand (read-only plan; the host edits).
+- Start-to-start / finish-to-finish dependency kinds, critical path, lags (only finish to start).
+- Sticky axis and sticky title column (one scroll box holds all; titles sit inside the bars), grouped/collapsible rows, baselines.
+- Setting the scroll position (no jump to today), zoom to fit, pinch zoom.
+- Weekend shading, working-day calendars, hours and minutes (days are the unit).
+- Locale formats: day numbers and years are plain numbers; month names come from `Say`.
+- Arrows are not hit-testable (the canvas does not take pointer events); no highlight of the arrows of the chosen item.
+- Very long titles are clipped inside the bar, not shown outside it.
