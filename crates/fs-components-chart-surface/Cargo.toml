@@ -1,0 +1,21 @@
+[package]
+name = "fs-components-chart-surface"
+description = "FreeSynergy chart screen (layer 4): a work area of the window shell that shows a chart from a Vega-Lite spec a program gives as data; the program draws nothing"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+fs-components-charts = { path = "../fs-components-charts" }
+fs-components-app = { path = "../fs-components-app" }
+fs-components-widgets = { path = "../fs-components-widgets" }
+blinc_layout = "0.6"
+
+[dev-dependencies]
+blinc_app = "0.6"
+blinc_cn = "0.6"
+blinc_core = "0.6"
+blinc_theme = "0.6"
+wgpu = "26"
+image = { version = "0.25", default-features = false, features = ["png"] }

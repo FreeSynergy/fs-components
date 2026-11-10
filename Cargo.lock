@@ -1001,6 +1001,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "fs-components-chart-surface"
+version = "0.0.2"
+dependencies = [
+ "blinc_app",
+ "blinc_cn",
+ "blinc_core",
+ "blinc_layout",
+ "blinc_theme",
+ "fs-components-app",
+ "fs-components-charts",
+ "fs-components-widgets",
+ "image",
+ "wgpu",
+]
+
+[[package]]
 name = "fs-components-charts"
 version = "0.0.2"
 dependencies = [
