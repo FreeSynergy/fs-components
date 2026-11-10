@@ -10,11 +10,13 @@
 
 #![deny(missing_docs)]
 #![warn(clippy::pedantic)]
+// A style is one long table of numbers (`styles/*.rs`), not logic: it may exceed 100 lines.
 // Colours are written as hex `0xRRGGBB`, the notation of every design sheet; the casts in `Rgba::hex` take one byte each on purpose.
 #![allow(
     clippy::must_use_candidate,
     clippy::module_name_repetitions,
     clippy::unreadable_literal,
+    clippy::too_many_lines,
     clippy::cast_possible_truncation
 )]
 
