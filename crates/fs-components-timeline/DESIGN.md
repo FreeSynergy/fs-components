@@ -23,12 +23,12 @@ Texts are translation keys through `Say`: `timeline.zoom.day|week|month`, `timel
 | `state.rs` | State | zoom, selection and keys in one set of transitions |
 | `layout.rs`, `route.rs` | none (pure functions) | scale, rectangles, ticks, the path of an arrow; tested without a window |
 | `handle.rs` | Facade + Observer | one clonable handle; change state, tell host, redraw the live area only |
-| `view/*` | View function / Adapter | `arrows.rs` is the only code that talks to Blinc's draw context (Blinc canvas, stroke and fill of paths) |
+| `view/*` | View function / Adapter | `arrows.rs` and `axis.rs` are the only code that talks to Blinc's draw context (Blinc canvas, stroke and fill of paths) |
 | `view/keys.rs` | Adapter | copy of a private helper of `fs-components-widgets` (move to a shared crate when one exists) |
 
 ## Behaviour
 
-Rows are items in order; a bar is tinted with its progress share filled; a milestone is a diamond with its title. Arrows run from the right edge of one item to the left edge of the next (elbow); when the next item starts earlier they go round through the gap between the rows. The today line is a thin full-height bar when today is on the axis; the axis never grows to reach today (its cost grows with the days drawn), so a today outside it is an edge mark with an arrow (`tl-today-edge`). Up/Down walk the rows (and tell the host), `+`/`-` (also number pad) zoom, a click chooses an item. A change rebuilds the live area only, never per frame.
+Rows are items in order; a bar is tinted with its progress share filled; a milestone is a diamond with its title. Arrows run from the right edge of one item to the left edge of the next (elbow); when the next item starts earlier they go round through the gap between the rows. The today line is a thin full-height bar when today is on the axis; the axis never grows to reach today (its cost grows with the days drawn), so a today outside it is an edge mark (`tl-today-edge`: a drawn triangle towards today and the word) on a row above the scroll box, so it is at the visible rim at any scroll position. The axis (lines and labels) is one canvas, not a node per tick: ten years at day zoom are 3650 ticks. Up/Down walk the rows (and tell the host), `+`/`-` (also number pad) zoom, a click chooses an item. A change rebuilds the live area only, never per frame.
 
 ## Tests
 

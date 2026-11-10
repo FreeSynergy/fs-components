@@ -1,8 +1,15 @@
-//! The axis: two rows of labels and thin lines down the rows.
+//! The axis: two rows of labels and thin lines down the rows, drawn on ONE canvas.
 //!
-//! Pattern: View function — ticks from `layout`; month names come from `Say`
+//! Pattern: Adapter — ticks from `layout` in, calls on Blinc's `DrawContext` out. One node for the
+//! whole axis instead of two per tick: ten years at day zoom are 3650 ticks, and a node per tick
+//! made every redraw cost time in proportion to them. Month names come from `Say`
 //! (`timeline.month.1..12`), the day numbers and years are plain numbers.
 
+use blinc_core::{
+    Brush, Color, CornerRadius, DrawContext, FontWeight, Point, Rect as CRect, TextAlign,
+    TextBaseline, TextStyle,
+};
+use blinc_layout::canvas::canvas;
 use blinc_layout::div::{Div, div};
 use fs_components_fields::Look;
 
@@ -23,41 +30,24 @@ fn label(t: &Timeline, tick: &Tick) -> String {
     }
 }
 
-/// The header (labels) and the lines below it down to `total_h`.
-pub fn axis(
-    t: &Timeline,
-    zoom: Zoom,
-    (first, last): (Day, Day),
-    scale: &Scale,
-    total_h: f32,
-) -> Vec<Div> {
-    let (look, s, pal) = (t.look, t.look.style, t.look.palette());
+/// What the canvas draws: lines (x) and labels (x, y, text).
+struct Marks {
+    lines: Vec<f32>,
+    labels: Vec<(f32, f32, String)>,
+}
+
+fn marks(t: &Timeline, zoom: Zoom, (first, last): (Day, Day), scale: &Scale) -> Marks {
     let h = row_height(t);
-    let mut out = Vec::new();
+    let pad = t.look.style.spacing.xs;
+    let mut m = Marks {
+        lines: Vec::new(),
+        labels: Vec::new(),
+    };
     let mut put = |tick: &Tick, y: f32, line: bool| {
-        let r = Rect {
-            x: scale.x_of(tick.day),
-            y,
-            w: scale.px * f32::from(tick.days),
-            h,
-        };
-        out.push(
-            at(r)
-                .padding_x_px(s.spacing.xs)
-                .pointer_events_none()
-                .child(look.text(label(t, tick), s.text.caption, pal.text_weak)),
-        );
+        let x = scale.x_of(tick.day);
+        m.labels.push((x + pad, y, label(t, tick)));
         if line {
-            out.push(
-                at(Rect {
-                    x: r.x,
-                    y: 0.0,
-                    w: 1.0,
-                    h: total_h,
-                })
-                .bg(Look::color(pal.border))
-                .pointer_events_none(),
-            );
+            m.lines.push(x);
         }
     };
     if zoom == Zoom::Month {
@@ -72,14 +62,66 @@ pub fn axis(
             put(k, h, true);
         }
     }
-    out.push(
-        div()
-            .absolute()
-            .left(0.0)
-            .top(2.0 * h - 1.0)
-            .w(scale.x_of(last.add_days(1)))
-            .h(1.0)
-            .bg(Look::color(pal.border)),
+    m
+}
+
+fn pen(
+    ctx: &mut dyn DrawContext,
+    m: &Marks,
+    size: (f32, f32),
+    family: &str,
+    line: Color,
+    text: Color,
+    caption: f32,
+) {
+    for x in &m.lines {
+        ctx.fill_rect(
+            CRect::new(*x, 0.0, 1.0, size.1),
+            CornerRadius::default(),
+            Brush::Solid(line),
+        );
+    }
+    let style = TextStyle {
+        family: family.to_owned(),
+        size: caption,
+        color: text,
+        weight: FontWeight::Regular,
+        align: TextAlign::Left,
+        baseline: TextBaseline::Top,
+        ..TextStyle::default()
+    };
+    for (x, y, s) in &m.labels {
+        ctx.draw_text(s, Point::new(*x, *y + 2.0), &style);
+    }
+}
+
+/// The axis as one element over `total_w` x `total_h`; a rule under the two label rows.
+pub fn axis(t: &Timeline, zoom: Zoom, range: (Day, Day), scale: &Scale, total_h: f32) -> Vec<Div> {
+    let (s, pal) = (t.look.style, t.look.palette());
+    let total_w = scale.x_of(range.1.add_days(1));
+    let m = marks(t, zoom, range, scale);
+    let (line, text) = (Look::color(pal.border), Look::color(pal.text_weak));
+    let (family, caption) = (s.fonts[0], s.text.caption);
+    let drawing = at(Rect {
+        x: 0.0,
+        y: 0.0,
+        w: total_w,
+        h: total_h,
+    })
+    .id("tl-axis")
+    .pointer_events_none()
+    .child(
+        canvas(move |ctx, _| pen(ctx, &m, (total_w, total_h), family, line, text, caption))
+            .redraw_while(|| false)
+            .w(total_w)
+            .h(total_h),
     );
-    out
+    let rule = div()
+        .absolute()
+        .left(0.0)
+        .top(2.0 * row_height(t) - 1.0)
+        .w(total_w)
+        .h(1.0)
+        .bg(Look::color(pal.border));
+    vec![drawing, rule]
 }

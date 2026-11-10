@@ -28,13 +28,7 @@ pub fn timeline(t: &Timeline, width: f32, height: f32) -> Div {
     };
     let mark = today_mark(st.today, first, last);
     let rh = axis::row_height(t);
-    // Below the two axis rows, a row for the edge mark when today is off the axis.
-    let head = 2.0 * rh
-        + if matches!(mark, TodayMark::Before | TodayMark::After) {
-            rh
-        } else {
-            0.0
-        };
+    let head = 2.0 * rh;
     let (total_w, rows_h) = (
         scale.x_of(last.add_days(1)).max(width),
         items.len() as f32 * g.row,
@@ -84,28 +78,25 @@ pub fn timeline(t: &Timeline, width: f32, height: f32) -> Div {
                 head + rows_h,
             ));
         }
-        TodayMark::Before | TodayMark::After => {
-            let r = Rect {
-                x: 0.0,
-                y: 2.0 * rh,
-                w: total_w,
-                h: rh,
-            };
-            body = body.child(rows::today_edge(t, r, mark == TodayMark::After));
-        }
-        TodayMark::None => {}
+        TodayMark::Before | TodayMark::After | TodayMark::None => {}
     }
-    let bar = s.heights.control + s.spacing.s;
-    div()
+    // A today off the axis is shown on a row of its own above the scroll box, so it is always at the
+    // visible rim whatever the scroll position.
+    let rim = matches!(mark, TodayMark::Before | TodayMark::After);
+    let bar = s.heights.control + s.spacing.s + if rim { rh } else { 0.0 };
+    let mut whole = div()
         .flex_col()
         .w(width)
         .h(height)
-        .child(toolbar::toolbar(t))
-        .child(
-            scroll()
-                .both_directions()
-                .w(width)
-                .h((height - bar).max(0.0))
-                .content(body),
-        )
+        .child(toolbar::toolbar(t));
+    if rim {
+        whole = whole.child(rows::today_edge(t, width, rh, mark == TodayMark::After));
+    }
+    whole.child(
+        scroll()
+            .both_directions()
+            .w(width)
+            .h((height - bar).max(0.0))
+            .content(body),
+    )
 }

@@ -3,6 +3,8 @@
 //! Pattern: View function — rectangles from `layout`. A click on an item chooses it; the chosen
 //! one has an accent border (not colour alone: the border is thicker).
 
+use blinc_core::{Brush, Path};
+use blinc_layout::canvas::canvas;
 use blinc_layout::div::{Div, div};
 use fs_components_fields::Look;
 
@@ -117,25 +119,48 @@ pub fn today_line(t: &Timeline, x: f32, total_h: f32) -> Div {
     .pointer_events_none()
 }
 
-/// The mark for a today off the axis: an arrow towards it and the word `timeline.today`, at the edge.
-pub fn today_edge(t: &Timeline, r: Rect, after: bool) -> Div {
+/// The mark for a today off the axis, on a row `width` wide and `high` tall above the scroll box:
+/// a drawn triangle towards it and the word `timeline.today`, at the left or right rim.
+pub fn today_edge(t: &Timeline, width: f32, high: f32, after: bool) -> Div {
     let (look, s, pal) = (t.look, t.look.style, t.look.palette());
+    let color = Look::color(pal.error);
+    let side = s.text.caption;
+    // The triangle is drawn, not typed: the fonts of the styles have no arrow glyphs.
+    let arrow = canvas(move |ctx, _| {
+        let (x0, x1) = if after { (0.0, side) } else { (side, 0.0) };
+        let p = Path::new()
+            .move_to(x0, 0.0)
+            .line_to(x1, side / 2.0)
+            .line_to(x0, side)
+            .close();
+        ctx.fill_path(&p, Brush::Solid(color));
+    })
+    .redraw_while(|| false)
+    .w(side)
+    .h(side);
     let word = look.text(t.say.say("timeline.today"), s.text.caption, pal.error);
-    let arrow = look.text(
-        if after { "\u{25B6}" } else { "\u{25C0}" },
-        s.text.caption,
-        pal.error,
-    );
-    let row = at(r)
+    let mark = div()
         .id("tl-today-edge")
         .flex_row()
         .items_center()
         .gap_px(s.spacing.xs)
-        .padding_x_px(s.spacing.xs)
-        .pointer_events_none();
-    if after {
-        row.justify_end().child(word).child(arrow)
+        .padding_x_px(s.spacing.xs);
+    let mark = if after {
+        mark.child(word)
+            .child(div().id("tl-today-arrow").w(side).h(side).child(arrow))
     } else {
-        row.child(arrow).child(word)
+        mark.child(div().id("tl-today-arrow").w(side).h(side).child(arrow))
+            .child(word)
+    };
+    let row = div()
+        .id("tl-today-row")
+        .flex_row()
+        .items_center()
+        .w(width)
+        .h(high);
+    if after {
+        row.justify_end().child(mark)
+    } else {
+        row.child(mark)
     }
 }
