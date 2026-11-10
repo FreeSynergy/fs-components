@@ -204,15 +204,15 @@ fn a_tile_that_is_no_longer_wanted_gives_up_its_place() {
 fn a_failure_is_not_kept_for_good_it_is_asked_again_after_the_time() {
     let _g = serial();
     let source = Scripted::new(Mode::Fail);
-    let s = surface(&source, limits(5000, 200, 256), 1.0);
-    let _ = s.build(300.0, 300.0);
+    let s = surface(&source, limits(5000, 700, 256), 0.0);
+    let _ = s.build(100.0, 100.0);
     until("asked", || source.asked() > 0);
     let once = source.asked();
     std::thread::sleep(Duration::from_millis(60));
-    let _ = s.build(300.0, 300.0);
+    let _ = s.build(100.0, 100.0);
     assert_eq!(source.asked(), once, "not again at once");
     source.set(Mode::Answer);
-    std::thread::sleep(Duration::from_millis(250));
+    std::thread::sleep(Duration::from_millis(750));
     draw_until(&s, "the tile arrived after the retry", || {
         s.tiles_kept() > 0
     });
@@ -222,11 +222,11 @@ fn a_failure_is_not_kept_for_good_it_is_asked_again_after_the_time() {
 fn no_such_tile_is_kept_for_good() {
     let _g = serial();
     let source = Scripted::new(Mode::Missing);
-    let s = surface(&source, limits(5000, 50, 256), 1.0);
+    let s = surface(&source, limits(5000, 50, 256), 0.0);
     draw_until(&s, "kept", || s.tiles_kept() > 0);
     let asked = source.asked();
-    std::thread::sleep(Duration::from_millis(150));
-    let _ = s.build(600.0, 400.0);
+    std::thread::sleep(Duration::from_millis(250));
+    let _ = s.build(100.0, 100.0);
     std::thread::sleep(Duration::from_millis(50));
     assert_eq!(
         source.asked(),
