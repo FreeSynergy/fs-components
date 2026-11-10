@@ -34,8 +34,15 @@ Rows are items in order; a bar is tinted with its progress share filled; a miles
 
 `tests/model.rs`: scale, range, rectangles, progress, ticks per zoom, routes (straight, elbow, round), zoom, keys. `tests/view.rs`: drawn offscreen in all four styles; arrows verified as ink on the canvas against the same plan without dependencies; zoom buttons rescale bars; click and keyboard through Blinc's event router.
 
+## Scrolling: what is known to be imperfect
+
+- A scroll asked for (`set_scroll_x`, a zoom change) counts at once but only for 100 ms and only while the view is still where it was. A reader who scrolls back to that place and zooms within the same 100 ms gets the old request's place.
+- A request that the view does not draw for more than 100 ms (no frame) is forgotten by the next zoom, which then starts from the view's own offset.
+- A request made before the first build is kept and bounded at the first build, whether it was read in between or not.
+
 ## Unsupported (named, not built)
 
+- A month name in a tick too narrow for four letters is left out without a hint (the tick has a line, the days still name the place).
 - Dragging or resizing bars, creating dependencies by hand (read-only plan; the host edits).
 - Start-to-start / finish-to-finish dependency kinds, critical path, lags (only finish to start).
 - Sticky axis and sticky title column (one scroll box holds all; titles sit inside the bars), grouped/collapsible rows, baselines.

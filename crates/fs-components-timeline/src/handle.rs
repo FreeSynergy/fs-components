@@ -4,7 +4,7 @@
 //! state, tells the host through [`TimelineEvents`], and asks the live area to draw again (only
 //! the timeline is built again, never per frame).
 
-use std::sync::atomic::{AtomicU32, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 use std::time::Instant;
 
@@ -31,6 +31,10 @@ pub struct Timeline {
     pub(crate) width: Arc<AtomicU32>,
     /// A scroll asked for and not yet drawn: the position and the offset the view had then.
     pub(crate) target: Arc<Mutex<Option<(f32, f32, Instant)>>>,
+    /// The scroll asked for before the first build (the width was not known), whether read since or not.
+    pub(crate) early: Arc<Mutex<Option<f32>>>,
+    /// The view has been built at least once.
+    pub(crate) built: Arc<AtomicBool>,
 }
 
 impl Timeline {
@@ -51,6 +55,8 @@ impl Timeline {
             scroll: ScrollRef::new(),
             width: Arc::new(AtomicU32::new(0)),
             target: Arc::default(),
+            early: Arc::default(),
+            built: Arc::default(),
         }
     }
 

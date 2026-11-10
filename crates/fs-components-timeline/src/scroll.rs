@@ -1,6 +1,7 @@
 //! Scrolling of the timeline: where the view is, where it was asked to be, and how a zoom keeps it.
 //!
-//! Pattern: State, part of `Timeline` (the handle is in `handle.rs`). A scroll asked for counts at
+//! Pattern: Facade + Observer, part of `Timeline` (the handle is in `handle.rs`): the scroll position
+//! is read and asked for through the handle, and the view reports back through the `ScrollRef`. A scroll asked for counts at
 //! once, before the view has drawn it, but only for a moment: after that the view is the one to ask,
 //! so a reader who scrolled is not answered with an old request.
 
@@ -28,18 +29,24 @@ impl Timeline {
         let (base, y) = self.scroll.offset();
         *self.target.lock().unwrap_or_else(PoisonError::into_inner) =
             Some((x, base, Instant::now()));
+        if !self.built.load(Ordering::Relaxed) {
+            *self.early.lock().unwrap_or_else(PoisonError::into_inner) = Some(x);
+        }
         self.scroll.set_scroll_offset(x, y);
     }
 
-    /// The width of the view is known now: a scroll asked for before (with the width taken as zero)
-    /// or at another width is brought inside the content.
+    /// The width of the view is known now (the first build): a scroll asked for before, with the
+    /// width taken as zero, is brought inside the content. This does not depend on whether the
+    /// request was read in between, because Blinc applies what was asked whatever was read.
     pub(crate) fn reclamp(&self) {
-        let asked = *self.target.lock().unwrap_or_else(PoisonError::into_inner);
-        if let Some((x, _, _)) = asked {
-            let max = self.max_scroll_x();
-            if x > max {
-                self.put_x(max);
-            }
+        self.built.store(true, Ordering::Relaxed);
+        let early = self
+            .early
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .take();
+        if let Some(x) = early {
+            self.put_x(x.min(self.max_scroll_x()));
         }
     }
 
