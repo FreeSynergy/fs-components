@@ -1,12 +1,12 @@
 //! Which commands are offered where, and with which form.
 //!
-//! Pattern: Strategy by command kind — one `plan_commands` reads the description and decides placement,
+//! Pattern: none — a small set of pure functions for one concept (nothing is chosen from a table or a trait). `plan_commands` reads the description and decides placement,
 //! confirmation and the form fields from the kind and the input; a program says nothing about buttons (ADR 0066
 //! point 3: not the look, but what is possible).
 //!
 //! Provisional rules (reported to the strategy): a command works on one record when its input has a `reference` to
-//! the type itself (that field is filled from the selection and not shown) or when its kind is `change` or `delete`;
-//! otherwise it works on the list. `delete` asks for confirmation. `find` is the search of the list.
+//! the type itself (that field is filled from the selection and not shown); otherwise it works on the list. A `change`
+//! or `delete` without such a reference is not offered ([`unoffered_commands`]). `delete` asks for confirmation. `find` is the search of the list.
 
 use fs_types::{BasicType, CommandDescription, CommandKind, FieldDescription, TypeDescription};
 
@@ -74,5 +74,24 @@ pub fn plan_commands(description: &TypeDescription) -> Vec<CommandPlan> {
         .commands
         .iter()
         .map(|c| plan(&description.name, c))
+        .filter(|p| !needs_a_record_without_naming_it(p))
+        .collect()
+}
+
+/// A `change` or `delete` that does not take the record as a reference to the type itself cannot be told which record
+/// to work on; offering it would run it without an id (review finding 4). It is not offered.
+fn needs_a_record_without_naming_it(p: &CommandPlan) -> bool {
+    matches!(p.kind, CommandKind::Change | CommandKind::Delete) && p.bound.is_none()
+}
+
+/// The names of the commands that are not offered, and why they are not: see [`plan_commands`]. A frontend shows this
+/// list in its About or log view so the omission is not silent.
+pub fn unoffered_commands(description: &TypeDescription) -> Vec<String> {
+    description
+        .commands
+        .iter()
+        .map(|c| plan(&description.name, c))
+        .filter(needs_a_record_without_naming_it)
+        .map(|p| p.name)
         .collect()
 }

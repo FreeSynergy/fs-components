@@ -26,7 +26,7 @@ pub mod window;
 
 pub use backend::{Backend, BackendError, Outcome, Record, Values};
 pub use clock::{Clock, ManualClock, SystemClock};
-pub use commands::{CommandPlan, Placement, plan_commands};
+pub use commands::{CommandPlan, Placement, plan_commands, unoffered_commands};
 pub use detail::{Entry, entries};
 pub use form::FormModel;
 pub use list::{Column, Direction, ListModel};

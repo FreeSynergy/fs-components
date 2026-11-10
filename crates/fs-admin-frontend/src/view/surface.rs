@@ -56,18 +56,7 @@ impl AdminSurface {
         suggest: Option<Arc<dyn Suggest>>,
     ) -> Self {
         let live = Live::new();
-        // The messages change while the session is locked (a transition); drawing at once would lock it again
-        // (found by the click test: deadlock). So the draw happens on another thread, which waits for the lock,
-        // and once more when a success has run out.
-        session.messages().subscribe(move || {
-            std::thread::spawn(move || {
-                live.refresh_now();
-                std::thread::sleep(std::time::Duration::from_millis(
-                    crate::messages::SUCCESS_MS + 100,
-                ));
-                live.refresh_now();
-            });
-        });
+        session.messages().subscribe(redraw_worker(live));
         Self {
             env: Arc::new(FormEnv {
                 session: Arc::new(Mutex::new(session)),
@@ -100,6 +89,12 @@ impl AdminSurface {
         lock(&self.env.session)
             .form()
             .is_some_and(crate::FormModel::is_dirty)
+    }
+
+    /// Tell the person that leaving would lose what is typed (ADR 0065 point 5: not silent).
+    pub fn warn_unsaved(&self) {
+        let board = Arc::clone(lock(&self.env.session).messages());
+        board.raise(crate::MessageKind::Error, "unsaved");
     }
 
     /// Draw the page again now.
@@ -180,7 +175,9 @@ impl AdminSurface {
             Screen::Confirm { name, .. } => self.confirm_screen(name),
             Screen::Result(name) => self.result_screen(name),
         };
-        let messages = lock(&self.env.session).messages().current();
+        // The guard is let go before the messages are read: reading can tell the listeners, and a listener draws.
+        let board = Arc::clone(lock(&self.env.session).messages());
+        let messages = board.current();
         let session = Arc::clone(&self.env.session);
         let live = self.live;
         let dismiss: Arc<dyn Fn(u64) + Send + Sync> = Arc::new(move |id| {
@@ -206,6 +203,36 @@ impl AdminSurface {
             about: Arc::clone(&self.about),
             live: self.live,
         }
+    }
+}
+
+/// The worker that draws the page again when the messages change. Messages change while the session is locked (a
+/// transition), and a draw reads the session, so the draw must not run on the caller's thread: it is asked by a signal
+/// and done here, which waits for the lock. One thread per surface, ended when the surface goes. It also draws once more
+/// when a success has run out (messages have no timer of their own).
+fn redraw_worker(live: Live) -> impl Fn() + Send + Sync + 'static {
+    let (tx, rx) = std::sync::mpsc::channel::<()>();
+    std::thread::spawn(move || {
+        let wait = std::time::Duration::from_millis(crate::messages::SUCCESS_MS + 100);
+        let mut armed = false;
+        loop {
+            match rx.recv_timeout(wait) {
+                Ok(()) => {
+                    live.refresh_now();
+                    armed = true;
+                }
+                Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {
+                    if std::mem::take(&mut armed) {
+                        live.refresh_now();
+                    }
+                }
+                Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => break,
+            }
+        }
+    });
+    let tx = std::sync::Mutex::new(tx);
+    move || {
+        let _ = tx.lock().unwrap_or_else(PoisonError::into_inner).send(());
     }
 }
 

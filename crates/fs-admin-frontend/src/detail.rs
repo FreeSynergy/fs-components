@@ -1,6 +1,6 @@
 //! The detail of one record: every field of the type with its values.
 //!
-//! Pattern: View function — a pure function from the description and a record to the entries the display component
+//! Pattern: none — one pure function from the description and a record to the entries the display component
 //! draws. The Admin frontend shows all fields (ADR 0066 point 5), also the empty ones, so a person sees what could be
 //! filled in.
 

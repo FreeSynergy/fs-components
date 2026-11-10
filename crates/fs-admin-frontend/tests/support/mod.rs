@@ -94,6 +94,11 @@ pub struct Memory {
     pub down: Mutex<bool>,
     /// A name the program's own rule refuses (a rule the form cannot know).
     pub forbidden: Mutex<Option<String>>,
+    /// After one successful command the program goes away (a reload then fails).
+    pub down_after_run: Mutex<bool>,
+    pub reject_delete: Mutex<bool>,
+    pub reject_search: Mutex<bool>,
+    pub next_id: std::sync::atomic::AtomicUsize,
     pub description: TypeDescription,
 }
 
@@ -103,6 +108,10 @@ impl Memory {
             records: Mutex::new(records),
             down: Mutex::new(false),
             forbidden: Mutex::new(None),
+            down_after_run: Mutex::new(false),
+            reject_delete: Mutex::new(false),
+            reject_search: Mutex::new(false),
+            next_id: std::sync::atomic::AtomicUsize::new(100),
             description: contact(),
         })
     }
@@ -119,6 +128,13 @@ impl Memory {
 impl Backend for Memory {
     fn list(&self, query: &Values) -> Result<Vec<Record>, BackendError> {
         self.up()?;
+        if *self.reject_search.lock().unwrap() && query.contains_key("text") {
+            return Err(BackendError::Rejected(vec![RecordIssue {
+                field: "text".into(),
+                index: 0,
+                problem: fs_types::RecordProblem::Value(fs_types::TypeProblem::TooLong),
+            }]));
+        }
         let needle = query
             .get("text")
             .and_then(|v| v.first())
@@ -162,9 +178,13 @@ impl Backend for Memory {
             }]));
         }
         let mut records = self.records.lock().unwrap();
-        match command.kind {
+        let out = match command.kind {
             CommandKind::Create => {
-                let id = format!("urn:uuid:{:08}", records.len() + 1);
+                let id = format!(
+                    "urn:uuid:{:08}",
+                    self.next_id
+                        .fetch_add(1, std::sync::atomic::Ordering::SeqCst)
+                );
                 records.push(Record {
                     id: id.clone(),
                     values: input.clone(),
@@ -181,7 +201,11 @@ impl Backend for Memory {
                     .find(|r| r.id == id)
                     .ok_or(BackendError::NotFound)?;
                 for (k, v) in input.iter().filter(|(k, _)| *k != "id") {
-                    r.values.insert(k.clone(), v.clone());
+                    if v.is_empty() {
+                        r.values.remove(k);
+                    } else {
+                        r.values.insert(k.clone(), v.clone());
+                    }
                 }
                 Ok(Outcome {
                     id: Some(id),
@@ -189,6 +213,13 @@ impl Backend for Memory {
                 })
             }
             CommandKind::Delete => {
+                if *self.reject_delete.lock().unwrap() {
+                    return Err(BackendError::Rejected(vec![RecordIssue {
+                        field: "id".into(),
+                        index: 0,
+                        problem: fs_types::RecordProblem::Value(fs_types::TypeProblem::Character),
+                    }]));
+                }
                 let id = input["id"][0].clone();
                 let before = records.len();
                 records.retain(|r| r.id != id);
@@ -215,7 +246,11 @@ impl Backend for Memory {
                 })
             }
             _ => Err(BackendError::NotFound),
+        };
+        if out.is_ok() && *self.down_after_run.lock().unwrap() {
+            *self.down.lock().unwrap() = true;
         }
+        out
     }
 }
 

@@ -70,7 +70,7 @@ impl AdminSurface {
             &say.say("action.back"),
             Weight::Plain,
             "back",
-            self.act(Session::open_list),
+            self.act(Session::back_to_list),
         )));
         (title, actions, fields_panel(look, say, &session.detail()))
     }

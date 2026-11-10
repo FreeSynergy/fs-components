@@ -35,7 +35,7 @@ pub struct Message {
     pub born_ms: u64,
 }
 
-type Listener = Box<dyn Fn() + Send + Sync>;
+type Listener = Arc<dyn Fn() + Send + Sync>;
 
 #[derive(Default)]
 struct State {
@@ -66,15 +66,17 @@ impl Messages {
         self.listeners
             .lock()
             .unwrap_or_else(PoisonError::into_inner)
-            .push(Box::new(f));
+            .push(Arc::new(f));
     }
 
     fn changed(&self) {
-        for f in &*self
+        // Copy the list and call outside the lock: a listener may ask the messages, or subscribe, without deadlock.
+        let listeners: Vec<Listener> = self
             .listeners
             .lock()
             .unwrap_or_else(PoisonError::into_inner)
-        {
+            .clone();
+        for f in &listeners {
             f();
         }
     }
