@@ -10,7 +10,13 @@
 
 #![deny(missing_docs)]
 #![warn(clippy::pedantic)]
-#![allow(clippy::must_use_candidate, clippy::module_name_repetitions)]
+// Colours are written as hex `0xRRGGBB`; `over` narrows a mix of two bytes back to one byte.
+#![allow(
+    clippy::must_use_candidate,
+    clippy::module_name_repetitions,
+    clippy::unreadable_literal,
+    clippy::cast_possible_truncation
+)]
 
 pub mod field;
 pub mod kinds;
