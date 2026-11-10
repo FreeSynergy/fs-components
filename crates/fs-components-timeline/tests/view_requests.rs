@@ -113,7 +113,7 @@ fn wheel_along(tree: &mut blinc_layout::prelude::RenderTree, x: f32, y: f32, dx:
 }
 
 #[test]
-fn the_wheel_moves_the_view_and_the_zoom_goes_on_from_there() {
+fn the_wheel_moves_the_view_and_the_handle_knows_it() {
     let _g = serial();
     let t = plan_with_today(many(60), host::d(2026, 6, 1), Zoom::Day);
     let mut tree = layout(t.build(W, H), W, H);

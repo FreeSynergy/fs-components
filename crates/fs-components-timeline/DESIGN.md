@@ -32,12 +32,13 @@ Rows are items in order; a bar is tinted with its progress share filled; a miles
 
 ## Tests
 
-`tests/model.rs`: scale, range, rectangles, progress, ticks per zoom, routes (straight, elbow, round), zoom, keys. `tests/view.rs`: drawn offscreen in all four styles; arrows verified as ink on the canvas against the same plan without dependencies; zoom buttons rescale bars; click and keyboard through Blinc's event router.
+`tests/model.rs`: scale, range, rectangles, progress, ticks per zoom, routes (straight, elbow, round), zoom, keys. `tests/view.rs`: drawn offscreen in all four styles; arrows verified as ink on the canvas against the same plan without dependencies; zoom buttons rescale bars; click and keyboard through Blinc's event router. `tests/view_today.rs`: today as a line or an edge mark (direction and place checked), ten years of items within a time limit, wide milestone titles. `tests/view_scale.rs`: time limits for 120 items and the measurement series (ignored). `tests/view_scroll.rs`: a zoom by key keeps the view on content (left, middle, right; 365 and 1100 days), a zoom change scales the offset. `tests/view_requests.rs`: scroll requests before the build (also when read in between), NaN, a reader's scroll, the wheel. `tests/view_labels.rs`: month labels cut at their tick (pixel comparison).
 
 ## Scrolling: what is known to be imperfect
 
 - A scroll asked for (`set_scroll_x`, a zoom change) counts at once but only for 100 ms and only while the view is still where it was. A reader who scrolls back to that place and zooms within the same 100 ms gets the old request's place.
 - A request that the view does not draw for more than 100 ms (no frame) is forgotten by the next zoom, which then starts from the view's own offset.
+- Building the same handle a second time into a new tree shows the view at 0, but `scroll_x()` still reports the old value (the request record outlives the first tree). Existing behaviour, not fixed.
 - A request made before the first build is kept and bounded at the first build, whether it was read in between or not.
 
 ## Unsupported (named, not built)
