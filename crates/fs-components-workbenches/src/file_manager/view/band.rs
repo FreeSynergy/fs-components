@@ -111,14 +111,16 @@ pub(in crate::file_manager) fn band(
                             ButtonVariant::Secondary,
                             &actions.plain(FilesState::keep),
                         ))
-                        .child(button(
-                            format!("{name}-really"),
-                            &yes,
-                            ButtonVariant::Destructive,
-                            &actions.plain(FilesState::really),
-                        )
-                        // A long answer wraps in its own box instead of leaving the window at the narrowest width.
-                        .max_w(width - 24.0)),
+                        .child(
+                            button(
+                                format!("{name}-really"),
+                                &yes,
+                                ButtonVariant::Destructive,
+                                &actions.plain(FilesState::really),
+                            )
+                            // A long answer wraps in its own box instead of leaving the window at the narrowest width.
+                            .max_w(width - 24.0),
+                        ),
                 );
             }
         }
