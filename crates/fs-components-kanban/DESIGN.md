@@ -23,7 +23,7 @@ One state machine (`state.rs`) for every way: `grab(key)` / `hover(column)` / `d
 |---|---|---|
 | `model.rs` | Value object | small immutable data |
 | `source.rs` | Strategy + Null object | host owns data and decisions |
-| `state.rs` | State + Command | one machine for gestures, keys, buttons; yields a `MoveRequest` |
+| `state.rs`, `keys.rs` | State + Command | one machine for gestures, keys, buttons; yields a `MoveRequest` |
 | `layout.rs` | none (pure functions) | column width, card height, initials, count mark, column under pointer |
 | `handle.rs` | Facade + Observer | one clonable handle; change state, tell host, redraw the live area only |
 | `view/*` | View function / Adapter | state in, Blinc elements out; `controls.rs` draws a control live or locked the same way |
