@@ -13,6 +13,7 @@ The generated Admin frontend of ADR 0066: from the type description of a program
 | `commands.rs` `plan_commands` | Strategy by command kind | placement, confirmation and form fields come from the kind and the input of the description |
 | `session.rs` `Session`, `Screen` | State | screens are the states, methods are the transitions |
 | `messages.rs` `Messages` | Observer with a lifetime per message | ADR 0065 point 4: success goes by itself, an error stays, none follows to another screen |
+| `window.rs` `admin_window` | Facade | one call builds the shell with a screen per type and the standard menus Program / View / Help |
 | `clock.rs` `Clock` | Strategy | lifetimes are testable (`ManualClock`) |
 
 ## Provisional decisions (reported to the strategy)
@@ -32,7 +33,7 @@ The generated Admin frontend of ADR 0066: from the type description of a program
 
 ## Unsupported (named, not faked)
 
-* Shell menus of ADR 0065 (Programm / Ansicht / Hilfe), Ctrl+Q and F1: not built; `fs-components-app` menus have no shortcuts.
+* Ctrl+Q and F1 of ADR 0065, the Settings entry (this window is the settings) and Fullscreen: not built; the shell menus have no shortcuts. Quit leaves without asking when no form is dirty and does nothing when one is (a dialog comes later).
 * People: waits for the type description of Thread P.
 * Basic types without a component in `fs-components-fields` (text, multi-line text, place, date-time, language, link, image, key, choice, keywords, reference): a plain input stands in (choice: buttons). It belongs in `fs-components-fields`. Buttons are `blinc_cn`'s, their height is not the style's.
 * Sort direction is written as a word, not drawn as an arrow (the icon set has no arrow).
