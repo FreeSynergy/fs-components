@@ -116,7 +116,9 @@ pub(in crate::file_manager) fn band(
                             &yes,
                             ButtonVariant::Destructive,
                             &actions.plain(FilesState::really),
-                        )),
+                        )
+                        // A long answer wraps in its own box instead of leaving the window at the narrowest width.
+                        .max_w(width - 24.0)),
                 );
             }
         }
