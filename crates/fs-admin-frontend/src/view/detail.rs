@@ -1,4 +1,4 @@
-//! The detail page: every field of the type with its values, and the commands for the record.
+//! The detail panel: every field of the type with its values (the commands are placed by `view/screens.rs`).
 //!
 //! Pattern: View function — session state in, elements out; the value components come from `view::value`.
 

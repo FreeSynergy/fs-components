@@ -101,8 +101,20 @@ impl Session {
         }
     }
 
-    /// Old records are not shown without a word: a screen entered while the last reading failed reads again, and a
-    /// failure is told on that screen.
+    /// A record screen whose record is gone after a successful reading: the selection goes, the list is shown, and
+    /// `not-found` is told there. (An unreadable record is not this case: that screen says "not loaded".)
+    pub(crate) fn leave_if_gone(&mut self) -> bool {
+        let gone = matches!(&self.screen, Screen::Detail(id) if !self.stale && self.list.record(id).is_none());
+        if gone {
+            self.list.clear_selection();
+            self.go(Screen::List);
+            self.fail(&BackendError::NotFound);
+        }
+        gone
+    }
+
+    /// Old records are not shown without a word: a screen that shows records (the list, a record), entered while the
+    /// last reading failed, reads again, and a failure is told on that screen.
     pub(crate) fn read_again_if_stale(&mut self) {
         if self.stale {
             self.reload();

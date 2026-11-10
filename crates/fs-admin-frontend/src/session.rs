@@ -155,8 +155,16 @@ impl Session {
                 self.messages.solve("unavailable");
                 true
             }
+            Err(BackendError::Rejected(_)) if !self.query.is_empty() => {
+                // The stored search is refused (it worked when it was set): drop it, say so, read everything. Keeping
+                // it would repeat the refusal at every screen.
+                self.query.clear();
+                self.fail(&BackendError::Rejected(Vec::new()));
+                self.reload()
+            }
             Err(e) => {
-                self.stale = true;
+                // Only a program that cannot be reached makes the records old; a refusal or a missing record does not.
+                self.stale = matches!(e, BackendError::Unavailable(_));
                 self.fail(&e);
                 false
             }
@@ -184,7 +192,8 @@ impl Session {
         }
     }
 
-    /// Show one record. Returns `false` if the list has none with this id.
+    /// Show one record. Returns `false` if the list has none with this id, or if reading again (the records were old)
+    /// shows that it is gone: then the list is shown with a `not-found` message.
     pub fn open_detail(&mut self, id: &str) -> bool {
         if !self.list.select(id) {
             return false;
@@ -192,7 +201,7 @@ impl Session {
         self.form = None;
         self.go(Screen::Detail(id.to_owned()));
         self.read_again_if_stale();
-        true
+        !self.leave_if_gone()
     }
 
     /// Back from a form, a question or an answer: to the record if there was one, else to the list.
@@ -211,6 +220,7 @@ impl Session {
         self.form = None;
         self.go(back);
         self.read_again_if_stale();
+        self.leave_if_gone();
     }
 
     /// Open a command. A command on a record needs the selection; a delete asks first. Returns `false` if the

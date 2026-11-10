@@ -56,8 +56,7 @@ pub trait Backend: Send + Sync {
     ///
     /// **The rule for changing (part of the contract, reported to the strategy):** a command of kind `change` is
     /// *partial*. A field that is missing from `input` is unchanged; a field with an empty list is cleared; a field
-    /// with
-    /// values replaces the old values. Required fields are always sent. A program that reads `input` as a whole
+    /// with values replaces the old values. Required fields are always sent. A program that reads `input` as a whole
     /// record would delete the optional fields that were not sent. A finding of `Rejected` counts the values of a
     /// field as they were sent (empty slots are not sent); the form maps it back to its slots.
     ///

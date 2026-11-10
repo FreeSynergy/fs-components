@@ -27,10 +27,20 @@ impl AdminSurface {
         let inner_w = (width - 2.0 * s.spacing.xl).max(0.0);
         let inner_h =
             (height - 2.0 * s.spacing.xl - s.heights.control - 3.0 * s.spacing.m).max(0.0);
+        // The records are old while the last reading failed: the list says so as long as it is true, not only the
+        // message (which goes when the person clicks it away).
+        let stale = session.is_stale().then(|| {
+            div().id("list-stale").child(look.text(
+                say.say("list.stale"),
+                s.text.caption,
+                look.palette().error,
+            ))
+        });
         let body = div()
             .flex_col()
             .gap_px(s.spacing.s)
             .w(inner_w)
+            .children(stale)
             .child(list_body(
                 look,
                 say,
