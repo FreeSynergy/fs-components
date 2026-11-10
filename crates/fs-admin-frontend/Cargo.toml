@@ -1,0 +1,10 @@
+[package]
+name = "fs-admin-frontend"
+description = "FreeSynergy generated Admin frontend (ADR 0066): list, detail, form and commands made from a type description, in the Fiori style, inside the window shell of ADR 0065"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+fs-types = { git = "https://github.com/FreeSynergy/fs-interfaces", tag = "v0.0.2" }
