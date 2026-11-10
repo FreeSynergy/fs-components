@@ -52,3 +52,38 @@ fn a_record_command_is_locked_the_same_way() {
     assert!(!s.begin("delete"));
     assert!(s.begin("change"), "the others are not affected");
 }
+
+/// A program that implements only the two required methods and says nothing about support.
+struct Silent;
+
+impl fs_admin_frontend::Backend for Silent {
+    fn list(
+        &self,
+        _query: &fs_admin_frontend::Values,
+    ) -> Result<Vec<fs_admin_frontend::Record>, fs_admin_frontend::BackendError> {
+        Ok(vec![record("urn:1", &[("name", &["Ada"])])])
+    }
+
+    fn run(
+        &self,
+        _name: &str,
+        _input: &fs_admin_frontend::Values,
+    ) -> Result<fs_admin_frontend::Outcome, fs_admin_frontend::BackendError> {
+        Err(fs_admin_frontend::BackendError::NotFound)
+    }
+}
+
+#[test]
+fn a_program_that_does_not_answer_unlocks_nothing() {
+    let mut s = Session::new(contact(), std::sync::Arc::new(Silent), clock());
+    for p in s.commands(Placement::OnList) {
+        assert!(
+            !s.is_supported(&p.name),
+            "{} was unlocked by silence",
+            p.name
+        );
+    }
+    assert!(!s.begin("create") && !s.begin("find"));
+    assert!(s.open_detail("urn:1"));
+    assert!(!s.begin("change") && !s.begin("delete"));
+}
