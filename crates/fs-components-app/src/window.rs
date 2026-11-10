@@ -44,6 +44,9 @@ pub fn launch(options: WindowOptions, app: AppWidget) -> Result<(), AppError> {
     };
     let css = app.styles();
     WindowedApp::run_with_theme(config, bundle(&css), color_scheme(), move |ctx| {
+        // The window's own way to close: the event loop ends, the program's tidying up (drops) runs.
+        let close = ctx.close_callback();
+        app.set_quit(move || close());
         app.build(ctx.width, ctx.height)
     })
     .map_err(|e| AppError::Window(e.to_string()))

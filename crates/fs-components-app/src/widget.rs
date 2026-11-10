@@ -34,6 +34,8 @@ static NEXT_ID: AtomicU64 = AtomicU64::new(1);
 pub struct AppWidget {
     id: u64,
     pub(crate) shell: Arc<Mutex<Shell>>,
+    /// Closes the window; set by `launch` (see `quit.rs`).
+    pub(crate) quit: crate::quit::QuitSlot,
 }
 
 impl AppWidget {
@@ -45,6 +47,7 @@ impl AppWidget {
         Ok(Self {
             id: NEXT_ID.fetch_add(1, Ordering::Relaxed),
             shell: Arc::new(Mutex::new(Shell::new(title, screens)?)),
+            quit: crate::quit::QuitSlot::default(),
         })
     }
 
