@@ -105,7 +105,10 @@ pub fn admin_window(
                         shell.select(id);
                         s.warn_unsaved();
                     }
-                    None => std::process::exit(0),
+                    None => {
+                        // The window closes and the event loop ends: everything is dropped in order, no `exit`.
+                        shell.quit();
+                    }
                 }
             }
             // `open_external` returns nothing: a failure to open the address cannot be told (named in DESIGN.md).

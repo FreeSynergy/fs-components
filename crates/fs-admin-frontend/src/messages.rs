@@ -33,6 +33,10 @@ pub struct Message {
     pub scope: String,
     /// When it was raised (clock milliseconds).
     pub born_ms: u64,
+    /// A text that comes with the code and is shown as it is (the words of `HandshakeError`); `None` for most.
+    pub detail: Option<String>,
+    /// The message offers "Try again" (`Session::retry`).
+    pub retry: bool,
 }
 
 type Listener = Arc<dyn Fn() + Send + Sync>;
@@ -96,6 +100,17 @@ impl Messages {
 
     /// Raise a message on the current screen.
     pub fn raise(&self, kind: MessageKind, code: &str) -> u64 {
+        self.raise_with(kind, code, None, false)
+    }
+
+    /// Raise a message with a text of its own and, if `retry`, the offer to try again.
+    pub fn raise_with(
+        &self,
+        kind: MessageKind,
+        code: &str,
+        detail: Option<String>,
+        retry: bool,
+    ) -> u64 {
         let id = {
             let mut s = self.state.lock().unwrap_or_else(PoisonError::into_inner);
             s.next += 1;
@@ -107,6 +122,8 @@ impl Messages {
                 code: code.to_owned(),
                 scope,
                 born_ms: self.clock.now_ms(),
+                detail,
+                retry,
             });
             id
         };

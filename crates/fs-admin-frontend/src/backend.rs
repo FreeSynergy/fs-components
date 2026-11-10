@@ -42,6 +42,11 @@ pub enum BackendError {
     NotFound,
     /// The program cannot be reached or failed; the text is for the log (English), a person sees a code.
     Unavailable(String),
+    /// The program could not reach a server of the right version (`fs_interfaces::rpc::HandshakeError`:
+    /// `CannotRestart`, `ServerMismatch`, `Io`). The text is `error.to_string()`: fs-interfaces words it for the person
+    /// (what runs, what is needed, what to do), so the window shows it as it is, with "Try again" (ADR 0065 points 4 and
+    /// 5), never a black window. The program maps its error: `BackendError::Handshake(e.to_string())`.
+    Handshake(String),
 }
 
 /// The records of one data type and the commands of its description.
@@ -60,6 +65,15 @@ pub trait Backend: Send + Sync {
     fn supported(&self, command: &str) -> bool {
         let _ = command;
         false
+    }
+
+    /// Connect again after a [`BackendError::Handshake`] (the program calls `connect_matching` once more and keeps the
+    /// new connection). Asked when the person presses "Try again". The default has nothing to connect and says so.
+    ///
+    /// # Errors
+    /// [`BackendError::Handshake`] (again) or [`BackendError::Unavailable`].
+    fn reconnect(&self) -> Result<(), BackendError> {
+        Ok(())
     }
 
     /// The command `change`: apply an [`Edit`] (typed, field by field, no JSON) to the record `record`. Rule (written

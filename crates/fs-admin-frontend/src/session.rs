@@ -144,10 +144,37 @@ impl Session {
             BackendError::Rejected(_) => "rejected",
             BackendError::NotFound => "not-found",
             BackendError::Unavailable(_) => "unavailable",
+            BackendError::Handshake(_) => "handshake",
         };
         // The same error is told once, however often it happens.
         self.messages.solve(code);
-        self.messages.raise(MessageKind::Error, code);
+        match e {
+            // The words of fs-interfaces, as they are, and the way to try again.
+            BackendError::Handshake(text) => {
+                self.messages
+                    .raise_with(MessageKind::Error, code, Some(text.clone()), true);
+            }
+            _ => {
+                self.messages.raise(MessageKind::Error, code);
+            }
+        }
+    }
+
+    /// "Try again" after a failed handshake: connect again, then read the records again. A failure is told again
+    /// (once), with its own words; success closes the message.
+    pub fn retry(&mut self) -> bool {
+        match self.backend.reconnect() {
+            Ok(()) => {
+                self.messages.solve("handshake");
+                self.refresh_support();
+                self.reload()
+            }
+            Err(e) => {
+                self.stale = matches!(e, BackendError::Unavailable(_) | BackendError::Handshake(_));
+                self.fail(&e);
+                false
+            }
+        }
     }
 
     /// Read the records again with the search that is set. The error of a program that cannot answer stays.
@@ -158,6 +185,7 @@ impl Session {
                 self.list.set_records(records);
                 self.stale = false;
                 self.messages.solve("unavailable");
+                self.messages.solve("handshake");
                 true
             }
             Err(BackendError::Rejected(_)) if !self.query.is_empty() => {
@@ -169,7 +197,7 @@ impl Session {
             }
             Err(e) => {
                 // Only a program that cannot be reached makes the records old; a refusal or a missing record does not.
-                self.stale = matches!(e, BackendError::Unavailable(_));
+                self.stale = matches!(e, BackendError::Unavailable(_) | BackendError::Handshake(_));
                 self.fail(&e);
                 false
             }
@@ -238,6 +266,10 @@ impl Session {
         let Some(plan) = self.command(&name).cloned() else {
             return false;
         };
+        // A form that was opened while the command was open may stand on after the core stopped offering it.
+        if !self.is_supported(&name) {
+            return false;
+        }
         if plan.kind == CommandKind::Change {
             return self.submit_change(&plan, record);
         }

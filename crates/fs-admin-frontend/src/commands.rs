@@ -62,7 +62,13 @@ fn plan(description: &TypeDescription, c: &CommandDescription, on_record: bool) 
             Placement::OnList
         },
         form: if c.kind == CommandKind::Change {
-            description.fields.clone()
+            // A read-only field is shown on the detail screen, not in the form: `Edit::check` refuses an edit of it.
+            description
+                .fields
+                .iter()
+                .filter(|f| !f.read_only)
+                .cloned()
+                .collect()
         } else {
             c.input
                 .iter()

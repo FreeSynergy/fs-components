@@ -50,6 +50,11 @@ pub struct Memory {
     /// The last `Edit` the program received.
     pub last_edit: Mutex<Option<fs_types::Edit>>,
     pub next_id: std::sync::atomic::AtomicUsize,
+    /// Counts the calls of `reconnect`; it answers this error while it is set, else it clears `list_error`.
+    pub reconnects: std::sync::atomic::AtomicUsize,
+    pub reconnect_error: Mutex<Option<BackendError>>,
+    /// Every `run` answers this error while it is set.
+    pub run_error: Mutex<Option<BackendError>>,
     pub description: TypeDescription,
 }
 
@@ -69,6 +74,9 @@ impl Memory {
             unsupported: Mutex::new(std::collections::BTreeSet::new()),
             last_edit: Mutex::new(None),
             next_id: std::sync::atomic::AtomicUsize::new(100),
+            reconnects: std::sync::atomic::AtomicUsize::new(0),
+            reconnect_error: Mutex::new(None),
+            run_error: Mutex::new(None),
             description: contact(),
         })
     }
@@ -83,6 +91,16 @@ impl Memory {
 }
 
 impl Backend for Memory {
+    fn reconnect(&self) -> Result<(), BackendError> {
+        self.reconnects
+            .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        if let Some(e) = self.reconnect_error.lock().unwrap().clone() {
+            return Err(e);
+        }
+        *self.list_error.lock().unwrap() = None;
+        Ok(())
+    }
+
     fn supported(&self, command: &str) -> bool {
         !self.unsupported.lock().unwrap().contains(command)
     }
@@ -165,6 +183,9 @@ impl Backend for Memory {
         record: Option<&str>,
         input: &Values,
     ) -> Result<Outcome, BackendError> {
+        if let Some(e) = self.run_error.lock().unwrap().clone() {
+            return Err(e);
+        }
         self.up()?;
         let command = self
             .description

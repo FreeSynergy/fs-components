@@ -28,7 +28,7 @@ The generated Admin frontend of ADR 0066: from the type description of a program
 
 * **The list is the command `find`** (`CommandDescription::standard_find`, input `term`, empty = everything, paging with the contract's cursor): `Backend::list(query)` takes the typed input of `find`. Decided by Thread T / the strategy (fs-interfaces v0.0.11, `types.capnp`).
 * **A command works on one record** when it is `change` or `delete` or its input holds a reference to the type itself (`TypeDescription::record_commands`). The id of the record travels in the call (`Backend::change(record, edit)`, `Backend::run(name, Some(record), input)`), not in the input; a reference to the type itself in the input is still filled from the shown record.
-* **Messages carry codes**, never sentences (ADR 0057): `message.<code>`; codes now: `done`, `rejected`, `not-found`, `unavailable`, `unsaved`.
+* **Messages carry codes**, never sentences (ADR 0057): `message.<code>`; codes now: `done`, `rejected`, `not-found`, `unavailable`, `handshake`, `unsaved`.
 * Columns: fields that fit one line (not multi-line text, not image), at most six, required ones first when there are more.
 
 ## State
@@ -56,11 +56,19 @@ The generated Admin frontend of ADR 0066: from the type description of a program
 
 ## Translation keys the frontend asks for (through `Say`)
 
-`action.{add,back,cancel,close,remove,save}`, `menu.{program,view,help,quit,about}`, `message.<code>` (`done`, `rejected`, `not-found`, `unavailable`, `unsaved`), `problem.<code>` (also `problem.{wrong-type,nested-path,duplicate-path}`), `hint.<label>`, `sort.{ascending,descending}`, `finding.slot` (a sentence with the named placeholder `{n}`, the number of the value), `list.{empty,separator,stale}`, `detail.not-loaded`, `confirm.sure`, `command.soon`, `value.none`, `about.{version,origin,licence,repository}`, and the keys of the description (labels, `<label>.<choice>`).
+`action.{add,back,cancel,close,remove,retry,save}`, `menu.{program,view,help,quit,about}`, `message.<code>` (`done`, `rejected`, `not-found`, `unavailable`, `handshake`, `unsaved`), `problem.<code>` (also `problem.{wrong-type,nested-path,duplicate-path,read-only}`), `hint.<label>`, `sort.{ascending,descending}`, `finding.slot` (a sentence with the named placeholder `{n}`, the number of the value), `list.{empty,separator,stale}`, `detail.not-loaded`, `confirm.sure`, `command.soon`, `value.none`, `about.{version,origin,licence,repository}`, and the keys of the description (labels, `<label>.<choice>`).
 
 ## Unsupported (named, not faked)
 
-* Ctrl+Q and F1 of ADR 0065, the Settings entry (this window is the settings) and Fullscreen: not built; the shell menus have no shortcuts. Quit leaves without asking when no form holds unsent text; with text it shows that surface and an `unsaved` message and stays (a dialog "leave anyway?" comes later).
+* Ctrl+Q and F1 of ADR 0065, the Settings entry (this window is the settings) and Fullscreen: not built; the shell menus have no shortcuts. Quit closes the window (`AppWidget::quit`, the window's own close callback: the event loop ends and everything is dropped in order; no `std::process::exit`) without asking when no form holds unsent text; with text it shows that surface and an `unsaved` message and stays (a dialog "leave anyway?" comes later).
 * People: waits for the type description of Thread P.
 * Basic types without a component in `fs-components-fields` (text, multi-line text, place, date-time, language, link, image, key, choice, keywords, reference): a plain input stands in (choice: buttons). It belongs in `fs-components-fields`. Buttons are `blinc_cn`'s, their height is not the style's.
 * Sort direction is written as a word, not drawn as an arrow (the icon set has no arrow).
+
+## Version handshake and fs-interfaces v0.0.17 (review of 2026-11-10)
+
+* **`BackendError::Handshake(String)`**: the program could not reach a server of the right version (`fs_interfaces::rpc::HandshakeError`: `CannotRestart`, `ServerMismatch`, `Io`). The text is `error.to_string()`; fs-interfaces words it for the person. The frontend does not depend on the `rpc` feature of fs-interfaces (it pulls in the runtime); the program maps its error with `BackendError::Handshake(e.to_string())`.
+* **A persistent message with "Try again"** (ADR 0065 points 4 and 5, `fs-interfaces/DESIGN.md`, version handshake): code `handshake`, `Message::detail` = the words as they are (shown under the text of `message.handshake`, never joined with it), `Message::retry` = the button `action.retry`. The records are old while it stands (`is_stale`): never a window that looks empty without a word. "Try again" is `Session::retry`: `Backend::reconnect` (the program calls `connect_matching` once more; the default does nothing), then the records are read again; a failure is told once with its new words, success closes the message.
+* **v0.0.17: read-only fields** (`FieldDescription::read_only`, `RecordProblem::ReadOnly`): the form of `change` leaves them out (they stay on the detail screen) and `submit_changes` never puts one into the `Edit`, which `Edit::check` would refuse; the finding has the key `problem.read-only` should a program still send one.
+* A command that the core stops offering while its form is open does not run: `Session::submit` asks `is_supported` again.
+* Tests: `tests/ninth_session.rs` (handshake, retry, read-only, locked while open) and `tests/ninth_view.rs` (the message drawn with words and button; Quit closes the window).

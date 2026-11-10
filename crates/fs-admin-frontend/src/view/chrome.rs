@@ -122,6 +122,7 @@ pub fn message_bar(
     say: &dyn Say,
     messages: &[Message],
     dismiss: &Arc<dyn Fn(u64) + Send + Sync>,
+    retry: &Arc<dyn Fn() + Send + Sync>,
 ) -> Div {
     let (s, pal) = (look.style, look.palette());
     let mut column = div().flex_col().gap_px(s.spacing.xs).w_full();
@@ -146,11 +147,28 @@ pub fn message_bar(
             .bg(Look::color(pal.panel))
             .w_full()
             .child(look.icon(glyph, None, color))
-            .child(div().flex_grow_value(1.0).min_w(0.0).child(look.text(
-                text,
-                s.text.body,
-                pal.text,
-            )));
+            .child(
+                div()
+                    .flex_grow_value(1.0)
+                    .min_w(0.0)
+                    .flex_col()
+                    .child(look.text(text, s.text.body, pal.text))
+                    .children(m.detail.iter().map(|detail| {
+                        // The words of the server side, as they are, under the code's own text (never joined with it).
+                        div()
+                            .id(format!("message-{}-detail", m.id))
+                            .child(look.text(detail.clone(), s.text.caption, pal.text))
+                    })),
+            );
+        if m.retry {
+            let again = Arc::clone(retry);
+            row = row.child(cn_button(
+                &say.say("action.retry"),
+                ButtonVariant::Primary,
+                &format!("retry-{id}"),
+                move || again(),
+            ));
+        }
         if m.kind == MessageKind::Error {
             row = row.child(cn_button(
                 &say.say("action.close"),

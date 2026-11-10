@@ -208,6 +208,11 @@ impl AdminSurface {
             lock(&session).messages().dismiss(id);
             live.refresh_now();
         });
+        let session = Arc::clone(&self.env.session);
+        let retry: Arc<dyn Fn() + Send + Sync> = Arc::new(move || {
+            lock(&session).retry();
+            live.refresh_now();
+        });
         div()
             .class("fs-admin-page")
             .flex_col()
@@ -218,7 +223,7 @@ impl AdminSurface {
             .h(height)
             .bg(Look::color(look.palette().ground))
             .child(header(look, &title, actions))
-            .child(message_bar(look, say, &messages, &dismiss))
+            .child(message_bar(look, say, &messages, &dismiss, &retry))
             .child(body)
     }
 

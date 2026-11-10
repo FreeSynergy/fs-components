@@ -24,7 +24,7 @@ impl FormModel {
         }
         let mut edit = Edit::new();
         let mut sent = BTreeMap::new();
-        for f in &self.fields {
+        for f in self.fields.iter().filter(|f| !f.read_only) {
             let now = self.canonical(&f.name, &self.values);
             if now == self.canonical(&f.name, &self.initial) {
                 continue;
