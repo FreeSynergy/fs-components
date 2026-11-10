@@ -972,6 +972,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "fs-components-calendar-grid"
+version = "0.0.2"
+dependencies = [
+ "blinc_animation",
+ "blinc_app",
+ "blinc_cn",
+ "blinc_core",
+ "blinc_layout",
+ "blinc_theme",
+ "fs-components-fields",
+ "fs-components-styles",
+ "fs-components-widgets",
+ "image",
+ "wgpu",
+]
+
+[[package]]
 name = "fs-components-charts"
 version = "0.0.2"
 dependencies = [
