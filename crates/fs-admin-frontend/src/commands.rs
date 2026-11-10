@@ -1,12 +1,13 @@
 //! Which commands are offered where, and with which form.
 //!
-//! Pattern: none — a small set of pure functions for one concept (nothing is chosen from a table or a trait). `plan_commands` reads the description and decides placement,
-//! confirmation and the form fields from the kind and the input; a program says nothing about buttons (ADR 0066
-//! point 3: not the look, but what is possible).
+//! Pattern: none — a small set of pure functions for one concept (nothing is chosen from a table or a trait).
+//! `plan_commands` reads the description and decides placement, confirmation and the form fields from the kind and
+//! the input; a program says nothing about buttons (ADR 0066 point 3: not the look, but what is possible).
 //!
 //! Provisional rules (reported to the strategy): a command works on one record when its input has a `reference` to
-//! the type itself (that field is filled from the selection and not shown); otherwise it works on the list. A `change`
-//! or `delete` without such a reference is not offered ([`unoffered_commands`]). `delete` asks for confirmation. `find` is the search of the list.
+//! the type itself (that field is filled from the selection and not shown); otherwise it works on the list. A
+//! `change` or `delete` without such a reference is not offered ([`unoffered_commands`]). `delete` asks for
+//! confirmation. `find` is the search of the list.
 
 use fs_types::{BasicType, CommandDescription, CommandKind, FieldDescription, TypeDescription};
 

@@ -184,16 +184,6 @@ impl Session {
         }
     }
 
-    /// Whether a search narrows the list.
-    pub fn search_active(&self) -> bool {
-        !self.query.is_empty()
-    }
-
-    /// Whether the records shown are old because the last reading failed.
-    pub fn is_stale(&self) -> bool {
-        self.stale
-    }
-
     /// Show one record. Returns `false` if the list has none with this id.
     pub fn open_detail(&mut self, id: &str) -> bool {
         if !self.list.select(id) {
@@ -201,6 +191,7 @@ impl Session {
         }
         self.form = None;
         self.go(Screen::Detail(id.to_owned()));
+        self.read_again_if_stale();
         true
     }
 
@@ -219,6 +210,7 @@ impl Session {
         };
         self.form = None;
         self.go(back);
+        self.read_again_if_stale();
     }
 
     /// Open a command. A command on a record needs the selection; a delete asks first. Returns `false` if the

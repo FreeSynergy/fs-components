@@ -1,9 +1,11 @@
 //! The form model: values per field, what is wrong, what the person has touched.
 //!
-//! Pattern: Unit of Work — it remembers what was there at the start (`initial`) and hands back what changed (and the required fields), checked,
-//! on [`FormModel::submit`] (a field the person emptied comes back as an empty list = cleared); the checking is the one
-//! flow of `fs-types` (`check_record`), so this form and the program's own `check` command say the same (Strategy by kind there). Findings show only where the person has been (touched) or after a try to send; a `Missing` never shows
-//! before that. No trait of its own: the boundary is `Backend`; this is a value the session owns.
+//! Pattern: Unit of Work — it remembers what was there at the start (`initial`) and hands back what changed (and the
+//! required fields), checked, on [`FormModel::submit`] (a field the person emptied comes back as an empty list =
+//! cleared); the checking is the one flow of `fs-types` (`check_record`), so this form and the program's own `check`
+//! command say the same (Strategy by kind there). Findings show only where the person has been (touched) or after a
+//! try to send; a `Missing` never shows before that. No trait of its own: the boundary is `Backend`; this is a value
+//! the session owns.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::OnceLock;
@@ -202,14 +204,18 @@ impl FormModel {
         })
     }
 
-    /// The program refused the input: mark its findings. A finding's index counts the values that were sent (empty slots
-    /// are not), so it is mapped back to the slot the person typed in.
+    /// The program refused the input: mark its findings. A finding's index counts the values that were sent (empty
+    /// slots are not), so it is mapped back to the slot the person typed in.
     pub fn refuse(&mut self, issues: Vec<RecordIssue>) {
         let sent = std::mem::take(&mut self.sent);
         self.refused = issues
             .into_iter()
             .map(|mut i| {
-                if let Some(slot) = sent.get(&i.field).and_then(|v| v.get(i.index)) {
+                // The program counts the values it got; one past the end points at the last value that was sent.
+                let sent_slot = sent
+                    .get(&i.field)
+                    .and_then(|v| v.get(i.index).or_else(|| v.last()));
+                if let Some(slot) = sent_slot {
                     i.index = *slot;
                 }
                 // a finding on a slot that is not there points at the last one, where the person can see it
@@ -220,9 +226,9 @@ impl FormModel {
             .collect();
     }
 
-    /// Try to send. Fields whose values changed since the start come back, and the required ones always (a program asks for them), as canonical texts with empty slots left
-    /// out; a field the person emptied comes back as an empty list (cleared). With findings nothing is returned and
-    /// they show from now on.
+    /// Try to send. Fields whose values changed since the start come back, and the required ones always (a program
+    /// asks for them), as canonical texts with empty slots left out; a field the person emptied comes back as an
+    /// empty list (cleared). With findings nothing is returned and they show from now on.
     ///
     /// # Errors
     /// All findings.

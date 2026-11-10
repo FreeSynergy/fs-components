@@ -1,8 +1,8 @@
 //! The list page: head with sort, the rows, the search.
 //!
 //! Pattern: Adapter over the `ListView` widget (virtual rows, keys, scroll position) with a head of our own, because
-//! the widget's head cannot be clicked to sort. Cells are the text of the cell component of the type (`BasicField::cell`)
-//! or the canonical text.
+//! the widget's head cannot be clicked to sort. Cells are the text of the cell component of the type
+//! (`BasicField::cell`) or the canonical text.
 
 use std::sync::Arc;
 

@@ -49,11 +49,12 @@ pub(super) fn findings_view(env: &FormEnv) -> Div {
                 .is_some_and(|f| f.values(&field.name).len() > 1))
         .then(|| {
             div()
-                .id(format!("finding-{name}-{}-slot", i.index))
-                .child(
-                    env.look
-                        .text((i.index + 1).to_string(), s.text.caption, pal.error),
-                )
+                .id(format!("finding-{name}-{}-{code}-slot", i.index))
+                .child(env.look.text(
+                    slot_label(&*env.say, i.index + 1),
+                    s.text.caption,
+                    pal.error,
+                ))
         });
         column = column.child(
             div()
@@ -76,4 +77,30 @@ pub(super) fn findings_view(env: &FormEnv) -> Div {
         );
     }
     column
+}
+
+/// "Value 2": the sentence of the key `finding.slot`, whose named placeholder `{n}` is the number. The sentence is the
+/// translator's; only the number is put in (coding.md section 2a).
+pub(super) fn slot_label(say: &dyn fs_components_fields::Say, n: usize) -> String {
+    say.say("finding.slot").replace("{n}", &n.to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::slot_label;
+
+    #[test]
+    fn the_number_goes_where_the_sentence_has_its_placeholder() {
+        let say = |k: &str| match k {
+            "finding.slot" => "Wert {n}".to_owned(),
+            other => other.to_owned(),
+        };
+        assert_eq!(slot_label(&say, 3), "Wert 3");
+        let say_after = |k: &str| format!("{{n}}. {k}");
+        assert_eq!(
+            slot_label(&say_after, 2),
+            "2. finding.slot",
+            "word order is the sentence's"
+        );
+    }
 }
