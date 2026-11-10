@@ -1,11 +1,13 @@
-//! What a command leaves behind: a search narrows the list, a finished command leads to the next screen.
+//! The transitions around a command: opening one, a search narrowing the list, a finished command leading to the next
+//! screen, refusals, old records, the commands the core supports.
 //!
-//! Pattern: State, part of [`Session`] (the transitions after a command ran, split off to keep the file small).
+//! Pattern: State, part of [`Session`] (the transitions around commands, split off to keep the file small).
 
 use fs_types::CommandKind;
 
 use crate::backend::{BackendError, Outcome, Values};
 use crate::commands::CommandPlan;
+use crate::commands::Placement;
 use crate::form::FormModel;
 use crate::messages::MessageKind;
 use crate::screen::Screen;
@@ -144,5 +146,50 @@ impl Session {
     /// unknown here is not supported.
     pub fn is_supported(&self, name: &str) -> bool {
         self.supported.get(name).copied().unwrap_or(false)
+    }
+
+    /// Open a command. A command on a record needs the selection; a delete asks first. Returns `false` if the
+    /// command is unknown or has no record to work on.
+    pub fn begin(&mut self, name: &str) -> bool {
+        let Some(plan) = self.command(name).cloned() else {
+            return false;
+        };
+        if !self.is_supported(name) {
+            return false; // locked: "coming soon"
+        }
+        let record = match plan.placement {
+            Placement::OnList => None,
+            // The record is the one of the screen that is shown, and only if it is loaded: the selection of the list
+            // may point elsewhere (or nowhere) after a failed reload.
+            Placement::OnRecord => match &self.screen {
+                Screen::Detail(id) if !self.stale && self.list.record(id).is_some() => {
+                    Some(id.clone())
+                }
+                _ => return false,
+            },
+        };
+        if plan.confirm {
+            let Some(record) = record else { return false };
+            self.form = None;
+            self.go(Screen::Confirm {
+                name: plan.name,
+                record,
+            });
+            return true;
+        }
+        let initial = match (&plan.kind, &record) {
+            (CommandKind::Change, Some(id)) => self
+                .list
+                .record(id)
+                .map(|r| r.values.clone())
+                .unwrap_or_default(),
+            _ => Values::new(),
+        };
+        self.form = Some(FormModel::new(&plan.form, &initial));
+        self.go(Screen::Command {
+            name: plan.name,
+            record,
+        });
+        true
     }
 }
