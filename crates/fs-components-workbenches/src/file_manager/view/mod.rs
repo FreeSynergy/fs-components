@@ -4,6 +4,7 @@
 
 mod actions;
 mod band;
+mod band_size;
 mod frame;
 mod item_bar;
 mod places;

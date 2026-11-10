@@ -10,7 +10,7 @@
 use blinc_layout::div::{Div, div};
 use blinc_layout::prelude::ElementBuilder;
 
-use super::band::band_height;
+use super::band_size::band_height;
 use super::toolbar::toolbar_height;
 use crate::file_manager::state::FilesState;
 
