@@ -31,6 +31,15 @@ The generated Admin frontend of ADR 0066: from the type description of a program
 | Views (`view/`): list with sortable head, detail, form (typed components of `fs-components-fields`, plain input for the rest), confirm, result, About, as a `Surface` of the shell | done, 5 tests drawn offscreen and driven with the window's router (click, type, add a slot, save, refuse) |
 | Messages draw the page again on another thread (a transition holds the session lock; found by the click test as a deadlock) | done |
 
+## Locks and the backend (review 2026-11-10)
+
+* The `Backend` is called **synchronously, with the session locked** (`act` holds the lock while `Backend::run` runs). A program that answers slowly freezes the window for that time; an asynchronous backend is a later change of the trait, not of the screens.
+* Messages tell their listeners **outside** their own lock (a listener may ask or subscribe). The page reads the messages **after** letting go of the session. The surface draws on a worker thread of its own (one per surface), because messages change while the session is locked and a draw reads the session.
+* `change` and `delete` without a reference to the type itself are **not offered** (`unoffered_commands` lists them), because they would run without a record id.
+* `submit` returns the changed fields and the required ones; a field emptied by the person is an empty list (cleared).
+* `open_external` (Help) returns nothing: a failure to open the address cannot be shown.
+* `Session`, `Messages` and `FormModel` have no trait of their own (coding.md section 1): they are values the frontend owns; the boundary to the outside is `Backend`. Reported to the strategy.
+
 ## Unsupported (named, not faked)
 
 * Ctrl+Q and F1 of ADR 0065, the Settings entry (this window is the settings) and Fullscreen: not built; the shell menus have no shortcuts. Quit leaves without asking when no form is dirty and does nothing when one is (a dialog comes later).

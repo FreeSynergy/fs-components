@@ -1,6 +1,6 @@
 //! Which basic types have a component yet.
 //!
-//! Pattern: Registry (basic type to component kind) — `fs-components-fields` has components for five basic types
+//! Pattern: none — one pure function (basic type to component kind). `fs-components-fields` has components for five basic types
 //! (`Kind`); every other type is shown as its canonical text and typed into a plain input, named in `DESIGN.md` as
 //! waiting for its own component (ADR 0066 point 4).
 

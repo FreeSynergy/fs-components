@@ -184,3 +184,62 @@ fn saving_an_empty_required_form_stays_and_marks_the_field() {
         1
     );
 }
+
+#[test]
+fn review_1_opening_the_same_form_for_another_record_shows_that_record() {
+    let _g = serial();
+    let (s, mem) = surface();
+    let mut tree = layout(s.build(W, H), W, H);
+    let mut input = Input::new();
+    input.click(&mut tree, "records-urn:2");
+    ui::frame(&mut tree, W, H);
+    input.click(&mut tree, "cmd-change");
+    ui::frame(&mut tree, W, H);
+    assert!(
+        matches!(screen(&s), Screen::Command { .. }),
+        "{:?}",
+        screen(&s)
+    );
+    assert_eq!(
+        s.session().lock().unwrap().form().unwrap().values("name"),
+        ["Charles Babbage"]
+    );
+    input.click(&mut tree, "cancel");
+    ui::frame(&mut tree, W, H);
+    input.click(&mut tree, "back");
+    ui::frame(&mut tree, W, H);
+    input.click(&mut tree, "records-urn:3");
+    ui::frame(&mut tree, W, H);
+    input.click(&mut tree, "cmd-change");
+    ui::frame(&mut tree, W, H);
+    assert_eq!(
+        screen(&s),
+        Screen::Command {
+            name: "change".into(),
+            record: Some("urn:3".into())
+        }
+    );
+    input.click(&mut tree, "name-0");
+    for ch in "!".chars() {
+        tree.broadcast_text_input_event(ch, false, false, false, false);
+        ui::frame(&mut tree, W, H);
+    }
+    let shown = s
+        .session()
+        .lock()
+        .unwrap()
+        .form()
+        .unwrap()
+        .values("name")
+        .to_vec();
+    assert_eq!(
+        shown,
+        ["Alan Turing!"],
+        "the input showed another record's text: {shown:?}"
+    );
+    input.click(&mut tree, "save");
+    assert_eq!(
+        mem.records.lock().unwrap()[2].values["name"],
+        ["Alan Turing!"]
+    );
+}

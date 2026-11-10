@@ -91,11 +91,14 @@ pub fn admin_window(
         let current = || shell.with_shell(|s| s.current().map(|c| c.id.clone()));
         match id {
             QUIT => {
-                // Nothing is kept unsaved but an open form: it asks first (a later version asks with a dialog).
-                if !surfaces.iter().any(|(_, s)| s.has_unsaved()) {
-                    std::process::exit(0);
+                // Nothing is kept unsaved but an open form. With text in one the window stays and says why (an error
+                // message that stays until closed); a dialog that asks "leave anyway?" comes later.
+                match surfaces.iter().find(|(_, s)| s.has_unsaved()) {
+                    Some((_, s)) => s.warn_unsaved(),
+                    None => std::process::exit(0),
                 }
             }
+            // `open_external` returns nothing: a failure to open the address cannot be told (named in DESIGN.md).
             HELP => open_external(&help_url),
             ABOUT => {
                 if let Some(here) = current()

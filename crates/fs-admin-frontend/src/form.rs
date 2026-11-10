@@ -1,16 +1,21 @@
 //! The form model: values per field, what is wrong, what the person has touched.
 //!
-//! Pattern: Unit of Work — it remembers what was there at the start (`initial`) and hands back only a changed, checked
-//! set on [`FormModel::submit`]; the checking is the one flow of `fs-types` (`check_record`), so this form and the
-//! program's own `check` command say the same (Template method there). Findings show only where the person has been
-//! (touched) or after a try to send; a `Missing` never shows before that.
+//! Pattern: Unit of Work — it remembers what was there at the start (`initial`) and hands back what changed (and the required fields), checked,
+//! on [`FormModel::submit`] (a field the person emptied comes back as an empty list = cleared); the checking is the one
+//! flow of `fs-types` (`check_record`), so this form and the program's own `check` command say the same (Template method
+//! there). Findings show only where the person has been (touched) or after a try to send; a `Missing` never shows
+//! before that. No trait of its own: the boundary is `Backend`; this is a value the session owns.
 
 use std::collections::BTreeSet;
 use std::sync::OnceLock;
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use fs_types::{BasicRules, FieldDescription, RecordIssue, RecordProblem, TypeDescription};
 
 use crate::backend::Values;
+
+/// Numbers for the generations of forms.
+static NEXT: AtomicU64 = AtomicU64::new(1);
 
 /// The rules of the basic types, built once.
 pub fn rules() -> &'static BasicRules {
@@ -28,6 +33,7 @@ fn as_type(fields: &[FieldDescription]) -> TypeDescription {
 /// A form over a list of fields (the fields of a type, or the input of a command).
 #[derive(Clone, Debug)]
 pub struct FormModel {
+    generation: u64,
     fields: Vec<FieldDescription>,
     values: Values,
     initial: Values,
@@ -52,6 +58,7 @@ impl FormModel {
             values.insert(f.name.clone(), v);
         }
         Self {
+            generation: NEXT.fetch_add(1, Ordering::Relaxed),
             fields: fields.to_vec(),
             initial: values.clone(),
             values,
@@ -59,6 +66,11 @@ impl FormModel {
             attempted: false,
             refused: Vec::new(),
         }
+    }
+
+    /// A number no other form has: a view that keeps inputs for a form makes them again when it changes.
+    pub fn generation(&self) -> u64 {
+        self.generation
     }
 
     /// The fields, in order.
@@ -78,7 +90,8 @@ impl FormModel {
         };
         text.clone_into(slot);
         self.touched.insert((field.to_owned(), index));
-        self.refused.retain(|i| i.field != field);
+        self.refused
+            .retain(|i| !(i.field == field && i.index == index));
         true
     }
 
@@ -107,8 +120,25 @@ impl FormModel {
         } else {
             v.remove(index);
         }
-        self.touched.retain(|(f, _)| f != field);
-        self.refused.retain(|i| i.field != field);
+        // The slots after the removed one move up by one: marks and refusals move with their values.
+        self.touched = std::mem::take(&mut self.touched)
+            .into_iter()
+            .filter(|(f, n)| f != field || *n != index)
+            .map(|(f, n)| {
+                if f == field && n > index {
+                    (f, n - 1)
+                } else {
+                    (f, n)
+                }
+            })
+            .collect();
+        self.refused
+            .retain(|i| !(i.field == field && i.index == index));
+        for i in &mut self.refused {
+            if i.field == field && i.index > index {
+                i.index -= 1;
+            }
+        }
         true
     }
 
@@ -142,8 +172,9 @@ impl FormModel {
         self.refused = issues;
     }
 
-    /// Try to send. The values are the canonical texts, empty slots left out, fields without a value absent. With
-    /// findings nothing is returned and they show from now on.
+    /// Try to send. Fields whose values changed since the start come back, and the required ones always (a program asks for them), as canonical texts with empty slots left
+    /// out; a field the person emptied comes back as an empty list (cleared). With findings nothing is returned and
+    /// they show from now on.
     ///
     /// # Errors
     /// All findings.
@@ -155,16 +186,27 @@ impl FormModel {
         }
         let mut out = Values::new();
         for f in &self.fields {
-            let canon: Vec<String> = self
-                .values(&f.name)
-                .iter()
-                .filter(|t| !t.trim().is_empty())
-                .filter_map(|t| rules().check(f.basic, t, &f.choices).ok())
-                .collect();
-            if !canon.is_empty() {
-                out.insert(f.name.clone(), canon);
+            let now = self.canonical(&f.name, &self.values);
+            if f.required || now != self.canonical(&f.name, &self.initial) {
+                out.insert(f.name.clone(), now);
             }
         }
         Ok(out)
+    }
+
+    /// The canonical texts of a field, empty slots left out (a text that fails its rule is left out too; `submit`
+    /// has found those before it asks).
+    fn canonical(&self, field: &str, from: &Values) -> Vec<String> {
+        let Some(f) = self.fields.iter().find(|f| f.name == field) else {
+            return Vec::new();
+        };
+        from.get(field)
+            .map(|v| {
+                v.iter()
+                    .filter(|t| !t.trim().is_empty())
+                    .filter_map(|t| rules().check(f.basic, t, &f.choices).ok())
+                    .collect()
+            })
+            .unwrap_or_default()
     }
 }

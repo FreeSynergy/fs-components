@@ -21,31 +21,39 @@ impl Session {
                 true
             }
             Err(e) => {
-                self.fail(&e);
+                self.refused(&e);
                 false
             }
         }
     }
 
+    /// The command ran. Go to the screen it leads to first, then read the records again there, so a failed reload is
+    /// raised on that screen and stays (the command itself did run, so "done" is true as well).
     pub(crate) fn done(&mut self, plan: &CommandPlan, record: Option<String>, outcome: Outcome) {
         self.form = None;
-        self.reload();
         let target = match plan.kind {
             CommandKind::Create | CommandKind::Change => outcome
                 .id
                 .clone()
                 .or(record)
-                .filter(|id| self.list.record(id).is_some())
                 .map_or(Screen::List, Screen::Detail),
             CommandKind::Delete => Screen::List,
             _ if !plan.result.is_empty() => Screen::Result(plan.name.clone()),
             _ => record.map_or(Screen::List, Screen::Detail),
         };
-        if let Screen::Detail(id) = &target {
-            self.list.select(id);
-        }
         self.result = Some(outcome);
-        self.go(target);
+        self.go(target.clone());
+        let read = self.reload();
+        if let Screen::Detail(id) = target {
+            if read && self.list.record(&id).is_none() && !self.query.is_empty() {
+                // the record is not in the narrowed list: show everything, the record is what the person asked for
+                self.query.clear();
+                self.reload();
+            }
+            if !self.list.select(&id) && read {
+                self.go(Screen::List);
+            }
+        }
         self.messages.raise(MessageKind::Success, "done");
     }
 }

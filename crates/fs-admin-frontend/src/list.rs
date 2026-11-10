@@ -1,6 +1,7 @@
 //! The list: columns from the description, rows from the records, sorting, filtering, selection.
 //!
-//! Pattern: View function (Model–View–Update) — the model holds the state (records, sort, filter, selection), the
+//! Pattern: State — the model holds records, sort, filter and selection and their transitions (the filter is a plain
+//! predicate; a combinable Specification is not needed yet). The view function over it is pure: the
 //! rows are computed from it; the cell component draws them. No Blinc here.
 
 use fs_types::{BasicType, FieldDescription, TypeDescription};

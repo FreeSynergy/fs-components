@@ -75,12 +75,28 @@ fn findings_view(env: &FormEnv) -> Div {
         .unwrap_or_default();
     let mut column = div().flex_col().gap_px(s.spacing.xs).w_full();
     for i in issues {
-        let label = session
+        // A finding on a field the form does not have never gets here: the session raises it as a message.
+        let Some(field) = session
             .form()
             .and_then(|f| f.fields().iter().find(|x| x.name == i.field))
-            .map_or(i.field.clone(), |f| env.say.say(&f.label));
-        let text = format!("{label}: {}", env.say.say(&problem_key(i.problem)));
-        column = column.child(env.look.text(text, s.text.caption, pal.error));
+        else {
+            continue;
+        };
+        // Two texts side by side, never joined: word order is the translator's business (coding.md section 2a).
+        column = column.child(
+            div()
+                .flex_row()
+                .gap_px(s.spacing.s)
+                .child(
+                    env.look
+                        .text(env.say.say(&field.label), s.text.caption, pal.error),
+                )
+                .child(env.look.text(
+                    env.say.say(&problem_key(i.problem)),
+                    s.text.caption,
+                    pal.error,
+                )),
+        );
     }
     column
 }
@@ -93,7 +109,12 @@ pub fn form_body(env: &Arc<FormEnv>, slots: &Arc<Mutex<FormSlots>>) -> Div {
         let Some(form) = session.form() else {
             return div();
         };
-        (session.screen().key(), form.fields().to_vec())
+        // The generation of the form is part of the key: the same command on another record is another form
+        // (review finding 1: the old inputs, with the old record's text, were kept).
+        (
+            format!("{}#{}", session.screen().key(), form.generation()),
+            form.fields().to_vec(),
+        )
     };
     ensure(env, slots, &key);
     let mut page = panel(&env.look);
@@ -102,11 +123,7 @@ pub fn form_body(env: &Arc<FormEnv>, slots: &Arc<Mutex<FormSlots>>) -> Div {
             .form()
             .map(|f| f.values(&field.name).to_vec())
             .unwrap_or_default();
-        let mut label = field.label.clone();
-        label = env.say.say(&label);
-        if field.required {
-            label.push_str(" *");
-        }
+        let label = env.say.say(&field.label);
         let mut column = div()
             .flex_col()
             .gap_px(s.spacing.xs)
@@ -137,7 +154,15 @@ pub fn form_body(env: &Arc<FormEnv>, slots: &Arc<Mutex<FormSlots>>) -> Div {
                     div()
                         .w(s.text.body * 12.0)
                         .flex_shrink_0()
-                        .child(env.look.text(label, s.text.body, pal.text_weak)),
+                        .flex_row()
+                        .gap_px(s.spacing.xs)
+                        .child(env.look.text(label, s.text.body, pal.text_weak))
+                        // the mark of a required field is a sign, not a word
+                        .child(env.look.text(
+                            if field.required { "*" } else { "" },
+                            s.text.body,
+                            pal.error,
+                        )),
                 )
                 .child(column),
         );

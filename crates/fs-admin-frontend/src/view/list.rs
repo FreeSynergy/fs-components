@@ -30,17 +30,21 @@ pub fn rows(model: &ListModel) -> Vec<Row> {
         .map(|record| {
             let cells = (0..model.columns().len())
                 .map(|c| {
-                    let (text, more) = model.cell(record, c);
+                    // All values of the field in one cell, joined by a comma: no sentence is built from pieces here.
                     let field = &model.columns()[c].field;
-                    let shown = kind_of(field.basic).map_or(text.clone(), |k| {
-                        let f = k.field();
-                        f.cell(&f.split(&text))
+                    let texts = record.values.get(&field.name).map_or_else(Vec::new, |v| {
+                        v.iter().filter(|t| !t.trim().is_empty()).cloned().collect()
                     });
-                    if more > 0 {
-                        format!("{shown}  +{more}")
-                    } else {
-                        shown
-                    }
+                    texts
+                        .iter()
+                        .map(|t| {
+                            kind_of(field.basic).map_or(t.clone(), |k| {
+                                let f = k.field();
+                                f.cell(&f.split(t))
+                            })
+                        })
+                        .collect::<Vec<_>>()
+                        .join(", ")
                 })
                 .collect();
             Row::new(record.id.clone(), cells)

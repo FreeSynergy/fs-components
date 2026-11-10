@@ -1,6 +1,6 @@
 //! The frame of a page: title, actions, message bar, buttons.
 //!
-//! Pattern: Adapter over Blinc elements — data from the model and measures from the [`Look`] in, elements out. The
+//! Pattern: View function — pure functions from model data and the measures of the [`Look`] to elements. The
 //! buttons are `blinc_cn`'s (focus and Tab for free, ADR 0065 point 6); their height is cn's, not the style's
 //! (finding for Thread C / Blinc, `DESIGN.md`).
 

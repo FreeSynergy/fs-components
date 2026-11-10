@@ -139,13 +139,17 @@ impl Session {
     }
 
     /// Read the records again with the search that is set. The error of a program that cannot answer stays.
-    pub fn reload(&mut self) {
+    pub fn reload(&mut self) -> bool {
         match self.backend.list(&self.query) {
             Ok(records) => {
                 self.list.set_records(records);
                 self.messages.solve("unavailable");
+                true
             }
-            Err(e) => self.fail(&e),
+            Err(e) => {
+                self.fail(&e);
+                false
+            }
         }
     }
 
@@ -155,6 +159,12 @@ impl Session {
         self.form = None;
         self.go(Screen::List);
         self.reload();
+    }
+
+    /// Back to the list as it is, with the search that is set (from a record or a result).
+    pub fn back_to_list(&mut self) {
+        self.form = None;
+        self.go(Screen::List);
     }
 
     /// Show one record. Returns `false` if the list has none with this id.
@@ -248,16 +258,24 @@ impl Session {
                 self.done(&plan, record, outcome);
                 true
             }
-            Err(BackendError::Rejected(issues)) => {
-                if let Some(form) = &mut self.form {
-                    form.refuse(issues);
-                }
-                false
-            }
             Err(e) => {
-                self.fail(&e);
+                self.refused(&e);
                 false
             }
         }
+    }
+
+    /// The program said no. Findings that point at fields of the open form are marked there; anything else (a
+    /// confirm screen has no form, a finding may name a field the form does not have) is an error message: never silent.
+    pub(crate) fn refused(&mut self, e: &BackendError) {
+        if let (BackendError::Rejected(issues), Some(form)) = (e, self.form.as_mut())
+            && issues
+                .iter()
+                .all(|i| form.fields().iter().any(|f| f.name == i.field))
+        {
+            form.refuse(issues.clone());
+            return;
+        }
+        self.fail(e);
     }
 }
