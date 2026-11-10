@@ -39,7 +39,7 @@ Clicks bubble to ancestors and there is no way to stop them. So a click target t
 
 ## Tests
 
-`tests/model.rs`: sizes, initials, grab/hover/drop, refusals, buttons, keys. `tests/view.rs`: drawn offscreen in all four styles; locked controls do nothing and stay visible; unlock without a new build; move buttons, refusal notice, API gesture, click-to-move, keyboard, through Blinc's event router.
+`tests/model.rs`: sizes, initials, grab/hover/drop, refusals, buttons, keys. `tests/model_keys.rs`: refusals while putting down, keys with nowhere to go, drop_at. `tests/view_locked.rs`: drawn offscreen in all four styles; locked controls do nothing and stay visible; unlock without a new build. `tests/view_moves.rs`: move buttons, refusal notice, API gesture, click-to-move, keyboard, through Blinc's event router. `tests/view_withdrawn.rs`: the host withdraws the permission while a card is held (call, click, key, a host calling back from `supports`).
 
 ## Unsupported (named, not built)
 

@@ -70,6 +70,11 @@ pub fn last(log: &Log) -> String {
 }
 
 pub fn plan_with_today(items: Vec<Item>, today: Day, zoom: Zoom) -> Timeline {
+    plan_in(StyleId::Admin, items, today, zoom)
+}
+
+/// The same in any style.
+pub fn plan_in(style: StyleId, items: Vec<Item>, today: Day, zoom: Zoom) -> Timeline {
     let mut st = TimelineState::new(Some(today));
     st.zoom = zoom;
     Timeline::new(
@@ -79,7 +84,7 @@ pub fn plan_with_today(items: Vec<Item>, today: Day, zoom: Zoom) -> Timeline {
             dependencies: vec![],
         }),
         std::sync::Arc::new(fs_components_fields::KeysAsText),
-        fs_components_fields::Look::new(StyleId::Admin, false),
+        fs_components_fields::Look::new(style, false),
     )
 }
 

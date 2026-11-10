@@ -98,8 +98,10 @@ fn pen(
         ..TextStyle::default()
     };
     for (x, y, w, s) in &m.labels {
-        // Room for fewer than four letters would leave a stub that reads as a word: draw nothing.
-        if *w < 4.0 * caption {
+        // Room for fewer letters than the label has (up to four) would leave a stub that reads as a
+        // word: draw nothing. A day number of two digits needs little, a month name more.
+        let letters = s.chars().count().min(4) as f32;
+        if *w < letters * caption * 0.6 {
             continue;
         }
         ctx.push_clip(ClipShape::Rect(CRect::new(

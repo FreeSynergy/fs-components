@@ -100,16 +100,20 @@ impl Timeline {
 
     /// Set the zoom level.
     pub fn set_zoom(&self, zoom: Zoom) -> Step {
-        let old = self.lock().zoom;
-        let step = self.lock().set_zoom(zoom);
+        let (old, step) = {
+            let mut state = self.lock();
+            (state.zoom, state.set_zoom(zoom))
+        };
         self.apply(step, old)
     }
 
     /// A key press; true when the timeline used it.
     pub fn key(&self, key: Key) -> bool {
         let items = self.source.items();
-        let old = self.lock().zoom;
-        let step = self.lock().key(&items, key);
+        let (old, step) = {
+            let mut state = self.lock();
+            (state.zoom, state.key(&items, key))
+        };
         self.apply(step, old) != Step::Ignored
     }
 
