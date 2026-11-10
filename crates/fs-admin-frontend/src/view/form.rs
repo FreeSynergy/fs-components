@@ -12,11 +12,10 @@ use blinc_layout::div::{Div, div};
 use fs_components_fields::{Look, Say, Suggest};
 use fs_components_widgets::Element;
 use fs_components_widgets::live::Live;
-use fs_types::{RecordIssue, RecordProblem};
 
 use super::chrome::{cn_button, panel};
+use super::findings::findings_view;
 use super::inputs::{Body, Slot, choice, plain};
-use crate::form::FormModel;
 use crate::session::Session;
 
 /// The slots of the open form, by field and value index.
@@ -54,59 +53,6 @@ pub struct FormEnv {
 
 fn lock(s: &Mutex<Session>) -> std::sync::MutexGuard<'_, Session> {
     s.lock().unwrap_or_else(PoisonError::into_inner)
-}
-
-/// The translation key of a finding.
-pub fn problem_key(p: RecordProblem) -> String {
-    match p {
-        RecordProblem::UnknownField => "problem.unknown-field".to_owned(),
-        RecordProblem::Missing => "problem.missing".to_owned(),
-        RecordProblem::NotMultiple => "problem.not-multiple".to_owned(),
-        RecordProblem::Value(v) => format!("problem.{}", v.code()),
-    }
-}
-
-fn findings_view(env: &FormEnv) -> Div {
-    let (s, pal) = (env.look.style, env.look.palette());
-    let session = lock(&env.session);
-    let issues: Vec<RecordIssue> = session
-        .form()
-        .map(FormModel::visible_issues)
-        .unwrap_or_default();
-    let mut column = div().flex_col().gap_px(s.spacing.xs).w_full();
-    for i in issues {
-        // A finding on a field the form does not have never gets here: the session raises it as a message.
-        let Some(field) = session
-            .form()
-            .and_then(|f| f.fields().iter().find(|x| x.name == i.field))
-        else {
-            continue;
-        };
-        // Two texts side by side, never joined: word order is the translator's business (coding.md section 2a).
-        column = column.child(
-            div()
-                .flex_row()
-                .gap_px(s.spacing.s)
-                .child(
-                    div()
-                        .id(format!("finding-{}-label", field.name))
-                        .child(
-                            env.look
-                                .text(env.say.say(&field.label), s.text.caption, pal.error),
-                        ),
-                )
-                .child(
-                    div()
-                        .id(format!("finding-{}-problem", field.name))
-                        .child(env.look.text(
-                            env.say.say(&problem_key(i.problem)),
-                            s.text.caption,
-                            pal.error,
-                        )),
-                ),
-        );
-    }
-    column
 }
 
 /// The page body for the open form.

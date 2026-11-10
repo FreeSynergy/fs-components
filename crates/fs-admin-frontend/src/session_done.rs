@@ -4,8 +4,9 @@
 
 use fs_types::CommandKind;
 
-use crate::backend::{Outcome, Values};
+use crate::backend::{BackendError, Outcome, Values};
 use crate::commands::CommandPlan;
+use crate::form::FormModel;
 use crate::messages::MessageKind;
 use crate::screen::Screen;
 use crate::session::Session;
@@ -47,8 +48,12 @@ impl Session {
         if let Screen::Detail(id) = target {
             if read && self.list.record(&id).is_none() && !self.query.is_empty() {
                 // the record is not in the narrowed list: show everything, the record is what the person asked for
-                self.query.clear();
+                // the search is dropped only if the wider reading works; else the old search stays, matching the list
+                let old = std::mem::take(&mut self.query);
                 read = self.reload();
+                if !read {
+                    self.query = old;
+                }
             }
             if self.list.select(&id) {
                 // loaded: the screen shows it
@@ -61,5 +66,36 @@ impl Session {
             }
         }
         self.messages.raise(MessageKind::Success, "done");
+    }
+
+    /// The program said no. Findings that point at fields of the open form are marked there; anything else (a confirm
+    /// screen has no form, a finding on a field the form does not have, a refusal with no findings at all) is an error
+    /// message: never silent.
+    pub(crate) fn refused(&mut self, e: &BackendError) {
+        if let (BackendError::Rejected(issues), Some(form)) = (e, self.form.as_mut()) {
+            let (mine, others): (Vec<_>, Vec<_>) = issues
+                .iter()
+                .cloned()
+                .partition(|i| form.fields().iter().any(|f| f.name == i.field));
+            if !mine.is_empty() {
+                form.refuse(mine);
+            }
+            if others.is_empty() && !issues.is_empty() {
+                return;
+            }
+        }
+        self.fail(e);
+    }
+
+    /// Whether an open form holds text the person has not sent. A search is no work to lose.
+    pub fn has_unsaved_form(&self) -> bool {
+        match &self.screen {
+            Screen::Command { name, .. } => {
+                self.command(name)
+                    .is_some_and(|p| p.kind != CommandKind::Find)
+                    && self.form.as_ref().is_some_and(FormModel::is_dirty)
+            }
+            _ => false,
+        }
     }
 }

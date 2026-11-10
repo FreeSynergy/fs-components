@@ -15,6 +15,7 @@ use fs_components_widgets::{Element, styles};
 
 use super::chrome::{Action, Weight, button, header, message_bar};
 use super::form::{FormEnv, FormSlots, form_body};
+use super::redraw::redraw_worker;
 use crate::commands::CommandPlan;
 use crate::screen::Screen;
 use crate::session::Session;
@@ -58,7 +59,10 @@ impl AdminSurface {
         suggest: Option<Arc<dyn Suggest>>,
     ) -> Self {
         let live = Live::new();
-        session.messages().subscribe(redraw_worker(live));
+        session.messages().subscribe(redraw_worker(
+            move || live.refresh_now(),
+            std::time::Duration::from_millis(crate::messages::SUCCESS_MS + 100),
+        ));
         let unoffered = crate::unoffered_commands(session.description())
             .into_iter()
             .map(|n| {
@@ -217,36 +221,6 @@ impl AdminSurface {
             about: Arc::clone(&self.about),
             live: self.live,
         }
-    }
-}
-
-/// The worker that draws the page again when the messages change. Messages change while the session is locked (a
-/// transition), and a draw reads the session, so the draw must not run on the caller's thread: it is asked by a signal
-/// and done here, which waits for the lock. One thread per surface, ended when the surface goes. It also draws once more
-/// when a success has run out (messages have no timer of their own).
-fn redraw_worker(live: Live) -> impl Fn() + Send + Sync + 'static {
-    let (tx, rx) = std::sync::mpsc::channel::<()>();
-    std::thread::spawn(move || {
-        let wait = std::time::Duration::from_millis(crate::messages::SUCCESS_MS + 100);
-        let mut armed = false;
-        loop {
-            match rx.recv_timeout(wait) {
-                Ok(()) => {
-                    live.refresh_now();
-                    armed = true;
-                }
-                Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {
-                    if std::mem::take(&mut armed) {
-                        live.refresh_now();
-                    }
-                }
-                Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => break,
-            }
-        }
-    });
-    let tx = std::sync::Mutex::new(tx);
-    move || {
-        let _ = tx.lock().unwrap_or_else(PoisonError::into_inner).send(());
     }
 }
 

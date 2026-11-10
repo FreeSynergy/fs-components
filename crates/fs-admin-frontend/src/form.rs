@@ -2,8 +2,7 @@
 //!
 //! Pattern: Unit of Work — it remembers what was there at the start (`initial`) and hands back what changed (and the required fields), checked,
 //! on [`FormModel::submit`] (a field the person emptied comes back as an empty list = cleared); the checking is the one
-//! flow of `fs-types` (`check_record`), so this form and the program's own `check` command say the same (Template method
-//! there). Findings show only where the person has been (touched) or after a try to send; a `Missing` never shows
+//! flow of `fs-types` (`check_record`), so this form and the program's own `check` command say the same (Strategy by kind there). Findings show only where the person has been (touched) or after a try to send; a `Missing` never shows
 //! before that. No trait of its own: the boundary is `Backend`; this is a value the session owns.
 
 use std::collections::{BTreeMap, BTreeSet};
@@ -148,9 +147,23 @@ impl FormModel {
 
     /// Every finding on the values now, shown or not.
     pub fn issues(&self) -> Vec<RecordIssue> {
-        let mut found = as_type(&self.fields).check_record(rules(), &self.values);
+        let mut found = self.own_issues();
         found.extend(self.refused.iter().cloned());
+        let mut seen: Vec<RecordIssue> = Vec::new();
+        found.retain(|i| {
+            let new = !seen.contains(i);
+            if new {
+                seen.push(i.clone());
+            }
+            new
+        });
         found
+    }
+
+    /// What the rules of the basic types find. A program's refusal is not among them: it does not stop a new try (the
+    /// person may not be able to reach what it points at), the program is asked again.
+    fn own_issues(&self) -> Vec<RecordIssue> {
+        as_type(&self.fields).check_record(rules(), &self.values)
     }
 
     /// The findings to show: where the person has typed, and everything after a try to send.
@@ -199,6 +212,9 @@ impl FormModel {
                 if let Some(slot) = sent.get(&i.field).and_then(|v| v.get(i.index)) {
                     i.index = *slot;
                 }
+                // a finding on a slot that is not there points at the last one, where the person can see it
+                let slots = self.values.get(&i.field).map_or(0, Vec::len);
+                i.index = i.index.min(slots.saturating_sub(1));
                 i
             })
             .collect();
@@ -212,7 +228,7 @@ impl FormModel {
     /// All findings.
     pub fn submit(&mut self) -> Result<Values, Vec<RecordIssue>> {
         self.attempted = true;
-        let found = self.issues();
+        let found = self.own_issues();
         if !found.is_empty() {
             return Err(found);
         }

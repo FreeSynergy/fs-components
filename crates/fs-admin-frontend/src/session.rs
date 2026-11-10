@@ -24,6 +24,8 @@ pub struct Session {
     pub(crate) plans: Vec<CommandPlan>,
     pub(crate) list: ListModel,
     pub(crate) query: Values,
+    /// The last reading of the records failed: what the list holds is old and no record of it is shown as current.
+    pub(crate) stale: bool,
     pub(crate) screen: Screen,
     pub(crate) form: Option<FormModel>,
     pub(crate) result: Option<Outcome>,
@@ -43,6 +45,7 @@ impl Session {
             description,
             backend,
             query: Values::new(),
+            stale: false,
             screen: Screen::List,
             form: None,
             result: None,
@@ -108,6 +111,9 @@ impl Session {
 
     /// The record shown on the detail screen.
     pub fn record(&self) -> Option<&Record> {
+        if self.stale {
+            return None; // old values are not shown as current
+        }
         match &self.screen {
             Screen::Detail(id)
             | Screen::Confirm { record: id, .. }
@@ -135,6 +141,8 @@ impl Session {
             BackendError::NotFound => "not-found",
             BackendError::Unavailable(_) => "unavailable",
         };
+        // The same error is told once, however often it happens.
+        self.messages.solve(code);
         self.messages.raise(MessageKind::Error, code);
     }
 
@@ -143,10 +151,12 @@ impl Session {
         match self.backend.list(&self.query) {
             Ok(records) => {
                 self.list.set_records(records);
+                self.stale = false;
                 self.messages.solve("unavailable");
                 true
             }
             Err(e) => {
+                self.stale = true;
                 self.fail(&e);
                 false
             }
@@ -163,8 +173,25 @@ impl Session {
 
     /// Back to the list as it is, with the search that is set (from a record or a result).
     pub fn back_to_list(&mut self) {
+        // From a record that was not loaded (or with old records) the list is read again, so it is not shown stale
+        // without a word: a failure is told on the list screen.
+        let unread = self.stale
+            || matches!(&self.screen, Screen::Detail(id) if self.list.record(id).is_none());
         self.form = None;
         self.go(Screen::List);
+        if unread {
+            self.reload();
+        }
+    }
+
+    /// Whether a search narrows the list.
+    pub fn search_active(&self) -> bool {
+        !self.query.is_empty()
+    }
+
+    /// Whether the records shown are old because the last reading failed.
+    pub fn is_stale(&self) -> bool {
+        self.stale
     }
 
     /// Show one record. Returns `false` if the list has none with this id.
@@ -205,7 +232,9 @@ impl Session {
             // The record is the one of the screen that is shown, and only if it is loaded: the selection of the list
             // may point elsewhere (or nowhere) after a failed reload.
             Placement::OnRecord => match &self.screen {
-                Screen::Detail(id) if self.list.record(id).is_some() => Some(id.clone()),
+                Screen::Detail(id) if !self.stale && self.list.record(id).is_some() => {
+                    Some(id.clone())
+                }
                 _ => return false,
             },
         };
@@ -264,37 +293,6 @@ impl Session {
                 self.refused(&e);
                 false
             }
-        }
-    }
-
-    /// The program said no. Findings that point at fields of the open form are marked there; anything else (a confirm
-    /// screen has no form, a finding on a field the form does not have, a refusal with no findings at all) is an error
-    /// message: never silent.
-    pub(crate) fn refused(&mut self, e: &BackendError) {
-        if let (BackendError::Rejected(issues), Some(form)) = (e, self.form.as_mut()) {
-            let (mine, others): (Vec<_>, Vec<_>) = issues
-                .iter()
-                .cloned()
-                .partition(|i| form.fields().iter().any(|f| f.name == i.field));
-            if !mine.is_empty() {
-                form.refuse(mine);
-            }
-            if others.is_empty() && !issues.is_empty() {
-                return;
-            }
-        }
-        self.fail(e);
-    }
-
-    /// Whether an open form holds text the person has not sent. A search is no work to lose.
-    pub fn has_unsaved_form(&self) -> bool {
-        match &self.screen {
-            Screen::Command { name, .. } => {
-                self.command(name)
-                    .is_some_and(|p| p.kind != CommandKind::Find)
-                    && self.form.as_ref().is_some_and(FormModel::is_dirty)
-            }
-            _ => false,
         }
     }
 }

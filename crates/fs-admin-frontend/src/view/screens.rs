@@ -1,6 +1,7 @@
 //! The pages of the surface other than the frame: list, detail, confirm, result, about.
 //!
-//! Pattern: View function, part of [`AdminSurface`] (an `impl` split off to keep the file small).
+//! Pattern: Adapter (session state to elements; the click handlers it builds change the session), part of
+//! [`AdminSurface`] (an `impl` split off to keep the file small).
 
 use std::sync::Arc;
 
