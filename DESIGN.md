@@ -1,6 +1,10 @@
 # fs-components - Design
 
-Shared UI components of FreeSynergy on Blinc 0.6 (released crates, `blinc_* = "0.6"`, resolved 0.6.0). Rules: ADR 0005 (a widget is the core of an app), 0009 (Blinc only behind our API), 0015 (no second GUI framework), 0037 (a workbench is open, gestures come from the frontend), 0043 (patterns, small files), 0049 (components first, only what the next program needs).
+Shared UI components of FreeSynergy on Blinc (fork `FreeSynergy/Blinc`, tag `fs-blinc-1`, see "Blinc in one place"). Rules: ADR 0005 (a widget is the core of an app), 0009 (Blinc only behind our API), 0015 (no second GUI framework), 0037 (a workbench is open, gestures come from the frontend), 0043 (patterns, small files), 0049 (components first, only what the next program needs).
+
+## Blinc in one place (Q0, 2026-11-10)
+
+Blinc comes from our fork `FreeSynergy/Blinc`, branch `freesynergy`, as a **git dependency on the tag `fs-blinc-1`** (pinned once in `[workspace.dependencies]` of the root `Cargo.toml`; every crate says `blinc_x.workspace = true`). Why not crates.io plus `[patch]`: Cargo applies `[patch]` only in the top project of a build, so every program had to repeat the patch lines, with different states, and a fix did not arrive everywhere (black window). A git dependency is inherited by dependants. Pattern: Facade: the crate `fs-components` re-exports Blinc as `fs_components::blinc::{animation, app, cn, core, layout, noto_emoji, theme}`; a program writes `use fs_components::blinc::layout::...` and has no `blinc_*` line and no `[patch]` line (`scripts/check_rust_rules.py` of fs-release rejects both). Moving Blinc: new `fs-blinc-N` tag, change the tag in the root `Cargo.toml`, new fs-components tag, `fs-release/scripts/bump-components.sh <tag>` for the programs. Checked: a probe crate that depends only on fs-components has exactly one source for `blinc_layout` (`cargo tree -i blinc_layout`). Since the fork is newer than crates.io 0.6.0 the button is wider; the confirm answer of the files band therefore wraps at 160 px.
 
 ## State
 
