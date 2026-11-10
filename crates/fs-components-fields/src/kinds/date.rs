@@ -77,7 +77,16 @@ impl BasicField for Date {
     fn settle(&self, parts: &[String]) -> Vec<String> {
         let parts = padded(parts, 3);
         let pasted: Vec<&str> = parts[0].trim().split('-').collect();
-        if let [y, m, d] = pasted.as_slice() {
+        if let [y, m, d] = pasted
+            .as_slice()
+            .iter()
+            .map(|p| p.trim())
+            .collect::<Vec<_>>()
+            .as_slice()
+        {
+            if y.is_empty() || m.is_empty() || d.is_empty() {
+                return parts;
+            }
             return vec![(*y).to_string(), (*m).to_string(), (*d).to_string()];
         }
         parts

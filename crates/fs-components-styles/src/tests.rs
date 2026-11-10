@@ -20,7 +20,7 @@ fn text_is_readable_in_both_appearances() {
         for dark in [false, true] {
             for (what, fg, bg) in style(id).palette(dark).readable_pairs() {
                 let ratio = fg.contrast(bg);
-                // Apple's own blue (#007AFF) under white text reaches 4.02: the 1:1 rebuild keeps it, so text on the accent is held to the 3:1 of WCAG for large text and controls, the rest to 4.5:1.
+                // Apple's own blue (#0088FF) under white text reaches about 3.5: the 1:1 rebuild keeps it, so text on the accent is held to the 3:1 of WCAG for large text and controls, the rest to 4.5:1.
                 let need = if what == "text on accent" { 3.0 } else { 4.5 };
                 assert!(
                     ratio >= need,

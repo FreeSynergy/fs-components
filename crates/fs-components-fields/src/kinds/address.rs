@@ -95,6 +95,9 @@ impl BasicField for Address {
             [a, b] => (*a, *b, ""),
             [a, rest @ .., z] => (*a, rest.first().copied().unwrap_or(""), *z),
         };
+        if let [_, _, region @ .., _] = lines.as_slice() {
+            v[3] = region.join(", ");
+        }
         v[0] = street.to_string();
         match mid.split_once(' ') {
             Some((code, city)) if code.chars().next().is_some_and(|c| c.is_ascii_digit()) => {
@@ -173,5 +176,11 @@ mod tests {
             a("Main St 1", "10115", "Berlin", "", "Germany")
         );
         assert_eq!(Address.split("Berlin"), a("Berlin", "", "", "", ""));
+        let full = a("Main St 1", "10115", "Berlin", "BE", "Germany");
+        assert_eq!(
+            Address.split(&Address.join(&full)),
+            full,
+            "split undoes join"
+        );
     }
 }

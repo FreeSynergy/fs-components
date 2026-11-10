@@ -92,6 +92,22 @@ pub fn build() -> Style {
                 offset: 2.0,
             },
         },
+        effects_dark: Effects {
+            chrome: Surface::Solid,
+            overlay: Surface::Solid,
+            card_shadow: None,
+            overlay_shadow: Some(Shadow {
+                dx: 0.0,
+                dy: 4.0,
+                blur: 16.0,
+                spread: 0.0,
+                color: c(0x000000).alpha(0x40),
+            }),
+            focus: FocusRing {
+                width: 4.0,
+                offset: 2.0,
+            },
+        },
         icons: IconSet {
             stroke: 2.5,
             cap: Cap::Round,

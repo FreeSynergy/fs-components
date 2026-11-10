@@ -25,7 +25,10 @@ The four components of each basic type (ADR 0066, item 4): **input**, **display*
 | Value types for name, address, date | here, local to this crate (provisional); move to the types crate of Thread T when it is tagged |
 | Per-language order and format (date, name, address) | **Unsupported**: ISO date, Western name order, street/postcode/locality order; the words crate has no date formatting yet |
 | Focus by Tab between parts, sizes by style | parts are normal text inputs; the style gives their height, radius and colours (tested: the control height equals the style's) |
-| Glass, backdrop (Mica) behind the components | not drawn here: a surface belongs to the frontend, which sets the ground; measured separately against Blinc |
+| Surfaces | `Look::surface` draws the chrome/overlay surface of a style: flat, glass (measured: blurs), **Backdrop (Mica) is Unsupported**: drawn as the flat tint, Blinc has no compositor blur (git-bug in the Blinc clone). The frontend places the surface, components do not paint a ground |
+| Focus and hover look of the input | **partly Unsupported**: Blinc draws hover and focus of a text input with its own theme (`ua_styles`), so the style's focus colour and ring (`Palette::focus`, `Effects::focus`) are not applied to the inputs yet. Text and idle colours are the style's. Possible cause of the "white text while typing" hand test (not reproduced in the live probe, not confirmed) |
+| Pasting a whole value into one part | e-mail and date spread it (`settle`); name, phone, address do not (Unsupported) |
+| Rules of the standard types in `fs-types` (Thread T, `fs-interfaces` v0.0.4: `BasicRules` check/suggest, `Date`, `Name`, `Address`) | **not used yet**: this crate still has its own date, name and address rules and the `Suggest` list. To do: delegate rules to `fs-types`, keep only the parts and the views here |
 
 ## Handtest errors of the input (2026-11-10)
 

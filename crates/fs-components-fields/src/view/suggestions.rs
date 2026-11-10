@@ -25,10 +25,13 @@ pub(super) fn hint(on: &Arc<Inner>) -> Div {
         .problem(&parts)
         .filter(|_| on.touched.load(Ordering::Relaxed));
     if let Some(problem) = problem {
-        column = column.child(
-            on.look
-                .text(on.say.say(problem.key()), s.text.caption, pal.error),
-        );
+        let mut line = on
+            .look
+            .text(on.say.say(problem.key()), s.text.caption, pal.error);
+        if let Some(name) = &on.name {
+            line = line.id(format!("{name}-problem"));
+        }
+        column = column.child(line);
     }
     let Some(source) = &on.suggest else {
         return column;
@@ -56,7 +59,7 @@ pub(super) fn hint(on: &Arc<Inner>) -> Div {
                 .on_click(move |_| {
                     target.refs[segment].set_value(value.clone());
                     target.refs[segment].focus();
-                    target.live.refresh_now();
+                    target.changed(segment);
                 })
                 .child(on.look.text(candidate, s.text.body, pal.text)),
         );

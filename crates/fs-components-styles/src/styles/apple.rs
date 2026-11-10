@@ -62,7 +62,7 @@ pub fn build() -> Style {
             focus: c(0x0088FF),
             hover: c(0xEDEDED),
             selected: c(0xD6E6FF),
-            error: c(0xFF383C),
+            error: c(0xD70015),
             success: c(0x34C759),
         },
         dark: Palette {
@@ -77,7 +77,7 @@ pub fn build() -> Style {
             focus: c(0x0091FF),
             hover: c(0x3A3A3C),
             selected: c(0x0A3A78),
-            error: c(0xFF4245),
+            error: c(0xFF6961),
             success: c(0x30D158),
         },
         effects: Effects {
@@ -89,6 +89,30 @@ pub fn build() -> Style {
             overlay: Surface::Glass {
                 blur: 30.0,
                 tint: c(0xFFFFFF).alpha(0xC7),
+                saturation: 1.8,
+            },
+            card_shadow: None,
+            overlay_shadow: Some(Shadow {
+                dx: 0.0,
+                dy: 10.0,
+                blur: 30.0,
+                spread: 0.0,
+                color: c(0x000000).alpha(0x38),
+            }),
+            focus: FocusRing {
+                width: 3.0,
+                offset: 0.0,
+            },
+        },
+        effects_dark: Effects {
+            chrome: Surface::Glass {
+                blur: 20.0,
+                tint: c(0x2A2A2C).alpha(0xB3),
+                saturation: 1.8,
+            },
+            overlay: Surface::Glass {
+                blur: 30.0,
+                tint: c(0x2D2D2F).alpha(0xC7),
                 saturation: 1.8,
             },
             card_shadow: None,

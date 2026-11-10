@@ -197,7 +197,7 @@ impl Inner {
 
     /// Part `i` changed: spread a whole that was typed into it, remember it, ask the question
     /// again, tell the owner.
-    fn changed(&self, i: usize) {
+    pub(super) fn changed(&self, i: usize) {
         let field = self.kind.field();
         let typed = self.parts();
         let settled = field.settle(&typed);
@@ -208,7 +208,11 @@ impl Inner {
         }
         // Part `i` gave up text to a later one (an `@` typed into the local part): go on there.
         if settled.get(i) != typed.get(i) && i + 1 < self.refs.len() {
-            self.refs[i + 1].focus();
+            let last = (i + 1..settled.len().min(self.refs.len()))
+                .rev()
+                .find(|j| typed.get(*j) != settled.get(*j))
+                .unwrap_or(i + 1);
+            self.refs[last].focus();
         }
         self.touched.store(true, Ordering::Relaxed);
         self.last.store(i, Ordering::Relaxed);

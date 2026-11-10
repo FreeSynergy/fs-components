@@ -14,7 +14,7 @@ impl Look {
     /// `ground` drawn as the chrome (window, sidebar, toolbar) or the overlay (popover, dialog)
     /// surface of the style: the panel colour for a flat one, glass for a glass one.
     pub fn surface(&self, ground: Div, overlay: bool) -> Div {
-        let effects = &self.style.effects;
+        let effects = self.style.effects(self.dark);
         let surface = if overlay {
             effects.overlay
         } else {

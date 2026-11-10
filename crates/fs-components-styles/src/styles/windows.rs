@@ -103,6 +103,30 @@ pub fn build() -> Style {
                 offset: 1.0,
             },
         },
+        effects_dark: Effects {
+            chrome: Surface::Backdrop {
+                tint: c(0x202020).alpha(0xE6),
+            },
+            overlay: Surface::Solid,
+            card_shadow: Some(Shadow {
+                dx: 0.0,
+                dy: 2.0,
+                blur: 4.0,
+                spread: 0.0,
+                color: c(0x000000).alpha(0x24),
+            }),
+            overlay_shadow: Some(Shadow {
+                dx: 0.0,
+                dy: 8.0,
+                blur: 16.0,
+                spread: 0.0,
+                color: c(0x000000).alpha(0x24),
+            }),
+            focus: FocusRing {
+                width: 2.0,
+                offset: 1.0,
+            },
+        },
         icons: IconSet {
             stroke: 1.5,
             cap: Cap::Butt,

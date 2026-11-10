@@ -96,8 +96,10 @@ pub struct Style {
     pub light: Palette,
     /// Colours, dark.
     pub dark: Palette,
-    /// Surfaces, shadows, focus.
+    /// Surfaces, shadows, focus, light.
     pub effects: Effects,
+    /// The same for the dark appearance (a light tint over a dark panel would be unreadable).
+    pub effects_dark: Effects,
     /// Icons.
     pub icons: IconSet,
 }
@@ -108,6 +110,15 @@ impl Style {
         if dark { &self.dark } else { &self.light }
     }
 
+    /// The effects for the appearance.
+    pub fn effects(&self, dark: bool) -> &Effects {
+        if dark {
+            &self.effects_dark
+        } else {
+            &self.effects
+        }
+    }
+
     /// What this style asks of the engine, one entry per distinct request.
     pub fn demands(&self) -> Vec<Demand> {
         let mut d = vec![
@@ -116,7 +127,12 @@ impl Style {
             Demand::RowHeight(self.heights.row),
             Demand::FocusRing,
         ];
-        for surface in [self.effects.chrome, self.effects.overlay] {
+        for surface in [
+            self.effects.chrome,
+            self.effects.overlay,
+            self.effects_dark.chrome,
+            self.effects_dark.overlay,
+        ] {
             match surface {
                 Surface::Solid => {}
                 Surface::Glass { blur, .. } => d.push(Demand::Glass(blur)),
@@ -129,7 +145,15 @@ impl Style {
         {
             d.push(Demand::Shadow(s.blur));
         }
-        d.dedup();
+        let mut seen: Vec<Demand> = Vec::new();
+        d.retain(|x| {
+            if seen.contains(x) {
+                false
+            } else {
+                seen.push(*x);
+                true
+            }
+        });
         d
     }
 }

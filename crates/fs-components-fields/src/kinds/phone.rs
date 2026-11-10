@@ -2,9 +2,9 @@
 //!
 //! Pattern: Strategy (one [`BasicField`] implementation); the rule is `PhoneNumber` (E.164) of the
 //! contract crate. The country code is its own part so that the person is asked for it; the stored
-//! form is the plain `+<digits>`. A number pasted whole is split at its first space or at the
-//! longest known leading digits; without a space the digits stay in the number part (no country
-//! is guessed).
+//! form is the plain `+<digits>`. A number pasted whole is split at its first space when it starts
+//! with `+`; without one the digits stay in the number part (no country is guessed; splitting by
+//! known country codes is Unsupported).
 
 use fs_components_styles::Glyph;
 use fs_interfaces::values::{ContactValue, PhoneNumber};

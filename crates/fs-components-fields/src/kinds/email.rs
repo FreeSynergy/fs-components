@@ -48,12 +48,14 @@ impl BasicField for Email {
     fn settle(&self, parts: &[String]) -> Vec<String> {
         let mut parts = padded(parts, 2);
         if let Some((local, rest)) = parts[0].clone().split_once('@') {
-            let domain = rest.trim_start_matches('@');
             parts[0] = local.to_string();
-            parts[1] = domain.to_string();
+            // an `@` typed at the end leaves the domain that is already there
+            if !rest.trim_start_matches('@').is_empty() {
+                parts[1] = rest.trim_start_matches('@').to_string();
+            }
         }
-        // no domain holds an `@`; the one just typed may arrive here too (see FieldInput)
-        parts[1] = parts[1].replace('@', "");
+        // the `@` just typed may arrive in the domain part too (see FieldInput); any other stays and is flagged by `problem`
+        parts[1] = parts[1].trim_start_matches('@').to_string();
         parts
     }
 
@@ -67,7 +69,7 @@ impl BasicField for Email {
     }
 
     fn split(&self, text: &str) -> Vec<String> {
-        match text.trim().rsplit_once('@') {
+        match text.trim().split_once('@') {
             Some((local, domain)) => vec![local.to_string(), domain.to_string()],
             None => vec![text.trim().to_string(), String::new()],
         }
@@ -128,6 +130,17 @@ mod tests {
             p("ada", "example.org")
         );
         assert_eq!(Email.settle(&p("ada", "x.org")), p("ada", "x.org"));
+        assert_eq!(
+            Email.settle(&p("ada@", "x.org")),
+            p("ada", "x.org"),
+            "a typed @ keeps the domain"
+        );
+        assert_eq!(Email.settle(&p("ada", "@exa")), p("ada", "exa"));
+        assert_eq!(
+            Email.problem(&p("ada", "ada@example.org")),
+            Some(Problem::Contact(ValueProblem::ManyAt)),
+            "a whole address pasted into the domain is flagged, not changed"
+        );
     }
 
     #[test]

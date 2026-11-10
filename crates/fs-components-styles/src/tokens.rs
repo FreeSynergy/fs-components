@@ -96,13 +96,16 @@ pub struct Palette {
 
 impl Palette {
     /// Pairs of (name, text colour, ground) that must stay readable (WCAG 4.5:1).
-    pub fn readable_pairs(&self) -> [(&'static str, Rgba, Rgba); 5] {
+    pub fn readable_pairs(&self) -> [(&'static str, Rgba, Rgba); 8] {
         [
             ("text on ground", self.text, self.ground),
             ("text on panel", self.text, self.panel),
             ("text in field", self.text, self.field),
             ("weak text on panel", self.text_weak, self.panel),
             ("text on accent", self.on_accent, self.accent),
+            ("weak text on ground", self.text_weak, self.ground),
+            ("weak text in field", self.text_weak, self.field),
+            ("error on panel", self.error, self.panel),
         ]
     }
 }

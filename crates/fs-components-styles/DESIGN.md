@@ -6,7 +6,8 @@ The style system (ADR 0066, items 5 and 6): `Style` is plain data (spacing, heig
 
 | Where | Pattern | Why |
 |---|---|---|
-| `color`, `tokens`, `effects`, `icons` | none | plain data and pure functions |
+| `color`, `tokens`, `effects` | none | plain data and pure functions |
+| `icons.rs` | Value object | `IconSet` holds how to draw, over a closed enum of glyphs |
 | `style.rs` | Registry + trait `StyleCatalog` | a frontend names a `StyleId`, a new style is one more entry; `Builtin` is the catalog of the four |
 | `styles/*` | none | one function per style, returning data |
 
@@ -19,7 +20,7 @@ The style system (ADR 0066, items 5 and 6): `Style` is plain data (spacing, heig
 | Simple | our own design (`Provenance::Sheet`: there is no outside sheet) |
 | Icon set | 11 glyphs of our own on a 24 grid; a style changes line width, ends, corners and size. Entirely different shapes per style: Unsupported |
 | Fonts | named per style (open licences: Source Sans 3, Inter, Noto Sans, Atkinson Hyperlegible); loading them is the task of the app shell, not built here |
-| Glass, Backdrop (Mica) | described, **not measured on Blinc yet**; `Style::demands()` lists what each style asks, the measurements go to git-bug in the Blinc clone |
+| Glass, Backdrop (Mica) | glass measured on Blinc: it blurs (step 255 to 23). Backdrop: **Unsupported** by Blinc (no compositor blur), drawn flat. Effects exist per appearance (`effects`, `effects_dark`) |
 
 ## Known finding
 

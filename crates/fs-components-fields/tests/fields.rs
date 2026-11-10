@@ -98,9 +98,10 @@ fn every_component_draws_something_in_every_style() {
                         ),
                     ),
                 ];
-                if !has_fonts() {
-                    continue;
-                }
+                assert!(
+                    has_fonts(),
+                    "no system fonts: the pictures would have no text (install DejaVu or Noto)"
+                );
                 for (mode, img) in shots {
                     let n = ink(&img, (0, 0, img.width(), img.height()), background(&img));
                     assert!(
@@ -187,7 +188,7 @@ fn typing_an_at_into_the_first_part_moves_the_rest_to_the_domain() {
 }
 
 #[test]
-fn a_wrong_value_shows_its_sentence_only_after_a_change_and_suggestions_complete() {
+fn a_wrong_value_shows_its_sentence_only_after_a_change_and_a_suggestion_fills_the_part() {
     let _g = serial();
     let look = Look::new(StyleId::Windows, false);
     let list = SuggestFromList {
@@ -199,23 +200,46 @@ fn a_wrong_value_shows_its_sentence_only_after_a_change_and_suggestions_complete
             "example.net".into(),
         ],
     };
+    let seen = Arc::new(std::sync::Mutex::new(String::new()));
+    let sink = Arc::clone(&seen);
     let f = FieldInput::new(Kind::Email, look, Arc::new(KeysAsText))
         .name("m")
-        .suggest(Arc::new(list));
-    let tree = layout(f.build(), 600.0, 200.0);
+        .suggest(Arc::new(list))
+        .on_change(move |t| *sink.lock().unwrap() = t.to_string());
+    let mut tree = layout(f.build(), 600.0, 200.0);
+    assert!(
+        tree.query_by_id("m-problem").is_none(),
+        "an untouched form shows no error"
+    );
     assert!(
         tree.query_by_id("m-suggest-0").is_none(),
         "nothing typed, nothing suggested"
     );
-    let mut tree = tree;
     let mut input = Input::new();
+    type_into(&mut tree, &mut input, "m-local", "ada");
+    common::frame(&mut tree, 600.0, 200.0);
+    assert!(
+        tree.query_by_id("m-problem").is_some(),
+        "after a change the missing domain is said"
+    );
     type_into(&mut tree, &mut input, "m-domain", "ex");
     common::frame(&mut tree, 600.0, 200.0);
-    let chip = tree
-        .query_by_id("m-suggest-0")
-        .expect("a suggestion after typing");
-    assert!(tree.get_absolute_bounds(chip).is_some());
-    assert_eq!(f.parts(), ["", "ex"]);
+    assert!(
+        tree.query_by_id("m-suggest-0").is_some(),
+        "a suggestion after typing"
+    );
+    input.click(&mut tree, "m-suggest-0");
+    common::frame(&mut tree, 600.0, 200.0);
+    assert_eq!(f.parts(), ["ada", "example.org"]);
+    assert_eq!(
+        *seen.lock().unwrap(),
+        "ada@example.org",
+        "the owner is told about a click too"
+    );
+    assert!(
+        tree.query_by_id("m-problem").is_none(),
+        "the sentence goes when the value is right"
+    );
 }
 
 #[test]
