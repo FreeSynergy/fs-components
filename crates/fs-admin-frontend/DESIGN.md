@@ -35,8 +35,8 @@ The generated Admin frontend of ADR 0066: from the type description of a program
 
 | Part | State |
 |---|---|
-| Model: backend trait, form, list, detail, command plans, messages, session | done, tests against the traits over a `Backend` in memory (`model`, `session`, `review_model`, `review_session`, `fourth_session`, `fifth_session`, `third_session`) |
-| Views (`view/`): list with sortable head, detail, form (typed components of `fs-components-fields`, plain input for the rest), confirm, result, About, as a `Surface` of the shell | done, tests drawn offscreen and driven with the window's router (`view`, `review_view`, `third_view`, `fifth_view`, `window`): click, type, add a slot, save, refuse, quit, redraw |
+| Model: backend trait, form, list, detail, command plans, messages, session | done, tests against the traits over a `Backend` in memory (`model`, `session`, `review_model`, `review_session`, `fourth_session`, `fifth_session`, `sixth_session`, `third_session`) |
+| Views (`view/`): list with sortable head, detail, form (typed components of `fs-components-fields`, plain input for the rest), confirm, result, About, as a `Surface` of the shell | done, tests drawn offscreen and driven with the window's router (`view`, `review_view`, `third_view`, `fifth_view` (also the locked controls), `window`): click, type, add a slot, save, refuse, quit, redraw |
 | Messages draw the page again on another thread (a transition holds the session lock; found by the click test as a deadlock); bursts are folded, a success runs out by a timer | done |
 
 ## Locks and the backend (review 2026-11-10)
@@ -47,6 +47,7 @@ The generated Admin frontend of ADR 0066: from the type description of a program
 * `submit` returns the changed fields and the required ones; a field emptied by the person is an empty list (cleared).
 * **The rule for `change` is part of the contract** (`Backend::run`, to be written into `types.capnp` by Thread T if the strategy agrees): a field missing from the input is unchanged, an empty list clears it, values replace; required fields are always sent. A program that reads the input as a whole record would delete the optional fields that were not sent. A refusal counts the values as they were sent; the form maps it back to the slots.
 * A command on a record works on the record of the shown detail screen, and only if it is loaded; only an unreachable program (`Unavailable`) makes the records old (`is_stale`; a refusal or a missing thing does not, and a stored search that is refused later is dropped with a `rejected` message). While old: a record screen says "not loaded", offers no record command, the list carries a `list.stale` mark, and every screen that shows records (list, record) reads again when entered; a record that is gone after a successful reading leads to the list with `not-found`. A record screen can also say "not loaded" when `is_stale()` is false: the record was never in the list (a created record whose reading failed and was then repaired by a narrower search).
+* **Locked controls ("coming soon", rule for R of 2026-11-10):** every described command has its control. One the core cannot carry out yet (`Backend::supported` = false) is shown locked with `command.soon` and cannot be started (`Session::begin` refuses). The core is asked when the records are read, so the control unlocks the next time they are read, with no change in the frontend. **Provisional:** `supported` is a method of `Backend` until Thread T puts `supported` into the description (`types.capnp`); then a command is supported only if the description and the backend both say so.
 * The same error is told once per occurrence (`fail` closes the earlier one with that code first); while the program stays down every new try tells it again, which is wanted (each try failed).
 * The slot number in a finding is the number as text in the sentence of `finding.slot`; it is not formatted for the reader's locale (noted, not changed).
 * Unsaved text: a search form does not count; values are compared cleaned. Quitting with text shows the surface that has it (the visible one first, then the others in order), closes About and says it once.
@@ -56,7 +57,7 @@ The generated Admin frontend of ADR 0066: from the type description of a program
 
 ## Translation keys the frontend asks for (through `Say`)
 
-`action.{add,back,cancel,close,remove,save}`, `menu.{program,view,help,quit,about}`, `message.<code>` (`done`, `rejected`, `not-found`, `unavailable`, `unsaved`), `problem.<code>`, `hint.<label>`, `sort.{ascending,descending}`, `finding.slot` (a sentence with the named placeholder `{n}`, the number of the value), `list.{empty,separator,stale}`, `detail.not-loaded`, `confirm.sure`, `value.none`, `about.{version,origin,licence,repository,unoffered}`, and the keys of the description (labels, `<label>.<choice>`).
+`action.{add,back,cancel,close,remove,save}`, `menu.{program,view,help,quit,about}`, `message.<code>` (`done`, `rejected`, `not-found`, `unavailable`, `unsaved`), `problem.<code>`, `hint.<label>`, `sort.{ascending,descending}`, `finding.slot` (a sentence with the named placeholder `{n}`, the number of the value), `list.{empty,separator,stale}`, `detail.not-loaded`, `confirm.sure`, `command.soon`, `value.none`, `about.{version,origin,licence,repository,unoffered}`, and the keys of the description (labels, `<label>.<choice>`).
 
 ## Unsupported (named, not faked)
 
