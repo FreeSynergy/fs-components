@@ -25,7 +25,7 @@ pub fn rules() -> &'static BasicRules {
 }
 
 /// A description of just these fields, to run `check_record` on them.
-fn as_type(fields: &[FieldDescription]) -> TypeDescription {
+pub(crate) fn as_type(fields: &[FieldDescription]) -> TypeDescription {
     let mut t = TypeDescription::new("Form", "form", "form", "form");
     t.fields = fields.to_vec();
     t
@@ -34,16 +34,16 @@ fn as_type(fields: &[FieldDescription]) -> TypeDescription {
 /// A form over a list of fields (the fields of a type, or the input of a command).
 #[derive(Clone, Debug)]
 pub struct FormModel {
-    generation: u64,
-    fields: Vec<FieldDescription>,
-    values: Values,
-    initial: Values,
-    touched: BTreeSet<(String, usize)>,
-    attempted: bool,
-    refused: Vec<RecordIssue>,
+    pub(crate) generation: u64,
+    pub(crate) fields: Vec<FieldDescription>,
+    pub(crate) values: Values,
+    pub(crate) initial: Values,
+    pub(crate) touched: BTreeSet<(String, usize)>,
+    pub(crate) attempted: bool,
+    pub(crate) refused: Vec<RecordIssue>,
     /// Per sent field: the slot each sent value came from (empty slots are not sent), for mapping a program's finding
     /// back to the slot the person typed in.
-    sent: BTreeMap<String, Vec<usize>>,
+    pub(crate) sent: BTreeMap<String, Vec<usize>>,
 }
 
 impl FormModel {
@@ -164,7 +164,7 @@ impl FormModel {
 
     /// What the rules of the basic types find. A program's refusal is not among them: it does not stop a new try (the
     /// person may not be able to reach what it points at), the program is asked again.
-    fn own_issues(&self) -> Vec<RecordIssue> {
+    pub(crate) fn own_issues(&self) -> Vec<RecordIssue> {
         as_type(&self.fields).check_record(rules(), &self.values)
     }
 
@@ -260,7 +260,7 @@ impl FormModel {
 
     /// The canonical texts of a field, empty slots left out (a text that fails its rule is left out too; `submit`
     /// has found those before it asks).
-    fn canonical(&self, field: &str, from: &Values) -> Vec<String> {
+    pub(crate) fn canonical(&self, field: &str, from: &Values) -> Vec<String> {
         let Some(f) = self.fields.iter().find(|f| f.name == field) else {
             return Vec::new();
         };

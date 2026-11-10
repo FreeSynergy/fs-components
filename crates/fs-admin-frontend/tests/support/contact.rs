@@ -4,10 +4,6 @@
 use fs_types::{BasicType, CommandDescription, CommandKind, FieldDescription, TypeDescription};
 
 pub fn contact() -> TypeDescription {
-    let id = FieldDescription::new("id", BasicType::Reference)
-        .target("Contact")
-        .required()
-        .label("contact.id");
     TypeDescription::new("Contact", "fs-test", "RFC 9553 Card", "contact")
         .field(
             FieldDescription::new("name", BasicType::Text)
@@ -34,28 +30,18 @@ pub fn contact() -> TypeDescription {
                         .label("contact.emails"),
                 ),
         )
-        .command(
-            CommandDescription::new("change", CommandKind::Change, "command.change")
-                .input(id.clone())
-                .input(
-                    FieldDescription::new("name", BasicType::Text)
-                        .required()
-                        .label("contact.name"),
-                )
-                .input(
-                    FieldDescription::new("emails", BasicType::Email)
-                        .multiple()
-                        .label("contact.emails"),
-                ),
-        )
-        .command(
-            CommandDescription::new("find", CommandKind::Find, "command.find")
-                .input(FieldDescription::new("text", BasicType::Text).label("command.find.text")),
-        )
-        .command(
-            CommandDescription::new("delete", CommandKind::Delete, "command.delete")
-                .input(id.clone()),
-        )
+        // change and delete have no input: the id travels in the call, change is an Edit of the fields
+        .command(CommandDescription::new(
+            "change",
+            CommandKind::Change,
+            "command.change",
+        ))
+        .command(CommandDescription::standard_find("command.find", "Contact"))
+        .command(CommandDescription::new(
+            "delete",
+            CommandKind::Delete,
+            "command.delete",
+        ))
         .command(
             CommandDescription::new("domains", CommandKind::Suggest, "command.domains").result(
                 FieldDescription::new("domains", BasicType::Text)

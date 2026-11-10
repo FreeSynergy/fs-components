@@ -4,10 +4,10 @@
 //! `plan_commands` reads the description and decides placement, confirmation and the form fields from the kind and
 //! the input; a program says nothing about buttons (ADR 0066 point 3: not the look, but what is possible).
 //!
-//! Provisional rules (reported to the strategy): a command works on one record when its input has a `reference` to
-//! the type itself (that field is filled from the selection and not shown); otherwise it works on the list. A
-//! `change` or `delete` without such a reference is not offered ([`unoffered_commands`]). `delete` asks for
-//! confirmation. `find` is the search of the list.
+//! Rules (decided 2026-11-10, written in `types.capnp`, `TypeDescription::record_commands`): a command works on one
+//! record when it is `change` or `delete` or its input holds a reference to the type itself; the id of the record
+//! travels in the program's call, so `change` and `delete` have no input for it. `change` is an `Edit` of the fields of
+//! the type; its form is the type's own fields. `delete` asks once more. `find` is the search (and the list).
 
 use fs_types::{BasicType, CommandDescription, CommandKind, FieldDescription, TypeDescription};
 
@@ -16,7 +16,7 @@ use fs_types::{BasicType, CommandDescription, CommandKind, FieldDescription, Typ
 pub enum Placement {
     /// With the list (create, find, other).
     OnList,
-    /// With the selected record (change, delete, or anything that takes the record as input).
+    /// With the shown record (change, delete, or anything that takes the record as input).
     OnRecord,
 }
 
@@ -31,23 +31,27 @@ pub struct CommandPlan {
     pub label: String,
     /// Where it is offered.
     pub placement: Placement,
-    /// The input field filled from the selected record, if any.
+    /// The input field filled from the shown record, if the command has a reference to the type itself.
     pub bound: Option<String>,
-    /// The fields to type: the input without the bound field.
+    /// The fields to type: the input without the bound field; for `change` the fields of the type.
     pub form: Vec<FieldDescription>,
     /// The result fields to show after it ran.
     pub result: Vec<FieldDescription>,
     /// A person is asked once more before it runs.
     pub confirm: bool,
+    /// What the description says (`CommandDescription::supported`). The control is free only if the program says so
+    /// too (`Backend::supported`).
+    pub described_supported: bool,
 }
 
-fn plan(type_name: &str, c: &CommandDescription) -> CommandPlan {
+fn plan(description: &TypeDescription, c: &CommandDescription, on_record: bool) -> CommandPlan {
     let bound = c
         .input
         .iter()
-        .find(|f| f.basic == BasicType::Reference && f.target == type_name)
+        .find(|f| {
+            f.basic == BasicType::Reference && (f.target.is_empty() || f.target == description.name)
+        })
         .map(|f| f.name.clone());
-    let on_record = bound.is_some() || matches!(c.kind, CommandKind::Change | CommandKind::Delete);
     CommandPlan {
         name: c.name.clone(),
         kind: c.kind,
@@ -57,42 +61,32 @@ fn plan(type_name: &str, c: &CommandDescription) -> CommandPlan {
         } else {
             Placement::OnList
         },
-        form: c
-            .input
-            .iter()
-            .filter(|f| Some(&f.name) != bound.as_ref())
-            .cloned()
-            .collect(),
+        form: if c.kind == CommandKind::Change {
+            description.fields.clone()
+        } else {
+            c.input
+                .iter()
+                .filter(|f| Some(&f.name) != bound.as_ref())
+                .cloned()
+                .collect()
+        },
         bound,
         result: c.result.clone(),
         confirm: c.kind == CommandKind::Delete,
+        described_supported: c.supported,
     }
 }
 
 /// All commands of a type, in the order of the description.
 pub fn plan_commands(description: &TypeDescription) -> Vec<CommandPlan> {
+    let on_record: Vec<&str> = description
+        .record_commands()
+        .iter()
+        .map(|c| c.name.as_str())
+        .collect();
     description
         .commands
         .iter()
-        .map(|c| plan(&description.name, c))
-        .filter(|p| !needs_a_record_without_naming_it(p))
-        .collect()
-}
-
-/// A `change` or `delete` that does not take the record as a reference to the type itself cannot be told which record
-/// to work on; offering it would run it without an id (review finding 4). It is not offered.
-fn needs_a_record_without_naming_it(p: &CommandPlan) -> bool {
-    matches!(p.kind, CommandKind::Change | CommandKind::Delete) && p.bound.is_none()
-}
-
-/// The names of the commands that are not offered, and why they are not: see [`plan_commands`]. A frontend shows this
-/// list in its About or log view so the omission is not silent.
-pub fn unoffered_commands(description: &TypeDescription) -> Vec<String> {
-    description
-        .commands
-        .iter()
-        .map(|c| plan(&description.name, c))
-        .filter(needs_a_record_without_naming_it)
-        .map(|p| p.name)
+        .map(|c| plan(description, c, on_record.contains(&c.name.as_str())))
         .collect()
 }

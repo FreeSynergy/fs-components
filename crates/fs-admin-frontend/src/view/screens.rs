@@ -188,20 +188,6 @@ impl AdminSurface {
                     .child(look.text(value.clone(), s.text.body, pal.text)),
             );
         }
-        for (name, label) in self.unoffered.iter() {
-            body = body.child(
-                div()
-                    .id(format!("about-unoffered-{name}"))
-                    .flex_row()
-                    .gap_px(s.spacing.m)
-                    .child(div().w(s.text.body * 12.0).flex_shrink_0().child(look.text(
-                        say.say("about.unoffered"),
-                        s.text.body,
-                        pal.text_weak,
-                    )))
-                    .child(look.text(say.say(label), s.text.body, pal.text)),
-            );
-        }
         div()
             .flex_col()
             .gap_px(s.spacing.m)

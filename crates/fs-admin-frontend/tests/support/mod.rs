@@ -47,6 +47,8 @@ pub struct Memory {
     pub create_refusal: std::sync::atomic::AtomicUsize,
     /// Commands the program does not carry out yet.
     pub unsupported: Mutex<std::collections::BTreeSet<String>>,
+    /// The last `Edit` the program received.
+    pub last_edit: Mutex<Option<fs_types::Edit>>,
     pub next_id: std::sync::atomic::AtomicUsize,
     pub description: TypeDescription,
 }
@@ -65,6 +67,7 @@ impl Memory {
             fail_list_call: Mutex::new(None),
             create_refusal: std::sync::atomic::AtomicUsize::new(0),
             unsupported: Mutex::new(std::collections::BTreeSet::new()),
+            last_edit: Mutex::new(None),
             next_id: std::sync::atomic::AtomicUsize::new(100),
             description: contact(),
         })
@@ -96,15 +99,15 @@ impl Backend for Memory {
             return Err(e);
         }
         self.up()?;
-        if *self.reject_search.lock().unwrap() && query.contains_key("text") {
+        if *self.reject_search.lock().unwrap() && query.contains_key("term") {
             return Err(BackendError::Rejected(vec![RecordIssue {
-                field: "text".into(),
+                field: "term".into(),
                 index: 0,
                 problem: fs_types::RecordProblem::Value(fs_types::TypeProblem::TooLong),
             }]));
         }
         let needle = query
-            .get("text")
+            .get("term")
             .and_then(|v| v.first())
             .map(|t| t.to_lowercase());
         Ok(self
@@ -124,7 +127,44 @@ impl Backend for Memory {
             .collect())
     }
 
-    fn run(&self, name: &str, input: &Values) -> Result<Outcome, BackendError> {
+    fn change(&self, record: &str, edit: &fs_types::Edit) -> Result<Outcome, BackendError> {
+        self.up()?;
+        // the program checks the edit again, as a program must
+        let edit = edit
+            .check(&self.description, &BasicRules::standard())
+            .map_err(BackendError::Rejected)?;
+        *self.last_edit.lock().unwrap() = Some(edit.clone());
+        let bad = self.forbidden.lock().unwrap().clone();
+        let names = edit.fields.iter().find(|f| f.path == ["name"]);
+        if bad.is_some_and(|b| names.is_some_and(|n| n.values.contains(&b))) {
+            return Err(BackendError::Rejected(vec![RecordIssue {
+                field: "name".into(),
+                index: 0,
+                problem: fs_types::RecordProblem::Value(fs_types::TypeProblem::Character),
+            }]));
+        }
+        let mut records = self.records.lock().unwrap();
+        let r = records
+            .iter_mut()
+            .find(|r| r.id == record)
+            .ok_or(BackendError::NotFound)?;
+        edit.apply(&mut r.values);
+        let out = Ok(Outcome {
+            id: Some(record.to_owned()),
+            values: Values::new(),
+        });
+        if *self.down_after_run.lock().unwrap() {
+            *self.down.lock().unwrap() = true;
+        }
+        out
+    }
+
+    fn run(
+        &self,
+        name: &str,
+        record: Option<&str>,
+        input: &Values,
+    ) -> Result<Outcome, BackendError> {
         self.up()?;
         let command = self
             .description
@@ -189,24 +229,6 @@ impl Backend for Memory {
                     values: Values::new(),
                 })
             }
-            CommandKind::Change => {
-                let id = input["id"][0].clone();
-                let r = records
-                    .iter_mut()
-                    .find(|r| r.id == id)
-                    .ok_or(BackendError::NotFound)?;
-                for (k, v) in input.iter().filter(|(k, _)| *k != "id") {
-                    if v.is_empty() {
-                        r.values.remove(k);
-                    } else {
-                        r.values.insert(k.clone(), v.clone());
-                    }
-                }
-                Ok(Outcome {
-                    id: Some(id),
-                    values: Values::new(),
-                })
-            }
             CommandKind::Delete => {
                 if *self.reject_delete.lock().unwrap() {
                     return Err(BackendError::Rejected(vec![RecordIssue {
@@ -215,7 +237,7 @@ impl Backend for Memory {
                         problem: fs_types::RecordProblem::Value(fs_types::TypeProblem::Character),
                     }]));
                 }
-                let id = input["id"][0].clone();
+                let id = record.ok_or(BackendError::NotFound)?.to_owned();
                 let before = records.len();
                 records.retain(|r| r.id != id);
                 if records.len() == before {

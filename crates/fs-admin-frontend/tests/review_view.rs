@@ -17,7 +17,7 @@ use fs_admin_frontend::{ListModel, ManualClock, MessageKind, Session};
 use fs_components_app::Surface;
 use fs_components_fields::{KeysAsText, Look, Say};
 use fs_components_styles::StyleId;
-use memory::{Memory, contact, record};
+use memory::{Memory, record};
 use ui::{Input, layout, serial};
 
 const W: f32 = 900.0;
@@ -177,28 +177,6 @@ fn review_12_findings_are_two_separate_texts_and_only_required_fields_have_the_m
     );
     assert!(tree.query_by_id("required-name").is_some());
     assert!(tree.query_by_id("required-emails").is_none());
-}
-
-#[test]
-fn review_g_a_command_that_is_not_offered_is_named_on_the_about_page() {
-    let _g = serial();
-    let mem = people();
-    let mut d = contact();
-    d = d.command(fs_types::CommandDescription::new(
-        "rename",
-        fs_types::CommandKind::Change,
-        "command.rename",
-    ));
-    let session = Session::new(d, mem, Arc::new(ManualClock::default()));
-    let s = AdminSurface::new(
-        session,
-        Look::new(StyleId::Admin, false),
-        Arc::new(KeysAsText),
-        None,
-    );
-    s.set_about(Some(about()));
-    let tree = layout(s.build(W, H), W, H);
-    assert!(tree.query_by_id("about-unoffered-rename").is_some());
 }
 
 #[test]

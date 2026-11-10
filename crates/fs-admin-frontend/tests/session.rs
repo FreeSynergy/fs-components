@@ -175,7 +175,7 @@ fn the_program_may_refuse_what_the_form_let_through_and_the_form_marks_it() {
 fn find_narrows_the_list_and_open_list_widens_it() {
     let (mut s, _, _) = open();
     assert!(s.begin("find"));
-    type_in(&mut s, "text", 0, "babbage");
+    type_in(&mut s, "term", 0, "babbage");
     assert!(s.submit());
     assert_eq!(*s.screen(), Screen::List);
     assert_eq!(s.list().rows().len(), 1);

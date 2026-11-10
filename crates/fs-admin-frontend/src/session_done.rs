@@ -135,10 +135,16 @@ impl Session {
 
     /// Ask the core which commands it can carry out now.
     pub(crate) fn refresh_support(&mut self) {
+        // free only if the description and the program both say so
         self.supported = self
             .plans
             .iter()
-            .map(|p| (p.name.clone(), self.backend.supported(&p.name)))
+            .map(|p| {
+                (
+                    p.name.clone(),
+                    p.described_supported && self.backend.supported(&p.name),
+                )
+            })
             .collect();
     }
 
@@ -191,5 +197,25 @@ impl Session {
             record,
         });
         true
+    }
+
+    /// Send the open change form as an `Edit` (the contract's `change`). The id of the record goes in the call.
+    pub(crate) fn submit_change(&mut self, plan: &CommandPlan, record: Option<String>) -> bool {
+        let (Some(id), Some(form)) = (record.clone(), self.form.as_mut()) else {
+            return false;
+        };
+        let Ok(edit) = form.submit_changes() else {
+            return false;
+        };
+        match self.backend.change(&id, &edit) {
+            Ok(outcome) => {
+                self.done(plan, record, outcome);
+                true
+            }
+            Err(e) => {
+                self.refused(&e);
+                false
+            }
+        }
     }
 }

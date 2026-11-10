@@ -40,7 +40,7 @@ fn fourth_1_a_search_that_works_ends_the_stale_state_and_its_error() {
     assert!(s.is_stale());
     *mem.down.lock().unwrap() = false;
     s.begin("find");
-    type_in(&mut s, "text", 0, "ada");
+    type_in(&mut s, "term", 0, "ada");
     assert!(s.submit());
     assert!(!s.is_stale());
     assert!(!codes(&s).contains(&"unavailable".to_owned()));
@@ -95,7 +95,7 @@ fn fourth_3_a_later_refusal_without_a_mark_for_the_form_clears_the_old_marks() {
 fn fourth_4_after_the_wider_reading_failed_the_list_is_the_fresh_narrow_one_not_stale() {
     let (mut s, mem) = open();
     s.begin("find");
-    type_in(&mut s, "text", 0, "babbage");
+    type_in(&mut s, "term", 0, "babbage");
     assert!(s.submit());
     let calls = mem.list_calls.load(std::sync::atomic::Ordering::SeqCst);
     *mem.fail_list_call.lock().unwrap() = Some(calls + 2);
