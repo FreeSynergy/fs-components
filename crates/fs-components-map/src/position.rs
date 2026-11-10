@@ -30,6 +30,7 @@ impl Default for MapPosition {
 impl MapPosition {
     /// A position; a longitude is wrapped into the world, a latitude and a zoom clamped, and
     /// anything that is not a number replaced.
+    #[must_use]
     pub fn new(lon: f64, lat: f64, zoom: f64) -> Self {
         Self {
             lon: wrap_lon(lon),
@@ -39,21 +40,25 @@ impl MapPosition {
     }
 
     /// The whole world at the lowest zoom.
+    #[must_use]
     pub fn world() -> Self {
         Self::new(0.0, 0.0, MIN_ZOOM)
     }
 
     /// Longitude of the centre, in `[-180, 180)`.
+    #[must_use]
     pub fn lon(&self) -> f64 {
         self.lon
     }
 
     /// Latitude of the centre.
+    #[must_use]
     pub fn lat(&self) -> f64 {
         self.lat
     }
 
     /// The zoom: 0 shows the world in one tile, each step doubles the scale.
+    #[must_use]
     pub fn zoom(&self) -> f64 {
         self.zoom
     }
@@ -105,6 +110,7 @@ impl MapPosition {
 
     /// Pixels `(x, y)` of a place on a view `width` x `height` whose centre is this position, on the
     /// copy of the world nearest to the centre, so a place across the antimeridian is still beside it.
+    #[must_use]
     pub fn to_screen(&self, lon: f64, lat: f64, width: f64, height: f64) -> (f64, f64) {
         let (cx, cy) = project(self.lon, self.lat, self.zoom);
         let (px, py) = project(wrap_lon(lon), lat, self.zoom);
@@ -122,6 +128,7 @@ impl MapPosition {
     }
 
     /// The longitude and latitude under the pixel `(x, y)` of a view `width` x `height`.
+    #[must_use]
     pub fn from_screen(&self, x: f64, y: f64, width: f64, height: f64) -> (f64, f64) {
         let (cx, cy) = project(self.lon, self.lat, self.zoom);
         let dx = finite_or(x, 0.0) - finite_or(width, 0.0) / 2.0;

@@ -97,7 +97,7 @@ fn a_marked_marker_looks_different_and_a_chosen_one_can_be_pressed() {
             .selected(),
     ];
     let map = view(markers).on_pick(Arc::new(move |key| {
-        sink.lock().unwrap().push(key.to_string())
+        sink.lock().unwrap().push(key.to_string());
     }));
     let scene = map.scene(400.0, 256.0);
     assert_eq!(scene.markers.len(), 2);
@@ -172,8 +172,8 @@ fn zero_sizes_and_bad_numbers_give_an_element_not_a_panic() {
 fn many_elements_are_planned_and_drawn_in_a_measured_time() {
     let _g = serial();
     let mut g = TileGeometry::new(4096.0);
-    for i in 0..4000u32 {
-        let (x, y) = ((i % 63) as f32 * 64.0, (i / 63) as f32 * 64.0);
+    for i in 0..4000u16 {
+        let (x, y) = (f32::from(i % 63) * 64.0, f32::from(i / 63) * 64.0);
         g.areas.push(Area {
             rings: vec![vec![
                 [x, y],

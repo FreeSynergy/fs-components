@@ -117,6 +117,7 @@ impl MapView {
     }
 
     /// The plan of the picture at a size; what `build` draws.
+    #[must_use]
     pub fn scene(&self, width: f32, height: f32) -> Scene {
         Scene::new(
             self.position,
@@ -128,6 +129,7 @@ impl MapView {
     }
 
     /// The element, `width` x `height` pixels. A size of 0 gives an empty element, not an error.
+    #[must_use]
     pub fn build(&self, width: f32, height: f32) -> impl Element + use<> {
         let (width, height) = (width.max(0.0), height.max(0.0));
         let scene = Rc::new(self.scene(width, height));

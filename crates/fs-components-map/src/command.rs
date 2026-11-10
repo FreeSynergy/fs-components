@@ -26,6 +26,7 @@ pub enum MapCommand {
 
 impl MapCommand {
     /// The view after this step.
+    #[must_use]
     pub fn apply(self, position: MapPosition, width: f64, height: f64) -> MapPosition {
         match self {
             Self::Pan(dx, dy) => position.panned_by(dx, dy),
@@ -36,6 +37,7 @@ impl MapCommand {
 }
 
 /// What a key asks for, if anything: the arrows pan, Page Up and `+` zoom in, Page Down and `-` out.
+#[must_use]
 pub fn command_for_key(event: KeyEvent) -> Option<MapCommand> {
     if event.ctrl || event.alt {
         return None;

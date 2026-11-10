@@ -21,16 +21,19 @@ pub fn finite_or(value: f64, fallback: f64) -> f64 {
 }
 
 /// A zoom inside the limits; a number that is not one is the lowest zoom.
+#[must_use]
 pub fn clamp_zoom(zoom: f64) -> f64 {
     finite_or(zoom, MIN_ZOOM).clamp(MIN_ZOOM, MAX_ZOOM)
 }
 
 /// A latitude Web Mercator can show; a number that is not one is the equator.
+#[must_use]
 pub fn clamp_lat(lat: f64) -> f64 {
     finite_or(lat, 0.0).clamp(-MAX_LAT, MAX_LAT)
 }
 
 /// A longitude in `[-180, 180)`: 190 is -170. A number that is not one is the meridian.
+#[must_use]
 pub fn wrap_lon(lon: f64) -> f64 {
     let lon = finite_or(lon, 0.0);
     if (-180.0..180.0).contains(&lon) {
@@ -42,6 +45,7 @@ pub fn wrap_lon(lon: f64) -> f64 {
 }
 
 /// Side of the whole world in pixels at `zoom`.
+#[must_use]
 pub fn world_size(zoom: f64) -> f64 {
     TILE_SIZE * 2f64.powf(clamp_zoom(zoom))
 }
@@ -49,6 +53,7 @@ pub fn world_size(zoom: f64) -> f64 {
 /// World pixels `(x, y)` of a position at `zoom`: `x` grows eastwards from -180, `y` southwards
 /// from the northern limit. Latitude is clamped; longitude is not wrapped (so a caller can place a
 /// point on the copy of the world nearest to the view).
+#[must_use]
 pub fn project(lon: f64, lat: f64, zoom: f64) -> (f64, f64) {
     let size = world_size(zoom);
     let lon = finite_or(lon, 0.0).clamp(-1.0e6, 1.0e6);
@@ -60,6 +65,7 @@ pub fn project(lon: f64, lat: f64, zoom: f64) -> (f64, f64) {
 
 /// The longitude and latitude at world pixels `(x, y)` at `zoom`; the latitude is clamped, the
 /// longitude is not wrapped.
+#[must_use]
 pub fn unproject(x: f64, y: f64, zoom: f64) -> (f64, f64) {
     let size = world_size(zoom);
     let x = finite_or(x, size / 2.0).clamp(-1.0e15, 1.0e15);
@@ -71,11 +77,13 @@ pub fn unproject(x: f64, y: f64, zoom: f64) -> (f64, f64) {
 }
 
 /// Is the span `west..east` one that crosses the antimeridian (west is east of east)?
+#[must_use]
 pub fn crosses_antimeridian(west: f64, east: f64) -> bool {
     finite_or(west, 0.0) > finite_or(east, 0.0)
 }
 
 /// The width in degrees of the span `west..east`, across the antimeridian if `west > east`.
+#[must_use]
 pub fn span_degrees(west: f64, east: f64) -> f64 {
     let (west, east) = (finite_or(west, 0.0), finite_or(east, 0.0));
     if west > east {

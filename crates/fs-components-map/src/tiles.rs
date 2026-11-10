@@ -45,6 +45,7 @@ pub struct TileSet {
 }
 
 /// The zoom of the tiles to draw at `zoom`: the whole zoom below it, inside what the source has.
+#[must_use]
 pub fn tile_zoom(zoom: f64, min_zoom: u8, max_zoom: u8) -> u8 {
     let (low, high) = (min_zoom.min(max_zoom), max_zoom.max(min_zoom));
     let whole = clamp_zoom(zoom).floor();
@@ -56,6 +57,7 @@ pub fn tile_zoom(zoom: f64, min_zoom: u8, max_zoom: u8) -> u8 {
 
 /// The tiles that cover a view `width` x `height` pixels at `position`, from a source with tiles
 /// between `min_zoom` and `max_zoom`. A view of no size needs none.
+#[must_use]
 pub fn needed_tiles(
     position: MapPosition,
     width: f64,

@@ -43,6 +43,7 @@ pub struct Placed {
 impl Placed {
     /// A point of the tile on the screen.
     #[allow(clippy::cast_possible_truncation)]
+    #[must_use]
     pub fn to_screen(&self, p: TilePoint) -> [f32; 2] {
         let scale = self.at.size / f64::from(self.geometry.extent);
         let x = self.at.left + f64::from(p[0]) * scale;
@@ -118,6 +119,7 @@ pub fn bounds(points: impl Iterator<Item = [f32; 2]>) -> Option<([f32; 2], [f32;
 impl Scene {
     /// The plan for a view `width` x `height` at `position`. `tiles` come with their rectangles,
     /// nearest the centre first, as `needed_tiles` gives them; a marker outside is left out.
+    #[must_use]
     pub fn new(
         position: MapPosition,
         width: f32,
@@ -172,6 +174,7 @@ impl Scene {
     }
 
     /// How many shapes of tiles are drawn.
+    #[must_use]
     pub fn drawn(&self) -> usize {
         self.tiles
             .iter()

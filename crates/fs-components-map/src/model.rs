@@ -49,6 +49,7 @@ pub enum Paint {
 
 impl Paint {
     /// A tone, fully opaque.
+    #[must_use]
     pub fn tone(tone: Tone) -> Self {
         Self::Theme(tone, 1.0)
     }
@@ -122,6 +123,7 @@ pub struct TileGeometry {
 
 impl TileGeometry {
     /// An empty tile of the given extent.
+    #[must_use]
     pub fn new(extent: f32) -> Self {
         Self {
             extent: if extent.is_finite() && extent > 0.0 {
@@ -137,11 +139,13 @@ impl TileGeometry {
     }
 
     /// How many primitives the tile holds.
+    #[must_use]
     pub fn len(&self) -> usize {
         self.areas.len() + self.lines.len() + self.dots.len() + self.labels.len()
     }
 
     /// Is the tile empty?
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }

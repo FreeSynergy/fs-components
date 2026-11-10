@@ -165,7 +165,10 @@ fn the_number_of_tiles_is_capped_for_any_size_and_zoom() {
 fn no_size_needs_no_tiles_and_extreme_zoom_does_not_panic() {
     let p = MapPosition::new(0.0, 0.0, 5.0);
     for (w, h) in [(0.0, 0.0), (0.0, 100.0), (-5.0, 100.0), (f64::NAN, 1.0)] {
-        assert!(needed_tiles(p, w, h, 0, 14).tiles.is_empty());
+        assert_eq!(
+            needed_tiles(p, w, h, 0, 14).tiles,
+            [] as [fs_components_map::NeededTile; 0]
+        );
     }
     assert_eq!(tile_zoom(22.0, 0, 3), 3);
     assert_eq!(tile_zoom(0.4, 5, 9), 5);

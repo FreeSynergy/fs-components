@@ -93,6 +93,7 @@ impl MapSurface {
     }
 
     /// Where the map looks now.
+    #[must_use]
     pub fn position(&self) -> MapPosition {
         *lock(&self.0.position)
     }
@@ -109,6 +110,7 @@ impl MapSurface {
     }
 
     /// How many tiles are decoded and kept.
+    #[must_use]
     pub fn tiles_kept(&self) -> usize {
         lock(&self.0.kept)
             .slots
