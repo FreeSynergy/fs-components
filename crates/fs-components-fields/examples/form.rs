@@ -1,4 +1,4 @@
-//! A window with the five basic-type inputs in a style: the probe for typing (AltGr, text colour,
+//! A window with the five basic-type inputs in a style: the probe for typing (`AltGr`, text colour,
 //! speed) and for looking at a style.
 //!
 //! Pattern: none (a small program over the public API).
