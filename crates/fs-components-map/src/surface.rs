@@ -136,10 +136,14 @@ impl MapSurface {
         drop(kept);
         let (source, store, live) = (Arc::clone(source), Arc::clone(&self.0.kept), self.0.live);
         std::thread::spawn(move || {
-            let geometry = match source.tile(id) {
-                Ok(Some(bytes)) => decode_tile(&bytes).ok().map(Arc::new),
-                Ok(None) | Err(_) => None,
-            };
+            // A tile source that panics leaves the tile empty, never `Loading` for good (it would use up a place of
+            // the loader).
+            let geometry =
+                std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| match source.tile(id) {
+                    Ok(Some(bytes)) => decode_tile(&bytes).ok().map(Arc::new),
+                    Ok(None) | Err(_) => None,
+                }))
+                .unwrap_or(None);
             let mut kept = lock(&store);
             kept.slots.insert(id, Slot::Ready(geometry));
             kept.order.push(id);
