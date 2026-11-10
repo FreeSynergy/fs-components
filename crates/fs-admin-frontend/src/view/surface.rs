@@ -41,6 +41,8 @@ pub struct AdminSurface {
     pub(super) slots: Arc<Mutex<FormSlots>>,
     pub(super) position: ListPosition,
     pub(super) about: Arc<Mutex<Option<AboutInfo>>>,
+    /// Commands of the description that are not offered, with their label keys (shown in About: not silent).
+    pub(super) unoffered: Arc<Vec<(String, String)>>,
 }
 
 pub(super) fn lock(s: &Mutex<Session>) -> std::sync::MutexGuard<'_, Session> {
@@ -57,6 +59,17 @@ impl AdminSurface {
     ) -> Self {
         let live = Live::new();
         session.messages().subscribe(redraw_worker(live));
+        let unoffered = crate::unoffered_commands(session.description())
+            .into_iter()
+            .map(|n| {
+                let label = session
+                    .description()
+                    .find_command(&n)
+                    .map(|c| c.label.clone())
+                    .unwrap_or_default();
+                (n, label)
+            })
+            .collect();
         Self {
             env: Arc::new(FormEnv {
                 session: Arc::new(Mutex::new(session)),
@@ -70,6 +83,7 @@ impl AdminSurface {
             slots: Arc::new(Mutex::new(FormSlots::default())),
             position: ListPosition::default(),
             about: Arc::new(Mutex::new(None)),
+            unoffered: Arc::new(unoffered),
         }
     }
 
@@ -86,15 +100,15 @@ impl AdminSurface {
 
     /// Whether a form is open with text that was not sent.
     pub fn has_unsaved(&self) -> bool {
-        lock(&self.env.session)
-            .form()
-            .is_some_and(crate::FormModel::is_dirty)
+        lock(&self.env.session).has_unsaved_form()
     }
 
     /// Tell the person that leaving would lose what is typed (ADR 0065 point 5: not silent).
     pub fn warn_unsaved(&self) {
         let board = Arc::clone(lock(&self.env.session).messages());
+        board.solve("unsaved"); // one warning, however often it is asked
         board.raise(crate::MessageKind::Error, "unsaved");
+        self.set_about(None); // the page with the form is the one to show
     }
 
     /// Draw the page again now.
@@ -257,6 +271,7 @@ impl Surface for AdminSurface {
             slots: Arc::clone(&self.slots),
             position: self.position.clone(),
             about: Arc::clone(&self.about),
+            unoffered: Arc::clone(&self.unoffered),
         });
         Box::new(self.live.region("page", move || this.page(width, height)))
     }

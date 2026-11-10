@@ -65,14 +65,29 @@ impl AdminSurface {
             .first()
             .and_then(|e| e.values.first().cloned())
             .unwrap_or_else(|| say.say(&session.description().label));
-        let mut actions = self.command_buttons(&session.commands(Placement::OnRecord));
+        // A record that could not be read (a failed reload) has no commands: nothing is done to what is not there.
+        let loaded = session.record().is_some();
+        let mut actions = if loaded {
+            self.command_buttons(&session.commands(Placement::OnRecord))
+        } else {
+            Vec::new()
+        };
         actions.push(div().child(button(
             &say.say("action.back"),
             Weight::Plain,
             "back",
             self.act(Session::back_to_list),
         )));
-        (title, actions, fields_panel(look, say, &session.detail()))
+        let body = if loaded {
+            fields_panel(look, say, &session.detail())
+        } else {
+            panel(look).child(div().id("not-loaded").child(look.text(
+                say.say("detail.not-loaded"),
+                look.style.text.body,
+                look.palette().error,
+            )))
+        };
+        (title, actions, body)
     }
 
     pub(super) fn confirm_screen(&self, name: &str) -> (String, Vec<Div>, Div) {
@@ -160,6 +175,20 @@ impl AdminSurface {
                         pal.text_weak,
                     )))
                     .child(look.text(value.clone(), s.text.body, pal.text)),
+            );
+        }
+        for (name, label) in self.unoffered.iter() {
+            body = body.child(
+                div()
+                    .id(format!("about-unoffered-{name}"))
+                    .flex_row()
+                    .gap_px(s.spacing.m)
+                    .child(div().w(s.text.body * 12.0).flex_shrink_0().child(look.text(
+                        say.say("about.unoffered"),
+                        s.text.body,
+                        pal.text_weak,
+                    )))
+                    .child(look.text(say.say(label), s.text.body, pal.text)),
             );
         }
         div()

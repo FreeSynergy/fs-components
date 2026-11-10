@@ -202,9 +202,11 @@ impl Session {
         };
         let record = match plan.placement {
             Placement::OnList => None,
-            Placement::OnRecord => match self.list.selected() {
-                Some(id) => Some(id.to_owned()),
-                None => return false,
+            // The record is the one of the screen that is shown, and only if it is loaded: the selection of the list
+            // may point elsewhere (or nowhere) after a failed reload.
+            Placement::OnRecord => match &self.screen {
+                Screen::Detail(id) if self.list.record(id).is_some() => Some(id.clone()),
+                _ => return false,
             },
         };
         if plan.confirm {
@@ -265,17 +267,34 @@ impl Session {
         }
     }
 
-    /// The program said no. Findings that point at fields of the open form are marked there; anything else (a
-    /// confirm screen has no form, a finding may name a field the form does not have) is an error message: never silent.
+    /// The program said no. Findings that point at fields of the open form are marked there; anything else (a confirm
+    /// screen has no form, a finding on a field the form does not have, a refusal with no findings at all) is an error
+    /// message: never silent.
     pub(crate) fn refused(&mut self, e: &BackendError) {
-        if let (BackendError::Rejected(issues), Some(form)) = (e, self.form.as_mut())
-            && issues
+        if let (BackendError::Rejected(issues), Some(form)) = (e, self.form.as_mut()) {
+            let (mine, others): (Vec<_>, Vec<_>) = issues
                 .iter()
-                .all(|i| form.fields().iter().any(|f| f.name == i.field))
-        {
-            form.refuse(issues.clone());
-            return;
+                .cloned()
+                .partition(|i| form.fields().iter().any(|f| f.name == i.field));
+            if !mine.is_empty() {
+                form.refuse(mine);
+            }
+            if others.is_empty() && !issues.is_empty() {
+                return;
+            }
         }
         self.fail(e);
+    }
+
+    /// Whether an open form holds text the person has not sent. A search is no work to lose.
+    pub fn has_unsaved_form(&self) -> bool {
+        match &self.screen {
+            Screen::Command { name, .. } => {
+                self.command(name)
+                    .is_some_and(|p| p.kind != CommandKind::Find)
+                    && self.form.as_ref().is_some_and(FormModel::is_dirty)
+            }
+            _ => false,
+        }
     }
 }

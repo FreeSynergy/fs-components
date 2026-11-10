@@ -97,20 +97,28 @@ fn review_11_removing_a_slot_moves_the_marks_of_the_slots_after_it() {
     );
     form.set("emails", 1, "still bad");
     assert_eq!(form.visible_issues().len(), 1);
-    form.remove_value("emails", 0);
-    let shown = form.visible_issues();
-    assert_eq!(shown.len(), 1, "the finding stays with its value");
-    assert_eq!((shown[0].field.as_str(), shown[0].index), ("emails", 0));
     form.refuse(vec![fs_types::RecordIssue {
         field: "emails".into(),
-        index: 1,
+        index: 2,
         problem: RecordProblem::Value(TypeProblem::Empty),
     }]);
+    form.remove_value("emails", 0);
+    let shown = form.visible_issues();
+    assert!(
+        shown.iter().any(|i| i.index == 0),
+        "the finding on 'still bad' moved to 0: {shown:?}"
+    );
+    assert!(
+        shown
+            .iter()
+            .any(|i| i.index == 1 && i.problem == RecordProblem::Value(TypeProblem::Empty)),
+        "the refusal of slot 2 moved to 1: {shown:?}"
+    );
     form.set("emails", 0, "fixed@b.test");
     assert!(
         form.visible_issues()
             .iter()
-            .any(|i| i.index == 1 && matches!(i.problem, RecordProblem::Value(TypeProblem::Empty))),
+            .any(|i| i.index == 1 && i.problem == RecordProblem::Value(TypeProblem::Empty)),
         "editing slot 0 does not clear the refusal of slot 1"
     );
 }

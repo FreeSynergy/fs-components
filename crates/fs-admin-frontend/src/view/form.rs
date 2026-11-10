@@ -88,14 +88,22 @@ fn findings_view(env: &FormEnv) -> Div {
                 .flex_row()
                 .gap_px(s.spacing.s)
                 .child(
-                    env.look
-                        .text(env.say.say(&field.label), s.text.caption, pal.error),
+                    div()
+                        .id(format!("finding-{}-label", field.name))
+                        .child(
+                            env.look
+                                .text(env.say.say(&field.label), s.text.caption, pal.error),
+                        ),
                 )
-                .child(env.look.text(
-                    env.say.say(&problem_key(i.problem)),
-                    s.text.caption,
-                    pal.error,
-                )),
+                .child(
+                    div()
+                        .id(format!("finding-{}-problem", field.name))
+                        .child(env.look.text(
+                            env.say.say(&problem_key(i.problem)),
+                            s.text.caption,
+                            pal.error,
+                        )),
+                ),
         );
     }
     column
@@ -157,12 +165,12 @@ pub fn form_body(env: &Arc<FormEnv>, slots: &Arc<Mutex<FormSlots>>) -> Div {
                         .flex_row()
                         .gap_px(s.spacing.xs)
                         .child(env.look.text(label, s.text.body, pal.text_weak))
-                        // the mark of a required field is a sign, not a word
-                        .child(env.look.text(
-                            if field.required { "*" } else { "" },
-                            s.text.body,
-                            pal.error,
-                        )),
+                        // the mark of a required field is a sign, not a word; other fields have none
+                        .children(field.required.then(|| {
+                            div()
+                                .id(format!("required-{}", field.name))
+                                .child(env.look.text("*", s.text.body, pal.error))
+                        })),
                 )
                 .child(column),
         );

@@ -6,7 +6,7 @@
 //! there). Findings show only where the person has been (touched) or after a try to send; a `Missing` never shows
 //! before that. No trait of its own: the boundary is `Backend`; this is a value the session owns.
 
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::sync::OnceLock;
 use std::sync::atomic::{AtomicU64, Ordering};
 
@@ -40,6 +40,9 @@ pub struct FormModel {
     touched: BTreeSet<(String, usize)>,
     attempted: bool,
     refused: Vec<RecordIssue>,
+    /// Per sent field: the slot each sent value came from (empty slots are not sent), for mapping a program's finding
+    /// back to the slot the person typed in.
+    sent: BTreeMap<String, Vec<usize>>,
 }
 
 impl FormModel {
@@ -65,6 +68,7 @@ impl FormModel {
             touched: BTreeSet::new(),
             attempted: false,
             refused: Vec::new(),
+            sent: BTreeMap::new(),
         }
     }
 
@@ -162,14 +166,42 @@ impl FormModel {
             .collect()
     }
 
-    /// Whether a value differs from what the form started with.
+    /// Whether the person changed anything that would be sent: the cleaned values are compared (an empty slot, or the
+    /// same value with other spaces or case in the domain, is no change). A text that fails its rule counts as typed.
     pub fn is_dirty(&self) -> bool {
-        self.values != self.initial
+        self.fields.iter().any(|f| {
+            let norm = |from: &Values| -> Vec<String> {
+                from.get(&f.name)
+                    .map(|v| {
+                        v.iter()
+                            .map(|t| t.trim())
+                            .filter(|t| !t.is_empty())
+                            .map(|t| {
+                                rules()
+                                    .check(f.basic, t, &f.choices)
+                                    .unwrap_or_else(|_| t.to_owned())
+                            })
+                            .collect()
+                    })
+                    .unwrap_or_default()
+            };
+            norm(&self.values) != norm(&self.initial)
+        })
     }
 
-    /// The program refused the input: mark its findings.
+    /// The program refused the input: mark its findings. A finding's index counts the values that were sent (empty slots
+    /// are not), so it is mapped back to the slot the person typed in.
     pub fn refuse(&mut self, issues: Vec<RecordIssue>) {
-        self.refused = issues;
+        let sent = std::mem::take(&mut self.sent);
+        self.refused = issues
+            .into_iter()
+            .map(|mut i| {
+                if let Some(slot) = sent.get(&i.field).and_then(|v| v.get(i.index)) {
+                    i.index = *slot;
+                }
+                i
+            })
+            .collect();
     }
 
     /// Try to send. Fields whose values changed since the start come back, and the required ones always (a program asks for them), as canonical texts with empty slots left
@@ -185,12 +217,22 @@ impl FormModel {
             return Err(found);
         }
         let mut out = Values::new();
+        let mut sent = BTreeMap::new();
         for f in &self.fields {
             let now = self.canonical(&f.name, &self.values);
             if f.required || now != self.canonical(&f.name, &self.initial) {
+                let slots = self
+                    .values(&f.name)
+                    .iter()
+                    .enumerate()
+                    .filter(|(_, t)| !t.trim().is_empty())
+                    .map(|(i, _)| i)
+                    .collect();
+                sent.insert(f.name.clone(), slots);
                 out.insert(f.name.clone(), now);
             }
         }
+        self.sent = sent;
         Ok(out)
     }
 

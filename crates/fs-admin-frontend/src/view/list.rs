@@ -23,14 +23,16 @@ pub struct ListEvents {
 }
 
 /// The rows as the list widget takes them.
-pub fn rows(model: &ListModel) -> Vec<Row> {
+pub fn rows(model: &ListModel, say: &dyn Say) -> Vec<Row> {
+    // The sign between several values of one field is a word of the language (`list.separator`), not ours.
+    let separator = say.say("list.separator");
     model
         .rows()
         .into_iter()
         .map(|record| {
             let cells = (0..model.columns().len())
                 .map(|c| {
-                    // All values of the field in one cell, joined by a comma: no sentence is built from pieces here.
+                    // All values of the field in one cell.
                     let field = &model.columns()[c].field;
                     let texts = record.values.get(&field.name).map_or_else(Vec::new, |v| {
                         v.iter().filter(|t| !t.trim().is_empty()).cloned().collect()
@@ -44,7 +46,7 @@ pub fn rows(model: &ListModel) -> Vec<Row> {
                             })
                         })
                         .collect::<Vec<_>>()
-                        .join(", ")
+                        .join(&separator)
                 })
                 .collect();
             Row::new(record.id.clone(), cells)
@@ -109,7 +111,7 @@ pub fn list_body(
         .map(|w| Column::new("", ColumnWidth::Pixels(*w)))
         .collect();
     let open = Arc::clone(&events.open);
-    let list = ListView::new(columns, Arc::new(VecRows::new(rows(model))))
+    let list = ListView::new(columns, Arc::new(VecRows::new(rows(model, say))))
         .selected(model.selected())
         .on_select(Arc::new(move |key| open(key)))
         .row_height(s.heights.row_dense)

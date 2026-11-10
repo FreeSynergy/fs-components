@@ -98,6 +98,12 @@ pub struct Memory {
     pub down_after_run: Mutex<bool>,
     pub reject_delete: Mutex<bool>,
     pub reject_search: Mutex<bool>,
+    /// Counts the calls of `list`; the call with this number fails (the program goes away for that one call).
+    pub list_calls: std::sync::atomic::AtomicUsize,
+    pub fail_list_call: Mutex<Option<usize>>,
+    /// What `create` refuses: 0 nothing, 1 a refusal with no findings, 2 a finding on `name` and one on an unknown
+    /// field, 3 a finding on index 0 of `emails` (counted over the values that were sent).
+    pub create_refusal: std::sync::atomic::AtomicUsize,
     pub next_id: std::sync::atomic::AtomicUsize,
     pub description: TypeDescription,
 }
@@ -111,6 +117,9 @@ impl Memory {
             down_after_run: Mutex::new(false),
             reject_delete: Mutex::new(false),
             reject_search: Mutex::new(false),
+            list_calls: std::sync::atomic::AtomicUsize::new(0),
+            fail_list_call: Mutex::new(None),
+            create_refusal: std::sync::atomic::AtomicUsize::new(0),
             next_id: std::sync::atomic::AtomicUsize::new(100),
             description: contact(),
         })
@@ -127,6 +136,13 @@ impl Memory {
 
 impl Backend for Memory {
     fn list(&self, query: &Values) -> Result<Vec<Record>, BackendError> {
+        let n = self
+            .list_calls
+            .fetch_add(1, std::sync::atomic::Ordering::SeqCst)
+            + 1;
+        if *self.fail_list_call.lock().unwrap() == Some(n) {
+            return Err(BackendError::Unavailable("one call lost".into()));
+        }
         self.up()?;
         if *self.reject_search.lock().unwrap() && query.contains_key("text") {
             return Err(BackendError::Rejected(vec![RecordIssue {
@@ -168,6 +184,27 @@ impl Backend for Memory {
         let issues: Vec<RecordIssue> = as_type.check_record(&BasicRules::standard(), input);
         if !issues.is_empty() {
             return Err(BackendError::Rejected(issues));
+        }
+        if command.kind == CommandKind::Create {
+            let issue = |field: &str, index| RecordIssue {
+                field: field.into(),
+                index,
+                problem: fs_types::RecordProblem::Value(fs_types::TypeProblem::Character),
+            };
+            match self
+                .create_refusal
+                .load(std::sync::atomic::Ordering::SeqCst)
+            {
+                1 => return Err(BackendError::Rejected(vec![])),
+                2 => {
+                    return Err(BackendError::Rejected(vec![
+                        issue("name", 0),
+                        issue("nope", 0),
+                    ]));
+                }
+                3 => return Err(BackendError::Rejected(vec![issue("emails", 0)])),
+                _ => {}
+            }
         }
         let bad = self.forbidden.lock().unwrap().clone();
         if bad.is_some_and(|b| input.get("name").is_some_and(|n| n.contains(&b))) {

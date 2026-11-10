@@ -185,11 +185,4 @@ impl ListModel {
         }
         rows
     }
-
-    /// The text of a cell and how many further values the field has (`+2`).
-    pub fn cell(&self, record: &Record, column: usize) -> (String, usize) {
-        self.columns
-            .get(column)
-            .map_or((String::new(), 0), |c| first(record, &c.field.name))
-    }
 }

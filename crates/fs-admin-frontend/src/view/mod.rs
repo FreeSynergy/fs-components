@@ -13,4 +13,5 @@ mod surface;
 mod value;
 
 pub use kinds::{WITHOUT_COMPONENT, kind_of};
+pub use list::rows as list_rows;
 pub use surface::{AboutInfo, AdminSurface};
