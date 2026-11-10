@@ -986,6 +986,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "fs-components-fields"
+version = "0.0.2"
+dependencies = [
+ "blinc_animation",
+ "blinc_app",
+ "blinc_cn",
+ "blinc_core",
+ "blinc_layout",
+ "blinc_theme",
+ "fs-components-styles",
+ "fs-components-widgets",
+ "fs-interfaces",
+ "image",
+ "wgpu",
+]
+
+[[package]]
 name = "fs-components-primitives"
 version = "0.0.2"
 dependencies = [
