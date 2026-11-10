@@ -45,6 +45,17 @@ pub fn cn_button(
     )
 }
 
+/// A locked button for a command the core cannot carry out yet: it is there, it cannot be pressed.
+pub fn locked_button(label: &str, name: &str) -> Box<dyn Element> {
+    Box::new(
+        cn::button(label.to_owned())
+            .variant(ButtonVariant::Secondary)
+            .disabled(true)
+            .build_component()
+            .id(name),
+    )
+}
+
 /// A button with a label that is already text.
 pub fn button(label: &str, weight: Weight, name: &str, on: Action) -> Box<dyn Element> {
     let variant = match weight {

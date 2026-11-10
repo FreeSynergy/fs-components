@@ -45,6 +45,8 @@ pub struct Memory {
     /// What `create` refuses: 0 nothing, 1 a refusal with no findings, 2 a finding on `name` and one on an unknown
     /// field, 3 a finding on index 0 of `emails` (counted over the values that were sent).
     pub create_refusal: std::sync::atomic::AtomicUsize,
+    /// Commands the program does not carry out yet.
+    pub unsupported: Mutex<std::collections::BTreeSet<String>>,
     pub next_id: std::sync::atomic::AtomicUsize,
     pub description: TypeDescription,
 }
@@ -62,6 +64,7 @@ impl Memory {
             list_error: Mutex::new(None),
             fail_list_call: Mutex::new(None),
             create_refusal: std::sync::atomic::AtomicUsize::new(0),
+            unsupported: Mutex::new(std::collections::BTreeSet::new()),
             next_id: std::sync::atomic::AtomicUsize::new(100),
             description: contact(),
         })
@@ -77,6 +80,10 @@ impl Memory {
 }
 
 impl Backend for Memory {
+    fn supported(&self, command: &str) -> bool {
+        !self.unsupported.lock().unwrap().contains(command)
+    }
+
     fn list(&self, query: &Values) -> Result<Vec<Record>, BackendError> {
         let n = self
             .list_calls

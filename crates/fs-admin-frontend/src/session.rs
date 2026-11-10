@@ -26,6 +26,8 @@ pub struct Session {
     pub(crate) query: Values,
     /// The last reading of the records failed: what the list holds is old and no record of it is shown as current.
     pub(crate) stale: bool,
+    /// What the core said about each command when it was last asked (see [`Backend::supported`]).
+    pub(crate) supported: std::collections::BTreeMap<String, bool>,
     pub(crate) screen: Screen,
     pub(crate) form: Option<FormModel>,
     pub(crate) result: Option<Outcome>,
@@ -46,12 +48,14 @@ impl Session {
             backend,
             query: Values::new(),
             stale: false,
+            supported: std::collections::BTreeMap::new(),
             screen: Screen::List,
             form: None,
             result: None,
             messages: Arc::new(Messages::new(clock)),
         };
         s.messages.enter(&s.screen.key());
+        s.refresh_support();
         s.reload();
         s
     }
@@ -150,6 +154,7 @@ impl Session {
     pub fn reload(&mut self) -> bool {
         match self.backend.list(&self.query) {
             Ok(records) => {
+                self.refresh_support();
                 self.list.set_records(records);
                 self.stale = false;
                 self.messages.solve("unavailable");
@@ -229,6 +234,9 @@ impl Session {
         let Some(plan) = self.command(name).cloned() else {
             return false;
         };
+        if !self.is_supported(name) {
+            return false; // locked: "coming soon"
+        }
         let record = match plan.placement {
             Placement::OnList => None,
             // The record is the one of the screen that is shown, and only if it is loaded: the selection of the list

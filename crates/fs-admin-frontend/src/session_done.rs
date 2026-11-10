@@ -130,4 +130,19 @@ impl Session {
     pub fn is_stale(&self) -> bool {
         self.stale
     }
+
+    /// Ask the core which commands it can carry out now.
+    pub(crate) fn refresh_support(&mut self) {
+        self.supported = self
+            .plans
+            .iter()
+            .map(|p| (p.name.clone(), self.backend.supported(&p.name)))
+            .collect();
+    }
+
+    /// Whether the core can carry out the command (as last asked when the records were read). A command that is
+    /// unknown here is not supported.
+    pub fn is_supported(&self, name: &str) -> bool {
+        self.supported.get(name).copied().unwrap_or(false)
+    }
 }

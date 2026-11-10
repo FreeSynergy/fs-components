@@ -52,6 +52,17 @@ pub trait Backend: Send + Sync {
     /// [`BackendError`] when the program cannot answer.
     fn list(&self, query: &Values) -> Result<Vec<Record>, BackendError>;
 
+    /// Whether the core can carry out the command `name` now. A command that is described but not yet built answers
+    /// `false`: the frontend shows its control locked with "coming soon" and unlocks it when this turns `true`, with no
+    /// change in the frontend. Asked when the records are read. The default is `true`.
+    ///
+    /// Provisional (reported to the strategy and Thread T): the description is to carry `supported` per command
+    /// (`types.capnp`); when it does, a command is supported only if the description and this both say so.
+    fn supported(&self, command: &str) -> bool {
+        let _ = command;
+        true
+    }
+
     /// Carry out the command `name` of the description with `input` (already checked against the description).
     ///
     /// **The rule for changing (part of the contract, reported to the strategy):** a command of kind `change` is

@@ -22,7 +22,7 @@ impl AdminSurface {
         let s = look.style;
         let session = lock(&self.env.session);
         let title = say.say(&session.description().label);
-        let actions = self.command_buttons(&session.commands(Placement::OnList));
+        let actions = self.command_buttons(&session.commands(Placement::OnList), &session);
         let (open, sort) = (self.opener(), self.sorter());
         let inner_w = (width - 2.0 * s.spacing.xl).max(0.0);
         let inner_h =
@@ -79,7 +79,7 @@ impl AdminSurface {
         // A record that could not be read (a failed reload) has no commands: nothing is done to what is not there.
         let loaded = session.record().is_some();
         let mut actions = if loaded {
-            self.command_buttons(&session.commands(Placement::OnRecord))
+            self.command_buttons(&session.commands(Placement::OnRecord), &session)
         } else {
             Vec::new()
         };

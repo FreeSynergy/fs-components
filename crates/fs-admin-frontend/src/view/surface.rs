@@ -13,7 +13,7 @@ use fs_components_widgets::list_view::ListPosition;
 use fs_components_widgets::live::Live;
 use fs_components_widgets::{Element, styles};
 
-use super::chrome::{Action, Weight, button, header, message_bar};
+use super::chrome::{Action, Weight, button, header, locked_button, message_bar};
 use super::form::{FormEnv, FormSlots, form_body};
 use super::redraw::redraw_worker;
 use crate::commands::CommandPlan;
@@ -128,7 +128,7 @@ impl AdminSurface {
         })
     }
 
-    pub(super) fn command_buttons(&self, plans: &[&CommandPlan]) -> Vec<Div> {
+    pub(super) fn command_buttons(&self, plans: &[&CommandPlan], session: &Session) -> Vec<Div> {
         plans
             .iter()
             .map(|p| {
@@ -138,6 +138,26 @@ impl AdminSurface {
                     (fs_types::CommandKind::Create, _) => Weight::Primary,
                     _ => Weight::Plain,
                 };
+                if !session.is_supported(&p.name) {
+                    // locked, with the word "coming soon"; it unlocks when the core reports the command
+                    return div()
+                        .flex_row()
+                        .items_center()
+                        .gap_px(self.env.look.style.spacing.xs)
+                        .child(locked_button(
+                            &self.env.say.say(&p.label),
+                            &format!("cmd-{}", p.name),
+                        ))
+                        .child(
+                            div()
+                                .id(format!("soon-{}", p.name))
+                                .child(self.env.look.text(
+                                    self.env.say.say("command.soon"),
+                                    self.env.look.style.text.caption,
+                                    self.env.look.palette().text_weak,
+                                )),
+                        );
+                }
                 let go = self.act(move |s| {
                     s.begin(&name);
                 });
