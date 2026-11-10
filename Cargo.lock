@@ -1020,6 +1020,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "fs-components-kanban"
+version = "0.0.2"
+dependencies = [
+ "blinc_animation",
+ "blinc_app",
+ "blinc_cn",
+ "blinc_core",
+ "blinc_layout",
+ "blinc_theme",
+ "fs-components-fields",
+ "fs-components-styles",
+ "fs-components-widgets",
+ "image",
+ "wgpu",
+]
+
+[[package]]
 name = "fs-components-primitives"
 version = "0.0.2"
 dependencies = [

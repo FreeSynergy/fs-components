@@ -1,0 +1,22 @@
+[package]
+name = "fs-components-kanban"
+description = "FreeSynergy kanban board component: columns with cards, locked operations, keyboard and drag-free moves; plain data in, Blinc stays behind this API"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+blinc_core = "0.6"
+blinc_layout = "0.6"
+blinc_cn = "0.6"
+fs-components-styles = { path = "../fs-components-styles" }
+fs-components-fields = { path = "../fs-components-fields" }
+fs-components-widgets = { path = "../fs-components-widgets" }
+
+[dev-dependencies]
+blinc_theme = "0.6"
+blinc_app = "0.6"
+wgpu = "26"
+blinc_animation = "0.6"
+image = { version = "0.25", default-features = false, features = ["png"] }
