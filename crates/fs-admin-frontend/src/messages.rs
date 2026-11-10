@@ -128,7 +128,7 @@ impl Messages {
         found
     }
 
-    /// The problem is solved: close the errors with this code on the current screen.
+    /// The problem is solved: close the errors with this code, on whatever screen they were raised.
     pub fn solve(&self, code: &str) {
         let found = {
             let mut s = self.state.lock().unwrap_or_else(PoisonError::into_inner);

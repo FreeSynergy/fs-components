@@ -1,10 +1,10 @@
 //! The worker that draws a page again when the messages change.
 //!
-//! Pattern: Observer (the messages tell it by a signal) with a worker thread as the receiving end. Messages change while
-//! the session is locked (a transition), and a draw reads the session, so the draw must not run on the caller's thread:
-//! it is asked by a signal and done here, which waits for the lock. Signals that arrive while a draw runs are folded
-//! into one more draw. It draws once more when `expiry` has passed after the last signal (a success runs out; messages
-//! have no timer of their own).
+//! Pattern: Observer (the messages tell it by a signal) with a worker thread as the receiving end. Messages change
+//! while the session is locked (a transition), and a draw reads the session, so the draw must not run on the caller's
+//! thread: it is asked by a signal and done here, which waits for the lock. Signals that arrive while a draw runs are
+//! folded into one more draw. It draws once more when `expiry` has passed after the last signal (a success runs out;
+//! messages have no timer of their own).
 //!
 //! One thread per surface. It ends when the last signal sender is dropped, i.e. when the session (which holds the
 //! listener) is dropped; Blinc may keep the page closures, and with them the session, for the life of the window, so in
@@ -61,20 +61,32 @@ mod tests {
                 d.fetch_add(1, Ordering::SeqCst);
                 std::thread::sleep(Duration::from_millis(5)); // a draw takes time
             },
-            Duration::from_millis(300),
+            Duration::from_secs(2),
         );
         for _ in 0..200 {
             signal();
         }
-        std::thread::sleep(Duration::from_millis(150));
-        let burst = draws.load(Ordering::SeqCst);
-        assert!(burst >= 1, "it draws");
-        assert!(burst < 30, "200 signals made {burst} draws");
-        std::thread::sleep(Duration::from_millis(500));
-        assert_eq!(
-            draws.load(Ordering::SeqCst),
-            burst + 1,
-            "once more when the quiet time has passed"
-        );
+        // wait (with a limit) until it has drawn, then until it is quiet: no fixed pauses that load could upset
+        let limit = std::time::Instant::now() + Duration::from_secs(10);
+        while draws.load(Ordering::SeqCst) == 0 && std::time::Instant::now() < limit {
+            std::thread::sleep(Duration::from_millis(5));
+        }
+        let mut last = draws.load(Ordering::SeqCst);
+        loop {
+            std::thread::sleep(Duration::from_millis(60));
+            let now = draws.load(Ordering::SeqCst);
+            if now == last && now > 0 {
+                break;
+            }
+            last = now;
+            assert!(std::time::Instant::now() < limit, "never quiet");
+        }
+        assert!(last < 30, "200 signals made {last} draws");
+        // the quiet time (2 s) after the last signal brings exactly one more
+        let limit = std::time::Instant::now() + Duration::from_secs(10);
+        while draws.load(Ordering::SeqCst) == last && std::time::Instant::now() < limit {
+            std::thread::sleep(Duration::from_millis(10));
+        }
+        assert_eq!(draws.load(Ordering::SeqCst), last + 1);
     }
 }

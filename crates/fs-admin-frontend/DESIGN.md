@@ -9,8 +9,13 @@ The generated Admin frontend of ADR 0066: from the type description of a program
 | `backend.rs` `Backend` | Repository (trait first, ADR 0043) | the only thing a program implements for the frontend; in memory for tests, over Cap'n Proto for People |
 | `form.rs` `FormModel` | Unit of Work (the check is `fs-types` `check_record`, Strategy by kind there) | remembers the start, hands back what changed plus the required fields, checked; the form and the program's `check` command say the same |
 | `list.rs` `ListModel` | State | records, sort, filter, selection and their transitions; the rows are a pure function of it |
-| `detail.rs`, `view/kinds.rs`, `view/value.rs` | none (pure functions) | description and record in, entries out; basic type to component kind |
-| `view/*.rs` pages, `view/chrome.rs` | View function; `view/screens.rs`, `view/surface.rs` Adapter | pages are pure from state; the screens and the surface build click handlers that change the session |
+| `detail.rs`, `view/kinds.rs` | none (pure functions) | description and record in, entries out; basic type to component kind |
+| `view/value.rs` | Strategy by basic type | the component of `fs-components-fields` where there is one, else the canonical text |
+| `view/detail.rs`, `view/findings.rs`, `view/chrome.rs` | View function | pure from state to elements |
+| `view/list.rs` | Adapter over the `ListView` widget | a head of our own that can be clicked, rows from the model |
+| `view/inputs.rs` | Adapter + Strategy | Blinc `text_input` for the plain input; component of the type or plain input by basic type |
+| `view/form.rs` | Adapter + Observer | slots made once per form and kept, findings in an area of their own |
+| `view/screens.rs`, `view/surface.rs` | Adapter (+ Observer in the surface) | session state to elements; the click handlers they build change the session |
 | `view/redraw.rs` | Observer with a worker thread | messages signal, the worker draws (folding bursts) |
 | `commands.rs` `plan_commands` | none (a small set of pure functions) | placement, confirmation and form fields come from the kind and the input of the description |
 | `session.rs` `Session`, `Screen` | State | screens are the states, methods are the transitions |
@@ -41,14 +46,14 @@ The generated Admin frontend of ADR 0066: from the type description of a program
 * `submit` returns the changed fields and the required ones; a field emptied by the person is an empty list (cleared).
 * **The rule for `change` is part of the contract** (`Backend::run`, to be written into `types.capnp` by Thread T if the strategy agrees): a field missing from the input is unchanged, an empty list clears it, values replace; required fields are always sent. A program that reads the input as a whole record would delete the optional fields that were not sent. A refusal counts the values as they were sent; the form maps it back to the slots.
 * A command on a record works on the record of the shown detail screen, and only if it is loaded; after a failed reload the records are marked old (`is_stale`): the screen says "not loaded", offers no record command, and going back reads the list again.
-* Unsaved text: a search form does not count; values are compared cleaned. Quitting with text shows the surface that has it, closes About and says it once.
+* Unsaved text: a search form does not count; values are compared cleaned. Quitting with text shows the surface that has it (the visible one first, then the others in order), closes About and says it once.
 * Commands that are not offered are named on the About page.
 * `open_external` (Help) returns nothing: a failure to open the address cannot be shown.
 * `Session`, `Messages` and `FormModel` have no trait of their own (coding.md section 1): they are values the frontend owns; the boundary to the outside is `Backend`. Reported to the strategy.
 
 ## Translation keys the frontend asks for (through `Say`)
 
-`action.{add,back,cancel,close,remove,save}`, `menu.{program,view,help,quit,about}`, `message.<code>` (`done`, `rejected`, `not-found`, `unavailable`, `unsaved`), `problem.<code>`, `hint.<label>`, `sort.{ascending,descending}`, `list.{empty,separator}`, `detail.not-loaded`, `confirm.sure`, `value.none`, `about.{version,origin,licence,repository,unoffered}`, and the keys of the description (labels, `<label>.<choice>`).
+`action.{add,back,cancel,close,remove,save}`, `menu.{program,view,help,quit,about}`, `message.<code>` (`done`, `rejected`, `not-found`, `unavailable`, `unsaved`), `problem.<code>`, `hint.<label>`, `sort.{ascending,descending}`, `finding.slot` (a sentence with the named placeholder `{n}`, the number of the value), `list.{empty,separator}`, `detail.not-loaded`, `confirm.sure`, `value.none`, `about.{version,origin,licence,repository,unoffered}`, and the keys of the description (labels, `<label>.<choice>`).
 
 ## Unsupported (named, not faked)
 

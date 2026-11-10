@@ -17,6 +17,8 @@ impl Session {
             Ok(records) => {
                 self.query = query;
                 self.list.set_records(records);
+                self.stale = false;
+                self.messages.solve("unavailable");
                 self.form = None;
                 self.go(Screen::List);
                 true
@@ -52,7 +54,9 @@ impl Session {
                 let old = std::mem::take(&mut self.query);
                 read = self.reload();
                 if !read {
+                    // the list still holds the first, narrowed reading: it is fresh, the error stays as a message
                     self.query = old;
+                    self.stale = false;
                 }
             }
             if self.list.select(&id) {
@@ -77,9 +81,7 @@ impl Session {
                 .iter()
                 .cloned()
                 .partition(|i| form.fields().iter().any(|f| f.name == i.field));
-            if !mine.is_empty() {
-                form.refuse(mine);
-            }
+            form.refuse(mine); // also when empty: marks from an earlier try go
             if others.is_empty() && !issues.is_empty() {
                 return;
             }
@@ -97,5 +99,23 @@ impl Session {
             }
             _ => false,
         }
+    }
+
+    /// Old records are not shown without a word: a screen entered while the last reading failed reads again, and a
+    /// failure is told on that screen.
+    pub(crate) fn read_again_if_stale(&mut self) {
+        if self.stale {
+            self.reload();
+        }
+    }
+
+    /// Whether a search narrows the list.
+    pub fn search_active(&self) -> bool {
+        !self.query.is_empty()
+    }
+
+    /// Whether the records shown are old because the last reading failed.
+    pub fn is_stale(&self) -> bool {
+        self.stale
     }
 }

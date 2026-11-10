@@ -92,24 +92,15 @@ fn third_3_and_4_each_finding_has_its_own_ids_and_says_which_slot() {
     s.refresh();
     ui::frame(&mut tree, W, H);
     input.click(&mut tree, "save");
-    let ids: Vec<String> = ["0", "1"]
-        .iter()
-        .flat_map(|i| {
-            vec![
-                format!("finding-emails-{i}-"),
-                format!("finding-emails-{i}-"),
-            ]
-        })
-        .collect();
+    let one = "finding-emails-1-problem.email.missing-at-slot";
+    let zero = "finding-emails-0-problem.email.missing-at-slot";
     assert!(
-        until(&mut tree, 3, |t| t
-            .query_by_id("finding-emails-1-slot")
-            .is_some()),
-        "{ids:?}"
+        until(&mut tree, 3, |t| t.query_by_id(one).is_some()),
+        "slot number of the second value"
     );
     assert!(
-        tree.query_by_id("finding-emails-0-slot").is_some(),
-        "slot numbers on every finding of a multi field"
+        tree.query_by_id(zero).is_some(),
+        "slot numbers on every finding of a multi field, ids of the two differ"
     );
 }
 
