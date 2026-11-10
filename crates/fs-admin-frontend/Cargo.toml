@@ -8,3 +8,18 @@ rust-version.workspace = true
 
 [dependencies]
 fs-types = { git = "https://github.com/FreeSynergy/fs-interfaces", tag = "v0.0.2" }
+blinc_core = "0.6"
+blinc_layout = "0.6"
+blinc_cn = "0.6"
+blinc_theme = "0.6"
+fs-components-styles = { path = "../fs-components-styles" }
+fs-components-fields = { path = "../fs-components-fields" }
+fs-components-widgets = { path = "../fs-components-widgets" }
+fs-components-app = { path = "../fs-components-app" }
+fs-components-primitives = { path = "../fs-components-primitives" }
+
+[dev-dependencies]
+blinc_app = "0.6"
+wgpu = "26"
+blinc_animation = "0.6"
+image = { version = "0.25", default-features = false, features = ["png"] }
