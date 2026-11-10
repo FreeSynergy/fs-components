@@ -8,6 +8,7 @@ use std::sync::Arc;
 use blinc_cn::cn;
 use blinc_cn::components::button::{ButtonSize, ButtonVariant};
 use blinc_layout::div::{Div, div};
+use blinc_layout::widgets::button as layout_button;
 
 use crate::file_manager::context::PickedFile;
 use crate::file_manager::state::FilesState;
@@ -77,6 +78,55 @@ pub(super) fn button(id: String, label: &str, variant: ButtonVariant, act: &Act)
             .size(ButtonSize::Small)
             .on_click(move |_| act()),
     )
+}
+
+/// A button whose words wrap inside `room` px instead of making the button wider (Blinc's button keeps its
+/// label on one line). It is built the way `cn::button` builds its own (the same layout button, the same
+/// classes, so the theme gives it the same look in every state), with a label that wraps.
+pub(super) fn wrapping_button(
+    id: String,
+    label: &str,
+    variant: ButtonVariant,
+    act: &Act,
+    room: f32,
+) -> Div {
+    let act = Arc::clone(act);
+    let label = label.to_string();
+    let kind = match variant {
+        ButtonVariant::Primary => "cn-button--primary",
+        ButtonVariant::Destructive => "cn-button--destructive",
+        ButtonVariant::Outline => "cn-button--outline",
+        ButtonVariant::Ghost => "cn-button--ghost",
+        ButtonVariant::Link => "cn-button--link",
+        _ => "cn-button--secondary",
+    };
+    let inner = layout_button::Button::with_content(move |_| {
+        div()
+            .padding_x_px(12.0)
+            .padding_y_px(4.0)
+            .max_w(room)
+            .pointer_events_none()
+            .child(
+                blinc_layout::text(label.clone())
+                    .size(13.0)
+                    .pointer_events_none()
+                    .no_cursor(),
+            )
+    })
+    .key(format!("_fs_files_btn_{id}"))
+    .items_center()
+    .justify_center()
+    .class("cn-button")
+    .class("tabindex=0")
+    .class(kind)
+    .class("cn-button--sm")
+    .on_click(move |_| act());
+    div()
+        .id(id)
+        .w_fit()
+        .flex_shrink_0()
+        .max_w(room)
+        .child(inner)
 }
 
 /// A thing to press in a live area, where Blinc's button must not be built: a plain element and a tab

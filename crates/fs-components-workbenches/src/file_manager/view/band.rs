@@ -11,7 +11,7 @@ use blinc_cn::components::input::{InputSize, input};
 use blinc_layout::div::{Div, div};
 use blinc_layout::text;
 
-use super::actions::{Act, FileActions, button};
+use super::actions::{Act, FileActions, wrapping_button};
 use super::frame::text_height;
 use crate::file_manager::ask::{Ask, InputAsk};
 use crate::file_manager::carry::CarryKind;
@@ -63,21 +63,65 @@ pub(super) fn band_height(state: &FilesState, width: f32) -> f32 {
             height += text_height(error.chars().count(), width);
         }
     }
-    if height > 0.0 { height + PADDING } else { 0.0 }
+    if height > 0.0 {
+        height + PADDING + wrapped_extra(state, width)
+    } else {
+        0.0
+    }
 }
 
-/// The most a button's frame may take at `width`: the band's inset on the left (18 px) and a small margin on
-/// the right are left free. The text of a button does not wrap, so the button is as wide as its words;
-/// at the narrowest width (160 px) the longest answer is 139 px, which fits in the 140 px this leaves. A
-/// longer word would leave the window: the labels must be short, and the test measures the button itself
-/// (inside its frame) for the answers of the confirm question, of a taken name and of carrying.
+/// The height the buttons take beyond one line, where their words wrap (the buttons stand one under the
+/// other or side by side; the worst is every one under the other).
+fn wrapped_extra(state: &FilesState, width: f32) -> f32 {
+    let labels = state.labels();
+    let mut words: Vec<String> = Vec::new();
+    if let Some(carrying) = state.carrying() {
+        words.push(labels.cancel.clone());
+        words.push(
+            match carrying.kind {
+                CarryKind::Move => &labels.move_here,
+                CarryKind::Copy => &labels.copy_here,
+                _ => &labels.restore_here,
+            }
+            .clone(),
+        );
+    }
+    match state.ask() {
+        Ask::Input(input) if input.discard_asked => {
+            words.extend([labels.keep_typing.clone(), labels.discard.clone()]);
+        }
+        Ask::Input(_) => words.extend([labels.cancel.clone(), labels.apply.clone()]),
+        Ask::Confirm(_) => {
+            words.push(labels.keep.clone());
+            words.extend(state.confirm_words().map(|(_, yes)| yes));
+        }
+        Ask::NameTaken(_) => words.extend([labels.back.clone(), labels.keep_both.clone()]),
+        _ => {}
+    }
+    words
+        .iter()
+        .map(|w| (button_height(w, width) - BUTTONS).max(0.0))
+        .sum()
+}
+
+/// The most a button of the band may take at `width`: the band's inset on the left (18 px) and a small
+/// margin on the right are left free. The words of a band button wrap inside this (see `wrapping_button`),
+/// so a long answer ("Yes, write this marked file") gets a second line instead of leaving the window; the
+/// button itself, not only its frame, is held to it, and `band_height` counts the extra lines.
 fn room(width: f32) -> f32 {
     width - 20.0
 }
 
+/// What a button of `width` px room takes at most in height: its words wrap at about 8 px a character.
+#[allow(clippy::cast_precision_loss)]
+fn button_height(label: &str, width: f32) -> f32 {
+    let per_line = ((room(width) - 24.0) / 8.0).floor().max(1.0);
+    (label.chars().count() as f32 / per_line).ceil().max(1.0) * 18.0 + 8.0 + 4.0
+}
+
 /// A button of the band, held to `room(width)` so that none leaves the window.
 fn band_button(width: f32, id: String, label: &str, variant: ButtonVariant, act: &Act) -> Div {
-    button(id, label, variant, act).max_w(room(width))
+    wrapping_button(id, label, variant, act, room(width))
 }
 
 /// Lines `count` buttons take at `width`, at the worst.
@@ -237,13 +281,15 @@ fn input_area(
     let mut bar = row();
     if ask.discard_asked {
         bar = bar
-            .child(button(
+            .child(band_button(
+                width,
                 format!("{name}-keep-typing"),
                 &labels.keep_typing,
                 ButtonVariant::Secondary,
                 &actions.plain(FilesState::keep_typing),
             ))
-            .child(button(
+            .child(band_button(
+                width,
                 format!("{name}-discard"),
                 &labels.discard,
                 ButtonVariant::Destructive,
@@ -251,13 +297,15 @@ fn input_area(
             ));
     } else {
         bar = bar
-            .child(button(
+            .child(band_button(
+                width,
                 format!("{name}-cancel"),
                 &labels.cancel,
                 ButtonVariant::Secondary,
                 &actions.plain(FilesState::cancel_input),
             ))
-            .child(button(
+            .child(band_button(
+                width,
                 format!("{name}-apply"),
                 &labels.apply,
                 ButtonVariant::Primary,
