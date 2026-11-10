@@ -1,0 +1,19 @@
+[package]
+name = "fs-components-gallery-grid"
+description = "FreeSynergy gallery grid (component): pictures as tiles, newest first, grouped by day, month or year; grouping is a pure model, the tiles are drawn by the file-tile widget"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+fs-components-widgets = { path = "../fs-components-widgets" }
+
+[dev-dependencies]
+blinc_app = "0.6"
+blinc_core = "0.6"
+blinc_layout = "0.6"
+blinc_cn = "0.6"
+blinc_theme = "0.6"
+wgpu = "26"
+image = { version = "0.25", default-features = false, features = ["png"] }

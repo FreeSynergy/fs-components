@@ -1,0 +1,19 @@
+[package]
+name = "fs-components-file-list"
+description = "FreeSynergy file list (component): files and folders as rows with name, size, type and date; sort and the human size are a pure model, the rows are drawn by the list-view widget"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+fs-components-widgets = { path = "../fs-components-widgets" }
+
+[dev-dependencies]
+blinc_app = "0.6"
+blinc_core = "0.6"
+blinc_layout = "0.6"
+blinc_cn = "0.6"
+blinc_theme = "0.6"
+wgpu = "26"
+image = { version = "0.25", default-features = false, features = ["png"] }
