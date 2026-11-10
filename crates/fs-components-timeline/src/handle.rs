@@ -6,6 +6,7 @@
 
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
+use std::time::Instant;
 
 use blinc_layout::selector::ScrollRef;
 use fs_components_fields::{Look, Say};
@@ -27,9 +28,9 @@ pub struct Timeline {
     live: Live,
     pub(crate) scroll: ScrollRef,
     /// Width of the view as built last, in pixels (as `f32` bits).
-    width: Arc<AtomicU32>,
+    pub(crate) width: Arc<AtomicU32>,
     /// A scroll asked for and not yet drawn: the position and the offset the view had then.
-    target: Arc<Mutex<Option<(f32, f32)>>>,
+    pub(crate) target: Arc<Mutex<Option<(f32, f32, Instant)>>>,
 }
 
 impl Timeline {
@@ -65,7 +66,7 @@ impl Timeline {
         self.lock().clone()
     }
 
-    fn lock(&self) -> MutexGuard<'_, TimelineState> {
+    pub(crate) fn lock(&self) -> MutexGuard<'_, TimelineState> {
         self.state.lock().unwrap_or_else(PoisonError::into_inner)
     }
 
@@ -84,21 +85,6 @@ impl Timeline {
         step
     }
 
-    /// The axis keeps its first day whatever the zoom, so the same day stays at the left of the
-    /// view: the offset scales with the pixels per day and stays inside the content. Left alone it
-    /// would stay as it was and, when the content shrinks, point past its end.
-    fn rescale(&self, old: Zoom, new: Zoom) {
-        let scaled = self.scroll_x() * new.px_per_day() / old.px_per_day();
-        self.put_x(scaled.min(self.max_scroll_x_at(new)));
-    }
-
-    /// Ask the view to scroll to `x`, and remember it until the view has done so.
-    fn put_x(&self, x: f32) {
-        let (base, y) = self.scroll.offset();
-        *self.target.lock().unwrap_or_else(PoisonError::into_inner) = Some((x, base));
-        self.scroll.set_scroll_offset(x, y);
-    }
-
     /// Choose an item.
     pub fn select(&self, key: &str) -> Step {
         let step = self.lock().select(key);
@@ -111,48 +97,6 @@ impl Timeline {
         let old = self.lock().zoom;
         let step = self.lock().set_zoom(zoom);
         self.apply(step, old)
-    }
-
-    /// How far the view is scrolled to the right, in pixels. A scroll asked for with
-    /// `set_scroll_x` or by a zoom change counts at once, before the view has drawn it.
-    pub fn scroll_x(&self) -> f32 {
-        let shown = self.scroll.scroll_x();
-        let mut target = self.target.lock().unwrap_or_else(PoisonError::into_inner);
-        match *target {
-            // Still where it was when asked: the view has not moved yet.
-            Some((x, base)) if (shown - base).abs() < 0.5 => x,
-            _ => {
-                *target = None;
-                shown
-            }
-        }
-    }
-
-    /// Scroll the view to `x` pixels from the left of the axis, kept between 0 and `max_scroll_x`.
-    pub fn set_scroll_x(&self, x: f32) {
-        self.put_x(x.clamp(0.0, self.max_scroll_x()));
-    }
-
-    /// The largest `scroll_x` the content allows at the current zoom, from the items and the width
-    /// of the view as built last. Before the first build the width of the view counts as zero, so it is
-    /// the width of the whole axis.
-    pub fn max_scroll_x(&self) -> f32 {
-        let zoom = self.lock().zoom;
-        self.max_scroll_x_at(zoom)
-    }
-
-    fn max_scroll_x_at(&self, zoom: Zoom) -> f32 {
-        let today = self.lock().today;
-        let (first, last) = crate::layout::range(
-            &self.source.items(),
-            7,
-            today.unwrap_or(crate::model::Day(0)),
-        );
-        let scale = crate::layout::Scale {
-            origin: first,
-            px: zoom.px_per_day(),
-        };
-        (scale.x_of(last.add_days(1)) - f32::from_bits(self.width.load(Ordering::Relaxed))).max(0.0)
     }
 
     /// A key press; true when the timeline used it.
@@ -176,6 +120,7 @@ impl Timeline {
         height: f32,
     ) -> impl blinc_layout::prelude::ElementBuilder + use<> {
         self.width.store(width.to_bits(), Ordering::Relaxed);
+        self.reclamp();
         let (me, keys) = (self.clone(), self.clone());
         let inner = self.live.region("timeline", move || {
             crate::view::timeline(&me, width, height)

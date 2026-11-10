@@ -25,6 +25,7 @@ pub mod handle;
 pub mod layout;
 pub mod model;
 pub mod route;
+mod scroll;
 pub mod source;
 pub mod state;
 pub mod view;

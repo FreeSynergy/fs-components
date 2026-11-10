@@ -98,6 +98,10 @@ fn pen(
         ..TextStyle::default()
     };
     for (x, y, w, s) in &m.labels {
+        // Room for fewer than four letters would leave a stub that reads as a word: draw nothing.
+        if *w < 4.0 * caption {
+            continue;
+        }
         ctx.push_clip(ClipShape::Rect(CRect::new(
             *x,
             *y,

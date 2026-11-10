@@ -82,3 +82,31 @@ pub fn plan_with_today(items: Vec<Item>, today: Day, zoom: Zoom) -> Timeline {
         fs_components_fields::Look::new(StyleId::Admin, false),
     )
 }
+
+pub fn many(n: usize) -> Vec<Item> {
+    spread(n, 365)
+}
+
+/// `n` bars of ten days spread over `days` days.
+pub fn spread(n: usize, days: i64) -> Vec<Item> {
+    (0..n)
+        .map(|i| {
+            let start = d(2026, 1, 1).add_days((i as i64 * days) / n as i64);
+            Item::bar(&format!("i{i}"), "Task", start, start.add_days(9), 50)
+        })
+        .collect()
+}
+
+/// The scroll offset the view has now (positive), after the view has done what was asked of it.
+pub fn shown_x(tree: &mut blinc_layout::prelude::RenderTree, t: &Timeline) -> f32 {
+    tree.process_pending_scroll_refs();
+    let scroll = tree.query_by_id("tl-scroll").unwrap();
+    let _ = t;
+    -tree.get_scroll_offset(scroll).0
+}
+
+pub fn body_width(tree: &blinc_layout::prelude::RenderTree) -> f32 {
+    tree.get_absolute_bounds(tree.query_by_id("tl-body").unwrap())
+        .unwrap()
+        .width
+}

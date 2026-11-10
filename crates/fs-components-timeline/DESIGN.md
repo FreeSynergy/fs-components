@@ -22,7 +22,7 @@ Texts are translation keys through `Say`: `timeline.zoom.day|week|month`, `timel
 | `source.rs` | Strategy + Null object | the host owns data and decides what a choice means |
 | `state.rs` | State | zoom, selection and keys in one set of transitions |
 | `layout.rs`, `route.rs` | none (pure functions) | scale, rectangles, ticks, the path of an arrow; tested without a window |
-| `handle.rs` | Facade + Observer | one clonable handle; change state, tell host, redraw the live area only |
+| `handle.rs`, `scroll.rs` | Facade + Observer | one clonable handle; change state, tell host, redraw the live area only |
 | `view/*` | View function / Adapter | `arrows.rs` and `axis.rs` are the only code that talks to Blinc's draw context (Blinc canvas, stroke and fill of paths) |
 | `view/keys.rs` | Adapter | copy of a private helper of `fs-components-widgets` (move to a shared crate when one exists) |
 

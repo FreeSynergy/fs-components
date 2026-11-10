@@ -33,7 +33,14 @@ pub fn timeline(t: &Timeline, width: f32, height: f32) -> Div {
         scale.x_of(last.add_days(1)).max(width),
         items.len() as f32 * g.row,
     );
-    let mut body = div().relative().w(total_w).h(head + rows_h).id("tl-body");
+    // Not shrunk to the view: the scroll box must see the whole width.
+    let mut body = div()
+        .relative()
+        .w(total_w)
+        .min_w(total_w)
+        .flex_shrink_0()
+        .h(head + rows_h)
+        .id("tl-body");
     for e in axis::axis(t, st.zoom, (first, last), &scale, head + rows_h) {
         body = body.child(e);
     }
