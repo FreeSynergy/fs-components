@@ -49,10 +49,11 @@ impl StyleId {
 /// Where the numbers of a style come from.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Provenance {
-    /// Taken from a measurement sheet (`docs/en/components/styles/<style>.md`) value by value.
+    /// Every number is in a measurement sheet (`docs/en/components/styles/<style>.md`) or is our own design.
     Sheet,
-    /// Written from the public guideline by memory, to be replaced when the sheet exists.
-    Provisional,
+    /// The sheet gives some numbers (sizes, spacing, radii, focus); the rest (named in the style's file) was
+    /// written from the public guideline by memory and waits for a measurement from the programs' screenshots.
+    Partial,
 }
 
 /// Things a style asks of the GUI engine; each can be measured and reported when it cannot be done.

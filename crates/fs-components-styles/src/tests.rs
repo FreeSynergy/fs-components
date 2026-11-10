@@ -96,3 +96,46 @@ fn icon_sets_are_distinct_per_style() {
         }
     }
 }
+
+#[test]
+fn the_numbers_of_the_measurement_sheets_are_kept() {
+    use crate::Provenance;
+    let a = style(StyleId::Admin);
+    assert_eq!((a.heights.control, a.heights.control_dense), (36.0, 26.0)); // fiori.md section 3
+    assert_eq!((a.heights.row, a.heights.row_dense), (44.0, 32.0));
+    assert_eq!(a.radii.control, 12.0);
+    assert_eq!(
+        (a.spacing.s, a.spacing.m, a.spacing.l, a.spacing.xl),
+        (8.0, 16.0, 32.0, 48.0)
+    ); // section 4
+    assert_eq!(
+        (a.text.caption, a.text.body, a.text.title, a.text.headline),
+        (12.0, 14.0, 16.0, 24.0)
+    ); // section 2
+    assert_eq!(
+        (a.light.focus.css().as_str(), a.effects.focus.width),
+        ("#0032a5", 2.0)
+    ); // section 5
+    let p = style(StyleId::Apple);
+    assert_eq!(
+        (p.text.body, p.text.body_line, p.heights.control),
+        (13.0, 16.0, 28.0)
+    ); // apple.md sections 1, 2
+    assert_eq!(p.light.accent.css(), "#0088ff"); // section 6
+    let w = style(StyleId::Windows);
+    assert_eq!(
+        (w.text.body, w.text.body_line, w.text.title, w.text.headline),
+        (14.0, 20.0, 20.0, 28.0)
+    ); // windows.md section 1
+    assert_eq!((w.radii.control, w.radii.overlay), (4.0, 8.0)); // section 2
+    assert_eq!(w.fonts[0], "Selawik"); // section 9
+    assert_eq!(style(StyleId::Simple).provenance, Provenance::Sheet);
+    for id in [StyleId::Admin, StyleId::Apple, StyleId::Windows] {
+        assert_eq!(
+            style(id).provenance,
+            Provenance::Partial,
+            "{}: not everything is in the sheet",
+            id.name()
+        );
+    }
+}

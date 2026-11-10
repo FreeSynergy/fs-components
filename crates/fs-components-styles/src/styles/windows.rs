@@ -1,9 +1,10 @@
 //! Windows: measures after Microsoft's Fluent 2.
 //!
-//! Pattern: none (plain data). Provisional: written from the public Fluent 2 guidelines by memory
-//! (14/20 text, 32 px control, 4 px control corners, 8 px overlay corners, 4 px grid, Mica) until
-//! Thread M's `docs/en/components/styles/windows.md` exists. Font: Segoe UI is not free; Noto Sans
-//! (OFL) has similar measures.
+//! Pattern: none (plain data). From `docs/en/components/styles/windows.md` (Windows 11 and Fluent 2):
+//! type ramp (Caption 12/16, Body 14/20, Subtitle 20/28, Title 28/36), corners 4 (controls) and 8
+//! (overlays), spacing on a 4 px base, Mica as the base layer, flat surfaces. **Not published, written
+//! by memory:** control and row heights, all colour values (the pages give token names only), shadows,
+//! focus ring width. Font: Segoe UI is not free; Selawik (OFL, metric-compatible), Inter, Noto Sans.
 
 use crate::color::Rgba;
 use crate::effects::{Effects, FocusRing, Shadow, Surface};
@@ -19,8 +20,8 @@ const fn c(rgb: u32) -> Rgba {
 pub fn build() -> Style {
     Style {
         id: StyleId::Windows,
-        provenance: Provenance::Provisional,
-        fonts: &["Noto Sans", "Open Sans", "DejaVu Sans"],
+        provenance: Provenance::Partial,
+        fonts: &["Selawik", "Inter", "Noto Sans", "DejaVu Sans"],
         spacing: Spacing {
             xs: 4.0,
             s: 8.0,
@@ -57,6 +58,7 @@ pub fn build() -> Style {
             border: c(0x8A8A8A),
             accent: c(0x0F6CBD),
             on_accent: c(0xFFFFFF),
+            focus: c(0x0F6CBD),
             hover: c(0xF0F0F0),
             selected: c(0xE0EDF9),
             error: c(0xB10E1C),
@@ -71,6 +73,7 @@ pub fn build() -> Style {
             border: c(0x9A9A9A),
             accent: c(0x479EF5),
             on_accent: c(0x000000),
+            focus: c(0x479EF5),
             hover: c(0x383838),
             selected: c(0x0F3A5E),
             error: c(0xEEACB2),

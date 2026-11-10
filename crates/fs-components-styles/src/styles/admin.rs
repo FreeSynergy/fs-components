@@ -1,9 +1,12 @@
 //! Admin: SAP Fiori (Horizon) measures for dense business data.
 //!
-//! Pattern: none (plain data). Provisional: written from the public Fiori guidelines (cozy control
-//! 44 px, compact 32 px, 14 px text, 8 px grid, 8 px control corners) until Thread M's
-//! `docs/en/components/styles/fiori.md` exists. Font: Fiori's own "72" is not free; Source Sans 3
-//! (OFL) has similar measures.
+//! Pattern: none (plain data). From `docs/en/components/styles/fiori.md` (SAP Horizon tokens of
+//! `SAP/fundamental-styles`): font sizes 12/14/16/24, control 36 (compact 26), line/row 44 (compact
+//! 32), element radius 12, spacing 8/16/32/48, focus `#0032a5` 2 px, list colours. **Not in the
+//! sheet, written by memory:** line height of text (20), palette values other than focus, field
+//! border, accent, text, hover and selected colours, dark palette, shadows. Cozy is the default
+//! here; the sheet proposes compact for the generated admin frontend (owner's decision open): the
+//! dense heights are the compact ones. Font: Fiori's "72" is not free; Inter (OFL), Noto Sans.
 
 use crate::color::Rgba;
 use crate::effects::{Effects, FocusRing, Shadow, Surface};
@@ -19,18 +22,18 @@ const fn c(rgb: u32) -> Rgba {
 pub fn build() -> Style {
     Style {
         id: StyleId::Admin,
-        provenance: Provenance::Provisional,
-        fonts: &["Source Sans 3", "Noto Sans", "DejaVu Sans"],
+        provenance: Provenance::Partial,
+        fonts: &["Inter", "Noto Sans", "DejaVu Sans"],
         spacing: Spacing {
             xs: 4.0,
             s: 8.0,
             m: 16.0,
-            l: 24.0,
-            xl: 32.0,
+            l: 32.0,
+            xl: 48.0,
         },
         heights: Heights {
-            control: 44.0,
-            control_dense: 32.0,
+            control: 36.0,
+            control_dense: 26.0,
             row: 44.0,
             row_dense: 32.0,
             head: 44.0,
@@ -44,9 +47,9 @@ pub fn build() -> Style {
             label_weight: 400,
         },
         radii: Radii {
-            control: 8.0,
-            card: 16.0,
-            overlay: 16.0,
+            control: 12.0,
+            card: 12.0,
+            overlay: 12.0,
         },
         light: Palette {
             ground: c(0xF5F6F7),
@@ -57,8 +60,9 @@ pub fn build() -> Style {
             border: c(0x758CA4),
             accent: c(0x0070F2),
             on_accent: c(0xFFFFFF),
-            hover: c(0xEAF1FB),
-            selected: c(0xD5E8FF),
+            focus: c(0x0032A5),
+            hover: c(0xF5F6F7),
+            selected: c(0xDEE2E5),
             error: c(0xD20A0A),
             success: c(0x256F3A),
         },
@@ -71,6 +75,7 @@ pub fn build() -> Style {
             border: c(0x8396A8),
             accent: c(0x58B6FF),
             on_accent: c(0x0A1623),
+            focus: c(0x8AB8FF),
             hover: c(0x2A323B),
             selected: c(0x1F3A5A),
             error: c(0xFF8E8E),

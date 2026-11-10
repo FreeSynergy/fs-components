@@ -82,6 +82,8 @@ pub struct Palette {
     pub accent: Rgba,
     /// Text on the accent.
     pub on_accent: Rgba,
+    /// The ring of the control that has the keyboard.
+    pub focus: Rgba,
     /// Hover ground of a row or control.
     pub hover: Rgba,
     /// Ground of a selected row.

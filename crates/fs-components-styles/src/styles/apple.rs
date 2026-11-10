@@ -1,9 +1,11 @@
 //! Apple: measures after Apple's design language (macOS apps, regular size).
 //!
-//! Pattern: none (plain data). Provisional: written from the public Human Interface Guidelines by
-//! memory (13 pt text, 22 pt regular control, 6 pt control corners, translucent sidebar) until
-//! Thread M's `docs/en/components/styles/apple.md` exists. Font: SF Pro is not free; Inter (OFL)
-//! has similar measures.
+//! Pattern: none (plain data). From `docs/en/components/styles/apple.md` (HIG): macOS text styles
+//! (Body 13/16, Subheadline 11/14, Title 3 15/20, Title 1 22/26), control 28 (minimum 20), padding
+//! about 12 around controls, system blue/red/green (light and dark), regular Liquid Glass for
+//! sidebars and popovers. **The sheet marks these "not published" and they are written by memory,
+//! to be measured from Apple's apps:** row heights, radii, blur and tint of the glass, focus ring,
+//! the neutral palette. Font: SF is not free; Inter (OFL).
 
 use crate::color::Rgba;
 use crate::effects::{Effects, FocusRing, Shadow, Surface};
@@ -19,7 +21,7 @@ const fn c(rgb: u32) -> Rgba {
 pub fn build() -> Style {
     Style {
         id: StyleId::Apple,
-        provenance: Provenance::Provisional,
+        provenance: Provenance::Partial,
         fonts: &["Inter", "Noto Sans", "DejaVu Sans"],
         spacing: Spacing {
             xs: 4.0,
@@ -29,8 +31,8 @@ pub fn build() -> Style {
             xl: 24.0,
         },
         heights: Heights {
-            control: 22.0,
-            control_dense: 19.0,
+            control: 28.0,
+            control_dense: 20.0,
             row: 28.0,
             row_dense: 24.0,
             head: 24.0,
@@ -55,12 +57,13 @@ pub fn build() -> Style {
             text: c(0x1D1D1F),
             text_weak: c(0x6E6E73),
             border: c(0xD1D1D6),
-            accent: c(0x007AFF),
+            accent: c(0x0088FF),
             on_accent: c(0xFFFFFF),
+            focus: c(0x0088FF),
             hover: c(0xEDEDED),
             selected: c(0xD6E6FF),
-            error: c(0xFF3B30),
-            success: c(0x28A745),
+            error: c(0xFF383C),
+            success: c(0x34C759),
         },
         dark: Palette {
             ground: c(0x1E1E1E),
@@ -69,12 +72,13 @@ pub fn build() -> Style {
             text: c(0xF5F5F7),
             text_weak: c(0x98989D),
             border: c(0x48484A),
-            accent: c(0x0A84FF),
+            accent: c(0x0091FF),
             on_accent: c(0xFFFFFF),
+            focus: c(0x0091FF),
             hover: c(0x3A3A3C),
             selected: c(0x0A3A78),
-            error: c(0xFF453A),
-            success: c(0x32D74B),
+            error: c(0xFF4245),
+            success: c(0x30D158),
         },
         effects: Effects {
             chrome: Surface::Glass {
