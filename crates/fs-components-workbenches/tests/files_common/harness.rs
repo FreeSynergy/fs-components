@@ -139,6 +139,23 @@ impl Harness {
         (b.x, b.y, b.x + b.width, b.y + b.height)
     }
 
+    /// The edges of the button itself, the first child of the element `<name>-<what>` (which is its frame).
+    pub fn button_edges(&self, what: &str) -> (f32, f32, f32, f32) {
+        let id = self.id(what);
+        let node = self
+            .tree
+            .query_by_id(&id)
+            .unwrap_or_else(|| panic!("no element {id}"));
+        let inner = *self
+            .tree
+            .layout_tree
+            .children(node)
+            .first()
+            .unwrap_or_else(|| panic!("{id} has no button"));
+        let b = self.tree.get_absolute_bounds(inner).expect("bounds");
+        (b.x, b.y, b.x + b.width, b.y + b.height)
+    }
+
     /// Press and release at a point, with nothing in between.
     pub fn press_at(&mut self, (x, y): (f32, f32)) {
         let moved = self.router.on_mouse_move(&self.tree, x, y);

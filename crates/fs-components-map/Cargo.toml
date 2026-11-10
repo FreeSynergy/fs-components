@@ -7,17 +7,17 @@ license.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-blinc_core = "0.6"
-blinc_layout = "0.6"
-blinc_theme = "0.6"
+blinc_core.workspace = true
+blinc_layout.workspace = true
+blinc_theme.workspace = true
 fs-components-widgets = { path = "../fs-components-widgets" }
 fs-components-app = { path = "../fs-components-app" }
 mvt-reader = "2"
 geo-types = "0.7"
 
 [dev-dependencies]
-blinc_app = "0.6"
-blinc_cn = "0.6"
+blinc_app.workspace = true
+blinc_cn.workspace = true
 mvt = "0.15"
 wgpu = "26"
 image = { version = "0.25", default-features = false, features = ["png"] }

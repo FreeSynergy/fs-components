@@ -11,7 +11,7 @@ use blinc_cn::components::input::{InputSize, input};
 use blinc_layout::div::{Div, div};
 use blinc_layout::text;
 
-use super::actions::{FileActions, button};
+use super::actions::{Act, FileActions, button};
 use super::frame::text_height;
 use crate::file_manager::ask::{Ask, InputAsk};
 use crate::file_manager::carry::CarryKind;
@@ -66,6 +66,20 @@ pub(super) fn band_height(state: &FilesState, width: f32) -> f32 {
     if height > 0.0 { height + PADDING } else { 0.0 }
 }
 
+/// The most a button's frame may take at `width`: the band's inset on the left (18 px) and a small margin on
+/// the right are left free. The text of a button does not wrap, so the button is as wide as its words;
+/// at the narrowest width (160 px) the longest answer is 139 px, which fits in the 140 px this leaves. A
+/// longer word would leave the window: the labels must be short, and the test measures the button itself
+/// (inside its frame) for the answers of the confirm question, of a taken name and of carrying.
+fn room(width: f32) -> f32 {
+    width - 20.0
+}
+
+/// A button of the band, held to `room(width)` so that none leaves the window.
+fn band_button(width: f32, id: String, label: &str, variant: ButtonVariant, act: &Act) -> Div {
+    button(id, label, variant, act).max_w(room(width))
+}
+
 /// Lines `count` buttons take at `width`, at the worst.
 fn button_lines(width: f32, count: u8) -> f32 {
     if width < 300.0 {
@@ -97,7 +111,7 @@ pub(in crate::file_manager) fn band(
                     .w(width - 32.0)
                     .child(text(text_of)),
             )
-            .child(carrying_buttons(state, name, actions));
+            .child(carrying_buttons(state, name, actions, width));
     }
     match state.ask() {
         Ask::Input(input) => area = input_area(state, input, name, actions, slots, area, width),
@@ -105,22 +119,20 @@ pub(in crate::file_manager) fn band(
             if let Some((question, yes)) = state.confirm_words() {
                 area = area.child(question_line(name, question, width)).child(
                     row()
-                        .child(button(
+                        .child(band_button(
+                            width,
                             format!("{name}-keep-it"),
                             &state.labels().keep,
                             ButtonVariant::Secondary,
                             &actions.plain(FilesState::keep),
                         ))
-                        .child(
-                            button(
-                                format!("{name}-really"),
-                                &yes,
-                                ButtonVariant::Destructive,
-                                &actions.plain(FilesState::really),
-                            )
-                            // A long answer wraps in its own box instead of leaving the window at the narrowest width.
-                            .max_w(width - 24.0),
-                        ),
+                        .child(band_button(
+                            width,
+                            format!("{name}-really"),
+                            &yes,
+                            ButtonVariant::Destructive,
+                            &actions.plain(FilesState::really),
+                        )),
                 );
             }
         }
@@ -129,13 +141,15 @@ pub(in crate::file_manager) fn band(
             let words = FileLabels::fill(&labels.name_taken_question, &question.message);
             area = area.child(question_line(name, words, width)).child(
                 row()
-                    .child(button(
+                    .child(band_button(
+                        width,
                         format!("{name}-back"),
                         &labels.back,
                         ButtonVariant::Secondary,
                         &actions.plain(FilesState::name_taken_back),
                     ))
-                    .child(button(
+                    .child(band_button(
+                        width,
                         format!("{name}-keep-both"),
                         &labels.keep_both,
                         ButtonVariant::Primary,
@@ -159,9 +173,10 @@ fn question_line(name: &str, words: String, width: f32) -> Div {
         .child(text(words))
 }
 
-fn carrying_buttons(state: &FilesState, name: &str, actions: &FileActions) -> Div {
+fn carrying_buttons(state: &FilesState, name: &str, actions: &FileActions, width: f32) -> Div {
     let labels = state.labels();
-    let mut bar = row().child(button(
+    let mut bar = row().child(band_button(
+        width,
         format!("{name}-stop-carrying"),
         &labels.cancel,
         ButtonVariant::Secondary,
@@ -173,7 +188,8 @@ fn carrying_buttons(state: &FilesState, name: &str, actions: &FileActions) -> Di
             Some(CarryKind::Copy) => &labels.copy_here,
             _ => &labels.restore_here,
         };
-        bar = bar.child(button(
+        bar = bar.child(band_button(
+            width,
             format!("{name}-put-down"),
             word,
             ButtonVariant::Primary,

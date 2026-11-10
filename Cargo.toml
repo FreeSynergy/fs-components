@@ -11,10 +11,10 @@ rust-version = "1.89"
 # Blinc: the one place. Every blinc_* crate comes from the same tag of our fork, so a program that depends on
 # fs-components gets it transitively (Cargo applies [patch] only at the top of a build, so none is used here).
 [workspace.dependencies]
-blinc_animation = { git = "https://github.com/FreeSynergy/Blinc", tag = "fs-blinc-1" }
-blinc_app = { git = "https://github.com/FreeSynergy/Blinc", tag = "fs-blinc-1" }
-blinc_cn = { git = "https://github.com/FreeSynergy/Blinc", tag = "fs-blinc-1" }
-blinc_core = { git = "https://github.com/FreeSynergy/Blinc", tag = "fs-blinc-1" }
-blinc_layout = { git = "https://github.com/FreeSynergy/Blinc", tag = "fs-blinc-1" }
-blinc_noto_emoji = { git = "https://github.com/FreeSynergy/Blinc", tag = "fs-blinc-1" }
-blinc_theme = { git = "https://github.com/FreeSynergy/Blinc", tag = "fs-blinc-1" }
+blinc_animation = { git = "https://github.com/FreeSynergy/Blinc", tag = "fs-blinc-2" }
+blinc_app = { git = "https://github.com/FreeSynergy/Blinc", tag = "fs-blinc-2" }
+blinc_cn = { git = "https://github.com/FreeSynergy/Blinc", tag = "fs-blinc-2" }
+blinc_core = { git = "https://github.com/FreeSynergy/Blinc", tag = "fs-blinc-2" }
+blinc_layout = { git = "https://github.com/FreeSynergy/Blinc", tag = "fs-blinc-2" }
+blinc_noto_emoji = { git = "https://github.com/FreeSynergy/Blinc", tag = "fs-blinc-2" }
+blinc_theme = { git = "https://github.com/FreeSynergy/Blinc", tag = "fs-blinc-2" }
