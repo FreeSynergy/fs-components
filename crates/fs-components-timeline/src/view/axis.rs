@@ -6,8 +6,8 @@
 //! (`timeline.month.1..12`), the day numbers and years are plain numbers.
 
 use blinc_core::{
-    Brush, Color, CornerRadius, DrawContext, FontWeight, Point, Rect as CRect, TextAlign,
-    TextBaseline, TextStyle,
+    Brush, ClipShape, Color, CornerRadius, DrawContext, FontWeight, Point, Rect as CRect,
+    TextAlign, TextBaseline, TextStyle,
 };
 use blinc_layout::canvas::canvas;
 use blinc_layout::div::{Div, div};
@@ -33,7 +33,7 @@ fn label(t: &Timeline, tick: &Tick) -> String {
 /// What the canvas draws: lines (x, top) and labels (x, y, text).
 struct Marks {
     lines: Vec<(f32, f32)>,
-    labels: Vec<(f32, f32, String)>,
+    labels: Vec<(f32, f32, f32, String)>,
 }
 
 fn marks(t: &Timeline, zoom: Zoom, (first, last): (Day, Day), scale: &Scale) -> Marks {
@@ -45,7 +45,13 @@ fn marks(t: &Timeline, zoom: Zoom, (first, last): (Day, Day), scale: &Scale) -> 
     };
     let mut put = |tick: &Tick, y: f32, line: bool| {
         let x = scale.x_of(tick.day);
-        m.labels.push((x + pad, y, label(t, tick)));
+        // The label may use the room of its tick: it is cut there, not drawn over the next one.
+        m.labels.push((
+            x + pad,
+            y,
+            scale.px * f32::from(tick.days) - pad,
+            label(t, tick),
+        ));
         if line {
             // A line starts under the row of its own label, not through the row above it.
             m.lines.push((x, y));
@@ -91,8 +97,15 @@ fn pen(
         baseline: TextBaseline::Top,
         ..TextStyle::default()
     };
-    for (x, y, s) in &m.labels {
+    for (x, y, w, s) in &m.labels {
+        ctx.push_clip(ClipShape::Rect(CRect::new(
+            *x,
+            *y,
+            w.max(0.0),
+            caption * 2.0,
+        )));
         ctx.draw_text(s, Point::new(*x, *y + 2.0), &style);
+        ctx.pop_clip();
     }
 }
 

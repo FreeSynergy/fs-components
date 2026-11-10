@@ -28,6 +28,8 @@ pub struct Timeline {
     pub(crate) scroll: ScrollRef,
     /// Width of the view as built last, in pixels (as `f32` bits).
     width: Arc<AtomicU32>,
+    /// A scroll asked for and not yet drawn: the position and the offset the view had then.
+    target: Arc<Mutex<Option<(f32, f32)>>>,
 }
 
 impl Timeline {
@@ -47,6 +49,7 @@ impl Timeline {
             live: Live::new(),
             scroll: ScrollRef::new(),
             width: Arc::new(AtomicU32::new(0)),
+            target: Arc::default(),
         }
     }
 
@@ -66,51 +69,73 @@ impl Timeline {
         self.state.lock().unwrap_or_else(PoisonError::into_inner)
     }
 
-    fn apply(&self, step: Step) -> Step {
+    /// Carry out a step. `old` is the zoom before it: a changed zoom is rescaled here, so the
+    /// toolbar, the keys and the API all take the one way.
+    fn apply(&self, step: Step, old: Zoom) -> Step {
         match &step {
             Step::Select(k) => self.events.select_item(k),
-            Step::Zoomed(z) => self.events.zoomed(*z),
+            Step::Zoomed(z) => {
+                self.rescale(old, *z);
+                self.events.zoomed(*z);
+            }
             Step::Ignored => return step,
         }
         self.live.refresh();
         step
     }
 
+    /// The axis keeps its first day whatever the zoom, so the same day stays at the left of the
+    /// view: the offset scales with the pixels per day and stays inside the content. Left alone it
+    /// would stay as it was and, when the content shrinks, point past its end.
+    fn rescale(&self, old: Zoom, new: Zoom) {
+        let scaled = self.scroll_x() * new.px_per_day() / old.px_per_day();
+        self.put_x(scaled.min(self.max_scroll_x_at(new)));
+    }
+
+    /// Ask the view to scroll to `x`, and remember it until the view has done so.
+    fn put_x(&self, x: f32) {
+        let (base, y) = self.scroll.offset();
+        *self.target.lock().unwrap_or_else(PoisonError::into_inner) = Some((x, base));
+        self.scroll.set_scroll_offset(x, y);
+    }
+
     /// Choose an item.
     pub fn select(&self, key: &str) -> Step {
         let step = self.lock().select(key);
-        self.apply(step)
+        let zoom = self.lock().zoom;
+        self.apply(step, zoom)
     }
 
     /// Set the zoom level.
     pub fn set_zoom(&self, zoom: Zoom) -> Step {
         let old = self.lock().zoom;
         let step = self.lock().set_zoom(zoom);
-        if step != Step::Ignored {
-            // The axis keeps its first day whatever the zoom, so the same day stays at the left of
-            // the view: the offset scales with the pixels per day. Left alone it would stay as it
-            // was and, when the content shrinks, point past its end.
-            let (x, y) = self.scroll.offset();
-            let scaled = x * zoom.px_per_day() / old.px_per_day();
-            self.scroll
-                .set_scroll_offset(scaled.min(self.max_scroll_x_at(zoom)), y);
-        }
-        self.apply(step)
+        self.apply(step, old)
     }
 
-    /// How far the view is scrolled to the right, in pixels.
+    /// How far the view is scrolled to the right, in pixels. A scroll asked for with
+    /// `set_scroll_x` or by a zoom change counts at once, before the view has drawn it.
     pub fn scroll_x(&self) -> f32 {
-        self.scroll.scroll_x()
+        let shown = self.scroll.scroll_x();
+        let mut target = self.target.lock().unwrap_or_else(PoisonError::into_inner);
+        match *target {
+            // Still where it was when asked: the view has not moved yet.
+            Some((x, base)) if (shown - base).abs() < 0.5 => x,
+            _ => {
+                *target = None;
+                shown
+            }
+        }
     }
 
-    /// Scroll the view to `x` pixels from the left of the axis.
+    /// Scroll the view to `x` pixels from the left of the axis, kept between 0 and `max_scroll_x`.
     pub fn set_scroll_x(&self, x: f32) {
-        let y = self.scroll.scroll_y();
-        self.scroll.set_scroll_offset(x.max(0.0), y);
+        self.put_x(x.clamp(0.0, self.max_scroll_x()));
     }
 
     /// The largest `scroll_x` the content allows at the current zoom, from the items and the width
-    /// of the view as built last (zero before the first build).
+    /// of the view as built last. Before the first build the width of the view counts as zero, so it is
+    /// the width of the whole axis.
     pub fn max_scroll_x(&self) -> f32 {
         let zoom = self.lock().zoom;
         self.max_scroll_x_at(zoom)
@@ -133,8 +158,9 @@ impl Timeline {
     /// A key press; true when the timeline used it.
     pub fn key(&self, key: Key) -> bool {
         let items = self.source.items();
+        let old = self.lock().zoom;
         let step = self.lock().key(&items, key);
-        self.apply(step) != Step::Ignored
+        self.apply(step, old) != Step::Ignored
     }
 
     /// Read the source again and draw: the host changed its data.

@@ -168,3 +168,22 @@ fn ten_years_of_items_at_day_zoom_redraw_within_the_time_limit() {
     assert!(took < limit, "one key press took {took} s");
     assert!(tree.query_by_id("tl-axis").is_some() && tree.query_by_id("tl-item-b").is_some());
 }
+
+#[test]
+fn month_labels_at_week_zoom_are_drawn_without_overlap() {
+    let _g = serial();
+    let items = vec![Item::bar(
+        "a",
+        "Winter",
+        host::d(2025, 12, 20),
+        host::d(2026, 1, 20),
+        10,
+    )];
+    let tree = layout(
+        plan_with_today(items, host::d(2026, 1, 5), Zoom::Week).build(W, H),
+        W,
+        H,
+    );
+    let img = draw_tree(&tree, W as u32, H as u32, "timeline-month-labels.png");
+    assert!(img.width() == W as u32, "a picture was drawn");
+}
