@@ -54,13 +54,14 @@ pub trait Backend: Send + Sync {
 
     /// Whether the core can carry out the command `name` now. A command that is described but not yet built answers
     /// `false`: the frontend shows its control locked with "coming soon" and unlocks it when this turns `true`, with no
-    /// change in the frontend. Asked when the records are read. The default is `true`.
+    /// change in the frontend. Asked when the records are read. **The default is `false`**: a program that does not
+    /// answer has not said it can do anything, so nothing is unlocked by silence.
     ///
     /// Provisional (reported to the strategy and Thread T): the description is to carry `supported` per command
     /// (`types.capnp`); when it does, a command is supported only if the description and this both say so.
     fn supported(&self, command: &str) -> bool {
         let _ = command;
-        true
+        false
     }
 
     /// Carry out the command `name` of the description with `input` (already checked against the description).
