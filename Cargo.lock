@@ -1011,6 +1011,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "fs-components-text-editor"
+version = "0.0.2"
+dependencies = [
+ "blinc_app",
+ "blinc_cn",
+ "blinc_core",
+ "blinc_layout",
+ "blinc_theme",
+ "fs-components-widgets",
+ "image",
+ "wgpu",
+]
+
+[[package]]
 name = "fs-components-widgets"
 version = "0.0.2"
 dependencies = [

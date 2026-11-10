@@ -1,0 +1,19 @@
+[package]
+name = "fs-components-text-editor"
+description = "FreeSynergy text editor component: Markdown source with a toolbar and a preview; the model is pure, Blinc stays behind this API"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+blinc_core = "0.6"
+blinc_layout = "0.6"
+blinc_cn = "0.6"
+fs-components-widgets = { path = "../fs-components-widgets" }
+
+[dev-dependencies]
+blinc_app = "0.6"
+blinc_theme = "0.6"
+wgpu = "26"
+image = { version = "0.25", default-features = false, features = ["png"] }
