@@ -94,6 +94,7 @@ pub fn message_bar(
         let off = Arc::clone(dismiss);
         let mut row = div()
             .class("fs-admin-message")
+            .id(format!("message-{}", m.id))
             .flex_row()
             .items_center()
             .gap_px(s.spacing.s)

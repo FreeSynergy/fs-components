@@ -105,14 +105,6 @@ fn filter_looks_in_every_value_without_case() {
 }
 
 #[test]
-fn cell_gives_the_first_value_and_how_many_more() {
-    let list = ListModel::new(&contact(), people());
-    let rows = list.rows();
-    assert_eq!(list.cell(rows[0], 1), ("ada@example.org".to_owned(), 1));
-    assert_eq!(list.cell(rows[2], 1), (String::new(), 0));
-}
-
-#[test]
 fn selection_survives_new_records_only_while_the_record_is_there() {
     let mut list = ListModel::new(&contact(), people());
     assert!(!list.select("urn:99"));

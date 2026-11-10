@@ -94,7 +94,11 @@ pub fn admin_window(
                 // Nothing is kept unsaved but an open form. With text in one the window stays and says why (an error
                 // message that stays until closed); a dialog that asks "leave anyway?" comes later.
                 match surfaces.iter().find(|(_, s)| s.has_unsaved()) {
-                    Some((_, s)) => s.warn_unsaved(),
+                    Some((id, s)) => {
+                        // the surface that has the text, not the one that happens to be shown
+                        shell.select(id);
+                        s.warn_unsaved();
+                    }
                     None => std::process::exit(0),
                 }
             }

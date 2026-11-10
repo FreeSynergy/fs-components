@@ -43,15 +43,21 @@ impl Session {
         };
         self.result = Some(outcome);
         self.go(target.clone());
-        let read = self.reload();
+        let mut read = self.reload();
         if let Screen::Detail(id) = target {
             if read && self.list.record(&id).is_none() && !self.query.is_empty() {
                 // the record is not in the narrowed list: show everything, the record is what the person asked for
                 self.query.clear();
-                self.reload();
+                read = self.reload();
             }
-            if !self.list.select(&id) && read {
-                self.go(Screen::List);
+            if self.list.select(&id) {
+                // loaded: the screen shows it
+            } else {
+                // not loaded: no selection of another record stays, and the screen says so
+                self.list.clear_selection();
+                if read {
+                    self.go(Screen::List);
+                }
             }
         }
         self.messages.raise(MessageKind::Success, "done");

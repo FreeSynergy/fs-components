@@ -37,6 +37,10 @@ The generated Admin frontend of ADR 0066: from the type description of a program
 * Messages tell their listeners **outside** their own lock (a listener may ask or subscribe). The page reads the messages **after** letting go of the session. The surface draws on a worker thread of its own (one per surface), because messages change while the session is locked and a draw reads the session.
 * `change` and `delete` without a reference to the type itself are **not offered** (`unoffered_commands` lists them), because they would run without a record id.
 * `submit` returns the changed fields and the required ones; a field emptied by the person is an empty list (cleared).
+* **The rule for `change` is part of the contract** (`Backend::run`, to be written into `types.capnp` by Thread T if the strategy agrees): a field missing from the input is unchanged, an empty list clears it, values replace; required fields are always sent. A program that reads the input as a whole record would delete the optional fields that were not sent. A refusal counts the values as they were sent; the form maps it back to the slots.
+* A command on a record works on the record of the shown detail screen, and only if it is loaded; after a failed reload the screen says "not loaded" and offers no record command.
+* Unsaved text: a search form does not count; values are compared cleaned. Quitting with text shows the surface that has it, closes About and says it once.
+* Commands that are not offered are named on the About page.
 * `open_external` (Help) returns nothing: a failure to open the address cannot be shown.
 * `Session`, `Messages` and `FormModel` have no trait of their own (coding.md section 1): they are values the frontend owns; the boundary to the outside is `Backend`. Reported to the strategy.
 
