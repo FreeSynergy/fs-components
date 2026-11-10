@@ -19,6 +19,7 @@ pub mod form;
 pub mod list;
 pub mod messages;
 pub mod session;
+pub mod view;
 
 pub use backend::{Backend, BackendError, Outcome, Record, Values};
 pub use clock::{Clock, ManualClock, SystemClock};

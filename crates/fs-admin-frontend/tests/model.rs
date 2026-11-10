@@ -3,6 +3,7 @@
 //! Pattern: none (tests).
 #![allow(clippy::pedantic)]
 
+#[path = "support/mod.rs"]
 mod common;
 
 use std::sync::Arc;

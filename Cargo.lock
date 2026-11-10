@@ -970,7 +970,20 @@ checksum = "aa9a19cbb55df58761df49b23516a86d432839add4af60fc256da840f66ed35b"
 name = "fs-admin-frontend"
 version = "0.0.2"
 dependencies = [
+ "blinc_animation",
+ "blinc_app",
+ "blinc_cn",
+ "blinc_core",
+ "blinc_layout",
+ "blinc_theme",
+ "fs-components-app",
+ "fs-components-fields",
+ "fs-components-primitives",
+ "fs-components-styles",
+ "fs-components-widgets",
  "fs-types",
+ "image",
+ "wgpu",
 ]
 
 [[package]]
