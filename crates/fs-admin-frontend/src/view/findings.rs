@@ -1,6 +1,7 @@
 //! The findings under a form: field, slot and kind of finding, each its own text and its own ids.
 //!
-//! Pattern: View function — session state in, elements out (the area is drawn again after each change by `Live`).
+//! Pattern: Adapter — session state (read under its lock) to elements; the area is drawn again after each change by
+//! `Live`.
 
 use blinc_layout::div::{Div, div};
 use fs_types::{RecordIssue, RecordProblem};

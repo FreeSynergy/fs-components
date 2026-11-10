@@ -39,6 +39,8 @@ pub struct Memory {
     pub reject_search: Mutex<bool>,
     /// Counts the calls of `list`; the call with this number fails (the program goes away for that one call).
     pub list_calls: std::sync::atomic::AtomicUsize,
+    /// Every `list` answers this error while it is set.
+    pub list_error: Mutex<Option<BackendError>>,
     pub fail_list_call: Mutex<Option<usize>>,
     /// What `create` refuses: 0 nothing, 1 a refusal with no findings, 2 a finding on `name` and one on an unknown
     /// field, 3 a finding on index 0 of `emails` (counted over the values that were sent).
@@ -57,6 +59,7 @@ impl Memory {
             reject_delete: Mutex::new(false),
             reject_search: Mutex::new(false),
             list_calls: std::sync::atomic::AtomicUsize::new(0),
+            list_error: Mutex::new(None),
             fail_list_call: Mutex::new(None),
             create_refusal: std::sync::atomic::AtomicUsize::new(0),
             next_id: std::sync::atomic::AtomicUsize::new(100),
@@ -81,6 +84,9 @@ impl Backend for Memory {
             + 1;
         if *self.fail_list_call.lock().unwrap() == Some(n) {
             return Err(BackendError::Unavailable("one call lost".into()));
+        }
+        if let Some(e) = self.list_error.lock().unwrap().clone() {
+            return Err(e);
         }
         self.up()?;
         if *self.reject_search.lock().unwrap() && query.contains_key("text") {

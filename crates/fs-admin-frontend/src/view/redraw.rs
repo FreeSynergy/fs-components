@@ -88,5 +88,12 @@ mod tests {
             std::thread::sleep(Duration::from_millis(10));
         }
         assert_eq!(draws.load(Ordering::SeqCst), last + 1);
+        // and then nothing more: wait longer than the quiet time
+        std::thread::sleep(Duration::from_millis(2500));
+        assert_eq!(
+            draws.load(Ordering::SeqCst),
+            last + 1,
+            "it draws again without a signal"
+        );
     }
 }
