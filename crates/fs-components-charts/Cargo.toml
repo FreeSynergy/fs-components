@@ -8,12 +8,12 @@ rust-version.workspace = true
 
 [dependencies]
 serde_json = "1"
-blinc_core = "0.6"
-blinc_layout = "0.6"
-blinc_theme = "0.6"
+blinc_core.workspace = true
+blinc_layout.workspace = true
+blinc_theme.workspace = true
 
 [dev-dependencies]
-blinc_app = "0.6"
-blinc_cn = "0.6"
+blinc_app.workspace = true
+blinc_cn.workspace = true
 wgpu = "26"
 image = { version = "0.25", default-features = false, features = ["png"] }

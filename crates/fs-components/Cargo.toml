@@ -1,0 +1,16 @@
+[package]
+name = "fs-components"
+description = "The one entry point of fs-components for programs: re-exports Blinc (pinned once, at one tag) so a program needs no blinc_* dependency and no [patch] line"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+blinc_animation.workspace = true
+blinc_app.workspace = true
+blinc_cn.workspace = true
+blinc_core.workspace = true
+blinc_layout.workspace = true
+blinc_noto_emoji.workspace = true
+blinc_theme.workspace = true

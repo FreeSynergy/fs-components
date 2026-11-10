@@ -9,11 +9,11 @@ rust-version.workspace = true
 [dependencies]
 fs-components-widgets = { path = "../fs-components-widgets" }
 fs-components-primitives = { path = "../fs-components-primitives" }
-blinc_app = "0.6"
-blinc_cn = "0.6"
-blinc_core = "0.6"
-blinc_layout = "0.6"
-blinc_theme = "0.6"
+blinc_app.workspace = true
+blinc_cn.workspace = true
+blinc_core.workspace = true
+blinc_layout.workspace = true
+blinc_theme.workspace = true
 fs-components-render = { path = "../fs-components-render" }
 
 [dev-dependencies]

@@ -7,17 +7,17 @@ license.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-blinc_core = "0.6"
-blinc_layout = "0.6"
-blinc_cn = "0.6"
-blinc_theme = "0.6"
-blinc_noto_emoji = "0.6"
+blinc_core.workspace = true
+blinc_layout.workspace = true
+blinc_cn.workspace = true
+blinc_theme.workspace = true
+blinc_noto_emoji.workspace = true
 fontdb = "0.22"
 ttf-parser = "0.24"
 fs-components-primitives = { path = "../fs-components-primitives" }
 image = { version = "0.25", default-features = false, features = ["png", "jpeg", "gif", "webp"] }
 
 [dev-dependencies]
-blinc_app = "0.6"
+blinc_app.workspace = true
 wgpu = "26"
-blinc_animation = "0.6"
+blinc_animation.workspace = true

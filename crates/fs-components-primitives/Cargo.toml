@@ -7,8 +7,8 @@ license.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-blinc_core = "0.6"
-blinc_layout = "0.6"
-blinc_cn = "0.6"
-blinc_theme = "0.6"
+blinc_core.workspace = true
+blinc_layout.workspace = true
+blinc_cn.workspace = true
+blinc_theme.workspace = true
 fs-interfaces = { git = "https://github.com/FreeSynergy/fs-interfaces", tag = "v0.0.1", features = ["values"] }

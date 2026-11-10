@@ -7,11 +7,11 @@ license.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-blinc_app = "0.6"
-blinc_cn = "0.6"
-blinc_core = "0.6"
-blinc_layout = "0.6"
-blinc_theme = "0.6"
-blinc_noto_emoji = "0.6"
+blinc_app.workspace = true
+blinc_cn.workspace = true
+blinc_core.workspace = true
+blinc_layout.workspace = true
+blinc_theme.workspace = true
+blinc_noto_emoji.workspace = true
 wgpu = "26"
 image = { version = "0.25", default-features = false, features = ["png"] }
