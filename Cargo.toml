@@ -18,3 +18,7 @@ blinc_core = { git = "https://github.com/FreeSynergy/Blinc", tag = "fs-blinc-2" 
 blinc_layout = { git = "https://github.com/FreeSynergy/Blinc", tag = "fs-blinc-2" }
 blinc_noto_emoji = { git = "https://github.com/FreeSynergy/Blinc", tag = "fs-blinc-2" }
 blinc_theme = { git = "https://github.com/FreeSynergy/Blinc", tag = "fs-blinc-2" }
+
+# fs-interfaces: one tag for every crate (the two packages come from the same repository, so one source in the tree).
+fs-interfaces = { git = "https://github.com/FreeSynergy/fs-interfaces", tag = "v0.0.17" }
+fs-types = { git = "https://github.com/FreeSynergy/fs-interfaces", tag = "v0.0.17" }

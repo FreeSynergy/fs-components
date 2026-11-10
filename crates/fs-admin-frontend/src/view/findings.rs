@@ -24,6 +24,7 @@ pub(super) fn problem_key(p: RecordProblem) -> String {
         RecordProblem::NestedPath => "problem.nested-path".to_owned(),
         RecordProblem::DuplicatePath => "problem.duplicate-path".to_owned(),
         RecordProblem::NotMultiple => "problem.not-multiple".to_owned(),
+        RecordProblem::ReadOnly => "problem.read-only".to_owned(),
         RecordProblem::Value(v) => format!("problem.{}", v.code()),
     }
 }

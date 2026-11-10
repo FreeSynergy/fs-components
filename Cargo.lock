@@ -1046,7 +1046,7 @@ dependencies = [
  "blinc_theme",
  "fs-components-styles",
  "fs-components-widgets",
- "fs-interfaces 0.0.1 (git+https://github.com/FreeSynergy/fs-interfaces?tag=v0.0.1)",
+ "fs-interfaces",
  "image",
  "wgpu",
 ]
@@ -1094,7 +1094,7 @@ dependencies = [
  "blinc_core",
  "blinc_layout",
  "blinc_theme",
- "fs-interfaces 0.0.1 (git+https://github.com/FreeSynergy/fs-interfaces?tag=v0.0.1)",
+ "fs-interfaces",
 ]
 
 [[package]]
@@ -1175,16 +1175,7 @@ dependencies = [
 [[package]]
 name = "fs-interfaces"
 version = "0.0.1"
-source = "git+https://github.com/FreeSynergy/fs-interfaces?tag=v0.0.1#9f2d3a0626d7382b478c754eb31834146188dfab"
-dependencies = [
- "capnp",
- "idna",
-]
-
-[[package]]
-name = "fs-interfaces"
-version = "0.0.1"
-source = "git+https://github.com/FreeSynergy/fs-interfaces?tag=v0.0.11#f8c87155bf5a90dd9f59a906ad6832d95c2c66b0"
+source = "git+https://github.com/FreeSynergy/fs-interfaces?tag=v0.0.17#298cebc7d376b591de1767e0a36cdfb0f0d74bda"
 dependencies = [
  "capnp",
  "idna",
@@ -1193,11 +1184,11 @@ dependencies = [
 [[package]]
 name = "fs-types"
 version = "0.0.1"
-source = "git+https://github.com/FreeSynergy/fs-interfaces?tag=v0.0.11#f8c87155bf5a90dd9f59a906ad6832d95c2c66b0"
+source = "git+https://github.com/FreeSynergy/fs-interfaces?tag=v0.0.17#298cebc7d376b591de1767e0a36cdfb0f0d74bda"
 dependencies = [
  "capnp",
  "chrono",
- "fs-interfaces 0.0.1 (git+https://github.com/FreeSynergy/fs-interfaces?tag=v0.0.11)",
+ "fs-interfaces",
  "geo-uri",
  "iri-string",
  "oxilangtag",
