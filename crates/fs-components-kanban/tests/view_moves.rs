@@ -161,3 +161,34 @@ fn the_host_may_call_the_board_from_supports_without_a_deadlock() {
         "the board held its lock while asking the host"
     );
 }
+
+#[test]
+fn a_click_on_a_column_does_not_put_the_card_down_after_the_permission_was_withdrawn() {
+    let _g = serial();
+    let h = host(&Operation::ALL);
+    let b = board(&h, StyleId::Admin);
+    let mut tree = layout(b.build(W, H), W, H);
+    let mut input = Input::new();
+    b.grab("a");
+    frame(&mut tree, W, H);
+    h.ops.lock().unwrap().retain(|o| *o != Operation::Move);
+    assert_eq!(b.drop_on("doing"), Step::Refused("locked"), "the call");
+    b.grab("a");
+    h.ops.lock().unwrap().push(Operation::Move);
+    b.grab("a");
+    h.ops.lock().unwrap().retain(|o| *o != Operation::Move);
+    let col = tree
+        .get_absolute_bounds(tree.query_by_id("kb-col-doing").unwrap())
+        .unwrap();
+    input.click_at(
+        &mut tree,
+        col.x + col.width / 2.0,
+        col.y + col.height - 10.0,
+    );
+    frame(&mut tree, W, H);
+    assert!(
+        h.log.lock().unwrap().is_empty(),
+        "nothing was moved: {:?}",
+        h.log.lock().unwrap()
+    );
+}

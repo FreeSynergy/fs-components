@@ -3,7 +3,7 @@
 //! Pattern: View function — rectangles from `layout`. A click on an item chooses it; the chosen
 //! one has an accent border (not colour alone: the border is thicker).
 
-use blinc_layout::div::Div;
+use blinc_layout::div::{Div, div};
 use fs_components_fields::Look;
 
 use super::parts::{at, tone_color};
@@ -87,16 +87,17 @@ pub fn item(
                 .pointer_events_none(),
             )
             .child(
-                at(Rect {
-                    x: r.h + s.spacing.xs,
-                    y: 0.0,
-                    w: title_width(&it.title, s.text.caption, s.spacing.s),
-                    h: r.h,
-                })
-                .flex_row()
-                .items_center()
-                .pointer_events_none()
-                .child(look.text(&it.title, s.text.caption, pal.text)),
+                // No width given: the title takes what its glyphs need, whatever they are (W, M, CJK).
+                div()
+                    .id(format!("tl-title-{}", it.key))
+                    .absolute()
+                    .left(r.h + s.spacing.xs)
+                    .top(0.0)
+                    .h(r.h)
+                    .flex_row()
+                    .items_center()
+                    .pointer_events_none()
+                    .child(look.text(&it.title, s.text.caption, pal.text)),
             )
         }
     }
@@ -116,7 +117,25 @@ pub fn today_line(t: &Timeline, x: f32, total_h: f32) -> Div {
     .pointer_events_none()
 }
 
-/// Room for a title of `caption`-size text: an upper bound of the glyph widths (0.6 of the size each).
-fn title_width(title: &str, caption: f32, pad: f32) -> f32 {
-    title.chars().count() as f32 * caption * 0.6 + pad
+/// The mark for a today off the axis: an arrow towards it and the word `timeline.today`, at the edge.
+pub fn today_edge(t: &Timeline, r: Rect, after: bool) -> Div {
+    let (look, s, pal) = (t.look, t.look.style, t.look.palette());
+    let word = look.text(t.say.say("timeline.today"), s.text.caption, pal.error);
+    let arrow = look.text(
+        if after { "\u{25B6}" } else { "\u{25C0}" },
+        s.text.caption,
+        pal.error,
+    );
+    let row = at(r)
+        .id("tl-today-edge")
+        .flex_row()
+        .items_center()
+        .gap_px(s.spacing.xs)
+        .padding_x_px(s.spacing.xs)
+        .pointer_events_none();
+    if after {
+        row.justify_end().child(word).child(arrow)
+    } else {
+        row.child(arrow).child(word)
+    }
 }

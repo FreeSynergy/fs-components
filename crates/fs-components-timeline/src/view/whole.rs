@@ -9,14 +9,15 @@ use blinc_layout::widgets::scroll::scroll;
 
 use super::{arrows, axis, rows, toolbar};
 use crate::handle::Timeline;
-use crate::layout::{Rect, Rows, Scale, item_rect, range_including};
+use crate::layout::{Rect, Rows, Scale, TodayMark, item_rect, range, today_mark};
+use crate::model::Day;
 use crate::route::route;
 
 /// The timeline filling `width` x `height`.
 pub fn timeline(t: &Timeline, width: f32, height: f32) -> Div {
     let (s, st) = (t.look.style, t.snapshot());
     let items = t.source.items();
-    let (first, last) = range_including(&items, 7, st.today);
+    let (first, last) = range(&items, 7, st.today.unwrap_or(Day(0)));
     let scale = Scale {
         origin: first,
         px: st.zoom.px_per_day(),
@@ -25,7 +26,15 @@ pub fn timeline(t: &Timeline, width: f32, height: f32) -> Div {
         row: s.heights.row_dense + s.spacing.xs,
         bar: s.heights.row_dense - s.spacing.xs,
     };
-    let head = 2.0 * axis::row_height(t);
+    let mark = today_mark(st.today, first, last);
+    let rh = axis::row_height(t);
+    // Below the two axis rows, a row for the edge mark when today is off the axis.
+    let head = 2.0 * rh
+        + if matches!(mark, TodayMark::Before | TodayMark::After) {
+            rh
+        } else {
+            0.0
+        };
     let (total_w, rows_h) = (
         scale.x_of(last.add_days(1)).max(width),
         items.len() as f32 * g.row,
@@ -67,12 +76,24 @@ pub fn timeline(t: &Timeline, width: f32, height: f32) -> Div {
             st.selected.as_deref() == Some(it.key.as_str()),
         ));
     }
-    if let Some(today) = st.today.filter(|d| *d >= first && *d <= last) {
-        body = body.child(rows::today_line(
-            t,
-            scale.x_of(today) + scale.px / 2.0 - 1.0,
-            head + rows_h,
-        ));
+    match mark {
+        TodayMark::Line(today) => {
+            body = body.child(rows::today_line(
+                t,
+                scale.x_of(today) + scale.px / 2.0 - 1.0,
+                head + rows_h,
+            ));
+        }
+        TodayMark::Before | TodayMark::After => {
+            let r = Rect {
+                x: 0.0,
+                y: 2.0 * rh,
+                w: total_w,
+                h: rh,
+            };
+            body = body.child(rows::today_edge(t, r, mark == TodayMark::After));
+        }
+        TodayMark::None => {}
     }
     let bar = s.heights.control + s.spacing.s;
     div()

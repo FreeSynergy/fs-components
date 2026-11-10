@@ -12,7 +12,7 @@ A horizontal time axis with bars, progress, milestones, dependency arrows, three
 | trait `TimelineEvents` | `select_item`, `zoomed`; defaults do nothing (`NoEvents`) |
 | `Zoom` (Day 40 px, Week 12 px, Month 4 px per day) | state of the host's choice, kept in `TimelineState` |
 
-Texts are translation keys through `Say`: `timeline.zoom.day|week|month`, `timeline.month.1..12`. Looks come only from `fs-components-styles` (`Look`; all four styles drawn in a test).
+Texts are translation keys through `Say`: `timeline.zoom.day|week|month`, `timeline.month.1..12`, `timeline.today`. Looks come only from `fs-components-styles` (`Look`; all four styles drawn in a test).
 
 ## Pattern map
 
@@ -28,7 +28,7 @@ Texts are translation keys through `Say`: `timeline.zoom.day|week|month`, `timel
 
 ## Behaviour
 
-Rows are items in order; a bar is tinted with its progress share filled; a milestone is a diamond with its title. Arrows run from the right edge of one item to the left edge of the next (elbow); when the next item starts earlier they go round through the gap between the rows. The today line is a thin full-height bar. Up/Down walk the rows (and tell the host), `+`/`-` (also number pad) zoom, a click chooses an item. A change rebuilds the live area only, never per frame.
+Rows are items in order; a bar is tinted with its progress share filled; a milestone is a diamond with its title. Arrows run from the right edge of one item to the left edge of the next (elbow); when the next item starts earlier they go round through the gap between the rows. The today line is a thin full-height bar when today is on the axis; the axis never grows to reach today (its cost grows with the days drawn), so a today outside it is an edge mark with an arrow (`tl-today-edge`). Up/Down walk the rows (and tell the host), `+`/`-` (also number pad) zoom, a click chooses an item. A change rebuilds the live area only, never per frame.
 
 ## Tests
 

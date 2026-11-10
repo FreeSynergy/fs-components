@@ -2,7 +2,7 @@
 //!
 //! Pattern: State (supported or locked) as one function — the same control is drawn both ways, so
 //! the layout does not change when the host starts to support the operation (ADR 0066: it unlocks
-//! by itself). A locked control has no handler and says `kanban.soon`.
+//! by itself). A locked control says `kanban.soon` and does nothing; its only handler swallows the click so the column below does not act on it.
 
 use blinc_layout::div::{Div, div};
 use fs_components_fields::Look;

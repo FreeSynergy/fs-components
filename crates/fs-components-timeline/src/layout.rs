@@ -55,10 +55,28 @@ pub fn range(items: &[Item], pad: i64, fallback: Day) -> (Day, Day) {
     (first.add_days(-pad), last.add_days(pad))
 }
 
-/// Like [`range`], widened to include `day` (today), so its line is always on the axis.
-pub fn range_including(items: &[Item], pad: i64, day: Option<Day>) -> (Day, Day) {
-    let (first, last) = range(items, pad, day.unwrap_or(Day(0)));
-    day.map_or((first, last), |d| (first.min(d), last.max(d)))
+/// Where today is relative to the axis `first..=last`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TodayMark {
+    /// No today given.
+    None,
+    /// Today is on the axis: a line at this day.
+    Line(Day),
+    /// Today is before the axis: a mark at its left edge.
+    Before,
+    /// Today is after the axis: a mark at its right edge.
+    After,
+}
+
+/// The mark for `today`. The axis never grows to reach today: it would cost time in proportion to
+/// the distance (days to draw), so a today far away is an edge mark with an arrow.
+pub fn today_mark(today: Option<Day>, first: Day, last: Day) -> TodayMark {
+    match today {
+        None => TodayMark::None,
+        Some(d) if d < first => TodayMark::Before,
+        Some(d) if d > last => TodayMark::After,
+        Some(d) => TodayMark::Line(d),
+    }
 }
 
 /// The rectangle of item number `row`. A milestone is a square centred on its day.
