@@ -31,6 +31,9 @@ pub const MOST_IN_FLIGHT: usize = 8;
 /// Most decoded tiles kept; when more arrive the oldest go.
 pub const MOST_KEPT: usize = 256;
 
+/// Held while a tile is decoded: the memory of decoding is bounded by one budget for the whole process.
+static DECODING: Mutex<()> = Mutex::new(());
+
 /// The time and the size limits of the loader.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Limits {
@@ -218,15 +221,19 @@ impl Loader {
             .name("fs-map-tile".into())
             .spawn(move || {
                 // A source that panics leaves the tile failed, never `Loading` for good.
-                let answer =
-                    std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                        match source.tile(id) {
-                            Ok(Some(bytes)) => decode_tile(&bytes).ok().map(|g| Some(Arc::new(g))),
-                            Ok(None) => Some(None),
-                            Err(_) => None,
+                let answer = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                    match source.tile(id) {
+                        Ok(Some(bytes)) => {
+                            // One tile is decoded at a time in the whole process: eight workers that come
+                            // back together must not take eight budgets (64 MiB each) at once.
+                            let _one_at_a_time = lock(&DECODING);
+                            decode_tile(&bytes).ok().map(|g| Some(Arc::new(g)))
                         }
-                    }))
-                    .unwrap_or(None);
+                        Ok(None) => Some(None),
+                        Err(_) => None,
+                    }
+                }))
+                .unwrap_or(None);
                 let mut kept = lock(&store);
                 kept.in_flight = kept.in_flight.saturating_sub(1);
                 kept.finish(
