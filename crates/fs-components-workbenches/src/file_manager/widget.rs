@@ -104,6 +104,11 @@ impl FileManagerWidget {
         locked(&self.state).context()
     }
 
+    /// SPIKE: the scroll position of the list, for a host that keeps it across restarts.
+    pub fn position(&self) -> &ListPosition {
+        &self.position
+    }
+
     /// The style sheet to add to the theme of the window.
     pub fn styles(&self) -> String {
         super::view::styles()
