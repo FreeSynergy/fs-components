@@ -319,3 +319,7 @@ Refused by name, among others: `transform`, `layer`, `facet`/`repeat`/`concat`, 
 ## Dependencies
 
 `blinc_app`, `blinc_cn`, `blinc_core`, `blinc_layout`, `blinc_theme` (0.6), `wgpu` 26 and `image` 0.25 (both already part of Blinc's tree, used for the offscreen picture). `fs-components-charts` additionally: `serde_json` (MIT OR Apache-2.0, pure Rust). `fs-components-words`: std only. No other repo.
+
+## Known assumption: the height of the files band
+
+The files band is a box as high as `band_height` says and it clips what is taller. The answer buttons wrap their words (`wrapping_button`), and the height of a wrapped button is **estimated by characters** (8 px each; `band_size.rs`). The double-press rule (the answer button is never under the point of the first press) depends on where the buttons stand, so on that estimate. It holds for the English texts and the widths that are tested (160, 200, 300 and wider). Another language with longer words may need a line more than estimated and have a button clipped. `files_band_buttons.rs` (`every_question_of_the_band_has_its_buttons_inside_the_window_when_narrow`) lays out every question and requires each button to lie inside the box of the band: an estimate that is too low turns it red. The tests of the double press itself (`files_widget.rs`) check that the answer is not under the first press, not only where it is.
