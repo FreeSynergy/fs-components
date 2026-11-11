@@ -97,8 +97,8 @@ pub struct Dot {
 pub struct Label {
     /// Where its middle is.
     pub at: TilePoint,
-    /// The text.
-    pub text: String,
+    /// The text (shared: a feature with many points holds it once).
+    pub text: std::sync::Arc<str>,
     /// How it is drawn.
     pub paint: Paint,
     /// Size in pixels.

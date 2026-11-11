@@ -35,7 +35,10 @@ mod widget;
 
 pub use choose::{AREA_BUDGET, DOT_BUDGET, LINE_BUDGET};
 pub use command::{MapCommand, PAN_STEP, ZOOM_STEP, command_for_key};
-pub use guard::{MAX_FEATURES, MAX_TILE_BYTES, MAX_TILE_MEMORY};
+pub use guard::{
+    BUDGET_BASE, BUDGET_PER_BYTE, MAX_FEATURES, MAX_LAYERS, MAX_STRINGS, MAX_TILE_BYTES,
+    MAX_TILE_MEMORY,
+};
 pub use loader::{Limits, MOST_IN_FLIGHT, MOST_KEPT, MOST_LOADING};
 pub use mercator::{
     MAX_LAT, MAX_ZOOM, MIN_ZOOM, TILE_SIZE, clamp_lat, clamp_zoom, crosses_antimeridian, project,

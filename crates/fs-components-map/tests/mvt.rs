@@ -54,7 +54,7 @@ fn a_vector_tile_becomes_areas_lines_and_labels() {
     assert_eq!(g.areas.len(), 1);
     assert_eq!(g.lines.len(), 1);
     assert_eq!(g.labels.len(), 1);
-    assert_eq!(g.labels[0].text, "Bern");
+    assert_eq!(&*g.labels[0].text, "Bern");
 }
 
 #[test]

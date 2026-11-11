@@ -69,8 +69,8 @@ pub struct PlacedMarker {
 /// A label that found room.
 #[derive(Clone, Debug, PartialEq)]
 pub struct PlacedLabel {
-    /// The text.
-    pub text: String,
+    /// The text (shared with the label of the tile).
+    pub text: std::sync::Arc<str>,
     /// Where its middle is.
     pub x: f32,
     /// Where its middle is.

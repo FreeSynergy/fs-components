@@ -4,6 +4,8 @@
 //! schemas (Protomaps, Shortbread: `water`, `earth`, `landuse`, `buildings`, `roads`, `boundaries`, `places`) pick a tone
 //! of the theme. A layer this does not know is drawn plainly, never refused.
 
+use std::sync::Arc;
+
 use geo_types::Geometry;
 use mvt_reader::Reader;
 
@@ -60,7 +62,7 @@ fn ring(line: &geo_types::LineString<f32>) -> Vec<[f32; 2]> {
     line.coords().map(|c| [c.x, c.y]).collect()
 }
 
-fn add(g: &Geometry<f32>, st: &Style, name: Option<&str>, out: &mut TileGeometry) {
+fn add(g: &Geometry<f32>, st: &Style, name: Option<&Arc<str>>, out: &mut TileGeometry) {
     match g {
         Geometry::Point(p) => add_point(p.x(), p.y(), st, name, out),
         Geometry::MultiPoint(m) => m
@@ -75,12 +77,12 @@ fn add(g: &Geometry<f32>, st: &Style, name: Option<&str>, out: &mut TileGeometry
     }
 }
 
-fn add_point(x: f32, y: f32, st: &Style, name: Option<&str>, out: &mut TileGeometry) {
+fn add_point(x: f32, y: f32, st: &Style, name: Option<&Arc<str>>, out: &mut TileGeometry) {
     if st.label {
         if let Some(text) = name {
             out.labels.push(Label {
                 at: [x, y],
-                text: text.to_owned(),
+                text: Arc::clone(text),
                 paint: Paint::tone(Tone::Text),
                 size: 12.0,
             });
@@ -154,11 +156,12 @@ pub fn decode_tile(bytes: &[u8]) -> Result<TileGeometry, MvtError> {
             .map_err(|e| MvtError(format!("{e:?}")))?;
         let before = Marks::of(&out);
         for f in features {
-            let name = match f.properties.as_ref().and_then(|p| p.get("name")) {
-                Some(mvt_reader::feature::Value::String(s)) => Some(s.as_str()),
+            // One copy of the name for the whole feature: every point of a `MultiPoint` shares it.
+            let name: Option<Arc<str>> = match f.properties.as_ref().and_then(|p| p.get("name")) {
+                Some(mvt_reader::feature::Value::String(s)) => Some(Arc::from(s.as_str())),
                 _ => None,
             };
-            add(&f.geometry, &st, name, &mut out);
+            add(&f.geometry, &st, name.as_ref(), &mut out);
         }
         let k = out.extent / extent_of(layer);
         before.scale_to(&mut out, k);

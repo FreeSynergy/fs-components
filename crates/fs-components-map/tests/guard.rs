@@ -1,78 +1,16 @@
 //! What a tile may cost: limits checked before `mvt-reader` decodes, and one extent per layer.
 //!
-//! Pattern: none (tests). The tiles are written by hand in the protobuf form, so they can be hostile.
+//! Pattern: none (tests). The tiles are the bombs of `bombs/mod.rs`; each must be refused by the guard before any
+//! decoding, so these tests take no memory themselves (run them under `limited.sh -m 1G`, see DESIGN.md).
 
-// Test encoders: the casts are of values that fit by construction.
-#![allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+mod bombs;
 
 use std::time::{Duration, Instant};
 
-use fs_components_map::{MAX_FEATURES, MAX_TILE_BYTES, MAX_TILE_MEMORY, decode_tile};
-
-fn varint(mut v: u64, out: &mut Vec<u8>) {
-    while v >= 0x80 {
-        out.push((v & 0x7f) as u8 | 0x80);
-        v >>= 7;
-    }
-    out.push(v as u8);
-}
-
-fn bytes_field(number: u64, body: &[u8], out: &mut Vec<u8>) {
-    varint(number << 3 | 2, out);
-    varint(body.len() as u64, out);
-    out.extend_from_slice(body);
-}
-
-fn number_field(number: u64, value: u64, out: &mut Vec<u8>) {
-    varint(number << 3, out);
-    varint(value, out);
-}
-
-fn feature(kind: u64, geometry: &[u64]) -> Vec<u8> {
-    let mut f = Vec::new();
-    number_field(3, kind, &mut f);
-    let mut packed = Vec::new();
-    for v in geometry {
-        varint(*v, &mut packed);
-    }
-    bytes_field(4, &packed, &mut f);
-    f
-}
-
-fn layer(name: &str, extent: u64, features: &[Vec<u8>]) -> Vec<u8> {
-    let mut l = Vec::new();
-    bytes_field(1, name.as_bytes(), &mut l);
-    for f in features {
-        bytes_field(2, f, &mut l);
-    }
-    number_field(5, extent, &mut l);
-    number_field(15, 2, &mut l);
-    l
-}
-
-fn tile(layers: &[Vec<u8>]) -> Vec<u8> {
-    let mut t = Vec::new();
-    for l in layers {
-        bytes_field(3, l, &mut t);
-    }
-    t
-}
-
-/// A line from (x0, y0) to (x1, y1) in a layer's own coordinates (zigzag numbers).
-fn line(x0: i64, y0: i64, x1: i64, y1: i64) -> Vec<u8> {
-    let zig = |v: i64| ((v << 1) ^ (v >> 63)) as u64;
-    feature(2, &[9, zig(x0), zig(y0), 10, zig(x1 - x0), zig(y1 - y0)])
-}
-
-/// The real bomb of `mvt-reader` 2.5.0: a polygon with `rings` times `LineTo` + `ClosePath`. The decoder reserves a
-/// buffer of the whole geometry at every `ClosePath` (see `guard.rs`); a `MoveTo` alone reserves nothing for a polygon.
-fn close_path_bomb(rings: u64) -> Vec<u8> {
-    let mut geometry = vec![9, 0, 0]; // MoveTo(1) 0,0
-    for _ in 0..rings {
-        geometry.extend_from_slice(&[10, 2, 2, 15]); // LineTo(1) 1,1 ; ClosePath
-    }
-    tile(&[layer("water", 4096, &[feature(3, &geometry)])])
-}
+use bombs::*;
+use fs_components_map::{
+    MAX_FEATURES, MAX_LAYERS, MAX_STRINGS, MAX_TILE_BYTES, MAX_TILE_MEMORY, decode_tile,
+};
 
 #[test]
 fn the_real_bomb_of_a_megabyte_is_refused_at_once_and_unread() {
@@ -105,15 +43,6 @@ fn a_bomb_of_move_to_alone_is_counted_too_to_be_safe() {
     let error =
         decode_tile(&tile(&[layer("roads", 4096, &[feature(2, &geometry)])])).expect_err("refused");
     assert!(error.0.contains("refused"), "{error}");
-}
-
-/// A feature of `rings` rings, which costs `(rings + 1) * (3 + 4 * rings)` points on its own.
-fn middling(rings: u64) -> Vec<u8> {
-    let mut geometry = vec![9, 0, 0];
-    for _ in 0..rings {
-        geometry.extend_from_slice(&[10, 2, 2, 15]);
-    }
-    feature(3, &geometry)
 }
 
 #[test]
@@ -174,49 +103,12 @@ fn every_layer_has_its_own_extent_and_lies_where_it_belongs() {
     }
 }
 
-/// The same bomb, every command written with the 32nd bit set: protobuf `uint32` keeps the low 32 bits, so for the
-/// decoder `(1 << 32) | 15` is the command 15 (a `ClosePath`), and the guard must read it the same way.
-fn close_path_bomb_with_high_bits(rings: u64) -> Vec<u8> {
-    let high = 1u64 << 32;
-    let mut geometry = vec![high | 0x09, 0, 0];
-    for _ in 0..rings {
-        geometry.extend_from_slice(&[high | 0x0a, 2, 2, high | 0x0f]);
-    }
-    tile(&[layer("water", 4096, &[feature(3, &geometry)])])
-}
-
 #[test]
 fn a_command_head_with_high_bits_is_read_as_the_decoder_reads_it() {
     let bomb = close_path_bomb_with_high_bits(250_000);
     assert!(bomb.len() < MAX_TILE_BYTES, "{} bytes", bomb.len());
     let error = decode_tile(&bomb).expect_err("refused");
     assert!(error.0.contains("refused"), "{error}");
-}
-
-/// A layer with one big value string (`size` bytes) and `features` point features that each name it.
-fn tag_bomb(size: usize, features: usize) -> Vec<u8> {
-    let mut value = Vec::new();
-    bytes_field(1, &vec![b'x'; size], &mut value); // Value.string_value
-    let mut layer = Vec::new();
-    bytes_field(1, b"places", &mut layer);
-    for _ in 0..features {
-        let mut f = Vec::new();
-        let mut pair = Vec::new();
-        varint(0, &mut pair);
-        varint(0, &mut pair);
-        bytes_field(2, &pair, &mut f); // tags: key 0, value 0
-        number_field(3, 1, &mut f); // type: point
-        let mut g = Vec::new();
-        for v in [9u64, 0, 0] {
-            varint(v, &mut g);
-        }
-        bytes_field(4, &g, &mut f);
-        bytes_field(2, &f, &mut layer);
-    }
-    bytes_field(3, b"name", &mut layer); // keys
-    bytes_field(4, &value, &mut layer); // values
-    number_field(5, 4096, &mut layer);
-    tile(&[layer])
 }
 
 #[test]
@@ -230,4 +122,99 @@ fn the_copies_of_the_tags_are_counted_one_big_value_named_by_many_features_is_re
     assert!(decode_tile(&tag_bomb(1_000_000, 1)).is_ok());
     // and many small ones are fine
     assert!(decode_tile(&tag_bomb(20, 5_000)).is_ok());
+}
+
+#[test]
+fn a_multipoint_with_a_big_name_is_decoded_with_one_shared_name_and_a_huge_one_is_refused() {
+    // 100 points and a 1 MiB name was 108 MB, 2000 points 2.05 GB, 20 000 points 21 GB (the name copied for every
+    // point). The name is shared now, and a point is counted as a struct of its own: all are judged by the budget.
+    for points in [100, 2000, 20_000] {
+        let bomb = multipoint_bomb(points, 1 << 20);
+        assert!(bomb.len() < 1_200_000, "{} bytes", bomb.len());
+        let verdict = decode_tile(&bomb);
+        // the name once (copied by the decoder, by the model) is 3 MiB: inside the budget of a tile of this size; the
+        // points are 64 bytes each: 20 000 of them 1.3 MB
+        assert!(verdict.is_ok(), "{points}: {verdict:?}");
+        assert_eq!(
+            verdict.unwrap().labels.len() as u64,
+            points,
+            "one label a point, one shared name"
+        );
+    }
+    // the budget stops what is over it: many points, each of its own struct, from a tile too short to pay for them
+    let many = multipoint_bomb(1_000_000, 4);
+    let error = decode_tile(&many).expect_err("refused");
+    assert!(
+        error.0.contains("refused") || error.0.contains("not a vector"),
+        "{error}"
+    );
+}
+
+#[test]
+fn empty_layers_keys_and_values_are_limited_and_cost_something() {
+    let layers = empty_layers(MAX_LAYERS + 1);
+    assert!(
+        decode_tile(&layers)
+            .expect_err("refused")
+            .0
+            .contains("too many layers")
+    );
+    let values = empty_values(MAX_STRINGS + 1);
+    assert!(
+        decode_tile(&values)
+            .expect_err("refused")
+            .0
+            .contains("too many keys")
+    );
+    let keys = empty_keys(MAX_STRINGS + 1);
+    assert!(
+        decode_tile(&keys)
+            .expect_err("refused")
+            .0
+            .contains("too many keys")
+    );
+    // the 1.1 MB tiles of the review: 550 000 empty layers, 550 000 empty values
+    assert!(decode_tile(&empty_layers(550_000)).is_err());
+    assert!(decode_tile(&empty_values(550_000)).is_err());
+    // under the limits and paid for by its bytes (64 bytes of memory for each of its 2): accepted
+    assert!(decode_tile(&empty_values(MAX_STRINGS - 10)).is_ok());
+}
+
+/// Writes the starting corpus of the fuzz target (`fuzz/corpus/mvt_decode`): the bombs of the reviews in a size that
+/// still is far over the budget, and small tiles that decode. Run with `-- --ignored write_the_fuzz_corpus`.
+#[test]
+#[ignore = "writes files: run on purpose"]
+fn write_the_fuzz_corpus() {
+    let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("fuzz/corpus/mvt_decode");
+    std::fs::create_dir_all(&dir).unwrap();
+    let mut move_to = Vec::new();
+    for _ in 0..3000 {
+        move_to.extend_from_slice(&[9, 0, 0]);
+    }
+    let files: Vec<(&str, Vec<u8>)> = vec![
+        ("close-path-bomb", close_path_bomb(3000)),
+        (
+            "move-to-bomb",
+            tile(&[layer("roads", 4096, &[feature(2, &move_to)])]),
+        ),
+        ("high-bits-head", close_path_bomb_with_high_bits(3000)),
+        ("value-bomb", tag_bomb(100_000, 700)),
+        ("multipoint-name-bomb", multipoint_bomb(1000, 50_000)),
+        ("multipoint-many-points", multipoint_bomb(20_000, 4)),
+        ("empty-layers", empty_layers(2000)),
+        ("empty-values", empty_values(100_050)),
+        ("ordinary", ordinary()),
+        (
+            "two-extents",
+            tile(&[
+                layer("roads", 4096, &[line(0, 2048, 4096, 2048)]),
+                layer("roads", 512, &[line(0, 256, 512, 256)]),
+            ]),
+        ),
+        ("one-point", multipoint_bomb(1, 4)),
+        ("empty", Vec::new()),
+    ];
+    for (name, bytes) in files {
+        std::fs::write(dir.join(name), bytes).unwrap();
+    }
 }

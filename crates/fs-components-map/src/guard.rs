@@ -10,6 +10,10 @@
 //! its features, and the estimated memory of the whole tile, geometry and tags together; the extent of each layer is
 //! read too. Numbers are read as `u32` like the decoder reads them (it cuts a longer number to its low 32 bits).
 //!
+//! Everything else the decoder makes is counted too: layers, keys, values and features have limits and a cost each,
+//! and a point of a feature costs its own copy of the feature's texts (`add_point` clones the name for every point of
+//! a `MultiPoint`: 20 000 points and a 1 MiB name are 20 GB from a tile of 1 MB).
+//!
 //! Tags: `parse_tags` (lib.rs:305) copies the key and the value of every tag pair for every feature, so a value
 //! string of 1 MB named by 400 features is 400 MB (4 MiB of tile and 100 000 features would be 300 GB). A tile over a limit is refused, never decoded.
 //!
@@ -26,8 +30,26 @@ pub const MAX_FEATURES: usize = 100_000;
 /// The most memory (bytes, estimated) `mvt-reader` may take for all features of one tile together: the geometry
 /// buffers (8 bytes a point) and the copies of the tags (every value string once for every feature that names it).
 pub const MAX_TILE_MEMORY: u64 = 64 * 1024 * 1024;
+/// The rule: no byte of input makes more than this many bytes of memory (`BUDGET_BASE` aside), and never more than
+/// [`MAX_TILE_MEMORY`] in all. The number is high because `mvt-reader` reserves a geometry-long buffer for every ring:
+/// a polygon of 300 holes of ten points is 4.5 KB of input and 17 MB reserved (3 900 bytes a byte), and such polygons
+/// exist (a forest with clearings). The budget of a tile is `min(MAX_TILE_MEMORY, BUDGET_BASE + BUDGET_PER_BYTE * bytes)`.
+pub const BUDGET_PER_BYTE: u64 = 4096;
+/// What any tile may take, however short.
+pub const BUDGET_BASE: u64 = 64 * 1024;
+/// The most layers in one tile (real tiles have a dozen or two).
+pub const MAX_LAYERS: usize = 256;
+/// The most keys and values of all layers of one tile together.
+pub const MAX_STRINGS: usize = 100_000;
 /// A point of a geometry buffer.
 const POINT_BYTES: u64 = 8;
+/// What the decoder keeps besides the text for one layer, one key or value, one feature (the structs of `prost` and of
+/// `mvt-reader`; an empty layer measured 175 bytes, an empty value 118), rounded up.
+const LAYER_BYTES: u64 = 512;
+const STRING_BYTES: u64 = 128;
+const FEATURE_BYTES: u64 = 256;
+/// What one point of a feature costs in the model of this crate (a dot or a label, without its text).
+const POINT_OUT_BYTES: u64 = 64;
 /// What one tag costs besides its two strings (the map entry, the string headers).
 const TAG_BYTES: u64 = 64;
 
@@ -109,6 +131,9 @@ struct Geometry {
     numbers: u64,
     extra: u64,
     skip: u64,
+    /// The command whose numbers are being read, and how many numbers of a `MoveTo` were read: a point is two.
+    command: u64,
+    move_numbers: u64,
 }
 
 impl Geometry {
@@ -118,8 +143,12 @@ impl Geometry {
         self.numbers += 1;
         if self.skip > 0 {
             self.skip -= 1;
+            if self.command == 1 {
+                self.move_numbers += 1;
+            }
             return;
         }
+        self.command = value & 7;
         let count = value >> 3;
         match value & 7 {
             // a `MoveTo` makes a buffer for a line, a `ClosePath` for every ring: counted for both, to be safe
@@ -131,6 +160,12 @@ impl Geometry {
             7 => self.extra += 1,
             _ => {}
         }
+    }
+
+    /// The points of the feature that stand alone (`MoveTo`s), as many as numbers were given for: a point of a
+    /// feature is drawn with its own copy of the text of the feature (`add_point` clones the name for every point).
+    fn points(&self) -> u64 {
+        self.move_numbers / 2
     }
 
     /// The bytes reserved: the first buffer and one per command, each as long as the geometry.
@@ -150,17 +185,33 @@ struct Strings {
 }
 
 impl Strings {
-    fn of(layer: &[u8]) -> Result<Self, MvtError> {
+    /// The sizes of one layer. `count` is the number of keys and values of the tile so far, `memory` what they cost so
+    /// far: both are limited here, before a list of them is made.
+    fn of(layer: &[u8], count: &mut usize, memory: &mut u64) -> Result<Self, MvtError> {
         let mut strings = Self::default();
         let mut cursor = Cursor(layer);
         while let Some((number, value)) = cursor.field()? {
-            match (number, value) {
-                (3, Value::Bytes(key)) => strings.keys.push(key.len() as u64),
-                (4, Value::Bytes(v)) => strings.values.push(v.len() as u64),
-                _ => {}
+            let (list, len) = match (number, value) {
+                (3, Value::Bytes(key)) => (&mut strings.keys, key.len() as u64),
+                (4, Value::Bytes(v)) => (&mut strings.values, v.len() as u64),
+                _ => continue,
+            };
+            *count += 1;
+            if *count > MAX_STRINGS {
+                return Err(too_much("too many keys and values"));
             }
+            *memory = memory.saturating_add(STRING_BYTES + len);
+            list.push(len);
         }
         Ok(strings)
+    }
+
+    fn value_len(&self, value: u64) -> u64 {
+        usize::try_from(value)
+            .ok()
+            .and_then(|i| self.values.get(i))
+            .copied()
+            .unwrap_or(0)
     }
 
     /// What `parse_tags` copies for one pair: the key and the value, for this feature.
@@ -173,9 +224,10 @@ impl Strings {
 }
 
 /// The estimated memory of one feature: its geometry and the copies of its tags.
-fn feature(bytes: &[u8], strings: &Strings) -> Result<u64, MvtError> {
+fn feature(bytes: &[u8], strings: &Strings, budget: u64) -> Result<u64, MvtError> {
     let mut geometry = Geometry::default();
     let mut tags = 0u64;
+    let mut texts = 0u64; // the lengths of the values the feature names: the name is copied once for the feature
     let mut half: Option<u64> = None;
     let mut cursor = Cursor(bytes);
     let mut tag = |v: u64, tags: &mut u64| {
@@ -183,7 +235,10 @@ fn feature(bytes: &[u8], strings: &Strings) -> Result<u64, MvtError> {
         let v = u64::from(v as u32);
         match half.take() {
             None => half = Some(v),
-            Some(key) => *tags = tags.saturating_add(strings.pair(key, v)),
+            Some(key) => {
+                *tags = tags.saturating_add(strings.pair(key, v));
+                texts = texts.saturating_add(strings.value_len(v));
+            }
         }
     };
     while let Some((number, value)) = cursor.field()? {
@@ -193,7 +248,7 @@ fn feature(bytes: &[u8], strings: &Strings) -> Result<u64, MvtError> {
                 let mut numbers = Cursor(packed);
                 while !numbers.0.is_empty() {
                     tag(numbers.varint()?, &mut tags);
-                    if tags > MAX_TILE_MEMORY {
+                    if tags > budget {
                         return Err(too_much("a feature would need too much memory to decode"));
                     }
                 }
@@ -203,7 +258,7 @@ fn feature(bytes: &[u8], strings: &Strings) -> Result<u64, MvtError> {
                 let mut numbers = Cursor(packed);
                 while !numbers.0.is_empty() {
                     geometry.feed(numbers.varint()?);
-                    if geometry.cost() > MAX_TILE_MEMORY {
+                    if geometry.cost() > budget {
                         return Err(too_much("a feature would need too much memory to decode"));
                     }
                 }
@@ -211,7 +266,15 @@ fn feature(bytes: &[u8], strings: &Strings) -> Result<u64, MvtError> {
             _ => {}
         }
     }
-    Ok(geometry.cost().saturating_add(tags))
+    // a point is a struct of its own (the text is shared by the points of the feature, `Arc<str>`: counted once, as
+    // `texts`, for the copy that `mvt.rs` makes of the name)
+    let points = geometry.points().saturating_mul(POINT_OUT_BYTES);
+    Ok(geometry
+        .cost()
+        .saturating_add(tags)
+        .saturating_add(points)
+        .saturating_add(texts)
+        .saturating_add(FEATURE_BYTES))
 }
 
 /// Look at a tile before it is decoded.
@@ -222,13 +285,24 @@ pub(crate) fn scan(bytes: &[u8]) -> Result<Scanned, MvtError> {
     if bytes.len() > MAX_TILE_BYTES {
         return Err(too_much("too many bytes"));
     }
+    let budget = MAX_TILE_MEMORY
+        .min(BUDGET_BASE.saturating_add(BUDGET_PER_BYTE.saturating_mul(bytes.len() as u64)));
     let (mut features, mut memory, mut extents) = (0usize, 0u64, Vec::new());
+    let (mut layers, mut strings_count) = (0usize, 0usize);
     let mut tile = Cursor(bytes);
     while let Some((number, value)) = tile.field()? {
         let (3, Value::Bytes(layer)) = (number, value) else {
             continue;
         };
-        let strings = Strings::of(layer)?;
+        layers += 1;
+        if layers > MAX_LAYERS {
+            return Err(too_much("too many layers"));
+        }
+        memory = memory.saturating_add(LAYER_BYTES);
+        let strings = Strings::of(layer, &mut strings_count, &mut memory)?;
+        if memory > budget {
+            return Err(too_much("the tile would need too much memory to decode"));
+        }
         let mut extent = None;
         let mut cursor = Cursor(layer);
         while let Some((number, value)) = cursor.field()? {
@@ -238,8 +312,8 @@ pub(crate) fn scan(bytes: &[u8]) -> Result<Scanned, MvtError> {
                     if features > MAX_FEATURES {
                         return Err(too_much("too many features"));
                     }
-                    memory = memory.saturating_add(feature(f, &strings)?);
-                    if memory > MAX_TILE_MEMORY {
+                    memory = memory.saturating_add(feature(f, &strings, budget)?);
+                    if memory > budget {
                         return Err(too_much("the tile would need too much memory to decode"));
                     }
                 }
