@@ -40,6 +40,8 @@ pub struct ReaderWidget {
 struct AreaSlot {
     edit: u64,
     state: SharedTextAreaState,
+    /// Gives the signals of `state` back when the edit is over.
+    _keep: fs_components_primitives::FieldData,
 }
 
 impl ReaderWidget {
@@ -205,9 +207,11 @@ impl ReaderWidget {
             editing.restore_form(&shown) == editing.draft
         });
         if current.is_none() {
+            let keep = fs_components_primitives::FieldData::new();
             *slot = Some(AreaSlot {
                 edit: editing.id,
-                state: new_area(&editing.draft),
+                state: new_area(&editing.draft, &keep),
+                _keep: keep,
             });
         }
         slot.as_ref().map(|a| a.state.clone())

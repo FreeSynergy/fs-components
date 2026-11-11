@@ -7,14 +7,17 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, PoisonError};
 
-use blinc_layout::widgets::text_area::{SharedTextAreaState, text_area_state};
-use blinc_layout::widgets::text_input::{SharedTextInputData, text_input_data};
+use blinc_layout::widgets::text_area::SharedTextAreaState;
+use blinc_layout::widgets::text_input::SharedTextInputData;
+use fs_components_primitives::FieldData;
 
 #[derive(Default)]
 struct Slots {
     edit: u64,
     lines: HashMap<String, SharedTextInputData>,
     areas: HashMap<String, SharedTextAreaState>,
+    /// Gives the signals of the states back when the edit is forgotten.
+    keep: FieldData,
 }
 
 impl Slots {
@@ -38,11 +41,12 @@ impl InputSlots {
         let data = {
             let mut slots = self.0.lock().unwrap_or_else(PoisonError::into_inner);
             slots.for_edit(edit);
+            let keep = slots.keep.clone();
             Arc::clone(
                 slots
                     .lines
                     .entry(field.to_string())
-                    .or_insert_with(text_input_data),
+                    .or_insert_with(|| keep.text_input()),
             )
         };
         {
@@ -61,8 +65,9 @@ impl InputSlots {
     pub(crate) fn area(&self, edit: u64, field: &str, value: &str) -> SharedTextAreaState {
         let mut slots = self.0.lock().unwrap_or_else(PoisonError::into_inner);
         slots.for_edit(edit);
+        let keep = slots.keep.clone();
         Arc::clone(slots.areas.entry(field.to_string()).or_insert_with(|| {
-            let state = text_area_state();
+            let state = keep.text_area();
             state
                 .lock()
                 .unwrap_or_else(PoisonError::into_inner)

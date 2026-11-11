@@ -7,7 +7,8 @@
 
 use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 
-use blinc_layout::widgets::text_area::{SharedTextAreaState, text_area_state};
+use blinc_layout::widgets::text_area::SharedTextAreaState;
+use fs_components_primitives::FieldData;
 
 use super::drafts::Job;
 use super::labels::Labels;
@@ -34,6 +35,8 @@ pub struct MessageComposer {
     pub(super) shared: Arc<Mutex<Inner>>,
     pub(super) live: Live,
     pub(super) area: SharedTextAreaState,
+    /// Gives the signals of `area` back when the composer is gone.
+    _keep: FieldData,
     pub(super) labels: Labels,
     pub(super) id: String,
     pub(super) key: String,
@@ -45,6 +48,7 @@ pub struct MessageComposer {
 impl MessageComposer {
     /// A composer for the conversation `key` (the key names its draft).
     pub fn new(key: impl Into<String>) -> Self {
+        let keep = FieldData::new();
         Self {
             shared: Arc::new(Mutex::new(Inner {
                 state: Composing::new(),
@@ -54,7 +58,8 @@ impl MessageComposer {
                 note: None,
             })),
             live: Live::new(),
-            area: text_area_state(),
+            area: keep.text_area(),
+            _keep: keep,
             labels: Labels::default(),
             id: "fs-mc".into(),
             key: key.into(),

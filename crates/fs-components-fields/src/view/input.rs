@@ -11,7 +11,8 @@ use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
 use blinc_layout::div::div;
 use blinc_layout::selector::InputRef;
-use blinc_layout::widgets::text_input::{SharedTextInputData, text_input, text_input_data};
+use blinc_layout::widgets::text_input::{SharedTextInputData, text_input};
+use fs_components_primitives::FieldData;
 use fs_components_widgets::Element;
 use fs_components_widgets::live::Live;
 
@@ -28,6 +29,8 @@ pub(super) struct Inner {
     pub(super) look: Look,
     pub(super) say: Arc<dyn Say>,
     pub(super) data: Vec<SharedTextInputData>,
+    /// Gives the signals of `data` back when the input is gone.
+    _keep: FieldData,
     pub(super) refs: Vec<InputRef>,
     pub(super) live: Live,
     pub(super) suggest: Option<Arc<dyn Suggest>>,
@@ -48,12 +51,14 @@ impl FieldInput {
     /// An empty input of `kind`.
     pub fn new(kind: Kind, look: Look, say: Arc<dyn Say>) -> Self {
         let n = kind.field().segments().len();
+        let keep = FieldData::new();
         Self {
             inner: Arc::new(Inner {
                 kind,
                 look,
                 say,
-                data: (0..n).map(|_| text_input_data()).collect(),
+                data: (0..n).map(|_| keep.text_input()).collect(),
+                _keep: keep,
                 refs: (0..n).map(|_| InputRef::new()).collect(),
                 live: Live::new(),
                 suggest: None,

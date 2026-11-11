@@ -9,8 +9,9 @@ use std::sync::Arc;
 
 use blinc_cn::components::button::ButtonVariant;
 use blinc_layout::div::div;
-use blinc_layout::widgets::text_input::{SharedTextInputData, text_input, text_input_data};
+use blinc_layout::widgets::text_input::{SharedTextInputData, text_input};
 use fs_components_fields::{FieldInput, Look, Say, Suggest};
+use fs_components_primitives::FieldData;
 use fs_components_widgets::Element;
 use fs_types::{BasicType, FieldDescription};
 
@@ -38,6 +39,8 @@ pub struct Slot {
     pub body: Body,
     /// Hears the text after every change.
     pub on: OnText,
+    /// Keeps the signals of the input alive as long as the slot lives (not as long as the page build that made it).
+    keep: FieldData,
 }
 
 impl Slot {
@@ -51,8 +54,9 @@ impl Slot {
         suggest: Option<&Arc<dyn Suggest>>,
         on: OnText,
     ) -> Self {
-        let body = Self::body(look, say, field, (text, id), suggest, &on);
-        Self { body, on }
+        let keep = FieldData::new();
+        let body = Self::body(look, say, field, (text, id), suggest, &on, &keep);
+        Self { body, on, keep }
     }
 
     fn body(
@@ -62,6 +66,7 @@ impl Slot {
         (text, id): (&str, &str),
         suggest: Option<&Arc<dyn Suggest>>,
         on: &OnText,
+        keep: &FieldData,
     ) -> Body {
         if let Some(kind) = kind_of(field.basic) {
             let on = Arc::clone(on);
@@ -77,7 +82,7 @@ impl Slot {
         if field.basic == BasicType::Choice {
             return Body::Choice;
         }
-        let data = text_input_data();
+        let data = keep.text_input();
         {
             let mut d = data
                 .lock()

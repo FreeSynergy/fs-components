@@ -52,7 +52,7 @@ impl Timeline {
             say,
             look,
             live: Live::new(),
-            scroll: ScrollRef::new(),
+            scroll: fs_components_primitives::scroll_ref(),
             width: Arc::new(AtomicU32::new(0)),
             target: Arc::default(),
             early: Arc::default(),

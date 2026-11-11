@@ -51,7 +51,7 @@ impl AgentTree {
         let total = count as f32 * ROW_HEIGHT;
         let offset = self.position.offset().clamp(0.0, (total - view).max(0.0));
         self.position.apply_offset(offset);
-        let watch = self.position.scroll.watch_y(offset);
+        let watch = fs_components_primitives::scroll_watch(&self.position.scroll, offset);
         if watch.try_get().is_none_or(|y| (y - offset).abs() > 0.5) {
             watch.set(offset);
         }

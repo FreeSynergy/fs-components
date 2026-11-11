@@ -55,7 +55,8 @@ impl MessageList {
         if slot.is_some() {
             return;
         }
-        let watch = self.position.scroll.watch_y(self.position.offset());
+        let watch =
+            fs_components_primitives::scroll_watch(&self.position.scroll, self.position.offset());
         let this = self.clone();
         *slot = Some(blinc_core::reactive::effect(move |graph| {
             this.on_scroll(graph.get(watch).unwrap_or(0.0));

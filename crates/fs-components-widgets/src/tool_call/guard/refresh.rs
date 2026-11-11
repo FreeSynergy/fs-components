@@ -52,7 +52,7 @@ impl Approvals {
     pub(super) fn watch_end(&self, scroll: &ScrollRef, rearm: &Rearm) -> Watch {
         let (this, scroll, rearm) = (Arc::downgrade(&self.0), scroll.clone(), Arc::clone(rearm));
         Owner::detached(|| {
-            let offset = scroll.watch_y(0.0);
+            let offset = fs_components_primitives::scroll_watch(&scroll, 0.0);
             let at_end = AtomicBool::new(false);
             let run = effect(move |g| {
                 let _ = g.get(offset);

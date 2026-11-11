@@ -12,7 +12,6 @@
 //! never matches) and, when the command does not fit its window, needs the person to have scrolled
 //! it to the end. Nothing is decided here: it only says whether a click may be reported.
 
-use blinc_layout::selector::ScrollRef;
 use blinc_layout::widgets::scroll::ScrollPhysics;
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex, PoisonError};
@@ -159,7 +158,7 @@ impl Approvals {
             let (generation, at) = (g.next, g.clock.now_ms());
             g.next += 1;
             let body = Body {
-                scroll: ScrollRef::new(),
+                scroll: fs_components_primitives::scroll_ref(),
                 physics: Arc::new(Mutex::new(ScrollPhysics::default())),
             };
             let old = g.entries.insert(

@@ -6,7 +6,9 @@
 use std::sync::Arc;
 
 use blinc_cn::components::input::{InputSize, input};
-use blinc_layout::widgets::text_input::{SharedTextInputData, text_input_data_with_placeholder};
+use blinc_layout::widgets::text_input::SharedTextInputData;
+
+use crate::field_data::FieldData;
 
 /// Called with the whole text after every change.
 pub type OnChange = Arc<dyn Fn(&str) + Send + Sync>;
@@ -28,6 +30,8 @@ pub enum FieldSize {
 #[derive(Clone)]
 pub struct SearchField {
     data: SharedTextInputData,
+    /// Gives the signals of `data` back when the field is gone.
+    _keep: FieldData,
     on_change: Option<OnChange>,
     size: FieldSize,
 }
@@ -35,8 +39,10 @@ pub struct SearchField {
 impl SearchField {
     /// A field showing `placeholder` while empty.
     pub fn new(placeholder: &str) -> Self {
+        let keep = FieldData::new();
         Self {
-            data: text_input_data_with_placeholder(placeholder),
+            data: keep.text_input_with_placeholder(placeholder),
+            _keep: keep,
             on_change: None,
             size: FieldSize::default(),
         }

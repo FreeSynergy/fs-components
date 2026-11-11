@@ -7,7 +7,8 @@ use blinc_cn::cn;
 use blinc_cn::components::textarea::textarea;
 use blinc_layout::div::{Div, div};
 use blinc_layout::text;
-use blinc_layout::widgets::text_area::{SharedTextAreaState, text_area_state};
+use blinc_layout::widgets::text_area::SharedTextAreaState;
+use fs_components_primitives::FieldData;
 
 use super::actions::Actions;
 use crate::labels::Labels;
@@ -23,7 +24,11 @@ pub(crate) fn editor(
 ) -> Div {
     // The shell keeps one area for the whole edit, so a redraw (failed save, resize) keeps the
     // cursor and the focus; without one (a picture) a fresh area is made.
-    let state = area.cloned().unwrap_or_else(|| new_area(&editing.draft));
+    let state = area.cloned().unwrap_or_else(|| {
+        let state = fs_components_primitives::build_scoped_text_area();
+        set_text(&state, &editing.draft);
+        state
+    });
     let draft = actions.draft.clone();
     let area = textarea(&state)
         .w_full()
@@ -68,14 +73,18 @@ pub(crate) fn editor(
         )
 }
 
-/// A text area holding `text`.
-pub(crate) fn new_area(text: &str) -> SharedTextAreaState {
-    let state = text_area_state();
+/// A text area holding `text`, its signals kept by `keep`.
+pub(crate) fn new_area(text: &str, keep: &FieldData) -> SharedTextAreaState {
+    let state = keep.text_area();
+    set_text(&state, text);
+    state
+}
+
+fn set_text(state: &SharedTextAreaState, text: &str) {
     state
         .lock()
         .unwrap_or_else(std::sync::PoisonError::into_inner)
         .set_value(text);
-    state
 }
 
 /// How many text rows fit into a window `height` pixels high (bar, buttons and padding take

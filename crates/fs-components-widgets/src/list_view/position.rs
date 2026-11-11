@@ -54,7 +54,7 @@ impl Drop for WindowNode {
 impl Default for ListPosition {
     fn default() -> Self {
         Self {
-            scroll: ScrollRef::new(),
+            scroll: fs_components_primitives::scroll_ref(),
             physics: Arc::new(Mutex::new(ScrollPhysics::default())),
             wanted: Arc::new(AtomicUsize::new(NONE)),
             cursor: Arc::new(AtomicUsize::new(NONE)),
@@ -149,7 +149,7 @@ impl ListPosition {
     /// The rows in view, for these measures.
     pub(crate) fn window(&self, offset: f32, measure: Measure) -> Computed<Vec<usize>> {
         // Made once and kept across builds, so no build's scope may own it: `WindowNode` gives it back.
-        let watch = Owner::detached(|| self.scroll.watch_y(offset));
+        let watch = fs_components_primitives::scroll_watch(&self.scroll, offset);
         if watch.try_get().is_none_or(|y| (y - offset).abs() > 0.5) {
             watch.set(offset);
         }

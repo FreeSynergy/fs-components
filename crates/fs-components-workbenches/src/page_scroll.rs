@@ -21,7 +21,7 @@ impl Default for PageScroll {
     fn default() -> Self {
         Self {
             physics: Arc::new(Mutex::new(ScrollPhysics::default())),
-            scroll: ScrollRef::new(),
+            scroll: fs_components_primitives::scroll_ref(),
             shown: Arc::new(Mutex::new(String::new())),
         }
     }
