@@ -1,0 +1,25 @@
+[package]
+name = "fs-components-map-fuzz"
+version = "0.0.0"
+edition = "2024"
+publish = false
+description = "Fuzz target of the vector tile decoder of fs-components-map (cargo-fuzz): no tile may take more memory than its budget"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+
+[dependencies.fs-components-map]
+path = ".."
+
+# Not a member of the workspace of fs-components: it is built by `cargo fuzz` only.
+[workspace]
+
+[[bin]]
+name = "mvt_decode"
+path = "fuzz_targets/mvt_decode.rs"
+test = false
+doc = false
+bench = false

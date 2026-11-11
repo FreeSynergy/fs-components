@@ -17,6 +17,7 @@ pub use contact_input::{
     OnChange as ContactOnChange, email_input, email_problem, phone_input, phone_problem,
 };
 pub use field_data::{
-    FieldData, build_scoped_text_area, collect as collect_field_data, scroll_ref, scroll_watch,
+    FieldData, build_scoped_text_area, collect as collect_field_data, dispose_effect_later,
+    scroll_ref, scroll_watch,
 };
 pub use search_field::{FieldSize, SearchField};

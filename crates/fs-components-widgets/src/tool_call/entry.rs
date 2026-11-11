@@ -6,7 +6,7 @@ use blinc_layout::selector::ScrollRef;
 use blinc_layout::widgets::scroll::SharedScrollPhysics;
 
 use super::model::ToolCall;
-use blinc_core::reactive::{EffectId, SignalId, dispose_host_effect, dispose_signal};
+use blinc_core::reactive::{EffectId, SignalId, dispose_signal};
 
 pub(super) type Call = (String, String);
 pub(super) type EntryKey = (String, String, String);
@@ -40,9 +40,10 @@ pub(super) struct Watch {
 }
 
 impl Watch {
-    /// Give it back. Never under the guard's lock: the effect locks the guard when it runs.
+    /// Give it back. Never under the guard's lock: the effect locks the guard when it runs. Safe inside an effect or a
+    /// computed too (the graph lock is not taken there).
     pub(super) fn dispose(self) {
-        dispose_host_effect(self.effect);
+        fs_components_primitives::dispose_effect_later(self.effect);
         dispose_signal(self.offset);
     }
 }
