@@ -6,6 +6,7 @@
 
 mod contact;
 
+use std::sync::atomic::Ordering::SeqCst;
 use std::sync::{Arc, Mutex};
 
 use fs_admin_frontend::{Backend, BackendError, ManualClock, Outcome, Record, Values};
@@ -95,14 +96,8 @@ impl Memory {
 
 impl Backend for Memory {
     fn reconnect(&self) -> Result<(), BackendError> {
-        self.reconnects
-            .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
-        assert!(
-            !self
-                .reconnect_panics
-                .load(std::sync::atomic::Ordering::SeqCst),
-            "a backend that panics"
-        );
+        self.reconnects.fetch_add(1, SeqCst);
+        assert!(!self.reconnect_panics.load(SeqCst), "a backend that panics");
         if let Some(e) = self.reconnect_error.lock().unwrap().clone() {
             return Err(e);
         }
@@ -115,10 +110,7 @@ impl Backend for Memory {
     }
 
     fn list(&self, query: &Values) -> Result<Vec<Record>, BackendError> {
-        let n = self
-            .list_calls
-            .fetch_add(1, std::sync::atomic::Ordering::SeqCst)
-            + 1;
+        let n = self.list_calls.fetch_add(1, SeqCst) + 1;
         if *self.fail_list_call.lock().unwrap() == Some(n) {
             return Err(BackendError::Unavailable("one call lost".into()));
         }
@@ -213,10 +205,7 @@ impl Backend for Memory {
                 index,
                 problem: fs_types::RecordProblem::Value(fs_types::TypeProblem::Character),
             };
-            match self
-                .create_refusal
-                .load(std::sync::atomic::Ordering::SeqCst)
-            {
+            match self.create_refusal.load(SeqCst) {
                 1 => return Err(BackendError::Rejected(vec![])),
                 2 => {
                     return Err(BackendError::Rejected(vec![
@@ -245,11 +234,7 @@ impl Backend for Memory {
         let mut records = self.records.lock().unwrap();
         let out = match command.kind {
             CommandKind::Create => {
-                let id = format!(
-                    "urn:uuid:{:08}",
-                    self.next_id
-                        .fetch_add(1, std::sync::atomic::Ordering::SeqCst)
-                );
+                let id = format!("urn:uuid:{:08}", self.next_id.fetch_add(1, SeqCst));
                 records.push(Record {
                     id: id.clone(),
                     values: input.clone(),
