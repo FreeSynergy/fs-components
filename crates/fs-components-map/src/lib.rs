@@ -32,6 +32,7 @@ mod scene;
 mod surface;
 mod tiles;
 mod widget;
+mod wire;
 
 pub use choose::{AREA_BUDGET, DOT_BUDGET, LINE_BUDGET};
 pub use command::{MapCommand, PAN_STEP, ZOOM_STEP, command_for_key};

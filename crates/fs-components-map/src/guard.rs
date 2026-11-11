@@ -22,6 +22,7 @@
 //! points of 8 bytes: 2 TB. The estimate here is `(C + 1) * G * 8` = 2e12 bytes; the limit is 64 MiB.
 
 use crate::mvt::MvtError;
+use crate::wire::{Cursor, Value, too_much};
 
 /// The most bytes a tile may have (a vector tile is some tens of kilobytes; busy ones a few hundred).
 pub const MAX_TILE_BYTES: usize = 4 * 1024 * 1024;
@@ -56,73 +57,6 @@ const TAG_BYTES: u64 = 64;
 /// What the scan found: the extent of each layer, in the order of the layers (`None` = the layer gives none: 4096).
 pub(crate) struct Scanned {
     pub extents: Vec<Option<u32>>,
-}
-
-struct Cursor<'a>(&'a [u8]);
-
-impl<'a> Cursor<'a> {
-    fn varint(&mut self) -> Result<u64, MvtError> {
-        let mut value = 0u64;
-        for shift in (0..70).step_by(7) {
-            let (&byte, rest) = self.0.split_first().ok_or_else(|| bad("cut off number"))?;
-            self.0 = rest;
-            if shift < 64 {
-                value |= u64::from(byte & 0x7f) << shift;
-            }
-            if byte & 0x80 == 0 {
-                return Ok(value);
-            }
-        }
-        Err(bad("number too long"))
-    }
-
-    /// The next field: its number, and what it holds (a number, or the bytes of a nested message or packed list).
-    fn field(&mut self) -> Result<Option<(u64, Value<'a>)>, MvtError> {
-        if self.0.is_empty() {
-            return Ok(None);
-        }
-        let key = self.varint()?;
-        let value = match key & 7 {
-            0 => Value::Number(self.varint()?),
-            1 => {
-                self.take(8)?;
-                Value::Skipped
-            }
-            2 => {
-                let len = usize::try_from(self.varint()?).map_err(|_| bad("length"))?;
-                Value::Bytes(self.take(len)?)
-            }
-            5 => {
-                self.take(4)?;
-                Value::Skipped
-            }
-            _ => return Err(bad("unknown wire type")),
-        };
-        Ok(Some((key >> 3, value)))
-    }
-
-    fn take(&mut self, len: usize) -> Result<&'a [u8], MvtError> {
-        if len > self.0.len() {
-            return Err(bad("cut off field"));
-        }
-        let (head, rest) = self.0.split_at(len);
-        self.0 = rest;
-        Ok(head)
-    }
-}
-
-enum Value<'a> {
-    Number(u64),
-    Bytes(&'a [u8]),
-    Skipped,
-}
-
-fn bad(why: &str) -> MvtError {
-    MvtError(format!("not a vector tile: {why}"))
-}
-
-fn too_much(what: &str) -> MvtError {
-    MvtError(format!("tile refused: {what}"))
 }
 
 /// Geometry commands of one feature: the numbers, and the buffers `mvt-reader` makes besides the first one.
