@@ -153,7 +153,7 @@ pub fn choice(
 
 #[cfg(test)]
 mod tests {
-    use std::sync::{Arc, Mutex};
+    use std::sync::Arc;
 
     use blinc_core::owner::BuildScope;
     use blinc_core::reactive::global_graph;
@@ -172,10 +172,7 @@ mod tests {
     /// made with Blinc's constructors directly (the scope takes the signals with it).
     #[test]
     fn the_signals_of_a_slot_outlive_the_page_build_that_made_it_and_go_with_the_slot() {
-        static SERIAL: Mutex<()> = Mutex::new(());
-        let _g = SERIAL
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        let _g = crate::view::graph_test_lock();
         let say: Arc<dyn Say> = Arc::new(KeysAsText);
         let look = Look::new(StyleId::Admin, false);
         let on: OnText = Arc::new(|_| {});

@@ -3,7 +3,7 @@ resolver = "2"
 members = ["crates/*"]
 
 [workspace.package]
-version = "0.0.7"
+version = "0.0.8"
 edition = "2024"
 license = "MIT OR Apache-2.0"
 rust-version = "1.89"
@@ -20,5 +20,5 @@ blinc_noto_emoji = { git = "https://github.com/FreeSynergy/Blinc", tag = "fs-bli
 blinc_theme = { git = "https://github.com/FreeSynergy/Blinc", tag = "fs-blinc-3" }
 
 # fs-interfaces: one tag for every crate (the two packages come from the same repository, so one source in the tree).
-fs-interfaces = { git = "https://github.com/FreeSynergy/fs-interfaces", tag = "v0.0.17" }
-fs-types = { git = "https://github.com/FreeSynergy/fs-interfaces", tag = "v0.0.17" }
+fs-interfaces = { git = "https://github.com/FreeSynergy/fs-interfaces", tag = "v0.0.18" }
+fs-types = { git = "https://github.com/FreeSynergy/fs-interfaces", tag = "v0.0.18" }

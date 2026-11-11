@@ -9,6 +9,8 @@ mod buttons;
 mod card;
 mod clock;
 mod entry;
+#[cfg(test)]
+mod entry_tests;
 mod guard;
 mod handle;
 mod labels;

@@ -5,16 +5,25 @@
 //!
 //! What is found: the calls (also split over lines, and as `Type::function(` from the path), the constructors of the
 //! data types (`new`, `with_placeholder`, `default`), the keyed variants, and an alias made with `use ... as`. What is
-//! not: a macro that expands to such a call. Two places are allowed by name (below), each with its reason.
+//! not: a macro that expands to such a call. `Default` is looked for in three shapes (`default_holes`): a statement that
+//! names one of the data types and ends in `Default::default()` or `<path>::default()` (`let d: TextInputData =
+//! Default::default()`, `let d: Arc<Mutex<TextInputData>> = Arc::default()`, `<TextInputData>::default()`), and a struct
+//! with `#[derive(Default)]` that has a field of one of the types (it would make the data without the one way). **Not
+//! found by a text search:** `Default::default()` whose type is only known by inference (a function argument, a field in
+//! `..Default::default()` of a struct that is not itself derived) and a `Default` that is written by hand in an `impl`.
+//! Two places are allowed by name (below), each with its reason.
 //!
 //! Pattern: none (tests). Reads the sources, needs nothing else.
 #![allow(clippy::pedantic)]
+
+#[path = "one_way/holes.rs"]
+mod holes;
 
 use std::fs;
 use std::path::{Path, PathBuf};
 
 /// Looked for in the code with comments and all white space taken out.
-const FORBIDDEN: [&str; 16] = [
+const FORBIDDEN: [&str; 17] = [
     "text_input_data(",
     "text_input_data_with_placeholder(",
     "text_input_data_keyed",
@@ -31,6 +40,7 @@ const FORBIDDEN: [&str; 16] = [
     "ScrollRef::default",
     "watch_y(",
     "SharedTextAreaState::default",
+    "SharedTextInputData::default",
 ];
 
 /// The names that must not be renamed with `use ... as`.
@@ -105,6 +115,7 @@ fn no_source_makes_field_data_or_a_scroll_watch_outside_the_one_way() {
             .to_string_lossy()
             .replace('\\', "/");
         if name == "fs-components-primitives/tests/one_way.rs"
+            || name == "fs-components-primitives/tests/one_way/holes.rs"
             || ALLOWED.iter().any(|(allowed, _)| *allowed == name)
         {
             continue;
@@ -115,6 +126,9 @@ fn no_source_makes_field_data_or_a_scroll_watch_outside_the_one_way() {
             if squeezed.contains(word) {
                 found.push(format!("{name}: {word}"));
             }
+        }
+        for hole in holes::default_holes(&squeezed) {
+            found.push(format!("{name}: {hole}"));
         }
         let spaced = code.split_whitespace().collect::<Vec<_>>().join(" ");
         for word in ALIASED {

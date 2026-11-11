@@ -23,7 +23,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, PoisonError};
 
 use blinc_core::owner::Owner;
-use blinc_core::reactive::Signal;
+use blinc_core::reactive::{EffectId, Signal, dispose_host_effect, global_graph};
 use blinc_layout::selector::ScrollRef;
 use blinc_layout::widgets::text_area::{SharedTextAreaState, text_area_state};
 use blinc_layout::widgets::text_input::{
@@ -32,6 +32,8 @@ use blinc_layout::widgets::text_input::{
 
 static NEXT: AtomicU64 = AtomicU64::new(1);
 static PENDING: Mutex<Vec<u64>> = Mutex::new(Vec::new());
+/// Effects that were to be given back while the graph was locked by the thread asking (inside an effect or a computed).
+static PENDING_EFFECTS: Mutex<Vec<EffectId>> = Mutex::new(Vec::new());
 
 thread_local! {
     static OWNERS: RefCell<HashMap<u64, Owner>> = RefCell::new(HashMap::new());
@@ -95,6 +97,7 @@ impl FieldData {
 /// Give back what dropped keepers held, for the keepers made on this thread. Called by every `FieldData` method
 /// that makes something; call it by hand where none is made for a long time.
 pub fn collect() {
+    give_back_pending_effects();
     let ids: Vec<u64> =
         std::mem::take(&mut *PENDING.lock().unwrap_or_else(PoisonError::into_inner));
     if ids.is_empty() {
@@ -113,6 +116,47 @@ pub fn collect() {
             .lock()
             .unwrap_or_else(PoisonError::into_inner)
             .extend(foreign);
+    }
+}
+
+/// Give an effect back to the reactive graph, safely from anywhere (a `Drop` too). `dispose_host_effect` takes the
+/// graph lock directly, so called by a thread that is inside an effect or a computed (which hold that lock while they
+/// run) it never returns. Here the lock is only tried: if it is free the effect goes now (and so does whatever was
+/// queued before), if not the id is queued and goes at the next call of this function or of [`collect`], on any
+/// thread. Never call `dispose_host_effect` directly from code that may run inside an effect.
+pub fn dispose_effect_later(effect: EffectId) {
+    PENDING_EFFECTS
+        .lock()
+        .unwrap_or_else(PoisonError::into_inner)
+        .push(effect);
+    give_back_pending_effects();
+}
+
+fn give_back_pending_effects() {
+    let free = match global_graph().try_lock() {
+        Ok(_guard) => true,
+        Err(std::sync::TryLockError::Poisoned(_)) => {
+            // a poisoned graph cannot be used any more: forget what waits
+            PENDING_EFFECTS
+                .lock()
+                .unwrap_or_else(PoisonError::into_inner)
+                .clear();
+            false
+        }
+        Err(std::sync::TryLockError::WouldBlock) => false,
+    };
+    if !free {
+        return;
+    }
+    // the guard is gone here; between the try and the disposal another thread may hold the lock for a moment (the
+    // disposal waits), but this thread holds none, so it cannot be waiting for itself
+    let ids = std::mem::take(
+        &mut *PENDING_EFFECTS
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner),
+    );
+    for id in ids {
+        dispose_host_effect(id);
     }
 }
 

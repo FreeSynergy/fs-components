@@ -82,7 +82,8 @@ impl Drop for Watcher {
             .unwrap_or_else(PoisonError::into_inner)
             .take();
         if let Some(effect) = effect {
-            blinc_core::reactive::dispose_host_effect(effect.id());
+            // the last clone may fall inside an effect or a computed, which hold the graph lock: never take it here
+            fs_components_primitives::dispose_effect_later(effect.id());
         }
     }
 }
@@ -96,6 +97,7 @@ fn default_probe(id: &str) -> Option<f32> {
 impl MessageList {
     /// A list over `source`, at the newest message.
     pub fn new(source: Arc<dyn MessageSource>) -> Self {
+        fs_components_primitives::collect_field_data();
         let default = 96.0;
         let count = source.count();
         let inner = Inner {

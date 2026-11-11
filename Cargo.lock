@@ -943,7 +943,7 @@ checksum = "aa9a19cbb55df58761df49b23516a86d432839add4af60fc256da840f66ed35b"
 
 [[package]]
 name = "fs-admin-frontend"
-version = "0.0.7"
+version = "0.0.8"
 dependencies = [
  "blinc_animation",
  "blinc_app",
@@ -963,7 +963,7 @@ dependencies = [
 
 [[package]]
 name = "fs-components"
-version = "0.0.7"
+version = "0.0.8"
 dependencies = [
  "blinc_animation",
  "blinc_app",
@@ -976,7 +976,7 @@ dependencies = [
 
 [[package]]
 name = "fs-components-app"
-version = "0.0.7"
+version = "0.0.8"
 dependencies = [
  "blinc_app",
  "blinc_cn",
@@ -990,7 +990,7 @@ dependencies = [
 
 [[package]]
 name = "fs-components-calendar-grid"
-version = "0.0.7"
+version = "0.0.8"
 dependencies = [
  "blinc_animation",
  "blinc_app",
@@ -1007,7 +1007,7 @@ dependencies = [
 
 [[package]]
 name = "fs-components-charts"
-version = "0.0.7"
+version = "0.0.8"
 dependencies = [
  "blinc_app",
  "blinc_cn",
@@ -1021,7 +1021,7 @@ dependencies = [
 
 [[package]]
 name = "fs-components-fields"
-version = "0.0.7"
+version = "0.0.8"
 dependencies = [
  "blinc_animation",
  "blinc_app",
@@ -1039,7 +1039,7 @@ dependencies = [
 
 [[package]]
 name = "fs-components-kanban"
-version = "0.0.7"
+version = "0.0.8"
 dependencies = [
  "blinc_animation",
  "blinc_app",
@@ -1056,7 +1056,7 @@ dependencies = [
 
 [[package]]
 name = "fs-components-primitives"
-version = "0.0.7"
+version = "0.0.8"
 dependencies = [
  "blinc_cn",
  "blinc_core",
@@ -1067,7 +1067,7 @@ dependencies = [
 
 [[package]]
 name = "fs-components-render"
-version = "0.0.7"
+version = "0.0.8"
 dependencies = [
  "blinc_app",
  "blinc_cn",
@@ -1081,11 +1081,11 @@ dependencies = [
 
 [[package]]
 name = "fs-components-styles"
-version = "0.0.7"
+version = "0.0.8"
 
 [[package]]
 name = "fs-components-timeline"
-version = "0.0.7"
+version = "0.0.8"
 dependencies = [
  "blinc_animation",
  "blinc_app",
@@ -1104,7 +1104,7 @@ dependencies = [
 
 [[package]]
 name = "fs-components-widgets"
-version = "0.0.7"
+version = "0.0.8"
 dependencies = [
  "blinc_animation",
  "blinc_app",
@@ -1122,11 +1122,11 @@ dependencies = [
 
 [[package]]
 name = "fs-components-words"
-version = "0.0.7"
+version = "0.0.8"
 
 [[package]]
 name = "fs-components-workbenches"
-version = "0.0.7"
+version = "0.0.8"
 dependencies = [
  "blinc_app",
  "blinc_cn",
@@ -1144,7 +1144,7 @@ dependencies = [
 [[package]]
 name = "fs-interfaces"
 version = "0.0.1"
-source = "git+https://github.com/FreeSynergy/fs-interfaces?tag=v0.0.17#298cebc7d376b591de1767e0a36cdfb0f0d74bda"
+source = "git+https://github.com/FreeSynergy/fs-interfaces?tag=v0.0.18#5fa4a8f012c1e2532dc9ca78273705d1e2bae8c5"
 dependencies = [
  "capnp",
  "idna",
@@ -1153,7 +1153,7 @@ dependencies = [
 [[package]]
 name = "fs-types"
 version = "0.0.1"
-source = "git+https://github.com/FreeSynergy/fs-interfaces?tag=v0.0.17#298cebc7d376b591de1767e0a36cdfb0f0d74bda"
+source = "git+https://github.com/FreeSynergy/fs-interfaces?tag=v0.0.18#5fa4a8f012c1e2532dc9ca78273705d1e2bae8c5"
 dependencies = [
  "capnp",
  "chrono",

@@ -16,6 +16,8 @@ mod model;
 mod scroll;
 mod styles;
 mod view;
+#[cfg(test)]
+mod watcher_tests;
 mod window;
 
 pub use estimate::estimate;
