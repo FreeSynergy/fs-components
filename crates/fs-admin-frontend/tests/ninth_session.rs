@@ -121,18 +121,46 @@ fn a_command_the_core_stops_offering_while_its_form_is_open_does_not_run() {
 }
 
 #[test]
-fn try_again_is_two_halves_so_the_connecting_holds_no_lock_and_a_second_press_does_nothing() {
+fn try_again_is_two_halves_so_the_work_holds_no_lock_and_a_second_press_does_nothing() {
     let mem = Memory::new(vec![record("urn:1", &[("name", &["Ada"])])]);
     *mem.list_error.lock().unwrap() = Some(handshake(WORDS));
     let mut s = open(&mem);
-    let backend = s.retry_begin().expect("the first press starts a try");
+    let job = s.retry_begin().expect("the first press starts a try");
     assert!(
         s.retry_begin().is_none(),
         "a second press while one runs does nothing"
     );
-    // the connecting happens here, outside the session (a worker in the window)
-    let connected = backend.reconnect();
-    assert!(s.retry_finish(connected));
+    // connecting, reading and asking the core happen here, outside the session (a worker in the window)
+    let calls_before = mem.list_calls.load(Ordering::SeqCst);
+    let outcome = job.run();
+    assert!(
+        mem.list_calls.load(Ordering::SeqCst) > calls_before,
+        "the reading was done by the job"
+    );
+    let calls_after_job = mem.list_calls.load(Ordering::SeqCst);
+    assert!(s.retry_finish(outcome));
+    assert_eq!(
+        mem.list_calls.load(Ordering::SeqCst),
+        calls_after_job,
+        "putting the answers in reads nothing under the lock"
+    );
     assert_eq!(mem.reconnects.load(Ordering::SeqCst), 1);
+    assert_eq!(s.list().rows().len(), 1);
     assert!(s.retry_begin().is_some(), "free again after the try");
+}
+
+#[test]
+fn a_backend_that_panics_in_reconnect_is_a_failed_try_and_try_again_still_works() {
+    let mem = Memory::new(vec![record("urn:1", &[("name", &["Ada"])])]);
+    *mem.list_error.lock().unwrap() = Some(handshake(WORDS));
+    let mut s = open(&mem);
+    mem.reconnect_panics.store(true, Ordering::SeqCst);
+    assert!(!s.retry(), "a failed try, not a hang");
+    let told = s.messages().current();
+    assert!(told.iter().any(|m| m.code == "unavailable"), "{told:?}");
+    mem.reconnect_panics.store(false, Ordering::SeqCst);
+    assert!(
+        s.retry_begin().is_some(),
+        "Try again is not dead: `retrying` was reset"
+    );
 }

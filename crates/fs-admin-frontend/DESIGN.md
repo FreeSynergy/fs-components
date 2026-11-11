@@ -72,3 +72,5 @@ The generated Admin frontend of ADR 0066: from the type description of a program
 * **v0.0.17: read-only fields** (`FieldDescription::read_only`, `RecordProblem::ReadOnly`): the form of `change` leaves them out (they stay on the detail screen) and `submit_changes` never puts one into the `Edit`, which `Edit::check` would refuse; the finding has the key `problem.read-only` should a program still send one.
 * A command that the core stops offering while its form is open does not run: `Session::submit` asks `is_supported` again.
 * Tests: `tests/ninth_session.rs` (handshake, retry, read-only, locked while open) and `tests/ninth_view.rs` (the message drawn with words and button; Quit closes the window).
+
+* **"Try again" never ends up dead (review of 2026-11-10):** everything slow of a try happens in `RetryJob::run` with no lock held (connect again, read the records, ask the core about its commands); only its answers go into the session in `retry_finish`, under the lock. A backend that panics in `reconnect`, `list` or `supported` is a failed try (`unavailable`), so `retrying` is always reset and the next "Try again" works. Tests: `ninth_session.rs`.

@@ -53,6 +53,8 @@ pub struct Memory {
     /// Counts the calls of `reconnect`; it answers this error while it is set, else it clears `list_error`.
     pub reconnects: std::sync::atomic::AtomicUsize,
     pub reconnect_error: Mutex<Option<BackendError>>,
+    /// `reconnect` panics while this is set.
+    pub reconnect_panics: std::sync::atomic::AtomicBool,
     /// Every `run` answers this error while it is set.
     pub run_error: Mutex<Option<BackendError>>,
     pub description: TypeDescription,
@@ -76,6 +78,7 @@ impl Memory {
             next_id: std::sync::atomic::AtomicUsize::new(100),
             reconnects: std::sync::atomic::AtomicUsize::new(0),
             reconnect_error: Mutex::new(None),
+            reconnect_panics: std::sync::atomic::AtomicBool::new(false),
             run_error: Mutex::new(None),
             description: contact(),
         })
@@ -94,6 +97,12 @@ impl Backend for Memory {
     fn reconnect(&self) -> Result<(), BackendError> {
         self.reconnects
             .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        assert!(
+            !self
+                .reconnect_panics
+                .load(std::sync::atomic::Ordering::SeqCst),
+            "a backend that panics"
+        );
         if let Some(e) = self.reconnect_error.lock().unwrap().clone() {
             return Err(e);
         }
