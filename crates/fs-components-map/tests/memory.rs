@@ -62,6 +62,8 @@ fn allowed(len: usize) -> usize {
     usize::try_from(budget).unwrap()
 }
 
+// One test on purpose (the counting allocator sees every thread): it runs the cases one after the other.
+#[allow(clippy::too_many_lines)]
 #[test]
 fn no_tile_takes_more_memory_than_its_budget_and_the_bombs_take_next_to_none() {
     let bombs: Vec<(&str, Vec<u8>)> = vec![
