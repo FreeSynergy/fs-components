@@ -92,7 +92,18 @@ pub(in crate::file_manager) fn band(
         }
         _ => {}
     }
-    Some(area)
+    // The box of the band: exactly as high as the estimate says and clipping what is taller, which is why the
+    // estimate must not be low (`files_band_buttons.rs` compares the buttons with this box).
+    Some(
+        div()
+            .id(format!("{name}-band"))
+            .class("fs-files-band")
+            .flex_shrink_0()
+            .w(width)
+            .h(band_height(state, width))
+            .overflow_clip()
+            .child(area),
+    )
 }
 
 fn row() -> Div {
