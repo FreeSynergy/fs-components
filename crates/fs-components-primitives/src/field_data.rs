@@ -8,10 +8,14 @@
 //! clone of the [`FieldData`] is dropped (never under the graph lock: the ids are queued and given back at the next
 //! [`FieldData::text_input`], [`FieldData::text_area`] or [`collect`] on the thread that made them).
 //!
-//! Workaround for the Blinc defect ec776dcf (signals of long-lived data are owned by the build scope); it goes away
-//! with fs-blinc-5 (`DataSignals`). Nothing else in the workspace may call `text_input_data()`,
-//! `text_area_state()`, `TextInputData::new`, `TextAreaState::new`, `ScrollRef::new` or `watch_y`: the test
-//! `tests/one_way.rs` of this crate fails if one does.
+//! Workaround for the Blinc defect ec776dcf (signals of long-lived data are owned by the build scope); it goes away as
+//! soon as Blinc itself keeps the field data detached from the build. Nothing else in the workspace (sources, tests,
+//! examples, benches) may call the Blinc constructors of field data or `watch_y`: the test `tests/one_way.rs` of this
+//! crate fails if one does (it cannot see through macros; a macro that expands to such a call is not caught).
+//!
+//! Threads: the signals of a keeper are given back by the thread that made them (the registry of scopes is per
+//! thread, as Blinc's scopes are). A keeper dropped after that thread has ended leaves its entries in the pending list
+//! for good (a few ids; nothing else is held). Call [`collect`] on the thread that builds the pages.
 
 use std::cell::RefCell;
 use std::collections::HashMap;

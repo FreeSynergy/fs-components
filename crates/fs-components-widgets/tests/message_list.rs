@@ -252,3 +252,31 @@ fn empty_and_unreadable_conversations_say_so() {
     assert!(ink(&broken, (0, 0, 400, 120), bg) > 300);
     assert_ne!(empty, broken);
 }
+
+/// Fall C for the scroll watcher: the effect is made once per list while a page is built; the next fresh build
+/// disposes that build's scope, and the list (which keeps the effect) must still have it.
+#[test]
+fn the_scroll_watcher_of_a_list_outlives_the_build_that_started_it() {
+    use blinc_core::owner::BuildScope;
+    use blinc_core::reactive::global_graph;
+    let _g = serial();
+    let effects = || global_graph().lock().unwrap().stats().effect_count;
+    let base = effects();
+    let list = list_of(vec![person("p", "Sam"), ai("a", "Sam")]);
+    let mut scope = BuildScope::new();
+    let pass = scope.begin();
+    let tree = layout(list.build(520.0, 300.0), 520.0, 300.0);
+    scope.finish(pass);
+    drop(tree);
+    assert_eq!(effects(), base + 1, "one watcher");
+    for _ in 0..50 {
+        let pass = scope.begin();
+        drop(layout(list.build(520.0, 300.0), 520.0, 300.0));
+        scope.finish(pass);
+    }
+    assert_eq!(
+        effects(),
+        base + 1,
+        "still the one watcher after fresh builds: not disposed, not doubled"
+    );
+}

@@ -50,6 +50,7 @@ impl MessageList {
     fn watch_scroll(&self) {
         let mut slot = self
             .watch
+            .0
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
         if slot.is_some() {
@@ -57,9 +58,15 @@ impl MessageList {
         }
         let watch =
             fs_components_primitives::scroll_watch(&self.position.scroll, self.position.offset());
-        let this = self.clone();
-        *slot = Some(blinc_core::reactive::effect(move |graph| {
-            this.on_scroll(graph.get(watch).unwrap_or(0.0));
+        // Only what the watcher needs, and the list weakly: the effect lives as long as the list, not longer.
+        let (shared, live) = (Arc::downgrade(&self.shared), self.live);
+        *slot = Some(blinc_core::owner::Owner::detached(|| {
+            blinc_core::reactive::effect(move |graph| {
+                let y = graph.get(watch).unwrap_or(0.0);
+                if let Some(shared) = shared.upgrade() {
+                    Self::scrolled(&shared, live, y);
+                }
+            })
         }));
     }
 

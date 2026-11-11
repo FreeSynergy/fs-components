@@ -8,8 +8,8 @@ mod common;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
-use blinc_layout::widgets::text_area::text_area_state;
 use common::{Input, draw, layout, serial};
+use fs_components_primitives::FieldData;
 use fs_components_widgets::drafts::{Draft, DraftStore};
 use fs_components_widgets::keys::{Key, KeyEvent};
 use fs_components_widgets::message_composer::{
@@ -84,7 +84,8 @@ fn nothing_or_white_space_is_not_sent() {
 #[test]
 fn what_the_text_area_does_to_text_is_known() {
     // The composer holds its own copy of what the area reported; this records what the area says.
-    let area = text_area_state();
+    let keep = FieldData::new();
+    let area = keep.text_area();
     for text in ["a\nb", "a\n", "a\r\nb", "a  ", "\u{1F600}x"] {
         area.lock().unwrap().set_value(text);
         let back = area.lock().unwrap().value();

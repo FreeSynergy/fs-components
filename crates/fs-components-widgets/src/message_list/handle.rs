@@ -63,9 +63,28 @@ pub struct MessageList {
     pub(super) position: ListPosition,
     pub(super) labels: Labels,
     pub(super) id: String,
-    pub(super) watch: Arc<Mutex<Option<blinc_core::reactive::Effect>>>,
+    pub(super) watch: Arc<Watcher>,
     pub(super) approvals: Approvals,
     pub(super) slots: Arc<std::sync::atomic::AtomicUsize>,
+}
+
+/// The effect that watches the scroll position: made once per list, owned by no build (a build's scope would dispose
+/// it at the next fresh build and leave the watcher dead while this still says it runs), given back when the last
+/// clone of the list is gone.
+#[derive(Default)]
+pub(super) struct Watcher(pub(super) Mutex<Option<blinc_core::reactive::Effect>>);
+
+impl Drop for Watcher {
+    fn drop(&mut self) {
+        let effect = self
+            .0
+            .get_mut()
+            .unwrap_or_else(PoisonError::into_inner)
+            .take();
+        if let Some(effect) = effect {
+            blinc_core::reactive::dispose_host_effect(effect.id());
+        }
+    }
 }
 
 fn default_probe(id: &str) -> Option<f32> {

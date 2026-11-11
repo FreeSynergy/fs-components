@@ -150,3 +150,65 @@ pub fn choice(
     }
     row
 }
+
+#[cfg(test)]
+mod tests {
+    use std::sync::{Arc, Mutex};
+
+    use blinc_core::owner::BuildScope;
+    use blinc_core::reactive::global_graph;
+    use fs_components_fields::{KeysAsText, Look, Say};
+    use fs_components_styles::StyleId;
+    use fs_types::{BasicType, FieldDescription};
+
+    use super::{Body, OnText, Slot};
+
+    fn live() -> usize {
+        global_graph().lock().unwrap().stats().signal_count
+    }
+
+    /// Fall C at the slot: a slot is made while a page is built; the page is built again and the scope of the first
+    /// build is disposed; the slot lives on (it is cached) and so must the signals of its data. Red when the data is
+    /// made with Blinc's constructors directly (the scope takes the signals with it).
+    #[test]
+    fn the_signals_of_a_slot_outlive_the_page_build_that_made_it_and_go_with_the_slot() {
+        static SERIAL: Mutex<()> = Mutex::new(());
+        let _g = SERIAL
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        let say: Arc<dyn Say> = Arc::new(KeysAsText);
+        let look = Look::new(StyleId::Admin, false);
+        let on: OnText = Arc::new(|_| {});
+        for (basic, plain) in [(BasicType::MultilineText, true), (BasicType::Email, false)] {
+            let field = FieldDescription::new("f", basic).label("f");
+            fp_collect();
+            let base = live();
+            let mut scope = BuildScope::new();
+            let pass = scope.begin();
+            let slot = Slot::new(look, &say, &field, "x", "f-0", None, Arc::clone(&on));
+            scope.finish(pass);
+            assert_eq!(matches!(slot.body, Body::Plain(_)), plain, "{basic:?}");
+            let made = live();
+            assert!(made > base, "{basic:?}: the slot makes signals");
+            let pass = scope.begin();
+            scope.finish(pass);
+            assert_eq!(
+                live(),
+                made,
+                "{basic:?}: the signals died with the build that made the slot"
+            );
+            for _ in 0..1000 {
+                let pass = scope.begin();
+                scope.finish(pass);
+            }
+            assert_eq!(live(), made, "{basic:?}: constant over 1000 page builds");
+            drop(slot);
+            fp_collect();
+            assert_eq!(live(), base, "{basic:?}: the slot gives its signals back");
+        }
+    }
+
+    fn fp_collect() {
+        fs_components_primitives::collect_field_data();
+    }
+}

@@ -3,8 +3,10 @@
 //! Pattern: Facade (more of the handle's methods, kept apart for size). The reader away from the
 //! bottom is never moved by what arrives; at the bottom the list follows.
 
-use super::handle::MessageList;
+use super::handle::{Inner, MessageList};
+use crate::live::Live;
 use std::ops::Range;
+use std::sync::{Arc, Mutex, PoisonError};
 
 use super::window::covered;
 
@@ -90,8 +92,13 @@ impl MessageList {
 
     /// The scroll position changed (called from the scroll watcher; also by tests).
     pub fn on_scroll(&self, y: f32) {
+        Self::scrolled(&self.shared, self.live, y);
+    }
+
+    /// What [`MessageList::on_scroll`] does, from the parts the scroll watcher keeps.
+    pub(super) fn scrolled(shared: &Arc<Mutex<Inner>>, live: Live, y: f32) {
         let rebuild = {
-            let mut inner = self.lock();
+            let mut inner = shared.lock().unwrap_or_else(PoisonError::into_inner);
             if inner.built.is_empty() {
                 return; // nothing drawn yet: the first drawing decides where the list stands
             }
@@ -108,7 +115,6 @@ impl MessageList {
         if rebuild {
             // Called from inside the reactive graph (the scroll watcher): drawing again from here
             // would write a signal while the graph is locked, so it is done from outside.
-            let live = self.live;
             std::thread::spawn(move || live.refresh());
         }
     }
