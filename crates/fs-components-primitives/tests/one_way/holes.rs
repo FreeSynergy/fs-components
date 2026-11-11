@@ -14,35 +14,80 @@ const DATA_TYPES: [&str; 5] = [
     "SharedTextAreaState",
 ];
 
-/// `Default` as a way to make the data: a statement that names a data type and calls a `default`, and a struct that
-/// derives `Default` and holds a data type. Works on the code without comments and white space.
+/// What makes a value out of nothing: `Default::default()`, `T::default()`, `.unwrap_or_default()`, `.or_default()`,
+/// `.unwrap_or_else(Default::default)`.
+const MAKERS: [&str; 4] = [
+    "::default()",
+    "unwrap_or_default()",
+    "or_default()",
+    "Default::default",
+];
+
+/// `Default` as a way to make the data. Works on the code without comments and white space. Found:
+/// * a statement that names a data type and makes a value from nothing (`MAKERS`), also `<T>::default()` and
+///   `Arc::<Mutex<T>>::default()`;
+/// * a function whose return type names a data type and whose body uses one of `MAKERS`
+///   (`fn f() -> TextInputData { Default::default() }`);
+/// * a type alias that names a data type (`type X = TextInputData;`: the name is hidden from every other search);
+/// * a struct with `#[derive(Default)]` or `#[cfg_attr(.., derive(Default))]` that has a field of a data type.
 pub fn default_holes(squeezed: &str) -> Vec<String> {
     let mut found = Vec::new();
-    let mut from = 0;
-    while let Some(at) = squeezed[from..].find("::default()") {
-        let at = from + at;
-        from = at + 1;
-        let start = squeezed[..at].rfind([';', '{', '}']).map_or(0, |i| i + 1);
-        let statement = &squeezed[start..at];
-        if let Some(name) = DATA_TYPES.iter().find(|n| statement.contains(**n)) {
-            found.push(format!("{statement}::default() with {name}"));
-        }
-    }
-    let mut from = 0;
-    while let Some(at) = squeezed[from..].find("#[derive(") {
-        let at = from + at;
-        from = at + 1;
-        let Some(end) = squeezed[at..].find(")]") else {
-            break;
-        };
-        let derives = &squeezed[at + "#[derive(".len()..at + end];
-        if !derives
-            .split(',')
-            .any(|d| d == "Default" || d.ends_with("::Default"))
-        {
+    let mut start = 0;
+    for (end, c) in squeezed.char_indices() {
+        if !matches!(c, ';' | '{' | '}') {
             continue;
         }
-        if let Some((name, body)) = struct_after(&squeezed[at + end + 2..])
+        let statement = &squeezed[start..end];
+        start = end + 1;
+        if let (Some(name), Some(maker)) = (
+            DATA_TYPES.iter().find(|n| statement.contains(**n)),
+            MAKERS.iter().find(|m| statement.contains(**m)),
+        ) {
+            found.push(format!("{statement} makes {name} with {maker}"));
+        }
+        let bare = statement.strip_prefix("pub").unwrap_or(statement);
+        let bare = bare
+            .strip_prefix(|c| c == '(')
+            .map_or(bare, |_| bare.find(')').map_or(bare, |i| &bare[i + 1..]));
+        if bare.starts_with("type")
+            && let Some(name) = DATA_TYPES.iter().find(|n| statement.contains(**n))
+        {
+            found.push(format!("{statement} hides {name} behind a type alias"));
+        }
+    }
+    // a function that returns a data type and makes it with a maker in its body
+    let mut from = 0;
+    while let Some(at) = squeezed[from..].find("->") {
+        let at = from + at;
+        from = at + 2;
+        let Some(open) = squeezed[from..].find(['{', ';']) else {
+            break;
+        };
+        let (ret, rest) = squeezed[from..].split_at(open);
+        if !rest.starts_with('{') || !DATA_TYPES.iter().any(|n| ret.contains(*n)) {
+            continue;
+        }
+        let body = &rest[..=closing(rest)];
+        if let Some(maker) = MAKERS.iter().find(|m| body.contains(**m)) {
+            found.push(format!("a function returning {ret} uses {maker}"));
+        }
+    }
+    // a derive of Default, also inside cfg_attr
+    let mut from = 0;
+    while let Some(at) = squeezed[from..].find("#[") {
+        let at = from + at;
+        from = at + 2;
+        let end = closing(&squeezed[at + 1..]) + at + 2;
+        let attribute = squeezed.get(at..end).unwrap_or("");
+        let derives_default = attribute.find("derive(").is_some_and(|i| {
+            attribute[i..]
+                .split([',', '(', ')'])
+                .any(|d| d == "Default" || d.ends_with("::Default"))
+        });
+        if !derives_default {
+            continue;
+        }
+        if let Some((name, body)) = struct_after(&squeezed[end..])
             && let Some(data) = made_by_default(body)
         {
             found.push(format!("#[derive(Default)] on {name} holds {data}"));
@@ -180,5 +225,52 @@ fn the_checker_sees_a_default_that_makes_the_data() {
     assert!(
         holes("#[derive(Default)]\nstruct S { a: u8 }\nstruct T { data: TextInputData }")
             .is_empty()
+    );
+    // the ways round
+    assert_eq!(
+        holes("let d: SharedTextInputData = Arc::default();").len(),
+        1
+    );
+    assert_eq!(
+        holes("let d = Some(x).unwrap_or_default(); let _: TextInputData = d;").len(),
+        0,
+        "two statements: not seen"
+    );
+    assert_eq!(
+        holes("let d: TextInputData = opt.unwrap_or_default();").len(),
+        1
+    );
+    assert_eq!(
+        holes("let d: TextAreaState = map.entry(k).or_default();").len(),
+        1
+    );
+    assert_eq!(
+        holes("let d: ScrollRef = opt.unwrap_or_else(Default::default);").len(),
+        1
+    );
+    assert_eq!(
+        holes("fn f() -> TextInputData { Default::default() }").len(),
+        1
+    );
+    assert_eq!(
+        holes("fn f() -> SharedTextInputData {\n    Arc::default()\n}").len(),
+        1
+    );
+    assert_eq!(holes("fn f() -> TextInputData { make() }").len(), 0);
+    assert_eq!(holes("fn f() -> u8 { Default::default() }").len(), 0);
+    assert_eq!(holes("type Data = SharedTextInputData;").len(), 1);
+    assert_eq!(
+        holes("pub(crate) type Data = Arc<Mutex<TextInputData>>;").len(),
+        1
+    );
+    assert_eq!(holes("type Names = Vec<String>;").len(), 0);
+    assert_eq!(
+        holes("#[cfg_attr(test, derive(Debug, Default))]\nstruct S { d: SharedTextInputData }")
+            .len(),
+        1
+    );
+    assert_eq!(
+        holes("#[cfg_attr(test, derive(Debug))]\nstruct S { d: SharedTextInputData }").len(),
+        0
     );
 }

@@ -5,12 +5,14 @@
 //!
 //! What is found: the calls (also split over lines, and as `Type::function(` from the path), the constructors of the
 //! data types (`new`, `with_placeholder`, `default`), the keyed variants, and an alias made with `use ... as`. What is
-//! not: a macro that expands to such a call. `Default` is looked for in three shapes (`default_holes`): a statement that
-//! names one of the data types and ends in `Default::default()` or `<path>::default()` (`let d: TextInputData =
-//! Default::default()`, `let d: Arc<Mutex<TextInputData>> = Arc::default()`, `<TextInputData>::default()`), and a struct
-//! with `#[derive(Default)]` that has a field of one of the types (it would make the data without the one way). **Not
-//! found by a text search:** `Default::default()` whose type is only known by inference (a function argument, a field in
-//! `..Default::default()` of a struct that is not itself derived) and a `Default` that is written by hand in an `impl`.
+//! not: a macro that expands to such a call. `Default` is looked for in `holes.rs` (`default_holes`): a statement that
+//! names one of the data types and makes a value from nothing (`Default::default()`, `<path>::default()`,
+//! `unwrap_or_default()`, `or_default()`), a function that returns one and makes it so, a type alias that hides one, and
+//! a struct with `#[derive(Default)]` or `#[cfg_attr(.., derive(Default))]` that has a field of one of the types (it
+//! would make the data without the one way; collections of them are empty by default and are fine). **Not found by a
+//! text search:** a `Default` whose type is only known by inference (a function argument, `..Default::default()` of a
+//! struct that is not itself derived, a value made in one statement and typed in the next), a `Default` written by hand
+//! in an `impl`, and a macro.
 //! Two places are allowed by name (below), each with its reason.
 //!
 //! Pattern: none (tests). Reads the sources, needs nothing else.
@@ -44,13 +46,15 @@ const FORBIDDEN: [&str; 17] = [
 ];
 
 /// The names that must not be renamed with `use ... as`.
-const ALIASED: [&str; 6] = [
+const ALIASED: [&str; 8] = [
     "text_input_data",
     "text_input_data_with_placeholder",
     "text_area_state",
     "TextInputData",
     "TextAreaState",
     "ScrollRef",
+    "SharedTextInputData",
+    "SharedTextAreaState",
 ];
 
 /// Files that may call Blinc directly, and why.
