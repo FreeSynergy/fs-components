@@ -11,6 +11,9 @@ use std::sync::Arc;
 use crate::backend::{Backend, BackendError, Record, Values};
 use crate::session::Session;
 
+/// The records as read, and what the core said about its commands.
+type Read = (Result<Vec<Record>, BackendError>, BTreeMap<String, bool>);
+
 /// What a try needs, taken from the session so that the work needs no lock.
 pub struct RetryJob {
     backend: Arc<dyn Backend>,
@@ -22,7 +25,7 @@ pub struct RetryJob {
 /// What a try found out, to be put into the session by [`Session::retry_finish`].
 pub struct RetryOutcome {
     connected: Result<(), BackendError>,
-    read: Option<(Result<Vec<Record>, BackendError>, BTreeMap<String, bool>)>,
+    read: Option<Read>,
 }
 
 impl RetryOutcome {
