@@ -2,7 +2,7 @@
 
 The component *Karte* of ADR 0066: everything that shows a map lives here, no program draws one. A program gives markers ([`MapData`]) and, if it has them, vector tiles as bytes ([`TileBytes`]); the crate decodes (MVT), plans, draws and puts the view into the window shell as a `Surface`.
 
-Moved here from `fs-components-widgets/src/map_view` (branch `maps-gui`, wip, 2026-11-06) and checked: its 18 tests pass, now in this crate. The crate has 37 tests now (math 13, ui 5, mvt 3, guard 7, loading 9).
+Moved here from `fs-components-widgets/src/map_view` (branch `maps-gui`, wip, 2026-11-06) and checked: its 18 tests pass, now in this crate. The crate has 39 tests now (math 13, ui 6, mvt 3, guard 9, loading 8).
 
 ## Pattern map
 

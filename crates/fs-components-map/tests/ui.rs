@@ -223,3 +223,47 @@ fn many_elements_are_planned_and_drawn_in_a_measured_time() {
     assert!(visible <= 14_000, "{visible}");
     assert!(drawn.as_secs() < 60, "{drawn:?}");
 }
+
+struct Credited;
+impl fs_components_map::TileBytes for Credited {
+    fn tile(&self, _: TileId) -> Result<Option<Vec<u8>>, String> {
+        Ok(None)
+    }
+    fn attribution(&self) -> Option<String> {
+        Some("© OpenStreetMap contributors".into())
+    }
+}
+
+struct NoMarkers;
+impl fs_components_map::MapData for NoMarkers {
+    fn markers(&self) -> Vec<Marker> {
+        Vec::new()
+    }
+    fn picked(&self, _: &str) {}
+}
+
+#[test]
+fn the_source_names_who_made_the_data_and_the_map_shows_it() {
+    let _g = serial();
+    let s = fs_components_map::MapSurface::new(
+        "map",
+        MapViewLabels::default(),
+        Arc::new(NoMarkers),
+        Some(Arc::new(Credited)),
+        MapPosition::new(7.44, 46.95, 2.0),
+    );
+    let tree = layout(
+        fs_components_app::Surface::build(&s, 600.0, 400.0),
+        600.0,
+        400.0,
+    );
+    let node = tree
+        .query_by_id("map-attribution")
+        .expect("the attribution is shown");
+    let b = tree.get_absolute_bounds(node).expect("bounds");
+    assert!(
+        b.x + b.width <= 600.5 && b.y + b.height <= 400.5,
+        "inside the view"
+    );
+    assert!(b.width > 20.0 && b.height > 6.0);
+}

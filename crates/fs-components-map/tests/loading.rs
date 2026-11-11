@@ -253,23 +253,6 @@ fn the_oldest_tiles_go_when_there_are_too_many() {
 }
 
 #[test]
-fn the_source_names_who_made_the_data_and_the_map_shows_it() {
-    let _g = serial();
-    let source = Scripted::new(Mode::Missing);
-    let s = surface(&source, limits(5000, 60_000, 8), 2.0);
-    let tree = common::layout(s.build(600.0, 400.0), 600.0, 400.0);
-    let node = tree
-        .query_by_id("map-attribution")
-        .expect("the attribution is shown");
-    let b = tree.get_absolute_bounds(node).expect("bounds");
-    assert!(
-        b.x + b.width <= 600.5 && b.y + b.height <= 400.5,
-        "inside the view"
-    );
-    assert!(b.width > 20.0 && b.height > 6.0);
-}
-
-#[test]
 fn the_time_limit_acts_without_a_draw_a_watchdog_frees_the_places_on_time() {
     let _g = serial();
     let source = Scripted::new(Mode::Hang);
