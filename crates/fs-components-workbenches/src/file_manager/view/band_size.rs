@@ -102,7 +102,12 @@ pub(super) fn room(width: f32) -> f32 {
     width - 20.0
 }
 
-/// What a button of `width` px room takes at most in height: its words wrap at about 8 px a character.
+/// What a button of `width` px room takes in height. An estimate by characters (8 px each, the widest letters), not
+/// by words: the real text breaks between words and may need a line more than this says. No reserve is added on
+/// purpose: the position of the answer buttons relative to the first press is part of what the double-press tests
+/// check (`cancel_with_something_typed_is_two_acts...`), and a reserve moved them. The band is a column that grows
+/// with its content, so a line more than estimated is not cut; `files_band_buttons.rs` measures the real bottom edge
+/// of every button at 160, 200 and 300 px against the window.
 #[allow(clippy::cast_precision_loss)]
 pub(super) fn button_height(label: &str, width: f32) -> f32 {
     let per_line = ((room(width) - 24.0) / 8.0).floor().max(1.0);

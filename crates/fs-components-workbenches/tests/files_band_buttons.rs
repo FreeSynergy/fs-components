@@ -131,7 +131,11 @@ const SCENES: [Scene; 12] = [
 fn inside(h: &Harness, what: &str, scene: &str, width: f32) {
     assert!(h.has(what), "{width} {scene}: there is no {what}");
     let (fl, _, fr, _) = h.edges(what);
-    let (bl, _, br, _) = h.button_edges(what);
+    let (bl, bt, br, bb) = h.button_edges(what);
+    assert!(
+        bt >= -0.5 && bb <= 700.5,
+        "{width} {scene} {what}: button {bt}..{bb} is outside the window height"
+    );
     assert!(
         bl >= fl - 0.5 && br <= fr + 0.5,
         "{width} {scene} {what}: button {bl}..{br} is outside its frame {fl}..{fr}"
