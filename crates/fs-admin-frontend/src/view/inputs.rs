@@ -56,7 +56,11 @@ impl Slot {
     ) -> Self {
         let keep = FieldData::new();
         let body = Self::body(look, say, field, (text, id), suggest, &on, &keep);
-        Self { body, on, _keep: keep }
+        Self {
+            body,
+            on,
+            _keep: keep,
+        }
     }
 
     fn body(
