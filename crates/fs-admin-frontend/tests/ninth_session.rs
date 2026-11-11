@@ -164,3 +164,29 @@ fn a_backend_that_panics_in_reconnect_is_a_failed_try_and_try_again_still_works(
         "Try again is not dead: `retrying` was reset"
     );
 }
+
+#[test]
+fn a_backend_that_panics_in_list_or_supported_is_a_failed_try_and_try_again_still_works() {
+    for which in ["list", "supported"] {
+        let mem = Memory::new(vec![record("urn:1", &[("name", &["Ada"])])]);
+        *mem.list_error.lock().unwrap() = Some(handshake(WORDS));
+        let mut s = open(&mem);
+        let flag = if which == "list" {
+            &mem.list_panics
+        } else {
+            &mem.supported_panics
+        };
+        flag.store(true, Ordering::SeqCst);
+        assert!(!s.retry(), "{which}: a failed try, not a hang");
+        let told = s.messages().current();
+        assert!(
+            told.iter().any(|m| m.code == "unavailable"),
+            "{which}: {told:?}"
+        );
+        flag.store(false, Ordering::SeqCst);
+        assert!(
+            s.retry_begin().is_some(),
+            "{which}: Try again is not dead: `retrying` was reset"
+        );
+    }
+}

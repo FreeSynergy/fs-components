@@ -56,6 +56,10 @@ pub struct Memory {
     pub reconnect_error: Mutex<Option<BackendError>>,
     /// `reconnect` panics while this is set.
     pub reconnect_panics: std::sync::atomic::AtomicBool,
+    /// `list` panics while this is set.
+    pub list_panics: std::sync::atomic::AtomicBool,
+    /// `supported` panics while this is set.
+    pub supported_panics: std::sync::atomic::AtomicBool,
     /// Every `run` answers this error while it is set.
     pub run_error: Mutex<Option<BackendError>>,
     pub description: TypeDescription,
@@ -80,6 +84,8 @@ impl Memory {
             reconnects: std::sync::atomic::AtomicUsize::new(0),
             reconnect_error: Mutex::new(None),
             reconnect_panics: std::sync::atomic::AtomicBool::new(false),
+            list_panics: std::sync::atomic::AtomicBool::new(false),
+            supported_panics: std::sync::atomic::AtomicBool::new(false),
             run_error: Mutex::new(None),
             description: contact(),
         })
@@ -106,10 +112,12 @@ impl Backend for Memory {
     }
 
     fn supported(&self, command: &str) -> bool {
+        assert!(!self.supported_panics.load(SeqCst), "a backend that panics");
         !self.unsupported.lock().unwrap().contains(command)
     }
 
     fn list(&self, query: &Values) -> Result<Vec<Record>, BackendError> {
+        assert!(!self.list_panics.load(SeqCst), "a backend that panics");
         let n = self.list_calls.fetch_add(1, SeqCst) + 1;
         if *self.fail_list_call.lock().unwrap() == Some(n) {
             return Err(BackendError::Unavailable("one call lost".into()));
