@@ -40,7 +40,7 @@ pub struct Slot {
     /// Hears the text after every change.
     pub on: OnText,
     /// Keeps the signals of the input alive as long as the slot lives (not as long as the page build that made it).
-    keep: FieldData,
+    _keep: FieldData,
 }
 
 impl Slot {
@@ -56,7 +56,7 @@ impl Slot {
     ) -> Self {
         let keep = FieldData::new();
         let body = Self::body(look, say, field, (text, id), suggest, &on, &keep);
-        Self { body, on, keep }
+        Self { body, on, _keep: keep }
     }
 
     fn body(
