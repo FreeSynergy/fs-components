@@ -51,6 +51,8 @@ struct After {
 }
 
 enum Answer {
+    /// Nothing was sent (the work could not even be started).
+    NotSent(BackendError),
     Done(Result<Outcome, BackendError>, Option<After>),
     Found(Values, Result<Vec<Record>, BackendError>),
 }
@@ -71,7 +73,7 @@ impl SubmitOutcome {
             record: job.record.clone(),
             answer: match &job.call {
                 Call::Find(q) => Answer::Found(q.clone(), Err(error)),
-                _ => Answer::Done(Err(error), None),
+                _ => Answer::NotSent(error),
             },
         }
     }
@@ -233,6 +235,10 @@ impl Session {
                         .raise(crate::MessageKind::Error, "edited-after-send");
                 }
                 true
+            }
+            Answer::NotSent(e) => {
+                self.refused(&e);
+                false
             }
             Answer::Done(Err(BackendError::Unavailable(_)), _) => {
                 // A write that got no answer may or may not have been made: say so, and offer no "try again" that

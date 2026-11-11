@@ -16,6 +16,7 @@ use memory::{Memory, clock, contact, record};
 struct Spy {
     inner: Arc<Memory>,
     lists: Mutex<Vec<ThreadId>>,
+    supports: Mutex<Vec<ThreadId>>,
 }
 
 impl Backend for Spy {
@@ -24,6 +25,10 @@ impl Backend for Spy {
         self.inner.list(q)
     }
     fn supported(&self, c: &str) -> bool {
+        self.supports
+            .lock()
+            .unwrap()
+            .push(std::thread::current().id());
         self.inner.supported(c)
     }
     fn change(&self, r: &str, e: &fs_types::Edit) -> Result<Outcome, BackendError> {
@@ -36,7 +41,7 @@ impl Backend for Spy {
 
 /// Create a record with `Grace` while a search is set; the work runs on another thread, the answer is put in here.
 /// Returns how often the program was asked on this thread while the answer went in.
-fn asked_here_while_finishing(reject_search: bool) -> usize {
+fn asked_here_while_finishing(reject_search: bool) -> (usize, usize) {
     let mem = Memory::new(vec![
         record("urn:1", &[("name", &["Ada"])]),
         record("urn:2", &[("name", &["Alan"])]),
@@ -44,6 +49,7 @@ fn asked_here_while_finishing(reject_search: bool) -> usize {
     let spy = Arc::new(Spy {
         inner: mem.clone(),
         lists: Mutex::new(Vec::new()),
+        supports: Mutex::new(Vec::new()),
     });
     let mut s = Session::new(contact(), spy.clone(), clock());
     assert!(s.begin("find"));
@@ -56,32 +62,33 @@ fn asked_here_while_finishing(reject_search: bool) -> usize {
     let job = s.submit_begin().unwrap();
     let outcome = std::thread::spawn(move || job.run()).join().unwrap();
     let here = std::thread::current().id();
-    let before = spy
-        .lists
-        .lock()
-        .unwrap()
-        .iter()
-        .filter(|t| **t == here)
-        .count();
+    let count = |v: &Mutex<Vec<ThreadId>>| v.lock().unwrap().iter().filter(|t| **t == here).count();
+    let (l0, s0) = (count(&spy.lists), count(&spy.supports));
     assert!(s.submit_finish(outcome));
-    let after = spy
-        .lists
-        .lock()
-        .unwrap()
-        .iter()
-        .filter(|t| **t == here)
-        .count();
-    after - before
+    let asked = (count(&spy.lists) - l0, count(&spy.supports) - s0);
+    // What was not read beforehand must not have been replaced by a failure: the new record is shown.
+    assert!(
+        matches!(s.screen(), Screen::Detail(id) if id.starts_with("urn:uuid:")),
+        "the new record is shown: {:?}",
+        s.screen()
+    );
+    assert!(!s.is_stale());
+    let told = s.messages().current();
+    assert!(
+        !told.iter().any(|m| m.code == "unavailable"),
+        "a false 'unavailable' after a good command: {told:?}"
+    );
+    asked
 }
 
 #[test]
 fn the_program_is_not_asked_under_the_lock_when_the_new_record_is_not_in_the_narrowed_list() {
-    assert_eq!(asked_here_while_finishing(false), 0);
+    assert_eq!(asked_here_while_finishing(false), (0, 0));
 }
 
 #[test]
 fn the_program_is_not_asked_under_the_lock_when_the_narrowed_search_is_refused_now() {
-    assert_eq!(asked_here_while_finishing(true), 0);
+    assert_eq!(asked_here_while_finishing(true), (0, 0));
 }
 
 #[test]
