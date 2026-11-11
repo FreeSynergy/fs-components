@@ -236,10 +236,6 @@ impl Session {
                 }
                 true
             }
-            Answer::NotSent(e) => {
-                self.refused(&e);
-                false
-            }
             Answer::Done(Err(BackendError::Unavailable(_)), _) => {
                 // A write that got no answer may or may not have been made: say so, and offer no "try again" that
                 // would write twice.
@@ -248,7 +244,8 @@ impl Session {
                     .raise(crate::MessageKind::Error, "unknown-result");
                 false
             }
-            Answer::Done(Err(e), _) => {
+            // nothing was sent (no thread) or the program refused: the usual way
+            Answer::NotSent(e) | Answer::Done(Err(e), _) => {
                 self.refused(&e);
                 false
             }
