@@ -46,7 +46,6 @@ fn a_form_page_rebuilt_a_thousand_times_keeps_its_inputs_alive() {
     let mut input = Input::new();
     input.click(&mut tree, "cmd-create");
     ui::frame(&mut tree, W, H);
-    let mut tree = build(&s);
     let _ = build(&s);
     // Not counted here: Blinc's `cn::button` leaves 3 signals per build (found by probe, 0 for a text input),
     // a defect of its own; the leak of the field data is counted in `fs-components-fields/tests/rebuild.rs`.
