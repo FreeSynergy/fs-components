@@ -174,6 +174,73 @@ pub fn empty_keys(n: usize) -> Vec<u8> {
     tile(&[layer])
 }
 
+/// The mix of the review (probe H): one layer of point features, `with_tags` of them naming 57 tags each, and
+/// `with_text` naming one 40 KB value: the estimate is filled by an exact part (the big string) and a part that is
+/// hash-map heavy.
+pub fn tag_mix(with_tags: usize, with_text: usize) -> Vec<u8> {
+    let mut layer = Vec::new();
+    bytes_field(1, b"roads", &mut layer);
+    let mut pairs = Vec::new();
+    for k in 0..57u64 {
+        varint(k, &mut pairs);
+        varint(0, &mut pairs);
+    }
+    for i in 0..with_tags + with_text {
+        let mut f = Vec::new();
+        if i < with_tags {
+            bytes_field(2, &pairs, &mut f);
+        } else {
+            bytes_field(2, &[57, 1], &mut f);
+        }
+        number_field(3, 1, &mut f);
+        bytes_field(4, &[9, 0, 0], &mut f);
+        bytes_field(2, &f, &mut layer);
+    }
+    for k in 0..58 {
+        bytes_field(3, format!("{k:03}").as_bytes(), &mut layer);
+    }
+    let mut v0 = Vec::new();
+    number_field(4, 7, &mut v0);
+    bytes_field(4, &v0, &mut layer);
+    let mut v1 = Vec::new();
+    bytes_field(1, &vec![b'x'; 40_000], &mut v1);
+    bytes_field(4, &v1, &mut layer);
+    number_field(15, 2, &mut layer);
+    tile(&[layer])
+}
+
+/// A polygon with `holes` holes of nine points each (the case behind the factor of the budget: a forest with
+/// clearings): the outer ring and the holes, each `MoveTo`, `LineTo` x 8, `ClosePath`.
+pub fn polygon_with_holes(holes: usize) -> Vec<u8> {
+    let mut g = vec![9u64, 0, 0, (3 << 3) | 2, 8000, 0, 0, 8000, 7999, 0, 15];
+    for _ in 0..holes {
+        g.extend_from_slice(&[
+            9,
+            20,
+            20,
+            (8 << 3) | 2,
+            2,
+            0,
+            0,
+            2,
+            1,
+            0,
+            0,
+            1,
+            2,
+            0,
+            0,
+            2,
+            1,
+            0,
+            0,
+            1,
+            15,
+        ]);
+    }
+    tile(&[layer("water", 4096, &[feature(3, &g)])])
+}
+
 /// A tile as a map has it: a few layers, a few hundred features with short names.
 pub fn ordinary() -> Vec<u8> {
     let road = |i: i64| line(i, 0, i + 500, 900 + i);

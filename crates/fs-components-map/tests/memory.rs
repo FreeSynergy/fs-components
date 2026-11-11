@@ -57,9 +57,9 @@ fn peak_of(tile: &[u8]) -> (usize, bool) {
 }
 
 fn allowed(len: usize) -> usize {
+    // the budget as the guard counts it: the copy of the input is in it (no extra for it here)
     let budget = MAX_TILE_MEMORY.min(BUDGET_BASE + BUDGET_PER_BYTE * len as u64);
-    // the decoder also holds a copy of the input (`Reader::new(bytes.to_vec())`)
-    usize::try_from(budget).unwrap() + len
+    usize::try_from(budget).unwrap()
 }
 
 #[test]
@@ -112,6 +112,60 @@ fn no_tile_takes_more_memory_than_its_budget_and_the_bombs_take_next_to_none() {
         replayed += 1;
     }
     assert!(replayed >= 10, "{replayed} files in the corpus");
+    // tiles that are ACCEPTED and near the budget: the estimate must be an upper bound for them, not a guess. The mix
+    // of the review (probe H) in sizes around the budget: every one that the guard lets through must stay inside it.
+    let mut accepted_near = 0;
+    for (with_tags, with_text) in [
+        (3000, 100),
+        (3500, 150),
+        (4000, 150),
+        (4400, 100),
+        (4800, 60),
+        (5200, 20),
+        (7000, 430),
+        (8000, 380),
+    ] {
+        let tile = tag_mix(with_tags, with_text);
+        let (peak, ok) = peak_of(&tile);
+        assert!(
+            peak <= allowed(tile.len()),
+            "H mix {with_tags}/{with_text}: {} bytes in, peak {peak}, budget {} (decoded: {ok})",
+            tile.len(),
+            allowed(tile.len())
+        );
+        // near: more than 40% of the budget really taken (the estimate is about twice what is taken for this mix)
+        if ok && peak * 10 > allowed(tile.len()) * 4 {
+            accepted_near += 1;
+        }
+        println!(
+            "H mix {with_tags}/{with_text}: {} bytes in, peak {peak} bytes, decoded: {ok}",
+            tile.len()
+        );
+    }
+    assert!(
+        accepted_near >= 1,
+        "no mix was accepted near the budget: the test would say nothing"
+    );
+    // a real polygon with 300 holes of nine points has to decode (it is 6 KB, and about 15 MB are taken)
+    let polygon = polygon_with_holes(300);
+    let (peak, ok) = peak_of(&polygon);
+    assert!(
+        ok,
+        "a polygon with 300 holes is a tile: {:?}",
+        decode_tile(&polygon).err()
+    );
+    assert!(
+        peak <= allowed(polygon.len()),
+        "polygon: {} bytes in, peak {peak}",
+        polygon.len()
+    );
+    let areas = decode_tile(&polygon).unwrap().areas;
+    println!(
+        "polygon 300 holes: {} bytes in, peak {peak} bytes, {} area(s), {} ring(s)",
+        polygon.len(),
+        areas.len(),
+        areas.iter().map(|a| a.rings.len()).sum::<usize>()
+    );
     for (name, tile) in [
         ("an ordinary tile", ordinary()),
         ("100 points, 1 MiB name", multipoint_bomb(100, 1 << 20)),

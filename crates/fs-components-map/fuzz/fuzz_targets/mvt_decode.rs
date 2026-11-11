@@ -1,5 +1,5 @@
 //! Fuzz target: `decode_tile` on any bytes. The rule of the crate (see `DESIGN.md`): no tile takes more memory than
-//! its budget, `min(MAX_TILE_MEMORY, BUDGET_BASE + BUDGET_PER_BYTE * bytes)`, plus a copy of the input. A counting
+//! its budget, `min(MAX_TILE_MEMORY, BUDGET_BASE + BUDGET_PER_BYTE * bytes)` (the copies of the input are in it). A counting
 //! allocator measures the peak of every run; going over it is a finding (a panic here), as is any panic of the decoder.
 //!
 //! Pattern: none (a fuzz target). Run it only with a memory limit, see `DESIGN.md`.
@@ -49,9 +49,8 @@ fuzz_target!(|data: &[u8]| {
     let _ = decode_tile(data);
     let peak = PEAK.load(SeqCst).saturating_sub(before);
     let budget = MAX_TILE_MEMORY.min(BUDGET_BASE + BUDGET_PER_BYTE * data.len() as u64);
-    let allowed = usize::try_from(budget)
-        .unwrap_or(usize::MAX)
-        .saturating_add(data.len());
+    // the copies of the input are in the estimate: no extra
+    let allowed = usize::try_from(budget).unwrap_or(usize::MAX);
     assert!(
         peak <= allowed,
         "{} bytes of input took {peak} bytes, the budget is {allowed}",
