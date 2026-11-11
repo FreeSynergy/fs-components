@@ -4,143 +4,16 @@
 //! Pattern: none (tests). The sources are made to answer, hang, fail or panic on demand.
 
 mod common;
+mod loading_support;
 
 use std::collections::HashSet;
-use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::{Arc, Mutex};
-use std::time::{Duration, Instant};
+use std::sync::atomic::Ordering;
+use std::time::Duration;
 
 use common::serial;
 use fs_components_app::Surface;
-use fs_components_map::{
-    Limits, MOST_LOADING, MapData, MapPosition, MapSurface, MapViewLabels, Marker, TileBytes,
-    TileId,
-};
-use mvt::{GeomEncoder, GeomType, Tile};
-
-fn fixture() -> Vec<u8> {
-    let mut tile = Tile::new(4096);
-    let layer = tile.create_layer("roads");
-    let road = GeomEncoder::new(GeomType::Linestring)
-        .point(0.0, 2000.0)
-        .and_then(|g| g.point(4000.0, 2100.0))
-        .and_then(GeomEncoder::encode)
-        .unwrap();
-    tile.add_layer(layer.into_feature(road).into_layer())
-        .unwrap();
-    tile.to_bytes().unwrap()
-}
-
-struct Nothing;
-impl MapData for Nothing {
-    fn markers(&self) -> Vec<Marker> {
-        Vec::new()
-    }
-    fn picked(&self, _: &str) {}
-}
-
-/// What a source does with a tile.
-#[derive(Clone, Copy)]
-enum Mode {
-    Answer,
-    Hang,
-    Fail,
-    Panic,
-    Missing,
-}
-
-struct Scripted {
-    mode: Mutex<Mode>,
-    asked: Mutex<Vec<TileId>>,
-    running: AtomicUsize,
-    most_running: AtomicUsize,
-    release: Mutex<bool>,
-    bytes: Vec<u8>,
-}
-
-impl Scripted {
-    fn new(mode: Mode) -> Arc<Self> {
-        Arc::new(Self {
-            mode: Mutex::new(mode),
-            asked: Mutex::default(),
-            running: AtomicUsize::new(0),
-            most_running: AtomicUsize::new(0),
-            release: Mutex::new(false),
-            bytes: fixture(),
-        })
-    }
-    fn set(&self, mode: Mode) {
-        *self.mode.lock().unwrap() = mode;
-    }
-    fn asked(&self) -> usize {
-        self.asked.lock().unwrap().len()
-    }
-}
-
-impl TileBytes for Scripted {
-    fn tile(&self, id: TileId) -> Result<Option<Vec<u8>>, String> {
-        self.asked.lock().unwrap().push(id);
-        let now = self.running.fetch_add(1, Ordering::SeqCst) + 1;
-        self.most_running.fetch_max(now, Ordering::SeqCst);
-        let mode = *self.mode.lock().unwrap();
-        let answer = match mode {
-            Mode::Answer => Ok(Some(self.bytes.clone())),
-            Mode::Missing => Ok(None),
-            Mode::Fail => Err("the network is down".to_owned()),
-            Mode::Panic => panic!("a source that panics"),
-            Mode::Hang => {
-                while !*self.release.lock().unwrap() {
-                    std::thread::sleep(Duration::from_millis(5));
-                }
-                Ok(Some(self.bytes.clone()))
-            }
-        };
-        self.running.fetch_sub(1, Ordering::SeqCst);
-        answer
-    }
-    fn zoom_range(&self) -> (u8, u8) {
-        (0, 12)
-    }
-    fn attribution(&self) -> Option<String> {
-        Some("© OpenStreetMap contributors".into())
-    }
-}
-
-fn limits(timeout_ms: u64, retry_ms: u64, most_kept: usize) -> Limits {
-    Limits {
-        load_timeout: Duration::from_millis(timeout_ms),
-        retry_after: Duration::from_millis(retry_ms),
-        most_kept,
-        ..Limits::default()
-    }
-}
-
-fn surface(source: &Arc<Scripted>, limits: Limits, zoom: f64) -> MapSurface {
-    MapSurface::new(
-        "map",
-        MapViewLabels::default(),
-        Arc::new(Nothing),
-        Some(source.clone()),
-        MapPosition::new(7.44, 46.95, zoom),
-    )
-    .with_limits(limits)
-}
-
-fn until(what: &str, mut ready: impl FnMut() -> bool) {
-    let limit = Instant::now() + Duration::from_secs(10);
-    while !ready() {
-        assert!(Instant::now() < limit, "gave up waiting: {what}");
-        std::thread::sleep(Duration::from_millis(10));
-    }
-}
-
-/// Draw (which asks for the tiles) again and again until `ready`.
-fn draw_until(s: &MapSurface, what: &str, mut ready: impl FnMut() -> bool) {
-    until(what, || {
-        let _ = s.build(600.0, 400.0);
-        ready()
-    });
-}
+use fs_components_map::{MOST_LOADING, MapPosition, TileId};
+use loading_support::*;
 
 #[test]
 fn a_source_that_panics_leaves_the_tile_empty_and_the_map_alive() {
@@ -234,54 +107,6 @@ fn no_such_tile_is_kept_for_good() {
         asked,
         "an answer of 'none' is not asked again"
     );
-}
-
-#[test]
-fn the_oldest_tiles_go_when_there_are_too_many() {
-    let _g = serial();
-    let source = Scripted::new(Mode::Answer);
-    let s = surface(&source, limits(5000, 60_000, 3), 4.0);
-    // a view of many tiles, then others elsewhere: never more than three are kept
-    for lon in [0.0, 40.0, 80.0, 120.0] {
-        s.go_to(MapPosition::new(lon, 30.0, 4.0));
-        let wanted = source.asked() + 1;
-        draw_until(&s, "something new arrived", || source.asked() >= wanted);
-        std::thread::sleep(Duration::from_millis(50));
-        assert!(s.tiles_kept() <= 3, "{} kept", s.tiles_kept());
-    }
-    assert!(source.asked() > 3, "more were fetched than are kept");
-    assert!(s.tiles_kept() > 0);
-}
-
-#[test]
-fn the_kept_tiles_are_bounded_in_bytes_not_only_in_number() {
-    let _g = serial();
-    let source = Scripted::new(Mode::Answer);
-    let one = fs_components_map::decode_tile(&source.bytes)
-        .expect("the fixture decodes")
-        .memory();
-    assert!(one > 0);
-    let bound = 2 * one + one / 2; // room for two tiles, not for three
-    let s = surface(
-        &source,
-        Limits {
-            most_bytes: bound,
-            ..limits(5000, 60_000, 256)
-        },
-        4.0,
-    );
-    for lon in [0.0, 40.0, 80.0, 120.0, 160.0] {
-        s.go_to(MapPosition::new(lon, 30.0, 4.0));
-        let wanted = source.asked() + 1;
-        draw_until(&s, "something new arrived", || source.asked() >= wanted);
-        std::thread::sleep(Duration::from_millis(50));
-        assert!(
-            s.tiles_kept_bytes() <= bound,
-            "{} bytes kept, bound {bound}",
-            s.tiles_kept_bytes()
-        );
-    }
-    assert!(s.tiles_kept() >= 1 && s.tiles_kept_bytes() > 0);
 }
 
 #[test]
