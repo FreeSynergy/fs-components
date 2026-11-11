@@ -129,7 +129,8 @@ impl AdminSurface {
         let (session, live) = (Arc::clone(&self.env.session), self.live);
         Arc::new(move || {
             let Some(job) = lock(&session).submit_begin() else {
-                return; // nothing to send, or one command is on its way
+                live.refresh_now(); // nothing to send (the form marks its findings), or one command is on its way
+                return;
             };
             live.refresh_now(); // shows "running"
             let slot = Arc::new(Mutex::new(Some(job)));
