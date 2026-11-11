@@ -106,8 +106,13 @@ pub fn admin_window(
                         s.warn_unsaved();
                     }
                     None => {
-                        // The window closes and the event loop ends: everything is dropped in order, no `exit`.
-                        shell.quit();
+                        // The window closes and the event loop ends: everything is dropped in order, no `exit`. With no
+                        // window to close nothing happened: that is told, never silence (ADR 0065 point 5).
+                        if !shell.quit() {
+                            if let Some((_, s)) = surfaces.first() {
+                                s.warn_quit_failed();
+                            }
+                        }
                     }
                 }
             }

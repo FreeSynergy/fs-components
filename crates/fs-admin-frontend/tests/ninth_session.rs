@@ -119,3 +119,20 @@ fn a_command_the_core_stops_offering_while_its_form_is_open_does_not_run() {
     assert!(s.submit());
     assert_eq!(s.list().rows().len(), 2);
 }
+
+#[test]
+fn try_again_is_two_halves_so_the_connecting_holds_no_lock_and_a_second_press_does_nothing() {
+    let mem = Memory::new(vec![record("urn:1", &[("name", &["Ada"])])]);
+    *mem.list_error.lock().unwrap() = Some(handshake(WORDS));
+    let mut s = open(&mem);
+    let backend = s.retry_begin().expect("the first press starts a try");
+    assert!(
+        s.retry_begin().is_none(),
+        "a second press while one runs does nothing"
+    );
+    // the connecting happens here, outside the session (a worker in the window)
+    let connected = backend.reconnect();
+    assert!(s.retry_finish(connected));
+    assert_eq!(mem.reconnects.load(Ordering::SeqCst), 1);
+    assert!(s.retry_begin().is_some(), "free again after the try");
+}

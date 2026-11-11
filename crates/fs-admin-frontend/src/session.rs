@@ -26,6 +26,8 @@ pub struct Session {
     pub(crate) query: Values,
     /// The last reading of the records failed: what the list holds is old and no record of it is shown as current.
     pub(crate) stale: bool,
+    /// A "Try again" is connecting now.
+    pub(crate) retrying: bool,
     /// What the core said about each command when it was last asked (see [`Backend::supported`]).
     pub(crate) supported: std::collections::BTreeMap<String, bool>,
     pub(crate) screen: Screen,
@@ -48,6 +50,7 @@ impl Session {
             backend,
             query: Values::new(),
             stale: false,
+            retrying: false,
             supported: std::collections::BTreeMap::new(),
             screen: Screen::List,
             form: None,
@@ -160,10 +163,34 @@ impl Session {
         }
     }
 
-    /// "Try again" after a failed handshake: connect again, then read the records again. A failure is told again
-    /// (once), with its own words; success closes the message.
+    /// "Try again" after a failed handshake, all in one go (a test, or a caller that may wait): connect again, then
+    /// read the records again. A window uses [`Session::retry_begin`] and [`Session::retry_finish`] so that the
+    /// connecting does not hold the session or the interface thread.
     pub fn retry(&mut self) -> bool {
-        match self.backend.reconnect() {
+        match self.retry_begin() {
+            Some(backend) => {
+                let connected = backend.reconnect();
+                self.retry_finish(connected)
+            }
+            None => false,
+        }
+    }
+
+    /// First half of "Try again": the backend to connect again, to be called with no lock held; `None` when a try is
+    /// already running (a second press does nothing).
+    pub fn retry_begin(&mut self) -> Option<Arc<dyn Backend>> {
+        if self.retrying {
+            return None;
+        }
+        self.retrying = true;
+        Some(Arc::clone(&self.backend))
+    }
+
+    /// Second half: what `Backend::reconnect` answered. A failure is told again (once), with its own words; success
+    /// closes the message and reads the records again.
+    pub fn retry_finish(&mut self, connected: Result<(), BackendError>) -> bool {
+        self.retrying = false;
+        match connected {
             Ok(()) => {
                 self.messages.solve("handshake");
                 self.refresh_support();

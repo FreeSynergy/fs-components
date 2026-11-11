@@ -95,3 +95,21 @@ fn quit_closes_the_window_and_does_not_end_the_process() {
         "the window was asked to close"
     );
 }
+
+#[test]
+fn quit_with_no_window_to_close_says_so_and_is_not_silent() {
+    let _g = serial();
+    let mem = Memory::new(vec![record("urn:1", &[("name", &["Ada"])])]);
+    let say: Arc<dyn Say> = Arc::new(KeysAsText);
+    let surface = Arc::new(surface(&mem));
+    let views = vec![TypeView {
+        id: "Contact".to_owned(),
+        label: "type.Contact".to_owned(),
+        surface: Arc::clone(&surface),
+    }];
+    let app = admin_window("Test", &say, views, about(), "https://example.org".into()).unwrap();
+    let quit = app.with_shell(|s| s.handler_for(QUIT)).unwrap();
+    quit(QUIT); // no `set_quit`: no window is open
+    let told = surface.session().lock().unwrap().messages().current();
+    assert!(told.iter().any(|m| m.code == "quit-failed"), "{told:?}");
+}
