@@ -35,3 +35,4 @@ pub use list::{Column, Direction, ListModel};
 pub use messages::{Message, MessageKind, Messages};
 pub use screen::Screen;
 pub use session::Session;
+pub use session_retry::{RetryJob, RetryOutcome};

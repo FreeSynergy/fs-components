@@ -219,22 +219,23 @@ impl AdminSurface {
         // Connecting again can take seconds (the program starts a server): it runs on a worker, with no lock and not on
         // the interface thread, so the window does not freeze; the messages tell the window when it is done.
         let retry: Arc<dyn Fn() + Send + Sync> = Arc::new(move || {
-            let Some(backend) = lock(&session).retry_begin() else {
+            let Some(job) = lock(&session).retry_begin() else {
                 return; // one try is running already
             };
             let later = Arc::clone(&session);
             let worker = std::thread::Builder::new()
                 .name("fs-admin-reconnect".into())
                 .spawn(move || {
-                    let connected = backend.reconnect();
-                    lock(&later).retry_finish(connected);
+                    // `run` never panics out and is done with no lock held; only its answers go in under the lock
+                    let outcome = job.run();
+                    lock(&later).retry_finish(outcome);
                     live.refresh();
                 });
             if worker.is_err() {
                 // No thread to be had: the failure is told, never silence.
-                lock(&session).retry_finish(Err(crate::BackendError::Unavailable(
-                    "no thread to connect again".into(),
-                )));
+                lock(&session).retry_finish(crate::RetryOutcome::failed(
+                    crate::BackendError::Unavailable("no thread to connect again".into()),
+                ));
                 live.refresh_now();
             }
         });

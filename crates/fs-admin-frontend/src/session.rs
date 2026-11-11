@@ -165,9 +165,23 @@ impl Session {
 
     /// Read the records again with the search that is set. The error of a program that cannot answer stays.
     pub fn reload(&mut self) -> bool {
-        match self.backend.list(&self.query) {
+        let read = self.backend.list(&self.query);
+        self.apply_list(read, None)
+    }
+
+    /// Take what reading the records answered. `support` is what the core said about its commands, if that was
+    /// asked already (outside the session); else it is asked now.
+    pub(crate) fn apply_list(
+        &mut self,
+        read: Result<Vec<Record>, BackendError>,
+        support: Option<std::collections::BTreeMap<String, bool>>,
+    ) -> bool {
+        match read {
             Ok(records) => {
-                self.refresh_support();
+                match support {
+                    Some(map) => self.supported = map,
+                    None => self.refresh_support(),
+                }
                 self.list.set_records(records);
                 self.stale = false;
                 self.messages.solve("unavailable");
