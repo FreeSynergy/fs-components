@@ -22,6 +22,7 @@ pub mod messages;
 pub mod screen;
 pub mod session;
 mod session_done;
+mod session_retry;
 pub mod view;
 pub mod window;
 
