@@ -11,6 +11,7 @@ mod kinds;
 mod list;
 mod redraw;
 mod screens;
+mod submit;
 mod surface;
 mod value;
 

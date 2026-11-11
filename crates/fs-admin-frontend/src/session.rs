@@ -6,7 +6,7 @@
 
 use std::sync::Arc;
 
-use fs_types::{CommandKind, TypeDescription};
+use fs_types::TypeDescription;
 
 use crate::backend::{Backend, BackendError, Outcome, Record, Values};
 use crate::clock::Clock;
@@ -28,6 +28,14 @@ pub struct Session {
     pub(crate) stale: bool,
     /// A "Try again" is connecting now.
     pub(crate) retrying: bool,
+    /// A command is on its way to the program (between `submit_begin` and `submit_finish`).
+    pub(crate) phase: crate::session_submit::Phase,
+    /// What the form held when it was sent (to tell a person that text typed after sending was not sent).
+    pub(crate) in_flight: Option<Values>,
+    /// `submit_finish` is putting an answer in, under the lock: nothing may ask the program now (it could hang).
+    /// What the worker of a command read afterwards (by search), taken by `reload` instead of asking again.
+    pub(crate) preread: Vec<(Values, Result<Vec<Record>, BackendError>)>,
+    pub(crate) preread_support: Option<std::collections::BTreeMap<String, bool>>,
     /// What the core said about each command when it was last asked (see [`Backend::supported`]).
     pub(crate) supported: std::collections::BTreeMap<String, bool>,
     pub(crate) screen: Screen,
@@ -51,6 +59,10 @@ impl Session {
             query: Values::new(),
             stale: false,
             retrying: false,
+            phase: crate::session_submit::Phase::Idle,
+            in_flight: None,
+            preread: Vec::new(),
+            preread_support: None,
             supported: std::collections::BTreeMap::new(),
             screen: Screen::List,
             form: None,
@@ -165,8 +177,17 @@ impl Session {
 
     /// Read the records again with the search that is set. The error of a program that cannot answer stays.
     pub fn reload(&mut self) -> bool {
-        let read = self.backend.list(&self.query);
-        self.apply_list(read, None)
+        let read = match self.preread.iter().position(|(q, _)| *q == self.query) {
+            Some(at) => self.preread.remove(at).1,
+            // Under the lock of a finishing command the program is never asked (it may hang, and the window waits for
+            // the lock): what the worker did not read beforehand is told as a failed reading.
+            None if self.phase == crate::session_submit::Phase::Finishing => {
+                Err(BackendError::Unavailable("not read beforehand".into()))
+            }
+            None => self.backend.list(&self.query),
+        };
+        let support = self.preread_support.clone();
+        self.apply_list(read, support)
     }
 
     /// Take what reading the records answered. `support` is what the core said about its commands, if that was
@@ -239,6 +260,9 @@ impl Session {
 
     /// Back from a form, a question or an answer: to the record if there was one, else to the list.
     pub fn cancel(&mut self) {
+        if self.is_busy() {
+            return; // a command is on its way: the screen it answers to stays
+        }
         let back = match &self.screen {
             Screen::Command {
                 record: Some(id), ..
@@ -256,43 +280,16 @@ impl Session {
         self.leave_if_gone();
     }
 
-    /// Send the open form, or confirm the question. Returns whether the command ran.
+    /// Send the open form, or confirm the question, all in one go (a test, or a caller that may wait). A window uses
+    /// [`Session::submit_begin`], [`crate::SubmitJob::run`] and [`Session::submit_finish`] so that the server's time is never
+    /// the interface thread's. Returns whether the command ran.
     pub fn submit(&mut self) -> bool {
-        let (name, record) = match &self.screen {
-            Screen::Command { name, record } => (name.clone(), record.clone()),
-            Screen::Confirm { name, record } => (name.clone(), Some(record.clone())),
-            _ => return false,
-        };
-        let Some(plan) = self.command(&name).cloned() else {
-            return false;
-        };
-        // A form that was opened while the command was open may stand on after the core stopped offering it.
-        if !self.is_supported(&name) {
-            return false;
-        }
-        if plan.kind == CommandKind::Change {
-            return self.submit_change(&plan, record);
-        }
-        let mut input = match self.form.as_mut().map(FormModel::submit) {
-            Some(Ok(v)) => v,
-            Some(Err(_)) => return false,
-            None => Values::new(),
-        };
-        if let (Some(field), Some(id)) = (&plan.bound, &record) {
-            input.insert(field.clone(), vec![id.clone()]);
-        }
-        if plan.kind == CommandKind::Find {
-            return self.search(input);
-        }
-        match self.backend.run(&name, record.as_deref(), &input) {
-            Ok(outcome) => {
-                self.done(&plan, record, outcome);
-                true
+        match self.submit_begin() {
+            Some(job) => {
+                let outcome = job.run();
+                self.submit_finish(outcome)
             }
-            Err(e) => {
-                self.refused(&e);
-                false
-            }
+            None => false,
         }
     }
 }

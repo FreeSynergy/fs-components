@@ -175,7 +175,10 @@ impl AdminSurface {
         {
             return self.about_page(&about);
         }
-        let screen = lock(&self.env.session).screen().clone();
+        let (screen, busy) = {
+            let session = lock(&self.env.session);
+            (session.screen().clone(), session.is_busy())
+        };
         let (title, actions, body): (String, Vec<Div>, Div) = match &screen {
             Screen::List => self.list_screen(width, height),
             Screen::Detail(_) => self.detail_screen(),
@@ -187,9 +190,7 @@ impl AdminSurface {
                     &say.say("action.save"),
                     Weight::Primary,
                     "save",
-                    self.act(|s| {
-                        s.submit();
-                    }),
+                    self.submit_action(),
                 );
                 let cancel = button(
                     &say.say("action.cancel"),
@@ -250,6 +251,13 @@ impl AdminSurface {
             .bg(Look::color(look.palette().ground))
             .child(header(look, &title, actions))
             .child(message_bar(look, say, &messages, &dismiss, &retry))
+            .children(busy.then(|| {
+                div().id("running").child(look.text(
+                    say.say("message.running"),
+                    s.text.body,
+                    look.palette().text_weak,
+                ))
+            }))
             .child(body)
     }
 

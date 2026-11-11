@@ -158,6 +158,7 @@ fn the_create_form_takes_typed_text_into_the_model_and_sends_it() {
         "the text survives"
     );
     input.click(&mut tree, "save");
+    settle(&s);
     assert!(matches!(screen(&s), Screen::Detail(_)));
     assert_eq!(mem.records.lock().unwrap().len(), 4);
 }
@@ -238,8 +239,17 @@ fn review_1_opening_the_same_form_for_another_record_shows_that_record() {
         "the input showed another record's text: {shown:?}"
     );
     input.click(&mut tree, "save");
+    settle(&s);
     assert_eq!(
         mem.records.lock().unwrap()[2].values["name"],
         ["Alan Turing!"]
     );
+}
+
+/// A command runs on a worker: wait (with a limit) until its answer is in.
+fn settle(s: &AdminSurface) {
+    let limit = std::time::Instant::now() + std::time::Duration::from_secs(10);
+    while s.session().lock().unwrap().is_busy() && std::time::Instant::now() < limit {
+        std::thread::sleep(std::time::Duration::from_millis(5));
+    }
 }
