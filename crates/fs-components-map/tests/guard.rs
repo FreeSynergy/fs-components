@@ -122,7 +122,7 @@ fn the_cost_is_summed_over_the_tile_not_only_checked_per_feature() {
     assert!(decode_tile(&tile(&[layer("water", 4096, &[middling(100)])])).is_ok());
     // 400 of them in one tile: each is fine alone, together 16.3 million points, over the limit of 8 million
     let features: Vec<Vec<u8>> = (0..400).map(|_| middling(100)).collect();
-    assert!(40_703 * 400 > MAX_TILE_CELLS);
+    const { assert!(40_703 * 400 > MAX_TILE_CELLS) };
     let big = tile(&[layer("water", 4096, &features)]);
     assert!(big.len() < 200_000, "small in bytes: {}", big.len());
     let error = decode_tile(&big).expect_err("refused");
