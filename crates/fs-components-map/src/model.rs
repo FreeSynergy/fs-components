@@ -122,8 +122,10 @@ pub struct TileGeometry {
 }
 
 impl TileGeometry {
-    /// About how many bytes this tile holds in memory: the points (8 bytes each), the structs that carry them and the
-    /// text of the labels (counted for every label, though a feature's points share one copy: an upper bound).
+    /// About how many bytes this tile holds in memory, by the capacity of every list (what is reserved, not only what
+    /// is used: a list that grew by pushing keeps up to twice its length): the points (8 bytes each), the structs that
+    /// carry them and the text of the labels (counted for every label, though a feature's points share one copy: an
+    /// upper bound). The allocator's own overhead per block is not in it.
     #[must_use]
     pub fn memory(&self) -> usize {
         use std::mem::size_of;
@@ -132,24 +134,22 @@ impl TileGeometry {
             .areas
             .iter()
             .map(|a| {
-                size_of::<Area>()
-                    + a.rings
-                        .iter()
-                        .map(|r| size_of::<Vec<TilePoint>>() + r.len() * point)
-                        .sum::<usize>()
+                a.rings
+                    .iter()
+                    .map(|r| size_of::<Vec<TilePoint>>() + r.capacity() * point)
+                    .sum::<usize>()
             })
             .sum();
-        let lines: usize = self
-            .lines
-            .iter()
-            .map(|l| size_of::<Line>() + l.points.len() * point)
-            .sum();
-        let labels: usize = self
-            .labels
-            .iter()
-            .map(|l| size_of::<Label>() + l.text.len())
-            .sum();
-        size_of::<Self>() + areas + lines + self.dots.len() * size_of::<Dot>() + labels
+        let lines: usize = self.lines.iter().map(|l| l.points.capacity() * point).sum();
+        let labels: usize = self.labels.iter().map(|l| l.text.len()).sum();
+        size_of::<Self>()
+            + self.areas.capacity() * size_of::<Area>()
+            + areas
+            + self.lines.capacity() * size_of::<Line>()
+            + lines
+            + self.dots.capacity() * size_of::<Dot>()
+            + self.labels.capacity() * size_of::<Label>()
+            + labels
     }
 
     /// An empty tile of the given extent.

@@ -7,60 +7,14 @@
 //! they are decoded; if a guard fails, the limit of the process is what stops the test, not the machine.
 
 mod bombs;
-
-use std::alloc::{GlobalAlloc, Layout, System};
-use std::sync::atomic::{AtomicUsize, Ordering::SeqCst};
+mod counting;
 
 use bombs::*;
-use fs_components_map::{BUDGET_BASE, BUDGET_PER_BYTE, MAX_TILE_MEMORY, decode_tile};
-
-struct Counting;
-static LIVE: AtomicUsize = AtomicUsize::new(0);
-static PEAK: AtomicUsize = AtomicUsize::new(0);
-
-unsafe impl GlobalAlloc for Counting {
-    unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
-        // SAFETY: the same call, on the system allocator, with the layout the caller gave.
-        let p = unsafe { System.alloc(layout) };
-        if !p.is_null() {
-            let now = LIVE.fetch_add(layout.size(), SeqCst) + layout.size();
-            PEAK.fetch_max(now, SeqCst);
-        }
-        p
-    }
-    unsafe fn dealloc(&self, p: *mut u8, layout: Layout) {
-        LIVE.fetch_sub(layout.size(), SeqCst);
-        // SAFETY: `p` came from `alloc` with this layout.
-        unsafe { System.dealloc(p, layout) }
-    }
-    unsafe fn realloc(&self, p: *mut u8, layout: Layout, new: usize) -> *mut u8 {
-        // SAFETY: `p` came from this allocator with this layout.
-        let q = unsafe { System.realloc(p, layout, new) };
-        if !q.is_null() {
-            LIVE.fetch_sub(layout.size(), SeqCst);
-            let now = LIVE.fetch_add(new, SeqCst) + new;
-            PEAK.fetch_max(now, SeqCst);
-        }
-        q
-    }
-}
+use counting::{Counting, allowed, peak_of};
+use fs_components_map::decode_tile;
 
 #[global_allocator]
 static COUNTING: Counting = Counting;
-
-/// The most memory `decode_tile` took above what was held before, for this tile.
-fn peak_of(tile: &[u8]) -> (usize, bool) {
-    let before = LIVE.load(SeqCst);
-    PEAK.store(before, SeqCst);
-    let ok = decode_tile(tile).is_ok();
-    (PEAK.load(SeqCst).saturating_sub(before), ok)
-}
-
-fn allowed(len: usize) -> usize {
-    // the budget as the guard counts it: the copy of the input is in it (no extra for it here)
-    let budget = MAX_TILE_MEMORY.min(BUDGET_BASE + BUDGET_PER_BYTE * len as u64);
-    usize::try_from(budget).unwrap()
-}
 
 // One test on purpose (the counting allocator sees every thread): it runs the cases one after the other.
 #[allow(clippy::too_many_lines)]
@@ -114,6 +68,19 @@ fn no_tile_takes_more_memory_than_its_budget_and_the_bombs_take_next_to_none() {
         );
         replayed += 1;
     }
+    // the probe of the review (w54), alone and by name: 1.1 M points made by `LineTo` in a feature of points, each with
+    // the name of the feature as its label. Before the guard counted them, 109 465 031 bytes were taken (budget 67 108 864).
+    let probe = std::fs::read(corpus.join("labels-lineto")).expect("the probe is in the corpus");
+    let (peak, ok) = peak_of(&probe);
+    println!(
+        "labels-lineto: {} bytes in, peak {peak} bytes, decoded: {ok}",
+        probe.len()
+    );
+    assert!(
+        !ok && peak <= allowed(probe.len()),
+        "peak {peak} for {} bytes",
+        probe.len()
+    );
     assert!(replayed >= 10, "{replayed} files in the corpus");
     // tiles that are ACCEPTED and near the budget: the estimate must be an upper bound for them, not a guess. The mix
     // of the review (probe H) in sizes around the budget: every one that the guard lets through must stay inside it.

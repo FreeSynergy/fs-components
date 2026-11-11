@@ -76,9 +76,9 @@ struct Geometry {
     /// `MoveTo` commands: a buffer for each, but only in a feature of lines (not in polygons and not for points).
     moves: u64,
     skip: u64,
-    /// The command whose numbers are being read, and how many numbers of a `MoveTo` were read: a point is two.
-    command: u64,
-    move_numbers: u64,
+    /// The numbers that follow a `MoveTo` or a `LineTo` (the parameters, two for a coordinate): the decoder turns EVERY
+    /// pair into a coordinate, whatever the command, and in a feature of points every coordinate is a point.
+    param_numbers: u64,
 }
 
 impl Geometry {
@@ -88,12 +88,9 @@ impl Geometry {
         self.numbers += 1;
         if self.skip > 0 {
             self.skip -= 1;
-            if self.command == 1 {
-                self.move_numbers += 1;
-            }
+            self.param_numbers += 1;
             return;
         }
-        self.command = value & 7;
         let count = value >> 3;
         match value & 7 {
             1 => {
@@ -106,10 +103,12 @@ impl Geometry {
         }
     }
 
-    /// The points of the feature that stand alone (`MoveTo`s), as many as numbers were given for: a point of a
-    /// feature is drawn with its own copy of the text of the feature (`add_point` clones the name for every point).
+    /// The coordinates of the feature, as the decoder makes them: one for every pair of parameters of a `MoveTo` or a
+    /// `LineTo`. In a feature of points (type 1) each is a point of its own, drawn with its own copy of the text of
+    /// the feature (`add_point` clones the name for every point); in the other types they are the points of a line
+    /// or a ring, which the number cost already pays for.
     fn points(&self) -> u64 {
-        self.move_numbers / 2
+        self.param_numbers / 2
     }
 
     /// The bytes taken: the first buffer and one per `ClosePath` (and, in a feature of lines, per `MoveTo`), each as
@@ -218,7 +217,11 @@ fn feature(bytes: &[u8], strings: &Strings, budget: u64) -> Result<u64, MvtError
     }
     // a point is a struct of its own (the text is shared by the points of the feature, `Arc<str>`: counted once, as
     // `texts`, for the copy that `mvt.rs` makes of the name)
-    let points = geometry.points().saturating_mul(POINT_OUT_BYTES);
+    let points = if kind == 1 {
+        geometry.points().saturating_mul(POINT_OUT_BYTES)
+    } else {
+        0
+    };
     Ok(geometry
         .cost(kind == 2)
         .saturating_add(tags)
@@ -238,7 +241,8 @@ pub(crate) fn scan(bytes: &[u8]) -> Result<Scanned, MvtError> {
     let budget = MAX_TILE_MEMORY
         .min(BUDGET_BASE.saturating_add(BUDGET_PER_BYTE.saturating_mul(bytes.len() as u64)));
     // the decoder holds a copy of the input (`Reader::new(bytes.to_vec())`) and what `prost` makes of it: its strings
-    // and bytes are copies again (the lengths of the keys and values are counted below; this is for the rest)
+    // and bytes are copies again (the lengths of the keys and values and the third copy of a layer name are counted
+    // below; this is for the rest)
     let (mut features, mut memory, mut extents) = (0usize, 2 * bytes.len() as u64, Vec::new());
     let (mut layers, mut strings_count) = (0usize, 0usize);
     let mut tile = Cursor(bytes);
@@ -270,8 +274,14 @@ pub(crate) fn scan(bytes: &[u8]) -> Result<Scanned, MvtError> {
                     }
                 }
                 (5, Value::Number(e)) => extent = u32::try_from(low32(e)).ok(), // `uint32`: the low 32 bits
+                // the name of the layer: `prost` has it and `get_layer_metadata` makes a copy of it again (a third one,
+                // the two copies of the whole input that are counted above are the first and the second)
+                (1, Value::Bytes(name)) => memory = memory.saturating_add(name.len() as u64),
                 _ => {}
             }
+        }
+        if memory > budget {
+            return Err(too_much("the tile would need too much memory to decode"));
         }
         extents.push(extent);
     }

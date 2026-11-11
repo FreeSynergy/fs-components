@@ -318,7 +318,7 @@ Refused by name, among others: `transform`, `layer`, `facet`/`repeat`/`concat`, 
 
 ## Dependencies
 
-`blinc_app`, `blinc_cn`, `blinc_core`, `blinc_layout`, `blinc_theme` (Blinc fork, tag fs-blinc-3), `wgpu` 26 and `image` 0.25 (both already part of Blinc's tree, used for the offscreen picture). `fs-components-charts` additionally: `serde_json` (MIT OR Apache-2.0, pure Rust). `fs-components-words`: std only. `fs-components-map`: `mvt-reader` 2 (MIT, pure Rust; it pulls `prost`, Apache-2.0) and `geo-types` 0.7 (MIT OR Apache-2.0); for its tests `mvt` 0.15 (MIT OR Apache-2.0). No other repo.
+`blinc_app`, `blinc_cn`, `blinc_core`, `blinc_layout`, `blinc_theme` (Blinc fork, tag fs-blinc-3), `wgpu` 26 and `image` 0.25 (both already part of Blinc's tree, used for the offscreen picture). `fs-components-charts` additionally: `serde_json` (MIT OR Apache-2.0, pure Rust). `fs-components-words`: std only. `fs-components-map`: `mvt-reader` 2 (MIT, pure Rust; it pulls `prost`, Apache-2.0) and `geo-types` 0.7 (MIT OR Apache-2.0; it pulls `approx`, Apache-2.0); for its tests `mvt` 0.15 (MIT OR Apache-2.0). No other repo.
 
 ## This tag and the map
 
