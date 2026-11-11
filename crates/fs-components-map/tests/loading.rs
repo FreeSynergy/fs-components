@@ -290,6 +290,13 @@ fn a_source_that_never_answers_stalls_the_map_and_says_so_until_it_comes_back() 
     let s = surface(&source, limits(40, 60_000, 256), 5.0);
     assert!(!s.source_stalled());
     draw_until(&s, "eight workers hang", || s.source_stalled());
+    // `in_flight` rises before the worker calls `tile()`: wait until all eight have asked, then look
+    until("all eight asked", || {
+        source.asked() >= fs_components_map::MOST_IN_FLIGHT
+    });
+    std::thread::sleep(Duration::from_millis(100));
+    let _ = s.build(900.0, 700.0);
+    std::thread::sleep(Duration::from_millis(100));
     assert_eq!(
         source.asked(),
         fs_components_map::MOST_IN_FLIGHT,

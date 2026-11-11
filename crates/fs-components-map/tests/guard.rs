@@ -7,7 +7,7 @@
 
 use std::time::{Duration, Instant};
 
-use fs_components_map::{MAX_FEATURES, MAX_TILE_BYTES, MAX_TILE_CELLS, decode_tile};
+use fs_components_map::{MAX_FEATURES, MAX_TILE_BYTES, MAX_TILE_MEMORY, decode_tile};
 
 fn varint(mut v: u64, out: &mut Vec<u8>) {
     while v >= 0x80 {
@@ -122,7 +122,7 @@ fn the_cost_is_summed_over_the_tile_not_only_checked_per_feature() {
     assert!(decode_tile(&tile(&[layer("water", 4096, &[middling(100)])])).is_ok());
     // 400 of them in one tile: each is fine alone, together 16.3 million points, over the limit of 8 million
     let features: Vec<Vec<u8>> = (0..400).map(|_| middling(100)).collect();
-    const { assert!(40_703 * 400 > MAX_TILE_CELLS) };
+    const { assert!(40_703 * 8 * 400 > MAX_TILE_MEMORY) };
     let big = tile(&[layer("water", 4096, &features)]);
     assert!(big.len() < 200_000, "small in bytes: {}", big.len());
     let error = decode_tile(&big).expect_err("refused");
@@ -172,4 +172,62 @@ fn every_layer_has_its_own_extent_and_lies_where_it_belongs() {
         assert_eq!(l.points.first(), Some(&[0.0, 2048.0]), "{:?}", l.points);
         assert_eq!(l.points.last(), Some(&[4096.0, 2048.0]), "{:?}", l.points);
     }
+}
+
+/// The same bomb, every command written with the 32nd bit set: protobuf `uint32` keeps the low 32 bits, so for the
+/// decoder `(1 << 32) | 15` is the command 15 (a `ClosePath`), and the guard must read it the same way.
+fn close_path_bomb_with_high_bits(rings: u64) -> Vec<u8> {
+    let high = 1u64 << 32;
+    let mut geometry = vec![high | 0x09, 0, 0];
+    for _ in 0..rings {
+        geometry.extend_from_slice(&[high | 0x0a, 2, 2, high | 0x0f]);
+    }
+    tile(&[layer("water", 4096, &[feature(3, &geometry)])])
+}
+
+#[test]
+fn a_command_head_with_high_bits_is_read_as_the_decoder_reads_it() {
+    let bomb = close_path_bomb_with_high_bits(250_000);
+    assert!(bomb.len() < MAX_TILE_BYTES, "{} bytes", bomb.len());
+    let error = decode_tile(&bomb).expect_err("refused");
+    assert!(error.0.contains("refused"), "{error}");
+}
+
+/// A layer with one big value string (`size` bytes) and `features` point features that each name it.
+fn tag_bomb(size: usize, features: usize) -> Vec<u8> {
+    let mut value = Vec::new();
+    bytes_field(1, &vec![b'x'; size], &mut value); // Value.string_value
+    let mut layer = Vec::new();
+    bytes_field(1, b"places", &mut layer);
+    for _ in 0..features {
+        let mut f = Vec::new();
+        let mut pair = Vec::new();
+        varint(0, &mut pair);
+        varint(0, &mut pair);
+        bytes_field(2, &pair, &mut f); // tags: key 0, value 0
+        number_field(3, 1, &mut f); // type: point
+        let mut g = Vec::new();
+        for v in [9u64, 0, 0] {
+            varint(v, &mut g);
+        }
+        bytes_field(4, &g, &mut f);
+        bytes_field(2, &f, &mut layer);
+    }
+    bytes_field(3, b"name", &mut layer); // keys
+    bytes_field(4, &value, &mut layer); // values
+    number_field(5, 4096, &mut layer);
+    tile(&[layer])
+}
+
+#[test]
+fn the_copies_of_the_tags_are_counted_one_big_value_named_by_many_features_is_refused() {
+    // mvt-reader 2.5.0 copies the value for every feature that names it: 400 x 1 MB = 400 MB from a 1 MB tile.
+    let bomb = tag_bomb(1_000_000, 400);
+    assert!(bomb.len() < 1_100_000, "a megabyte: {} bytes", bomb.len());
+    let error = decode_tile(&bomb).expect_err("refused");
+    assert!(error.0.contains("refused"), "{error}");
+    // the same value named by one feature is a normal tile
+    assert!(decode_tile(&tag_bomb(1_000_000, 1)).is_ok());
+    // and many small ones are fine
+    assert!(decode_tile(&tag_bomb(20, 5_000)).is_ok());
 }
