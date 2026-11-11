@@ -26,6 +26,10 @@ pub struct Column {
     pub title: String,
     /// The room it takes.
     pub width: ColumnWidth,
+    /// What the list reports to `on_head` when the heading is clicked; `None` = not clickable.
+    pub sort: Option<String>,
+    /// `Some(descending)` while the list is ordered by this column (an arrow shows it).
+    pub order: Option<bool>,
 }
 
 impl Column {
@@ -34,7 +38,23 @@ impl Column {
         Self {
             title: title.into(),
             width,
+            sort: None,
+            order: None,
         }
+    }
+
+    /// Make the heading clickable: a click reports `key` to `ListView::on_head`.
+    #[must_use]
+    pub fn sortable(mut self, key: impl Into<String>) -> Self {
+        self.sort = Some(key.into());
+        self
+    }
+
+    /// The list is ordered by this column, backwards if `descending`.
+    #[must_use]
+    pub fn ordered(mut self, descending: bool) -> Self {
+        self.order = Some(descending);
+        self
     }
 }
 
@@ -122,6 +142,7 @@ pub struct ListView {
     pub(super) on_select: Option<OnSelect>,
     pub(super) on_walk: Option<OnSelect>,
     pub(super) on_open: Option<OnSelect>,
+    pub(super) on_head: Option<OnSelect>,
     pub(super) row_height: f32,
     pub(super) position: Option<ListPosition>,
     pub(super) keys: bool,
@@ -140,6 +161,7 @@ impl ListView {
             on_select: None,
             on_walk: None,
             on_open: None,
+            on_head: None,
             row_height: DEFAULT_ROW_HEIGHT,
             position: None,
             keys: false,
@@ -170,6 +192,12 @@ impl ListView {
     pub fn walking(mut self, on_walk: OnSelect, on_open: OnSelect) -> Self {
         self.on_walk = Some(on_walk);
         self.on_open = Some(on_open);
+        self
+    }
+
+    /// Report the `sort` key of a column whose heading was clicked.
+    pub fn on_head(mut self, handler: OnSelect) -> Self {
+        self.on_head = Some(handler);
         self
     }
 

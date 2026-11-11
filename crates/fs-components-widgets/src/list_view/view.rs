@@ -198,12 +198,22 @@ impl Shared {
 fn head(list: &ListView, widths: &[f32]) -> Div {
     let mut element = div().class("fs-list-head").flex_row().h(HEAD_HEIGHT);
     for (column, width) in list.columns.iter().zip(widths) {
-        element = element.child(
-            div()
-                .class("fs-list-cell")
-                .w(*width)
-                .child(text(&column.title).no_wrap().no_cursor()),
+        let arrow = match column.order {
+            Some(true) => " \u{25BE}",
+            Some(false) => " \u{25B4}",
+            None => "",
+        };
+        let mut cell = div().class("fs-list-cell").w(*width).child(
+            text(format!("{}{arrow}", column.title))
+                .no_wrap()
+                .no_cursor(),
         );
+        if let (Some(key), Some(on_head)) = (column.sort.clone(), list.on_head.clone()) {
+            cell = cell
+                .class("fs-list-cell-sortable")
+                .on_click(move |_| on_head(&key));
+        }
+        element = element.child(cell);
     }
     element
 }

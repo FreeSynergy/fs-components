@@ -26,6 +26,10 @@ const LAYOUT: &str = r"
 .fs-files-band-inner { padding: var(--space-2) var(--space-3); gap: var(--space-1); }
 .fs-files-band-row { align-items: center; gap: var(--space-2); }
 .fs-files-failed-line { padding: var(--space-1) var(--space-3); background: var(--error-bg); color: var(--text-primary); font-size: var(--text-sm); }
+.fs-files-status { padding: 0 var(--space-3); border-top-width: 1px; border-top-color: var(--border); background: var(--surface); color: var(--text-secondary); font-size: var(--text-sm); }
+.fs-files-place { padding: var(--space-1) var(--space-3); border-radius: var(--radius-default); cursor: pointer; }
+.fs-files-place:hover { background: var(--accent-subtle); }
+.fs-files-place-current { background: var(--selection); color: var(--accent); }
 .fs-files-empty { padding: var(--space-4); color: var(--text-secondary); }
 .fs-files-more { justify-content: center; border-top-width: 1px; border-top-color: var(--border); }
 .fs-files-press { padding: var(--space-1) var(--space-3); border-radius: var(--radius-default); background: var(--surface-elevated); cursor: pointer; }

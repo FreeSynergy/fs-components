@@ -19,7 +19,7 @@ pub(super) use actions::{FileActions, OnPick as PickHandler};
 pub(super) use band::band;
 pub use blinc_layout::prelude::ElementBuilder as Elem;
 pub(super) use frame::{frame, sizes};
-pub(super) use places::{crumbs_row, notice_line, tree_pane};
+pub(super) use places::{crumbs_row, notice_line, status_line, tree_pane};
 pub(super) use side::side;
 pub use styles::styles;
 pub(super) use toolbar::toolbar;

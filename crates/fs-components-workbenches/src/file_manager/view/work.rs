@@ -18,7 +18,7 @@ use super::actions::{ActOn, FileActions, plain_button};
 use super::frame::text_height;
 use crate::file_manager::context::FileView;
 use crate::file_manager::labels::FileLabels;
-use crate::file_manager::model::{EntryKind, FileEntry};
+use crate::file_manager::model::{EntryKind, FileEntry, SortKey};
 use crate::file_manager::state::FilesState;
 
 const ROW_HEIGHT: f32 = 36.0;
@@ -54,41 +54,52 @@ fn size_cell(entry: &FileEntry) -> String {
     }
 }
 
+fn head_column(state: &FilesState, title: &str, width: ColumnWidth, key: SortKey) -> Column {
+    let name = match key {
+        SortKey::Modified => "modified",
+        SortKey::Size => "size",
+        SortKey::Type => "type",
+        _ => "name",
+    };
+    let column = Column::new(title, width).sortable(name);
+    if state.sort().key == key {
+        column.ordered(state.sort().descending)
+    } else {
+        column
+    }
+}
+
 fn list_view(state: &FilesState, width: f32) -> (Vec<Column>, Vec<Row>) {
     let labels = state.labels();
     let dates = state.capabilities().dates && width >= ALL_COLUMNS_FROM;
     let all = width >= ALL_COLUMNS_FROM;
-    let mut columns = vec![Column::new(
-        labels.col_name.clone(),
-        ColumnWidth::Share(3.0),
-    )];
-    if all {
-        columns.push(Column::new(
-            labels.col_type.clone(),
-            ColumnWidth::Share(1.5),
-        ));
-    }
-    columns.push(Column::new(
-        labels.col_size.clone(),
-        ColumnWidth::Pixels(96.0),
-    ));
+    let sortable = state.capabilities().sort;
+    let head = |title: &str, width, key| {
+        if sortable {
+            head_column(state, title, width, key)
+        } else {
+            Column::new(title, width)
+        }
+    };
+    // Name, Size, Modified, Type: what a person looks for first comes first.
+    let mut columns = vec![head(&labels.col_name, ColumnWidth::Share(3.0), SortKey::Name)];
+    columns.push(head(&labels.col_size, ColumnWidth::Pixels(90.0), SortKey::Size));
     if dates {
-        columns.push(Column::new(
-            labels.col_modified.clone(),
-            ColumnWidth::Share(1.5),
-        ));
+        columns.push(head(&labels.col_modified, ColumnWidth::Pixels(150.0), SortKey::Modified));
+    }
+    if all {
+        columns.push(head(&labels.col_type, ColumnWidth::Share(1.5), SortKey::Type));
     }
     let rows = state
         .rows()
         .iter()
         .map(|entry| {
-            let mut cells = vec![entry.name.clone()];
-            if all {
-                cells.push(state.type_word(entry));
-            }
-            cells.push(size_cell(entry));
+            let mut cells = vec![entry.name.clone(), size_cell(entry)];
             if dates {
                 cells.push(entry.modified.clone().unwrap_or_default());
+            }
+            if all {
+                cells.push(state.type_word(entry));
             }
             let row = Row::new(entry.key.clone(), cells);
             if entry.is_marked() {
@@ -193,6 +204,7 @@ pub(in crate::file_manager) fn work(
                 .selected(state.selected_key())
                 .when_empty(empty_text(state))
                 .on_select(select)
+                .on_head(actions.on_key(FilesState::sort_by_head))
                 .keys(true)
                 .build(width, left),
         )

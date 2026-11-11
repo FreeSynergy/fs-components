@@ -23,7 +23,8 @@ use super::labels::FileLabels;
 use super::source::FileSource;
 use super::state::FilesState;
 use super::view::{
-    PickHandler, band, crumbs_row, frame, notice_line, side, sizes, toolbar, tree_pane, work,
+    PickHandler, band, crumbs_row, frame, notice_line, side, sizes, status_line, toolbar, tree_pane,
+    work,
 };
 use crate::input_slots::InputSlots;
 
@@ -181,12 +182,13 @@ impl FileManagerWidget {
                     )
                 })
         };
+        let status = (snapshot.variant() != super::context::Variant::Picker).then(|| status_line(&snapshot));
         let questions = band(&snapshot, &name, &actions, &self.slots, width);
         frame(
             (measured, height),
             (bar, crumbs, notice),
             (tree, live, side_area),
-            questions,
+            (status, questions),
         )
     }
 }

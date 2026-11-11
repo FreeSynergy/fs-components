@@ -133,3 +133,30 @@ fn pages_of_the_source_are_put_together_and_more_keeps_on_after_a_failure() {
     assert_eq!(s.rows().len(), 450);
     assert!(!s.has_more());
 }
+
+#[test]
+fn a_click_on_a_heading_orders_by_it_and_a_second_click_turns_it_around() {
+    use fs_components_workbenches::file_manager::SortKey;
+    let (_, mut s) = state(Shelf::new().file("a").file("b"));
+    assert_eq!(s.sort().key, SortKey::Name);
+    s.sort_by_head("size");
+    assert_eq!(s.sort().key, SortKey::Size);
+    assert!(!s.sort().descending);
+    s.sort_by_head("size");
+    assert!(s.sort().descending);
+    s.sort_by_head("name");
+    assert_eq!(s.sort().key, SortKey::Name);
+}
+
+#[test]
+fn a_media_type_is_shown_as_a_short_word_and_an_unknown_one_as_file() {
+    use fs_components_workbenches::file_manager::FileEntry;
+    let (_, s) = state(Shelf::new());
+    let mut entry = FileEntry::file("k", "a.jpg", 1);
+    entry.media_type = "image/jpeg".into();
+    assert_eq!(s.type_word(&entry), "JPEG");
+    entry.media_type = "application/octet-stream".into();
+    assert_eq!(s.type_word(&entry), FileLabels::default().unknown_type);
+    entry.media_type = "text/markdown".into();
+    assert_eq!(s.type_word(&entry), "Markdown");
+}

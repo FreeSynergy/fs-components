@@ -11,6 +11,7 @@ use fs_components_widgets::breadcrumb::{Breadcrumb, Crumb};
 
 use super::actions::FileActions;
 use crate::file_manager::context::Variant;
+use crate::file_manager::labels::FileLabels;
 use crate::file_manager::side::Place;
 use crate::file_manager::state::{FilesState, Notice};
 use crate::file_manager::tree::TOP;
@@ -63,6 +64,29 @@ pub(in crate::file_manager) fn crumbs_row(
     row
 }
 
+/// The line at the bottom: how many things are here, and what is selected.
+pub(in crate::file_manager) fn status_line(state: &FilesState) -> Div {
+    let labels = state.labels();
+    let mut line = div().flex_row().items_center().gap(16.0).w_full().child(
+        text(FileLabels::fill(
+            &labels.status_items,
+            &state.rows().len().to_string(),
+        ))
+        .no_cursor(),
+    );
+    if let Some(entry) = state.selected_entry() {
+        let mut said = FileLabels::fill(&labels.status_selected, "1");
+        if entry.kind == crate::file_manager::model::EntryKind::File {
+            said = format!(
+                "{said}, {}",
+                fs_components_widgets::transfer_list::format_bytes(entry.size)
+            );
+        }
+        line = line.child(text(said).no_cursor());
+    }
+    line
+}
+
 pub(in crate::file_manager) fn tree_pane(state: &FilesState, actions: &FileActions) -> Div {
     let mut pane = div().flex_col().w_full().h_full();
     if let Some(problem) = state.tree_problem() {
@@ -77,5 +101,49 @@ pub(in crate::file_manager) fn tree_pane(state: &FilesState, actions: &FileActio
         .selected(current)
         .on_select(move |key| choose(key))
         .build();
-    pane.child(scroll().w_full().h_full().content(tree))
+    let places = places_group(state, actions);
+    pane.child(places)
+        .child(
+            div()
+                .w_full()
+                .flex_grow()
+                .min_h(0.0)
+                .child(scroll().w_full().h_full().content(tree)),
+        )
+}
+
+/// The places: the own storage and the trash, each one click away.
+fn places_group(state: &FilesState, actions: &FileActions) -> Div {
+    let labels = state.labels();
+    let in_trash = state.in_trash();
+    let row = |id: &str, word: &str, current: bool, act: super::actions::Act| {
+        let one = div().id(id.to_string()).class("fs-files-place");
+        let one = if current {
+            one.class("fs-files-place-current")
+        } else {
+            one
+        };
+        one
+            .w_full()
+            .attr("tabindex", "0")
+            .on_click(move |_| act())
+            .child(text(word).no_cursor())
+    };
+    div()
+        .flex_col()
+        .w_full()
+        .flex_shrink_0()
+        .child(div().class("fs-files-section-title").child(text(&labels.places).no_cursor()))
+        .child(row(
+            "fs-files-place-top",
+            &labels.root,
+            !in_trash && state.folder().is_none(),
+            actions.with(|s| s.open_folder(None)),
+        ))
+        .child(row(
+            "fs-files-place-trash",
+            &labels.trash_place,
+            in_trash,
+            actions.plain(FilesState::open_trash),
+        ))
 }

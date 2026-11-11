@@ -29,6 +29,7 @@ const CHAR_WIDTH: f32 = 7.5;
 /// Height of a line of a message.
 const LINE_HEIGHT: f32 = 22.0;
 /// The body never gets less than this, so the bars above and the band below cannot overlap.
+pub(super) const STATUS_HEIGHT: f32 = 30.0;
 const LEAST_BODY: f32 = 96.0;
 
 /// What is worked out.
@@ -57,7 +58,12 @@ pub(in crate::file_manager) fn sizes(state: &FilesState, width: f32, height: f32
         .notice()
         .map_or(0.0, |n| text_height(n.text().chars().count(), width) + 16.0);
     let band = band_height(state, width);
-    let body = (height - bar - CRUMBS_HEIGHT - notice - band).max(LEAST_BODY);
+    let status = if state.variant() == crate::file_manager::context::Variant::Picker {
+        0.0
+    } else {
+        STATUS_HEIGHT
+    };
+    let body = (height - bar - CRUMBS_HEIGHT - notice - band - status).max(LEAST_BODY);
     let one_pane = width < ONE_PANE_BELOW;
     let picker = state.variant() == crate::file_manager::context::Variant::Picker;
     let tree = if width < TREE_BELOW || picker {
@@ -74,6 +80,10 @@ pub(in crate::file_manager) fn sizes(state: &FilesState, width: f32, height: f32
         } else {
             (width, 0.0)
         }
+    } else if state.selected_key().is_none() && matches!(state.side(), super::super::side::Side::Item)
+    {
+        // nothing to show beside the list: the list takes the room
+        (rest, 0.0)
     } else {
         (rest * WORK_SHARE, rest * (1.0 - WORK_SHARE))
     };
@@ -89,11 +99,11 @@ pub(in crate::file_manager) fn sizes(state: &FilesState, width: f32, height: f32
 }
 
 /// Everything. The areas are ready made; one with no room is not added.
-pub(in crate::file_manager) fn frame<A, B, C, D, E, F, G>(
+pub(in crate::file_manager) fn frame<A, B, C, D, E, F, G, H>(
     (sizes, height): (Sizes, f32),
     (bar, crumbs, notice): (A, B, Option<C>),
     (tree, work, side): (D, E, F),
-    band: Option<G>,
+    (status, band): (Option<H>, Option<G>),
 ) -> Div
 where
     A: ElementBuilder + 'static,
@@ -103,6 +113,7 @@ where
     E: ElementBuilder + 'static,
     F: ElementBuilder + 'static,
     G: ElementBuilder + 'static,
+    H: ElementBuilder + 'static,
 {
     let Sizes { width, body, .. } = sizes;
     let mut root = div()
@@ -180,6 +191,19 @@ where
         );
     }
     root = root.child(middle);
+    if let Some(status) = status {
+        root = root.child(
+            div()
+                .class("fs-files-status")
+                .flex_row()
+                .items_center()
+                .flex_shrink_0()
+                .w(width)
+                .h(STATUS_HEIGHT)
+                .overflow_clip()
+                .child(status),
+        );
+    }
     if let Some(band) = band {
         root = root.child(band); // the band is its own box, of the height `band_height` says (see `band`)
     }

@@ -82,6 +82,21 @@ impl FilesState {
         self.new_list();
     }
 
+    /// A click on a column heading: this order; the same one again turns it around.
+    pub fn sort_by_head(&mut self, key: &str) {
+        let key = match key {
+            "modified" => SortKey::Modified,
+            "size" => SortKey::Size,
+            "type" => SortKey::Type,
+            _ => SortKey::Name,
+        };
+        if self.sort.key == key {
+            self.toggle_direction();
+        } else {
+            self.set_sort(key);
+        }
+    }
+
     /// The other direction, if there is one for this order.
     pub fn toggle_direction(&mut self) {
         if self.can_toggle_direction() {

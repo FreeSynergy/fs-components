@@ -112,6 +112,12 @@ pub struct FileLabels {
     pub col_size: String,
     /// Default: `Modified`.
     pub col_modified: String,
+    /// Default: `{} items`.
+    pub status_items: String,
+    /// Default: `{} selected`.
+    pub status_selected: String,
+    /// Default: `Places`.
+    pub places: String,
     /// Default: `Folder`.
     pub folder_word: String,
     /// Default: `File`.

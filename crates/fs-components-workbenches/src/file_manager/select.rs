@@ -143,10 +143,10 @@ impl FilesState {
     pub fn type_word(&self, entry: &FileEntry) -> String {
         if entry.kind == EntryKind::Folder {
             self.labels.folder_word.clone()
-        } else if entry.media_type.is_empty() {
+        } else if entry.media_type.is_empty() || entry.media_type == "application/octet-stream" {
             self.labels.unknown_type.clone()
         } else {
-            entry.media_type.clone()
+            short_type(&entry.media_type)
         }
     }
 
@@ -224,5 +224,22 @@ impl FilesState {
             Some(text) => PreviewContent::Text(text, labels.preview_cut.clone()),
             None => PreviewContent::Note(labels.preview_binary.clone()),
         }
+    }
+}
+
+/// A media type as a short word: the part after the slash without `x-`, `vnd.` and `+suffix`
+/// (`image/jpeg` is `JPEG`, `application/x-tar` is `TAR`).
+fn short_type(media_type: &str) -> String {
+    let sub = media_type.split_once('/').map_or(media_type, |(_, s)| s);
+    let sub = sub.split(['+', ';']).next().unwrap_or(sub);
+    let sub = sub.trim_start_matches("x-").trim_start_matches("vnd.");
+    let sub = sub.rsplit('.').next().unwrap_or(sub);
+    if sub.chars().count() <= 5 {
+        sub.to_uppercase()
+    } else {
+        let mut chars = sub.chars();
+        chars.next().map_or_else(String::new, |c| {
+            c.to_uppercase().chain(chars).collect()
+        })
     }
 }
