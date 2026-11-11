@@ -121,6 +121,44 @@ impl AdminSurface {
         })
     }
 
+    /// The action of "Save" and "Yes": the command goes to the program on a worker, with no lock held and not on the
+    /// interface thread, so the window stays usable however long the server takes. The page shows "running" meanwhile
+    /// (`message.running`); a second press while it runs does nothing. The answer is put in under the lock and the page
+    /// is drawn again from the worker (the same way as "Try again").
+    pub(super) fn submit_action(&self) -> Action {
+        let (session, live) = (Arc::clone(&self.env.session), self.live);
+        Arc::new(move || {
+            let Some(job) = lock(&session).submit_begin() else {
+                return; // nothing to send, or one command is on its way
+            };
+            live.refresh_now(); // shows "running"
+            let slot = Arc::new(Mutex::new(Some(job)));
+            let (later, taken) = (Arc::clone(&session), Arc::clone(&slot));
+            let spawned = std::thread::Builder::new()
+                .name("fs-admin-command".into())
+                .spawn(move || {
+                    let job = taken.lock().unwrap_or_else(PoisonError::into_inner).take();
+                    if let Some(job) = job {
+                        let outcome = job.run();
+                        lock(&later).submit_finish(outcome);
+                        live.refresh();
+                    }
+                });
+            if spawned.is_err() {
+                // No thread to be had: the failure is told, never silence.
+                let job = slot.lock().unwrap_or_else(PoisonError::into_inner).take();
+                if let Some(job) = job {
+                    let failed = crate::SubmitOutcome::failed(
+                        &job,
+                        crate::BackendError::Unavailable("no thread to send the command".into()),
+                    );
+                    lock(&session).submit_finish(failed);
+                }
+                live.refresh_now();
+            }
+        })
+    }
+
     pub(super) fn command_buttons(&self, plans: &[&CommandPlan], session: &Session) -> Vec<Div> {
         plans
             .iter()
@@ -175,7 +213,10 @@ impl AdminSurface {
         {
             return self.about_page(&about);
         }
-        let screen = lock(&self.env.session).screen().clone();
+        let (screen, busy) = {
+            let session = lock(&self.env.session);
+            (session.screen().clone(), session.is_busy())
+        };
         let (title, actions, body): (String, Vec<Div>, Div) = match &screen {
             Screen::List => self.list_screen(width, height),
             Screen::Detail(_) => self.detail_screen(),
@@ -187,9 +228,7 @@ impl AdminSurface {
                     &say.say("action.save"),
                     Weight::Primary,
                     "save",
-                    self.act(|s| {
-                        s.submit();
-                    }),
+                    self.submit_action(),
                 );
                 let cancel = button(
                     &say.say("action.cancel"),
@@ -250,6 +289,13 @@ impl AdminSurface {
             .bg(Look::color(look.palette().ground))
             .child(header(look, &title, actions))
             .child(message_bar(look, say, &messages, &dismiss, &retry))
+            .children(busy.then(|| {
+                div().id("running").child(look.text(
+                    say.say("message.running"),
+                    s.text.body,
+                    look.palette().text_weak,
+                ))
+            }))
             .child(body)
     }
 

@@ -5,7 +5,7 @@
 
 use fs_types::CommandKind;
 
-use crate::backend::{BackendError, Outcome, Values};
+use crate::backend::{BackendError, Outcome, Record, Values};
 use crate::commands::CommandPlan;
 use crate::commands::Placement;
 use crate::form::FormModel;
@@ -14,8 +14,13 @@ use crate::screen::Screen;
 use crate::session::Session;
 
 impl Session {
-    pub(crate) fn search(&mut self, query: Values) -> bool {
-        match self.backend.list(&query) {
+    /// Take what a search answered (the reading was done by the caller, on a worker or in place).
+    pub(crate) fn search_apply(
+        &mut self,
+        query: Values,
+        read: Result<Vec<Record>, BackendError>,
+    ) -> bool {
+        match read {
             Ok(records) => {
                 self.query = query;
                 self.list.set_records(records);
@@ -157,6 +162,9 @@ impl Session {
     /// Open a command. A command on a record needs the selection; a delete asks first. Returns `false` if the
     /// command is unknown or has no record to work on.
     pub fn begin(&mut self, name: &str) -> bool {
+        if self.submitting {
+            return false; // a command is on its way
+        }
         let Some(plan) = self.command(name).cloned() else {
             return false;
         };
@@ -197,25 +205,5 @@ impl Session {
             record,
         });
         true
-    }
-
-    /// Send the open change form as an `Edit` (the contract's `change`). The id of the record goes in the call.
-    pub(crate) fn submit_change(&mut self, plan: &CommandPlan, record: Option<String>) -> bool {
-        let (Some(id), Some(form)) = (record.clone(), self.form.as_mut()) else {
-            return false;
-        };
-        let Ok(edit) = form.submit_changes() else {
-            return false;
-        };
-        match self.backend.change(&id, &edit) {
-            Ok(outcome) => {
-                self.done(plan, record, outcome);
-                true
-            }
-            Err(e) => {
-                self.refused(&e);
-                false
-            }
-        }
     }
 }

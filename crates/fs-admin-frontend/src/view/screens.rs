@@ -118,14 +118,7 @@ impl AdminSurface {
         let label = session
             .command(name)
             .map_or(String::new(), |p| say.say(&p.label));
-        let yes = button(
-            &label,
-            Weight::Danger,
-            "confirm",
-            self.act(|s| {
-                s.submit();
-            }),
-        );
+        let yes = button(&label, Weight::Danger, "confirm", self.submit_action());
         let no = button(
             &say.say("action.cancel"),
             Weight::Plain,
