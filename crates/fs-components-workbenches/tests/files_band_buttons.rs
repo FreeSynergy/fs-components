@@ -157,6 +157,17 @@ fn every_question_of_the_band_has_its_buttons_inside_the_window_when_narrow() {
             for what in buttons {
                 inside(&h, what, scene, width);
             }
+            // The band is a box as high as its estimate and clips what is taller; the double-press rule (the
+            // answer is never under the point of the first press) stands on where the buttons are. So every button
+            // must lie inside the box: a too small estimate turns this red.
+            let (_, top, _, bottom) = h.edges("band");
+            for what in buttons {
+                let (_, bt, _, bb) = h.button_edges(what);
+                assert!(
+                    bt >= top - 0.5 && bb <= bottom + 0.5,
+                    "{width} {scene} {what}: button {bt}..{bb}, the band {top}..{bottom}"
+                );
+            }
         }
     }
 }

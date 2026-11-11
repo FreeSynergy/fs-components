@@ -38,7 +38,6 @@ pub(in crate::file_manager) struct Sizes {
     pub bar: f32,
     pub notice: f32,
     pub body: f32,
-    pub band: f32,
     pub tree: f32,
     pub work: f32,
     pub side: f32,
@@ -83,7 +82,6 @@ pub(in crate::file_manager) fn sizes(state: &FilesState, width: f32, height: f32
         bar,
         notice,
         body,
-        band,
         tree,
         work,
         side,
@@ -183,15 +181,7 @@ where
     }
     root = root.child(middle);
     if let Some(band) = band {
-        root = root.child(
-            div()
-                .class("fs-files-band")
-                .flex_shrink_0()
-                .w(width)
-                .h(sizes.band)
-                .overflow_clip()
-                .child(band),
-        );
+        root = root.child(band); // the band is its own box, of the height `band_height` says (see `band`)
     }
     root
 }
