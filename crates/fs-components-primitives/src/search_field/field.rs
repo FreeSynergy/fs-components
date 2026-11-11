@@ -6,9 +6,15 @@
 use std::sync::Arc;
 
 use blinc_cn::components::input::{InputSize, input};
-use blinc_layout::widgets::text_input::SharedTextInputData;
+use blinc_layout::div::div;
+use blinc_layout::widgets::text_input::{SharedTextInputData, text_input};
+use blinc_theme::{ColorToken, ThemeState};
 
 use crate::field_data::FieldData;
+
+/// The size of [`FieldSize::Body`].
+const BODY_TEXT: f32 = 14.0;
+const BODY_HEIGHT: f32 = 36.0;
 
 /// Called with the whole text after every change.
 pub type OnChange = Arc<dyn Fn(&str) + Send + Sync>;
@@ -24,6 +30,9 @@ pub enum FieldSize {
     Medium,
     /// For a field that is the main thing on the screen.
     Large,
+    /// Text of exactly body size (14 px), as the fields of the components of the types have it, in a
+    /// control 36 px high: what a typed word must look like to be read and tested at one size.
+    Body,
 }
 
 /// A search field.
@@ -66,14 +75,30 @@ impl SearchField {
     pub fn build(&self) -> impl blinc_layout::prelude::ElementBuilder + use<> {
         let size = match self.size {
             FieldSize::Small => InputSize::Small,
-            FieldSize::Medium => InputSize::Medium,
             FieldSize::Large => InputSize::Large,
+            _ => InputSize::Medium,
         };
+        let handler = self.on_change.clone();
+        if self.size == FieldSize::Body {
+            let theme = ThemeState::get();
+            let mut field = text_input(&self.data)
+                .h(BODY_HEIGHT)
+                .text_size(BODY_TEXT)
+                .rounded(6.0)
+                .border(1.0, theme.color(ColorToken::Border))
+                .idle_bg_color(theme.color(ColorToken::InputBg))
+                .text_color(theme.color(ColorToken::TextPrimary))
+                .placeholder_color(theme.color(ColorToken::TextTertiary))
+                .w_full();
+            if let Some(handler) = handler {
+                field = field.on_change(move |text| handler(text));
+            }
+            return div().w_full().child(field);
+        }
         let mut field = input(&self.data).size(size).w_full();
-        if let Some(handler) = &self.on_change {
-            let handler = Arc::clone(handler);
+        if let Some(handler) = handler {
             field = field.on_change(move |text| handler(text));
         }
-        field
+        div().w_full().child(field)
     }
 }

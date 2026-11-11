@@ -164,7 +164,7 @@ fn input_area(
     area = area.child(
         div().id(format!("{name}-line")).w(width - 32.0).child(
             input(&data)
-                .size(InputSize::Small)
+                .size(InputSize::Medium)
                 .w_full()
                 .on_change(move |value| typed(value)),
         ),

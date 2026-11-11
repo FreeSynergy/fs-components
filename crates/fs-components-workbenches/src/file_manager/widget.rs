@@ -52,7 +52,7 @@ fn search_field(
 ) -> SearchField {
     let (state, typed) = (Arc::clone(state), Arc::clone(typed));
     SearchField::new(placeholder)
-        .size(FieldSize::Small)
+        .size(FieldSize::Body)
         .on_change(Arc::new(move |term| {
             typed.store(!term.is_empty(), Ordering::Relaxed);
             locked(&state).search(term);
