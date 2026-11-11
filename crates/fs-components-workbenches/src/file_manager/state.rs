@@ -75,6 +75,9 @@ pub struct FilesState {
     pub(super) tools_open: bool,
     pub(super) report: Option<Arc<RescanSummary>>,
     pub(super) picked: Option<PickedFile>,
+    pub(super) back: Vec<Place>,
+    pub(super) forward: Vec<Place>,
+    pub(super) moving: bool,
 }
 
 impl FilesState {
@@ -116,6 +119,9 @@ impl FilesState {
             tools_open: false,
             report: None,
             picked: None,
+            back: Vec::new(),
+            forward: Vec::new(),
+            moving: false,
         };
         state.reload_tree();
         state.reload(PAGE);

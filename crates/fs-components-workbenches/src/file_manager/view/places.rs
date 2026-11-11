@@ -7,6 +7,7 @@ use blinc_layout::div::{Div, div};
 use blinc_layout::text;
 use blinc_layout::widgets::scroll::scroll;
 use fs_components_widgets::TreeView;
+use fs_components_widgets::icon::{Glyph, Tone, icon};
 use fs_components_widgets::breadcrumb::{Breadcrumb, Crumb};
 
 use super::actions::FileActions;
@@ -28,11 +29,12 @@ pub(in crate::file_manager) fn notice_line(notice: &Notice, name: &str) -> Div {
 }
 
 /// The way to where the person is. It says that changes from outside do not come in by themselves.
-pub(in crate::file_manager) fn crumbs_row(
+/// The way to where the person is, as a breadcrumb that fits `room`.
+pub(in crate::file_manager) fn crumbs(
     state: &FilesState,
     name: &str,
     actions: &FileActions,
-    width: f32,
+    room: f32,
 ) -> Div {
     let labels = state.labels();
     let mut crumbs = vec![Crumb::new(TOP, labels.root.clone())];
@@ -45,29 +47,19 @@ pub(in crate::file_manager) fn crumbs_row(
             .iter()
             .map(|f| Crumb::new(f.key.clone(), f.name.clone())),
     );
-    let wide = width >= 960.0 && state.capabilities().rescan;
-    let room = if wide { width * 0.6 } else { width - 24.0 };
-    let mut row = div().flex_row().items_center().w_full().child(
+    div().flex_row().items_center().w_full().child(
         Breadcrumb::new(crumbs, name.to_string())
             .on_choose(actions.on_key(|s, key| {
                 s.open_folder((key != TOP).then_some(key));
             }))
             .build(room),
-    );
-    if wide {
-        row = row.child(
-            div()
-                .class("fs-files-outside")
-                .child(text(&labels.outside_hint).no_wrap()),
-        );
-    }
-    row
+    )
 }
 
 /// The line at the bottom: how many things are here, and what is selected.
 pub(in crate::file_manager) fn status_line(state: &FilesState) -> Div {
     let labels = state.labels();
-    let mut line = div().flex_row().items_center().gap(16.0).w_full().child(
+    let mut line = div().flex_row().items_center().gap(4.0).w_full().child(
         text(FileLabels::fill(
             &labels.status_items,
             &state.rows().len().to_string(),
@@ -112,38 +104,53 @@ pub(in crate::file_manager) fn tree_pane(state: &FilesState, actions: &FileActio
         )
 }
 
-/// The places: the own storage and the trash, each one click away.
+/// The places, in groups: where the files are (the own storage), and the trash. A place that the source
+/// does not have is not shown.
 fn places_group(state: &FilesState, actions: &FileActions) -> Div {
     let labels = state.labels();
     let in_trash = state.in_trash();
-    let row = |id: &str, word: &str, current: bool, act: super::actions::Act| {
+    let row = |id: &str, glyph: Glyph, word: &str, current: bool, act: super::actions::Act| {
         let one = div().id(id.to_string()).class("fs-files-place");
         let one = if current {
             one.class("fs-files-place-current")
         } else {
             one
         };
-        one
-            .w_full()
+        one.w_full()
+            .flex_row()
+            .justify_start()
+            .items_center()
+            .gap(2.0)
             .attr("tabindex", "0")
             .on_click(move |_| act())
+            .child(icon(glyph, 18.0, if current { Tone::Accent } else { Tone::Kind }))
             .child(text(word).no_cursor())
     };
-    div()
+    let title = |word: &str| {
+        div()
+            .class("fs-files-section-title")
+            .child(text(word).no_cursor())
+    };
+    let mut group = div()
         .flex_col()
         .w_full()
         .flex_shrink_0()
-        .child(div().class("fs-files-section-title").child(text(&labels.places).no_cursor()))
+        .child(title(&labels.places))
         .child(row(
             "fs-files-place-top",
+            Glyph::Home,
             &labels.root,
             !in_trash && state.folder().is_none(),
             actions.with(|s| s.open_folder(None)),
-        ))
-        .child(row(
+        ));
+    if state.capabilities().trash {
+        group = group.child(row(
             "fs-files-place-trash",
-            &labels.trash_place,
+            Glyph::Trash,
+            &labels.trash,
             in_trash,
             actions.plain(FilesState::open_trash),
-        ))
+        ));
+    }
+    group.child(title(&labels.folders_title))
 }

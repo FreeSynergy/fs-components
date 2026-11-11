@@ -7,6 +7,7 @@
 use blinc_layout::div::{Div, div};
 use blinc_layout::prelude::text;
 
+use crate::icon::{Glyph, Tone, icon};
 use crate::list_view::fit_cell;
 
 /// One tile.
@@ -19,6 +20,8 @@ pub struct FileTile {
     pub name: String,
     /// A short word for what it is, where a picture would be.
     pub badge: String,
+    /// The icon of what it is; when set it is drawn big where the badge would be, and the badge is left out.
+    pub glyph: Option<Glyph>,
     /// Smaller lines below the name, in the caller's words.
     pub lines: Vec<String>,
     /// Markings that must be seen at once, in the caller's words.
@@ -43,6 +46,13 @@ impl FileTile {
         self
     }
 
+    /// With this icon in place of the badge.
+    #[must_use]
+    pub fn with_glyph(mut self, glyph: Glyph) -> Self {
+        self.glyph = Some(glyph);
+        self
+    }
+
     /// With these markings.
     #[must_use]
     pub fn with_marks(mut self, marks: Vec<String>) -> Self {
@@ -61,14 +71,27 @@ impl FileTile {
         if selected {
             tile = tile.class("fs-tile-selected");
         }
-        tile = tile.child(
-            div().class("fs-tile-badge").child(
-                text(fit_cell(&self.badge, width))
-                    .no_wrap()
-                    .no_cursor()
-                    .pointer_events_none(),
-            ),
-        );
+        tile = if let Some(glyph) = self.glyph {
+            let px = (height * 0.45).min(width - 24.0).clamp(24.0, 72.0);
+            tile.child(
+                div()
+                    .class("fs-tile-icon")
+                    .flex_row()
+                    .justify_center()
+                    .items_center()
+                    .pointer_events_none()
+                    .child(icon(glyph, px, Tone::Kind)),
+            )
+        } else {
+            tile.child(
+                div().class("fs-tile-badge").child(
+                    text(fit_cell(&self.badge, width))
+                        .no_wrap()
+                        .no_cursor()
+                        .pointer_events_none(),
+                ),
+            )
+        };
         if !self.marks.is_empty() {
             let mut row = div().class("fs-tile-marks").flex_row().flex_wrap();
             for mark in &self.marks {

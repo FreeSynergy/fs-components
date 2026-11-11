@@ -9,6 +9,7 @@ use std::sync::Arc;
 
 use blinc_layout::div::{Div, div};
 use blinc_layout::text;
+use fs_components_widgets::icon::glyph_of;
 use fs_components_widgets::transfer_list::format_bytes;
 use fs_components_widgets::{
     Column, ColumnWidth, FileTile, ListPosition, ListView, Row, TileGrid, VecRows,
@@ -23,7 +24,7 @@ use crate::file_manager::state::FilesState;
 
 const ROW_HEIGHT: f32 = 36.0;
 const MORE_HEIGHT: f32 = 48.0;
-const TILE: (f32, f32) = (168.0, 132.0);
+const TILE: (f32, f32) = (168.0, 152.0);
 /// Below this width the list has only the name and the size.
 const ALL_COLUMNS_FROM: f32 = 420.0;
 
@@ -101,7 +102,10 @@ fn list_view(state: &FilesState, width: f32) -> (Vec<Column>, Vec<Row>) {
             if all {
                 cells.push(state.type_word(entry));
             }
-            let row = Row::new(entry.key.clone(), cells);
+            let row = Row::new(entry.key.clone(), cells).with_glyph(glyph_of(
+                &entry.media_type,
+                entry.kind == EntryKind::Folder,
+            ));
             if entry.is_marked() {
                 row.with_mark(state.labels().marked.clone())
             } else {
@@ -124,6 +128,7 @@ fn grid(
         .iter()
         .map(|e| {
             FileTile::new(e.key.clone(), e.name.clone(), state.type_word(e))
+                .with_glyph(glyph_of(&e.media_type, e.kind == EntryKind::Folder))
                 .with_lines(vec![size_cell(e)])
                 .with_marks(marks(state, e))
         })

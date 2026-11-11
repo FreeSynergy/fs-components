@@ -11,7 +11,7 @@ use blinc_layout::div::{Div, div};
 use blinc_layout::prelude::ElementBuilder;
 
 use super::band_size::band_height;
-use super::toolbar::toolbar_height;
+use super::toolbar::{NAV_HEIGHT, commands_height};
 use crate::file_manager::state::FilesState;
 
 /// Below this width one pane is shown at a time.
@@ -23,7 +23,6 @@ const TREE_WIDTH: f32 = 220.0;
 /// The part of what is left that the list takes.
 const WORK_SHARE: f32 = 0.6;
 /// Height of the line with the breadcrumb.
-const CRUMBS_HEIGHT: f32 = 40.0;
 /// About how wide a character of a message is.
 const CHAR_WIDTH: f32 = 7.5;
 /// Height of a line of a message.
@@ -37,6 +36,7 @@ const LEAST_BODY: f32 = 96.0;
 pub(in crate::file_manager) struct Sizes {
     pub width: f32,
     pub bar: f32,
+    pub commands: f32,
     pub notice: f32,
     pub body: f32,
     pub tree: f32,
@@ -53,7 +53,8 @@ pub(super) fn text_height(chars: usize, width: f32) -> f32 {
 
 /// The sizes for `state` in `width` x `height`.
 pub(in crate::file_manager) fn sizes(state: &FilesState, width: f32, height: f32) -> Sizes {
-    let bar = toolbar_height(state, width);
+    let bar = NAV_HEIGHT;
+    let commands = commands_height(state, width);
     let notice = state
         .notice()
         .map_or(0.0, |n| text_height(n.text().chars().count(), width) + 16.0);
@@ -63,7 +64,7 @@ pub(in crate::file_manager) fn sizes(state: &FilesState, width: f32, height: f32
     } else {
         STATUS_HEIGHT
     };
-    let body = (height - bar - CRUMBS_HEIGHT - notice - band - status).max(LEAST_BODY);
+    let body = (height - bar - commands - notice - band - status).max(LEAST_BODY);
     let one_pane = width < ONE_PANE_BELOW;
     let picker = state.variant() == crate::file_manager::context::Variant::Picker;
     let tree = if width < TREE_BELOW || picker {
@@ -90,6 +91,7 @@ pub(in crate::file_manager) fn sizes(state: &FilesState, width: f32, height: f32
     Sizes {
         width,
         bar,
+        commands,
         notice,
         body,
         tree,
@@ -137,7 +139,7 @@ where
                 .items_center()
                 .flex_shrink_0()
                 .w(width)
-                .h(CRUMBS_HEIGHT)
+                .h(sizes.commands)
                 .overflow_clip()
                 .child(crumbs),
         );

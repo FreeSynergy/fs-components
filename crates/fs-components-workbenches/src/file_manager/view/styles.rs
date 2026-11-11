@@ -30,6 +30,11 @@ const LAYOUT: &str = r"
 .fs-files-place { padding: var(--space-1) var(--space-3); border-radius: var(--radius-default); cursor: pointer; }
 .fs-files-place:hover { background: var(--accent-subtle); }
 .fs-files-place-current { background: var(--selection); color: var(--accent); }
+.fs-files-icon-btn { border-radius: var(--radius-default); cursor: pointer; }
+.fs-files-icon-btn:hover { background: var(--accent-subtle); }
+.fs-files-icon-btn-on { background: var(--selection); }
+.fs-files-icon-btn-off { opacity: 0.4; cursor: default; }
+.fs-files-command-row { padding: 0; gap: 4px; }
 .fs-files-empty { padding: var(--space-4); color: var(--text-secondary); }
 .fs-files-more { justify-content: center; border-top-width: 1px; border-top-color: var(--border); }
 .fs-files-press { padding: var(--space-1) var(--space-3); border-radius: var(--radius-default); background: var(--surface-elevated); cursor: pointer; }

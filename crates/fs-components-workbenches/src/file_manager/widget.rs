@@ -23,8 +23,8 @@ use super::labels::FileLabels;
 use super::source::FileSource;
 use super::state::FilesState;
 use super::view::{
-    PickHandler, band, crumbs_row, frame, notice_line, side, sizes, status_line, toolbar, tree_pane,
-    work,
+    PickHandler, band, command_row, frame, nav_row, notice_line, side, sizes, status_line,
+    tree_pane, work,
 };
 use crate::input_slots::InputSlots;
 
@@ -143,8 +143,8 @@ impl FileManagerWidget {
         let name = self.element_name();
         let measured = sizes(&snapshot, width, height);
         let search = self.field_for(&snapshot).build();
-        let bar = toolbar(&snapshot, &name, &actions, search, width);
-        let crumbs = crumbs_row(&snapshot, &name, &actions, width);
+        let bar = nav_row(&snapshot, &name, &actions, search, width);
+        let crumbs = command_row(&snapshot, &name, &actions, width);
         let notice = snapshot.notice().map(|n| notice_line(n, &name));
         let tree = tree_pane(&snapshot, &actions);
         let side_area = side(

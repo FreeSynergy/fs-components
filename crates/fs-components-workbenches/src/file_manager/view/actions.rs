@@ -9,6 +9,7 @@ use blinc_cn::cn;
 use blinc_cn::components::button::{ButtonSize, ButtonVariant};
 use blinc_layout::div::{Div, div};
 use blinc_layout::widgets::button as layout_button;
+use fs_components_widgets::icon::{Glyph, Tone, icon};
 
 use crate::file_manager::context::PickedFile;
 use crate::file_manager::state::FilesState;
@@ -141,3 +142,55 @@ pub(super) fn plain_button(id: String, label: &str, act: &Act) -> Div {
         .on_click(move |_| act())
         .child(blinc_layout::text(label).no_cursor())
 }
+
+/// A button that is only an icon, with its words as a tooltip. `on` shows it pressed (a view that is the
+/// one in force), `enabled` false shows it dimmed and does nothing. A tab stop that the window presses with
+/// Enter and Space, like the other buttons.
+pub(super) fn icon_button(
+    id: String,
+    glyph: Glyph,
+    tip: &str,
+    (on, enabled): (bool, bool),
+    act: &Act,
+) -> Div {
+    let act = Arc::clone(act);
+    let key = blinc_layout::InstanceKey::explicit(format!("fs-files-tip-{id}"));
+    let trigger = move || {
+        let mut face = div()
+            .class("fs-files-icon-btn")
+            .flex_row()
+            .items_center()
+            .justify_center()
+            .w(ICON_BUTTON)
+            .h(ICON_BUTTON)
+            .child(
+                div()
+                    .pointer_events_none()
+                    .child(icon(glyph, 20.0, if enabled { Tone::Normal } else { Tone::Muted })),
+            );
+        if on {
+            face = face.class("fs-files-icon-btn-on");
+        }
+        if !enabled {
+            face = face.class("fs-files-icon-btn-off");
+        }
+        face
+    };
+    let with_tip = blinc_cn::components::tooltip::TooltipBuilder::with_key(trigger, key)
+        .text(tip.to_string());
+    div()
+        .id(id)
+        .flex_shrink_0()
+        .w(ICON_BUTTON)
+        .h(ICON_BUTTON)
+        .attr("tabindex", "0")
+        .on_click(move |_| {
+            if enabled {
+                act();
+            }
+        })
+        .child(with_tip)
+}
+
+/// The width and height of an icon button.
+pub(in crate::file_manager) const ICON_BUTTON: f32 = 36.0;

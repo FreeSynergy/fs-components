@@ -6,6 +6,7 @@
 use std::sync::Arc;
 
 use super::position::ListPosition;
+use crate::icon::Glyph;
 use super::window::DEFAULT_ROW_HEIGHT;
 
 /// How much room a column takes.
@@ -68,6 +69,8 @@ pub struct Row {
     pub cells: Vec<String>,
     /// A short marking that stands out, before the first text; its words come from the caller.
     pub mark: Option<String>,
+    /// An icon before the first text.
+    pub glyph: Option<Glyph>,
 }
 
 impl Row {
@@ -77,10 +80,18 @@ impl Row {
             key: key.into(),
             cells,
             mark: None,
+            glyph: None,
         }
     }
 
     /// The row with this marking.
+    #[must_use]
+    pub fn with_glyph(mut self, glyph: Glyph) -> Self {
+        self.glyph = Some(glyph);
+        self
+    }
+
+    /// With this marking before the first text.
     #[must_use]
     pub fn with_mark(mut self, mark: impl Into<String>) -> Self {
         self.mark = Some(mark.into());

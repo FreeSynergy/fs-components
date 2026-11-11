@@ -18,8 +18,12 @@ use super::model::{ListView, OnSelect, Row, RowSource};
 use super::position::ListPosition;
 use super::window::column_widths;
 use crate::Element;
+use crate::icon::{Tone, icon};
 use crate::keys::{Key, KeyEvent, bind_keys};
 
+/// The size of the icon before the first text of a row, and what it takes of the cell.
+const GLYPH_SIZE: f32 = 20.0;
+const GLYPH_ROOM: f32 = 28.0;
 /// Height of the row of headings in pixels.
 const HEAD_HEIGHT: f32 = 28.0;
 
@@ -155,17 +159,27 @@ impl Shared {
         for (column, width) in self.widths.iter().enumerate() {
             let cell = row.cells.get(column).map_or("", String::as_str);
             let mark = row.mark.as_ref().filter(|_| column == 0);
+            let glyph = row.glyph.filter(|_| column == 0);
             let room = width
                 - if mark.is_some() {
                     FIRST_CELL_MARK_ROOM
                 } else {
                     0.0
-                };
+                }
+                - if glyph.is_some() { GLYPH_ROOM } else { 0.0 };
             let mut holder = div()
                 .class("fs-list-cell")
                 .flex_row()
                 .items_center()
                 .w(*width);
+            if let Some(glyph) = glyph {
+                holder = holder.child(
+                    div()
+                        .flex_shrink_0()
+                        .mr(2.0)
+                        .child(icon(glyph, GLYPH_SIZE, Tone::Kind)),
+                );
+            }
             if let Some(mark) = mark {
                 holder = holder.child(
                     div()

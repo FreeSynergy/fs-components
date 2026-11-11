@@ -19,6 +19,7 @@ pub mod calendar_view;
 pub mod drafts;
 pub mod file_preview;
 pub mod file_tile;
+pub mod icon;
 pub mod keys;
 pub mod lightbox;
 pub mod list_view;
@@ -49,6 +50,7 @@ pub use calendar_view::{
 };
 pub use file_preview::{Fact, FilePreview, PreviewContent, SafeText, picture_fits, safe_text};
 pub use file_tile::{FileTile, TileGrid};
+pub use icon::{Glyph, Tone, icon};
 pub use keys::{Handled, Key, KeyEvent};
 pub use lightbox::{LightBox, Media};
 pub use list_view::{Column, ColumnWidth, ListPosition, ListView, Row, RowSource, VecRows};

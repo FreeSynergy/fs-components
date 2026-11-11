@@ -118,6 +118,16 @@ pub struct FileLabels {
     pub status_selected: String,
     /// Default: `Places`.
     pub places: String,
+    /// Default: `Folders`.
+    pub folders_title: String,
+    /// Default: `Back`.
+    pub nav_back: String,
+    /// Default: `Forward`.
+    pub nav_forward: String,
+    /// Default: `Up one folder`.
+    pub nav_up: String,
+    /// Default: `Reload`.
+    pub nav_reload: String,
     /// Default: `Folder`.
     pub folder_word: String,
     /// Default: `File`.

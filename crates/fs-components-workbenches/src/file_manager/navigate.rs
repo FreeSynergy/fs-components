@@ -35,6 +35,68 @@ impl FilesState {
         self.open_tree_to(key);
     }
 
+    /// Can the person go back to the place before?
+    pub fn can_go_back(&self) -> bool {
+        !self.back.is_empty()
+    }
+
+    /// Can the person go forward again, after going back?
+    pub fn can_go_forward(&self) -> bool {
+        !self.forward.is_empty()
+    }
+
+    /// Can the person go up one folder?
+    pub fn can_go_up(&self) -> bool {
+        match &self.place {
+            Place::Folder(folder) => folder.is_some(),
+            Place::Trash => true,
+        }
+    }
+
+    fn go_to(&mut self, place: &Place) {
+        self.moving = true;
+        match place {
+            Place::Folder(folder) => self.open_folder(folder.as_deref()),
+            Place::Trash => self.open_trash(),
+        }
+        self.moving = false;
+    }
+
+    /// Back to the place before; the place left can be come back to with [`FilesState::go_forward`].
+    pub fn go_back(&mut self) {
+        if let Some(place) = self.back.pop() {
+            let from = self.place.clone();
+            self.go_to(&place);
+            if self.place == place {
+                self.forward.push(from);
+            }
+        }
+    }
+
+    /// Forward again to where [`FilesState::go_back`] came from.
+    pub fn go_forward(&mut self) {
+        if let Some(place) = self.forward.pop() {
+            let from = self.place.clone();
+            self.go_to(&place);
+            if self.place == place {
+                self.back.push(from);
+            }
+        }
+    }
+
+    /// Up one folder (from the trash: to the top).
+    pub fn go_up(&mut self) {
+        let parent = match &self.place {
+            Place::Folder(Some(_)) => {
+                let n = self.path.len();
+                (n >= 2).then(|| self.path[n - 2].key.clone())
+            }
+            Place::Folder(None) => return,
+            Place::Trash => None,
+        };
+        self.open_folder(parent.as_deref());
+    }
+
     /// Show the trash. A move in progress goes on: a restore to a place chooses its place out here.
     pub fn open_trash(&mut self) {
         if self.capabilities.trash {
@@ -45,6 +107,10 @@ impl FilesState {
 
     /// A new list in another place, from its top, with nothing selected.
     fn leave_for(&mut self, place: Place) {
+        if !self.moving && place != self.place {
+            self.back.push(self.place.clone());
+            self.forward.clear();
+        }
         self.place = place;
         self.selected = None;
         if matches!(self.ask, Ask::Confirm(_) | Ask::NameTaken(_)) {
