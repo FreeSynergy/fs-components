@@ -33,8 +33,8 @@ pub const MAX_FEATURES: usize = 100_000;
 pub const MAX_TILE_MEMORY: u64 = 64 * 1024 * 1024;
 /// The rule: no byte of input makes more than this many bytes of memory (`BUDGET_BASE` aside), and never more than
 /// [`MAX_TILE_MEMORY`] in all. The number is high because `mvt-reader` reserves a geometry-long buffer for every ring
-/// (every `ClosePath`): a polygon of 300 holes of nine points is 6.3 KB of input and about 15 MB taken (2 400 bytes a
-/// byte), and such polygons exist (a forest with clearings); small tiles of many lines reach about 3 300. The budget
+/// (every `ClosePath`): a polygon of 300 holes of nine points is 6.3 KB of input; the guard estimates 15 MB for it (2 400
+/// bytes a byte), the measured peak is 183 KB (the estimate is a safe upper bound, not what is taken), and such polygons exist (a forest with clearings); small tiles of many lines reach about 3 300. The budget
 /// of a tile is `min(MAX_TILE_MEMORY, BUDGET_BASE + BUDGET_PER_BYTE * bytes)`. The estimate is an upper bound as far
 /// as measured (`tests/memory.rs` on tiles near the budget, and the fuzz target), not a proof.
 pub const BUDGET_PER_BYTE: u64 = 4096;

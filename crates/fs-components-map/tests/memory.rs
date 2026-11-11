@@ -116,7 +116,7 @@ fn no_tile_takes_more_memory_than_its_budget_and_the_bombs_take_next_to_none() {
         accepted_near >= 1,
         "no mix was accepted near the budget: the test would say nothing"
     );
-    // a real polygon with 300 holes of nine points has to decode (it is 6 KB, and about 15 MB are taken)
+    // a real polygon with 300 holes of nine points has to decode (it is 6 KB; the guard estimates 15 MB, the measured peak is 183 KB)
     let polygon = polygon_with_holes(300);
     let (peak, ok) = peak_of(&polygon);
     assert!(
