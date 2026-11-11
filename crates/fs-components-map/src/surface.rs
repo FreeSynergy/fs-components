@@ -108,6 +108,19 @@ impl MapSurface {
         self.0.live.refresh_now();
     }
 
+    /// The source does not answer: so many fetches hang that no tile can be asked for until one comes back. The
+    /// map has no words of its own; a program shows "the source does not answer" while this is true.
+    #[must_use]
+    pub fn source_stalled(&self) -> bool {
+        self.0.loader.stalled()
+    }
+
+    /// How many fetches hold a place now.
+    #[must_use]
+    pub fn tiles_loading(&self) -> usize {
+        self.0.loader.loading()
+    }
+
     /// How many tiles are decoded and kept.
     #[must_use]
     pub fn tiles_kept(&self) -> usize {

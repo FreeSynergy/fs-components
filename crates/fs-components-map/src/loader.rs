@@ -5,7 +5,9 @@
 //! * At most [`MOST_LOADING`] tiles are fetched at once, and at most [`MOST_IN_FLIGHT`] workers exist (a source
 //!   that never answers cannot be stopped, but it cannot fill the machine with threads either).
 //! * A fetch that takes longer than [`Limits::load_timeout`] gives up its place: the tile is `Failed` and tried again
-//!   after [`Limits::retry_after`]; the late answer of that worker is thrown away.
+//!   after [`Limits::retry_after`]; the late answer of that worker is thrown away. A watchdog thread of the loader
+//!   (it ends with the loader) does this on time and has the view draw again, so it needs no draw to happen first.
+//! * When [`MOST_IN_FLIGHT`] workers hang, no tile is fetched until one comes back: [`Loader::stalled`] says so.
 //! * A tile that is no longer needed (the view moved) gives up its place at the next draw.
 //! * `Ok(None)` (no such tile) is kept for good; an error, a panic or bytes that do not decode are kept as `Failed`
 //!   and asked for again after [`Limits::retry_after`], so a bad moment of the network is no "there is none" for ever.
@@ -73,6 +75,29 @@ impl Kept {
             .count()
     }
 
+    /// Time passes: a fetch over the time limit fails, a failure old enough is forgotten (so it is asked for again).
+    /// Returns whether something changed.
+    fn sweep(&mut self, now: Instant, limits: Limits) -> bool {
+        let mut timed_out = Vec::new();
+        let before = self.slots.len();
+        self.slots.retain(|id, slot| match slot {
+            Slot::Loading { since, .. } if now.duration_since(*since) >= limits.load_timeout => {
+                timed_out.push(*id);
+                false
+            }
+            Slot::Failed(at, _) => now.duration_since(*at) < limits.retry_after,
+            _ => true,
+        });
+        let changed = self.slots.len() != before;
+        for id in timed_out {
+            self.counter += 1;
+            let number = self.counter;
+            self.slots.insert(id, Slot::Failed(now, number));
+            self.order.push_back((id, number));
+        }
+        changed
+    }
+
     /// A tile is finished: it takes the place of what is in the slot and the oldest go if there are too many.
     fn finish(&mut self, id: TileId, token: u64, done: impl FnOnce(u64) -> Slot, most: usize) {
         if !matches!(self.slots.get(&id), Some(Slot::Loading { token: t, .. }) if *t == token) {
@@ -110,11 +135,31 @@ fn lock<T>(m: &Mutex<T>) -> std::sync::MutexGuard<'_, T> {
 
 impl Loader {
     pub(crate) fn new(limits: Limits, live: Live) -> Self {
-        Self {
-            kept: Arc::default(),
-            limits,
-            live,
-        }
+        let kept: Arc<Mutex<Kept>> = Arc::default();
+        // The time limits act without a draw: this thread looks every now and then (a quarter of the shorter time,
+        // between 10 ms and 1 s) and has the view draw again when it changed something. It ends with the loader.
+        let weak = Arc::downgrade(&kept);
+        let tick = (limits.load_timeout.min(limits.retry_after) / 4)
+            .clamp(Duration::from_millis(10), Duration::from_secs(1));
+        // No thread to be had: the limits then act at the next draw, as before.
+        let _ = std::thread::Builder::new()
+            .name("fs-map-watchdog".into())
+            .spawn(move || {
+                while let Some(kept) = weak.upgrade() {
+                    let changed = lock(&kept).sweep(Instant::now(), limits);
+                    drop(kept);
+                    if changed {
+                        live.refresh();
+                    }
+                    std::thread::sleep(tick);
+                }
+            });
+        Self { kept, limits, live }
+    }
+
+    /// How many fetches hold a place.
+    pub(crate) fn loading(&self) -> usize {
+        lock(&self.kept).loading()
     }
 
     /// How many tiles are decoded and kept.
@@ -126,34 +171,19 @@ impl Loader {
             .count()
     }
 
-    /// The tiles that the view needs now: the others give up their place, a fetch that took too long fails, a failure
-    /// that is old enough is forgotten so that it is asked for again.
+    /// The tiles that the view needs now: the others give up their place; time is taken into account (`sweep`).
     pub(crate) fn retarget(&self, wanted: &[TileId]) {
         let wanted: HashSet<TileId> = wanted.iter().copied().collect();
-        let now = Instant::now();
         let mut kept = lock(&self.kept);
-        let limits = self.limits;
-        let mut failed = Vec::new();
-        kept.slots.retain(|id, slot| match slot {
-            Slot::Loading { since, .. } => {
-                if !wanted.contains(id) {
-                    false
-                } else if now.duration_since(*since) >= limits.load_timeout {
-                    failed.push(*id);
-                    false
-                } else {
-                    true
-                }
-            }
-            Slot::Failed(at, _) => now.duration_since(*at) < limits.retry_after,
-            Slot::Ready(..) => true,
-        });
-        for id in failed {
-            kept.counter += 1;
-            let number = kept.counter;
-            kept.slots.insert(id, Slot::Failed(now, number));
-            kept.order.push_back((id, number));
-        }
+        kept.slots
+            .retain(|id, slot| !matches!(slot, Slot::Loading { .. }) || wanted.contains(id));
+        kept.sweep(Instant::now(), self.limits);
+    }
+
+    /// No tile can be fetched at the moment because [`MOST_IN_FLIGHT`] workers hang: the source does not answer. A
+    /// caller that has words for it ("the source does not answer") shows them while this is true.
+    pub(crate) fn stalled(&self) -> bool {
+        lock(&self.kept).in_flight >= MOST_IN_FLIGHT
     }
 
     /// The tile if it is here; if not, start fetching it (when there is a place) and say nothing yet.

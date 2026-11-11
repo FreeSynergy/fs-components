@@ -268,3 +268,33 @@ fn the_source_names_who_made_the_data_and_the_map_shows_it() {
     );
     assert!(b.width > 20.0 && b.height > 6.0);
 }
+
+#[test]
+fn the_time_limit_acts_without_a_draw_a_watchdog_frees_the_places_on_time() {
+    let _g = serial();
+    let source = Scripted::new(Mode::Hang);
+    let s = surface(&source, limits(120, 60_000, 256), 5.0);
+    let _ = s.build(900.0, 700.0);
+    until("four hold places", || s.tiles_loading() == MOST_LOADING);
+    // no draw from here on: the places come back by themselves
+    until("the places came back with no draw", || {
+        s.tiles_loading() == 0
+    });
+    *source.release.lock().unwrap() = true;
+}
+
+#[test]
+fn a_source_that_never_answers_stalls_the_map_and_says_so_until_it_comes_back() {
+    let _g = serial();
+    let source = Scripted::new(Mode::Hang);
+    let s = surface(&source, limits(40, 60_000, 256), 5.0);
+    assert!(!s.source_stalled());
+    draw_until(&s, "eight workers hang", || s.source_stalled());
+    assert_eq!(
+        source.asked(),
+        fs_components_map::MOST_IN_FLIGHT,
+        "no ninth thread"
+    );
+    *source.release.lock().unwrap() = true;
+    until("they come back", || !s.source_stalled());
+}

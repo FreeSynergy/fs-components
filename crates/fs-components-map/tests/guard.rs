@@ -7,7 +7,7 @@
 
 use std::time::{Duration, Instant};
 
-use fs_components_map::{MAX_FEATURES, MAX_TILE_BYTES, decode_tile};
+use fs_components_map::{MAX_FEATURES, MAX_TILE_BYTES, MAX_TILE_CELLS, decode_tile};
 
 fn varint(mut v: u64, out: &mut Vec<u8>) {
     while v >= 0x80 {
@@ -64,21 +64,30 @@ fn line(x0: i64, y0: i64, x1: i64, y1: i64) -> Vec<u8> {
     feature(2, &[9, zig(x0), zig(y0), 10, zig(x1 - x0), zig(y1 - y0)])
 }
 
-/// One feature with `rings` rings: a `MoveTo` and a point each, so `rings * numbers` grows with the square.
-fn ring_bomb(rings: u64) -> Vec<u8> {
-    let mut geometry = Vec::new();
+/// The real bomb of `mvt-reader` 2.5.0: a polygon with `rings` times `LineTo` + `ClosePath`. The decoder reserves a
+/// buffer of the whole geometry at every `ClosePath` (see `guard.rs`); a `MoveTo` alone reserves nothing for a polygon.
+fn close_path_bomb(rings: u64) -> Vec<u8> {
+    let mut geometry = vec![9, 0, 0]; // MoveTo(1) 0,0
     for _ in 0..rings {
-        geometry.extend_from_slice(&[9, 0, 0]);
+        geometry.extend_from_slice(&[10, 2, 2, 15]); // LineTo(1) 1,1 ; ClosePath
     }
     tile(&[layer("water", 4096, &[feature(3, &geometry)])])
 }
 
 #[test]
-fn a_tile_whose_rings_would_make_the_decoder_reserve_the_square_is_refused_at_once_and_unread() {
+fn the_real_bomb_of_a_megabyte_is_refused_at_once_and_unread() {
     let started = Instant::now();
-    // 20_000 rings, 60_000 numbers: 1.2 thousand million points reserved by mvt-reader 2.5.0 (9.6 GB), from 60 KB.
-    let bomb = ring_bomb(20_000);
-    assert!(bomb.len() < 100_000, "a small tile: {} bytes", bomb.len());
+    // 250 000 ClosePaths over 1 000 003 numbers: mvt-reader would reserve 250 000 x 1 000 003 points of 8 bytes, 2 TB.
+    let bomb = close_path_bomb(250_000);
+    assert!(
+        bomb.len() <= 1_100_000,
+        "about a megabyte: {} bytes",
+        bomb.len()
+    );
+    assert!(
+        bomb.len() < MAX_TILE_BYTES,
+        "it passes the byte limit, so only the estimate can stop it"
+    );
     let error = decode_tile(&bomb).expect_err("refused");
     assert!(error.0.contains("refused"), "{error}");
     assert!(
@@ -88,25 +97,43 @@ fn a_tile_whose_rings_would_make_the_decoder_reserve_the_square_is_refused_at_on
 }
 
 #[test]
-fn the_same_shape_in_a_size_that_is_fine_is_not_refused_by_the_guard() {
-    let tile = ring_bomb(100);
-    let result = decode_tile(&tile);
-    assert!(
-        result
-            .as_ref()
-            .is_err_and(|e| e.0.contains("refused"))
-            .not(),
-        "{result:?}"
-    );
+fn a_bomb_of_move_to_alone_is_counted_too_to_be_safe() {
+    let mut geometry = Vec::new();
+    for _ in 0..250_000 {
+        geometry.extend_from_slice(&[9, 0, 0]);
+    }
+    let error =
+        decode_tile(&tile(&[layer("roads", 4096, &[feature(2, &geometry)])])).expect_err("refused");
+    assert!(error.0.contains("refused"), "{error}");
 }
 
-trait Not {
-    fn not(self) -> bool;
-}
-impl Not for bool {
-    fn not(self) -> bool {
-        !self
+/// A feature of `rings` rings, which costs `(rings + 1) * (3 + 4 * rings)` points on its own.
+fn middling(rings: u64) -> Vec<u8> {
+    let mut geometry = vec![9, 0, 0];
+    for _ in 0..rings {
+        geometry.extend_from_slice(&[10, 2, 2, 15]);
     }
+    feature(3, &geometry)
+}
+
+#[test]
+fn the_cost_is_summed_over_the_tile_not_only_checked_per_feature() {
+    // one feature of 100 rings: 101 * 403 = 40 703 points, far below the limit
+    assert!(decode_tile(&tile(&[layer("water", 4096, &[middling(100)])])).is_ok());
+    // 400 of them in one tile: each is fine alone, together 16.3 million points, over the limit of 8 million
+    let features: Vec<Vec<u8>> = (0..400).map(|_| middling(100)).collect();
+    assert!(40_703 * 400 > MAX_TILE_CELLS);
+    let big = tile(&[layer("water", 4096, &features)]);
+    assert!(big.len() < 200_000, "small in bytes: {}", big.len());
+    let error = decode_tile(&big).expect_err("refused");
+    assert!(
+        error.0.contains("whole") || error.0.contains("refused"),
+        "{error}"
+    );
+    // and the sum runs over layers: two layers of 200
+    let half: Vec<Vec<u8>> = (0..200).map(|_| middling(100)).collect();
+    let two = tile(&[layer("water", 4096, &half), layer("landuse", 4096, &half)]);
+    assert!(decode_tile(&two).is_err(), "the layers are summed");
 }
 
 #[test]

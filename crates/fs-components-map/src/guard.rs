@@ -1,10 +1,17 @@
 //! What a tile may cost, looked at before `mvt-reader` decodes it.
 //!
-//! Pattern: Guard (a check before the work). `mvt-reader` 2.5.0 reserves, for every ring of a feature, room for the
-//! whole geometry of that feature, so a feature of `G` numbers with `R` rings asks for `R * G` points (quadratic), and
-//! running out of memory is no panic that `catch_unwind` catches. The tile is therefore scanned first, in its raw
-//! protobuf form, with no allocation: its size, the number of its features, and for each feature `R * G`, and the
-//! extent of each layer is read here too. A tile over a limit is refused, never decoded.
+//! Pattern: Guard (a check before the work). `mvt-reader` 2.5.0 (`parse_geometry`, lib.rs) reserves a buffer of the
+//! size of the WHOLE geometry of a feature (`G` numbers, 8 bytes a point) at the start, again at every `ClosePath`
+//! command, and again at every `MoveTo` of a line. A feature with `C` such commands therefore asks for `(C + 1) * G`
+//! points (quadratic in its size), and what a layer decodes stays in memory until the layer is done: the cost of a
+//! tile is the SUM over all its features. Running out of memory is no panic that `catch_unwind` catches (on Windows,
+//! where the system must really promise the memory, it ends the process). The tile is therefore scanned first, in its
+//! raw protobuf form, with no allocation: its size, the number of its features, and the estimated reservation of the
+//! whole tile; the extent of each layer is read too. A tile over a limit is refused, never decoded.
+//!
+//! Evidence (no memory is used by the tests): a tile of 1 MB made of `LineTo`+`ClosePath` repeated 250 000 times is
+//! one feature with 250 000 `ClosePath` and 1 000 000 numbers, so `mvt-reader` reserves 250 000 buffers of 1 000 000
+//! points of 8 bytes: 2 TB. The estimate here is `(C + 1) * G` = 2.5e11 points; the limit is 8e6 (64 MiB).
 
 use crate::mvt::MvtError;
 
@@ -12,8 +19,8 @@ use crate::mvt::MvtError;
 pub const MAX_TILE_BYTES: usize = 4 * 1024 * 1024;
 /// The most features of all layers of one tile.
 pub const MAX_FEATURES: usize = 100_000;
-/// The most points `mvt-reader` may reserve for one feature (`rings * numbers of its geometry`, 8 bytes each).
-pub const MAX_RING_CELLS: u64 = 4_000_000;
+/// The most points `mvt-reader` may reserve for all features of one tile together (8 bytes each: 64 MiB).
+pub const MAX_TILE_CELLS: u64 = 8_000_000;
 
 /// What the scan found: the extent of each layer, in the order of the layers (`None` = the layer gives none: 4096).
 pub(crate) struct Scanned {
@@ -87,11 +94,11 @@ fn too_much(what: &str) -> MvtError {
     MvtError(format!("tile refused: {what}"))
 }
 
-/// Geometry commands of one feature: the numbers and the rings (the `MoveTo`s) so far.
+/// Geometry commands of one feature: the numbers, and the buffers `mvt-reader` makes besides the first one.
 #[derive(Default)]
 struct Geometry {
     numbers: u64,
-    rings: u64,
+    extra: u64,
     skip: u64,
 }
 
@@ -104,21 +111,24 @@ impl Geometry {
         }
         let count = value >> 3;
         match value & 7 {
+            // a `MoveTo` makes a buffer for a line, a `ClosePath` for every ring: counted for both, to be safe
             1 => {
-                self.rings = self.rings.saturating_add(count);
+                self.extra += 1;
                 self.skip = count.saturating_mul(2);
             }
             2 => self.skip = count.saturating_mul(2),
+            7 => self.extra += 1,
             _ => {}
         }
     }
 
+    /// The points reserved: the first buffer and one per command, each as long as the geometry.
     fn cost(&self) -> u64 {
-        self.rings.saturating_mul(self.numbers)
+        self.extra.saturating_add(1).saturating_mul(self.numbers)
     }
 }
 
-fn feature(bytes: &[u8]) -> Result<(), MvtError> {
+fn feature(bytes: &[u8]) -> Result<u64, MvtError> {
     let mut geometry = Geometry::default();
     let mut cursor = Cursor(bytes);
     while let Some((number, value)) = cursor.field()? {
@@ -131,15 +141,15 @@ fn feature(bytes: &[u8]) -> Result<(), MvtError> {
                 let mut numbers = Cursor(packed);
                 while !numbers.0.is_empty() {
                     geometry.feed(numbers.varint()?);
+                    if geometry.cost() > MAX_TILE_CELLS {
+                        return Err(too_much("a feature would need too much memory to decode"));
+                    }
                 }
             }
             Value::Skipped => {}
         }
-        if geometry.cost() > MAX_RING_CELLS {
-            return Err(too_much("a feature would need too much memory to decode"));
-        }
     }
-    Ok(())
+    Ok(geometry.cost())
 }
 
 /// Look at a tile before it is decoded.
@@ -150,7 +160,7 @@ pub(crate) fn scan(bytes: &[u8]) -> Result<Scanned, MvtError> {
     if bytes.len() > MAX_TILE_BYTES {
         return Err(too_much("too many bytes"));
     }
-    let (mut features, mut extents) = (0usize, Vec::new());
+    let (mut features, mut cells, mut extents) = (0usize, 0u64, Vec::new());
     let mut tile = Cursor(bytes);
     while let Some((number, value)) = tile.field()? {
         let (3, Value::Bytes(layer)) = (number, value) else {
@@ -165,7 +175,10 @@ pub(crate) fn scan(bytes: &[u8]) -> Result<Scanned, MvtError> {
                     if features > MAX_FEATURES {
                         return Err(too_much("too many features"));
                     }
-                    feature(f)?;
+                    cells = cells.saturating_add(feature(f)?);
+                    if cells > MAX_TILE_CELLS {
+                        return Err(too_much("the tile would need too much memory to decode"));
+                    }
                 }
                 (5, Value::Number(e)) => extent = u32::try_from(e).ok(),
                 _ => {}
