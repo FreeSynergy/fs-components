@@ -1,8 +1,5 @@
-//! The words the file manager shows.
-//!
-//! Pattern: none — the workbench does not know its audience, so every text comes from the
-//! caller (translation, ADR 0053, is the caller's). `{}` is replaced by what the text talks about. The
-//! defaults are neutral English; the file `labels_default.rs` keeps them.
+//! The words the file manager shows. Pattern: none — every text comes from the caller (ADR 0053); `{}` is replaced by what it talks about.
+//! The defaults are neutral English, in `labels_default.rs`.
 
 /// Texts of the file manager. Build by `Default` and assigning fields.
 #[non_exhaustive]
@@ -299,17 +296,4 @@ pub struct FileLabels {
     pub filter_title: String,
     /// Default: `What the rescan found`.
     pub report_title: String,
-}
-
-impl FileLabels {
-    /// `text` with `{}` replaced by `what`.
-    pub fn fill(text: &str, what: &str) -> String {
-        text.replacen("{}", what, 1)
-    }
-
-    /// `text` with the placeholder `{name}` replaced by `value`: a sentence that names what goes
-    /// into it, so a translation may move it.
-    pub fn fill_named(text: &str, name: &str, value: &str) -> String {
-        text.replace(&format!("{{{name}}}"), value)
-    }
 }

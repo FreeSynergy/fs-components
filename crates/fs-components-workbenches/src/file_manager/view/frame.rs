@@ -11,7 +11,7 @@ use blinc_layout::div::{Div, div};
 use blinc_layout::prelude::ElementBuilder;
 
 use super::band_size::band_height;
-use super::toolbar::{NAV_HEIGHT, commands_height};
+use super::nav::{NAV_HEIGHT, commands_height};
 use crate::file_manager::state::FilesState;
 
 /// Below this width one pane is shown at a time.
@@ -81,7 +81,8 @@ pub(in crate::file_manager) fn sizes(state: &FilesState, width: f32, height: f32
         } else {
             (width, 0.0)
         }
-    } else if state.selected_key().is_none() && matches!(state.side(), super::super::side::Side::Item)
+    } else if state.selected_key().is_none()
+        && matches!(state.side(), super::super::side::Side::Item)
     {
         // nothing to show beside the list: the list takes the room
         (rest, 0.0)

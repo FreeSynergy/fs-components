@@ -238,8 +238,8 @@ fn short_type(media_type: &str) -> String {
         sub.to_uppercase()
     } else {
         let mut chars = sub.chars();
-        chars.next().map_or_else(String::new, |c| {
-            c.to_uppercase().chain(chars).collect()
-        })
+        chars
+            .next()
+            .map_or_else(String::new, |c| c.to_uppercase().chain(chars).collect())
     }
 }

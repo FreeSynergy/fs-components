@@ -61,7 +61,9 @@ pub fn kind_colour(glyph: Glyph) -> Option<Rgba> {
 pub fn icon(glyph: Glyph, px: f32, tone: Tone) -> impl Element + use<> {
     let theme = ThemeState::get();
     let colour = match tone {
-        Tone::Kind => kind_colour(glyph).unwrap_or_else(|| rgba(theme.color(ColorToken::TextPrimary))),
+        Tone::Kind => {
+            kind_colour(glyph).unwrap_or_else(|| rgba(theme.color(ColorToken::TextPrimary)))
+        }
         Tone::Normal => rgba(theme.color(ColorToken::TextPrimary)),
         Tone::Muted => rgba(theme.color(ColorToken::TextSecondary)),
         Tone::Accent => rgba(theme.color(ColorToken::Primary)),
@@ -101,7 +103,10 @@ pub fn glyph_of(media_type: &str, folder: bool) -> Glyph {
             "json" | "xml" | "yaml" | "toml" | "sql" | "javascript" => Glyph::FileCode,
             s if s.contains("spreadsheet") || s.contains("excel") => Glyph::FileSheet,
             s if s.contains("presentation") || s.contains("powerpoint") => Glyph::FileSlides,
-            s if s.contains("wordprocessing") || s.contains("opendocument.text") || s.contains("msword") => {
+            s if s.contains("wordprocessing")
+                || s.contains("opendocument.text")
+                || s.contains("msword") =>
+            {
                 Glyph::FileDoc
             }
             _ => Glyph::FileUnknown,
@@ -129,7 +134,10 @@ mod tests {
             ),
             Glyph::FileSheet
         );
-        assert_eq!(glyph_of("application/octet-stream", false), Glyph::FileUnknown);
+        assert_eq!(
+            glyph_of("application/octet-stream", false),
+            Glyph::FileUnknown
+        );
         assert_eq!(glyph_of("", true), Glyph::Folder);
     }
 

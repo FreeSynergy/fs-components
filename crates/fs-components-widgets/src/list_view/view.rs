@@ -13,6 +13,7 @@ use blinc_layout::widgets::scroll::Scroll;
 
 use super::cache::RowCache;
 use super::cell::{FIRST_CELL_MARK_ROOM, fit_cell};
+use super::head::HEAD_HEIGHT;
 use super::keys::key_target;
 use super::model::{ListView, OnSelect, Row, RowSource};
 use super::position::ListPosition;
@@ -24,8 +25,6 @@ use crate::keys::{Key, KeyEvent, bind_keys};
 /// The size of the icon before the first text of a row, and what it takes of the cell.
 const GLYPH_SIZE: f32 = 20.0;
 const GLYPH_ROOM: f32 = 28.0;
-/// Height of the row of headings in pixels.
-const HEAD_HEIGHT: f32 = 28.0;
 
 impl ListView {
     /// The element to place in a layout, filling `width` x `height`.
@@ -44,7 +43,7 @@ impl ListView {
         let count = self.source.count();
         let widths = Arc::new(column_widths(&self.columns, width));
         let with_head = self.columns.iter().any(|c| !c.title.is_empty());
-        let head = with_head.then(|| head(&self, &widths));
+        let head = with_head.then(|| super::head::head(&self, &widths));
         let view = (height - if with_head { HEAD_HEIGHT } else { 0.0 }).max(0.0);
         let root = match head {
             Some(head) => root.child(head),
@@ -173,12 +172,11 @@ impl Shared {
                 .items_center()
                 .w(*width);
             if let Some(glyph) = glyph {
-                holder = holder.child(
-                    div()
-                        .flex_shrink_0()
-                        .mr(2.0)
-                        .child(icon(glyph, GLYPH_SIZE, Tone::Kind)),
-                );
+                holder = holder.child(div().flex_shrink_0().mr(2.0).child(icon(
+                    glyph,
+                    GLYPH_SIZE,
+                    Tone::Kind,
+                )));
             }
             if let Some(mark) = mark {
                 holder = holder.child(
@@ -207,29 +205,6 @@ impl Shared {
             }
         })
     }
-}
-
-fn head(list: &ListView, widths: &[f32]) -> Div {
-    let mut element = div().class("fs-list-head").flex_row().h(HEAD_HEIGHT);
-    for (column, width) in list.columns.iter().zip(widths) {
-        let arrow = match column.order {
-            Some(true) => " \u{25BE}",
-            Some(false) => " \u{25B4}",
-            None => "",
-        };
-        let mut cell = div().class("fs-list-cell").w(*width).child(
-            text(format!("{}{arrow}", column.title))
-                .no_wrap()
-                .no_cursor(),
-        );
-        if let (Some(key), Some(on_head)) = (column.sort.clone(), list.on_head.clone()) {
-            cell = cell
-                .class("fs-list-cell-sortable")
-                .on_click(move |_| on_head(&key));
-        }
-        element = element.child(cell);
-    }
-    element
 }
 
 /// Keys report the row they lead to. A caller that selects decides: only a build with that row

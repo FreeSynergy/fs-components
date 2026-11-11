@@ -83,13 +83,29 @@ fn list_view(state: &FilesState, width: f32) -> (Vec<Column>, Vec<Row>) {
         }
     };
     // Name, Size, Modified, Type: what a person looks for first comes first.
-    let mut columns = vec![head(&labels.col_name, ColumnWidth::Share(3.0), SortKey::Name)];
-    columns.push(head(&labels.col_size, ColumnWidth::Pixels(90.0), SortKey::Size));
+    let mut columns = vec![head(
+        &labels.col_name,
+        ColumnWidth::Share(3.0),
+        SortKey::Name,
+    )];
+    columns.push(head(
+        &labels.col_size,
+        ColumnWidth::Pixels(90.0),
+        SortKey::Size,
+    ));
     if dates {
-        columns.push(head(&labels.col_modified, ColumnWidth::Pixels(150.0), SortKey::Modified));
+        columns.push(head(
+            &labels.col_modified,
+            ColumnWidth::Pixels(150.0),
+            SortKey::Modified,
+        ));
     }
     if all {
-        columns.push(head(&labels.col_type, ColumnWidth::Share(1.5), SortKey::Type));
+        columns.push(head(
+            &labels.col_type,
+            ColumnWidth::Share(1.5),
+            SortKey::Type,
+        ));
     }
     let rows = state
         .rows()
@@ -102,10 +118,8 @@ fn list_view(state: &FilesState, width: f32) -> (Vec<Column>, Vec<Row>) {
             if all {
                 cells.push(state.type_word(entry));
             }
-            let row = Row::new(entry.key.clone(), cells).with_glyph(glyph_of(
-                &entry.media_type,
-                entry.kind == EntryKind::Folder,
-            ));
+            let row = Row::new(entry.key.clone(), cells)
+                .with_glyph(glyph_of(&entry.media_type, entry.kind == EntryKind::Folder));
             if entry.is_marked() {
                 row.with_mark(state.labels().marked.clone())
             } else {

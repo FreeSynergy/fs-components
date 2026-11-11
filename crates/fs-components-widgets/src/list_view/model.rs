@@ -6,8 +6,8 @@
 use std::sync::Arc;
 
 use super::position::ListPosition;
-use crate::icon::Glyph;
 use super::window::DEFAULT_ROW_HEIGHT;
+use crate::icon::Glyph;
 
 /// How much room a column takes.
 #[non_exhaustive]

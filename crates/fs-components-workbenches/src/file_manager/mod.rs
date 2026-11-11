@@ -16,6 +16,7 @@ mod filter;
 mod input;
 mod labels;
 mod labels_default;
+mod labels_fill;
 mod model;
 mod navigate;
 mod picker;

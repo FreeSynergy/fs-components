@@ -163,11 +163,11 @@ pub(super) fn icon_button(
             .justify_center()
             .w(ICON_BUTTON)
             .h(ICON_BUTTON)
-            .child(
-                div()
-                    .pointer_events_none()
-                    .child(icon(glyph, 20.0, if enabled { Tone::Normal } else { Tone::Muted })),
-            );
+            .child(div().pointer_events_none().child(icon(
+                glyph,
+                20.0,
+                if enabled { Tone::Normal } else { Tone::Muted },
+            )));
         if on {
             face = face.class("fs-files-icon-btn-on");
         }
@@ -176,8 +176,8 @@ pub(super) fn icon_button(
         }
         face
     };
-    let with_tip = blinc_cn::components::tooltip::TooltipBuilder::with_key(trigger, key)
-        .text(tip.to_string());
+    let with_tip =
+        blinc_cn::components::tooltip::TooltipBuilder::with_key(trigger, key).text(tip.to_string());
     div()
         .id(id)
         .flex_shrink_0()

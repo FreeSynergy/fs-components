@@ -7,8 +7,8 @@ use blinc_layout::div::{Div, div};
 use blinc_layout::text;
 use blinc_layout::widgets::scroll::scroll;
 use fs_components_widgets::TreeView;
-use fs_components_widgets::icon::{Glyph, Tone, icon};
 use fs_components_widgets::breadcrumb::{Breadcrumb, Crumb};
+use fs_components_widgets::icon::{Glyph, Tone, icon};
 
 use super::actions::FileActions;
 use crate::file_manager::context::Variant;
@@ -94,14 +94,13 @@ pub(in crate::file_manager) fn tree_pane(state: &FilesState, actions: &FileActio
         .on_select(move |key| choose(key))
         .build();
     let places = places_group(state, actions);
-    pane.child(places)
-        .child(
-            div()
-                .w_full()
-                .flex_grow()
-                .min_h(0.0)
-                .child(scroll().w_full().h_full().content(tree)),
-        )
+    pane.child(places).child(
+        div()
+            .w_full()
+            .flex_grow()
+            .min_h(0.0)
+            .child(scroll().w_full().h_full().content(tree)),
+    )
 }
 
 /// The places, in groups: where the files are (the own storage), and the trash. A place that the source
@@ -123,7 +122,11 @@ fn places_group(state: &FilesState, actions: &FileActions) -> Div {
             .gap(2.0)
             .attr("tabindex", "0")
             .on_click(move |_| act())
-            .child(icon(glyph, 18.0, if current { Tone::Accent } else { Tone::Kind }))
+            .child(icon(
+                glyph,
+                18.0,
+                if current { Tone::Accent } else { Tone::Kind },
+            ))
             .child(text(word).no_cursor())
     };
     let title = |word: &str| {

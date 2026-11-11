@@ -7,6 +7,7 @@
 
 mod cache;
 mod cell;
+mod head;
 mod keys;
 mod model;
 mod position;

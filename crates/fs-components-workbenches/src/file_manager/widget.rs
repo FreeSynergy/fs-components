@@ -182,7 +182,8 @@ impl FileManagerWidget {
                     )
                 })
         };
-        let status = (snapshot.variant() != super::context::Variant::Picker).then(|| status_line(&snapshot));
+        let status =
+            (snapshot.variant() != super::context::Variant::Picker).then(|| status_line(&snapshot));
         let questions = band(&snapshot, &name, &actions, &self.slots, width);
         frame(
             (measured, height),
