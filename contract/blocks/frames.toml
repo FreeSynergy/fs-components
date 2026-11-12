@@ -1,0 +1,101 @@
+# General frames and shapes that ARIA and Open UI have no name for (naming = "own", each with its reason). Scope general:
+# every program has them in some form.
+
+[block.app-window]
+naming = "own"
+reason = "ADR 0065: the standard window shell (menus, navigation, main area, status); no ARIA role or Open UI component is a whole window."
+scope = "general"
+summary = "The standard window shell of a program: menu bar, navigation, main area, status line."
+summary_de = "Die Standard-Fensterhülle eines Programms: Menüleiste, Navigation, Hauptfläche, Statuszeile."
+parts = ["root", "bar", "nav", "main", "row", "title", "title-box", "empty", "status"]
+states = ["focus", "busy"]
+
+[block.workbench]
+naming = "own"
+reason = "ADR 0037 and DESIGN.md: a workbench is the full working surface of a program; ARIA has no landmark for it (closest: main)."
+scope = "general"
+summary = "The working surface of a program: toolbar, side, main area with its body, status."
+summary_de = "Die Arbeitsfläche eines Programms: Werkzeugleiste, Seite, Hauptfläche mit Inhalt, Status."
+parts = ["root", "toolbar", "side", "work", "main", "body", "status", "preview", "tree", "panel", "band"]
+states = ["busy", "empty", "invalid"]
+
+[block.sidebar]
+naming = "own"
+reason = "The ARIA role is complementary, which says where it sits, not what it is; every design system calls this a sidebar."
+scope = "general"
+summary = "The strip beside the main area: headings, items to go to, a tree or a list."
+summary_de = "Der Streifen neben der Hauptfläche: Überschriften, Ziele zum Anspringen, ein Baum oder eine Liste."
+parts = ["root", "inner", "body", "head", "heading", "section", "item", "count", "title"]
+states = ["expanded", "collapsed", "selected", "hover", "disabled"]
+
+[block.detail-page]
+naming = "own"
+reason = "One object opened on its own (a task, a person, an event); ARIA article is too generic to style by."
+scope = "general"
+summary = "The page of one object: head with title and actions, sections, fields."
+summary_de = "Die Seite eines Objekts: Kopf mit Titel und Aktionen, Abschnitte, Felder."
+parts = ["root", "head", "title", "title-text", "face", "actions", "body", "section", "bar", "pinned"]
+states = ["editing", "busy", "default"]
+
+[block.section]
+naming = "own"
+reason = "The ARIA role region is a landmark; a section with a title inside a page is what a style needs to name."
+scope = "general"
+summary = "A titled group inside a page (title, content, actions at the end)."
+summary_de = "Eine Gruppe mit Titel innerhalb einer Seite (Titel, Inhalt, Aktionen am Ende)."
+parts = ["root", "head", "title", "body", "actions", "footer"]
+states = ["expanded", "collapsed"]
+
+[block.form-field]
+naming = "own"
+reason = "ARIA role group has no label and value parts; a form row (label, value or input, choices) needs them."
+scope = "general"
+summary = "One row of a form or detail view: label, value or input, choices, a hint."
+summary_de = "Eine Zeile eines Formulars oder einer Detailansicht: Beschriftung, Wert oder Eingabe, Auswahl, Hinweis."
+parts = ["root", "label", "value", "input", "choices", "hint", "cell"]
+states = ["required", "invalid", "disabled", "focus", "checked"]
+
+[block.empty-state]
+naming = "own"
+reason = "Neither ARIA nor Open UI names the text a list shows when it has nothing to show."
+scope = "general"
+summary = "What a list or page shows when there is nothing: text, optional icon and action."
+summary_de = "Was eine Liste oder Seite zeigt, wenn nichts da ist: Text, optional Symbol und Aktion."
+parts = ["root", "icon", "title", "text", "action"]
+states = ["default"]
+
+[block.load-more]
+naming = "own"
+reason = "The row at the end of a long list that fetches the next rows; no standard name."
+scope = "general"
+summary = "The row at the end of a list that fetches more."
+summary_de = "Die Zeile am Ende einer Liste, die mehr nachlädt."
+parts = ["root", "button", "label"]
+states = ["default", "busy", "disabled"]
+
+[block.confirm-bar]
+naming = "own"
+reason = "A bar that asks again before a destructive action and shows the confirming button; ARIA alertdialog is a dialog, this is a bar."
+scope = "general"
+summary = "The bar that asks once more (really delete?) with the confirming button."
+summary_de = "Die Leiste, die noch einmal fragt (wirklich löschen?), mit dem bestätigenden Knopf."
+parts = ["root", "text", "confirm", "cancel"]
+states = ["default", "busy"]
+
+[block.tile-grid]
+naming = "own"
+reason = "Craft look: tiles that share their lines (ArtCraft measures); no standard name for a grid of tiles with shared borders."
+scope = "block"
+summary = "Rows of numbered tiles that share their lines, with head and body per tile."
+summary_de = "Reihen nummerierter Kacheln, die ihre Linien teilen, mit Kopf und Körper je Kachel."
+parts = ["root", "tile", "head", "body", "number", "footer"]
+states = ["hover", "selected"]
+
+[block.search-hit]
+naming = "own"
+reason = "One result of a search in the reader or the wiki (path, title, snippet); ARIA has no role for a result."
+scope = "general"
+summary = "One hit of a search: title, path, snippet."
+summary_de = "Ein Treffer einer Suche: Titel, Pfad, Textauszug."
+parts = ["root", "title", "path", "snippet"]
+states = ["selected", "hover", "focus"]

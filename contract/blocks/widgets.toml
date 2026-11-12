@@ -1,0 +1,205 @@
+# Block-specific blocks: one widget or crate of fs-components each (naming = "own", reason given). Scope block.
+
+[block.avatar-group]
+naming = "own"
+reason = "Our own widget (DESIGN.md); neither ARIA nor Open UI has a component of this shape (Open UI has Avatar only)."
+scope = "block"
+widget = "AvatarGroup"
+summary = "A row of avatars with a +N circle for the rest."
+summary_de = "Eine Reihe von Avataren mit einem +N-Kreis f\u00fcr den Rest."
+parts = ["root", "avatar", "overflow"]
+states = ["online", "away", "offline"]
+
+[block.agent-tree]
+naming = "own"
+reason = "Our own widget (DESIGN.md); neither ARIA nor Open UI has a component of this shape (closest ARIA role: tree)."
+scope = "block"
+widget = "AgentTree"
+summary = "The tree of agents and their steps, each row with name, state and what it needs from the person."
+summary_de = "Der Baum der Agenten und ihrer Schritte, jede Zeile mit Name, Zustand und dem, was sie von der Person braucht."
+parts = ["root", "row", "head", "head-text", "main", "name", "state", "meta", "summary", "toggle", "below", "empty"]
+states = ["expanded", "collapsed", "question", "failed", "delivered"]
+
+[block.calendar-view]
+naming = "own"
+reason = "Our own widget (DESIGN.md); neither ARIA nor Open UI has a component of this shape (Open UI: Datepicker is a picker, this shows events)."
+scope = "block"
+widget = "CalendarView"
+summary = "Month, week, day and agenda views of events."
+summary_de = "Monats-, Wochen-, Tages- und Agenda-Ansicht von Terminen."
+parts = ["root", "column", "day", "head", "head-cell", "gutter", "hour", "item", "all-day", "agenda", "agenda-day", "agenda-row", "agenda-time", "mark", "more", "now", "number", "empty"]
+states = ["today", "selected", "outside"]
+variants = ["color-0", "color-1", "color-2", "color-3", "color-4", "color-5"]
+
+[block.calendar-grid]
+naming = "own"
+reason = "Our own widget (DESIGN.md); neither ARIA nor Open UI has a component of this shape (a time grid of slots)."
+scope = "block"
+widget = "fs-components-calendar-grid"
+summary = "The time grid of the calendar: month cells, timed slots, all-day row, the now line."
+summary_de = "Das Zeitraster des Kalenders: Monatszellen, Zeitfenster, Ganztagszeile, die Jetzt-Linie."
+parts = ["root", "toolbar", "month", "timed", "allday", "slot", "now"]
+states = ["default", "selected"]
+
+[block.file-tile]
+naming = "own"
+reason = "Our own widget (DESIGN.md); neither ARIA nor Open UI has a component of this shape (Open UI File is an upload control)."
+scope = "block"
+widget = "FileTile"
+summary = "One file or folder as a tile with icon, name and a line of facts."
+summary_de = "Eine Datei oder ein Ordner als Kachel mit Symbol, Name und einer Zeile Angaben."
+parts = ["root", "icon", "name", "line", "badge", "mark", "marks", "plain", "grid", "empty"]
+states = ["selected", "hover", "focus", "cursor"]
+
+[block.file-preview]
+naming = "own"
+reason = "Our own widget (DESIGN.md); neither ARIA nor Open UI has a component of this shape."
+scope = "block"
+widget = "FilePreview"
+summary = "The preview of a file: title, facts, text, or the reason it is refused."
+summary_de = "Die Vorschau einer Datei: Titel, Angaben, Text oder der Grund, warum sie abgelehnt wird."
+parts = ["root", "head", "title", "fact", "label", "value", "mark", "marks", "note", "text", "refused"]
+states = ["default", "busy"]
+
+[block.lightbox]
+naming = "own"
+reason = "Our own widget (DESIGN.md); neither ARIA nor Open UI has a component of this shape (closest ARIA role: dialog)."
+scope = "block"
+widget = "Lightbox"
+summary = "Pictures full-window with a bar, caption and count."
+summary_de = "Bilder im ganzen Fenster mit Leiste, Bildunterschrift und Z\u00e4hler."
+parts = ["root", "bar", "body", "stage", "caption", "count", "note"]
+states = ["open", "busy"]
+
+[block.message-composer]
+naming = "own"
+reason = "Our own widget (DESIGN.md); neither ARIA nor Open UI has a component of this shape."
+scope = "block"
+widget = "MessageComposer"
+summary = "The field where a message is written, with attached files and the send buttons."
+summary_de = "Das Feld, in dem eine Nachricht geschrieben wird, mit Anh\u00e4ngen und Senden-Kn\u00f6pfen."
+parts = ["root", "area", "buttons", "files", "file", "file-name", "notes", "note", "failed"]
+states = ["busy", "disabled", "invalid"]
+
+[block.message-list]
+naming = "own"
+reason = "Our own widget (DESIGN.md); neither ARIA nor Open UI has a component of this shape (closest ARIA role: log)."
+scope = "block"
+widget = "MessageList"
+summary = "The messages of a conversation; who wrote it is the variant."
+summary_de = "Die Nachrichten einer Unterhaltung; wer sie schrieb, ist die Variante."
+parts = ["root", "msg", "head", "name", "meta", "body", "col", "delivery", "failure", "failure-text", "edge", "empty", "note", "notice", "reasoning", "refs", "tools"]
+states = ["mine", "failed"]
+variants = ["person", "software", "ai", "unknown"]
+
+[block.participant]
+naming = "own"
+reason = "Our own widget (DESIGN.md); neither ARIA nor Open UI has a component of this shape (who takes part in a conversation)."
+scope = "block"
+widget = "Participant"
+summary = "A chip that names a participant: person, software, AI or unknown."
+summary_de = "Ein Chip, der einen Teilnehmenden nennt: Person, Software, KI oder unbekannt."
+parts = ["root", "text"]
+states = ["default"]
+variants = ["person", "software", "ai", "unknown"]
+
+[block.share-dialog]
+naming = "own"
+reason = "Our own widget (DESIGN.md); neither ARIA nor Open UI has a component of this shape (a dialog of one purpose)."
+scope = "block"
+widget = "ShareDialog"
+summary = "The dialog that shows who may see something and lets the person choose."
+summary_de = "Der Dialog, der zeigt, wer etwas sehen darf, und die Auswahl erlaubt."
+parts = ["root", "title", "who", "list", "row", "mark", "name", "meta", "note", "perms", "pick", "buttons", "foot", "unknown"]
+states = ["cursor", "selected", "checked"]
+
+[block.sortable-list]
+naming = "own"
+reason = "Our own widget (DESIGN.md); neither ARIA nor Open UI has a component of this shape (closest ARIA role: listbox)."
+scope = "block"
+widget = "SortableList"
+summary = "A list whose rows are moved by keys or drag."
+summary_de = "Eine Liste, deren Zeilen per Tasten oder Ziehen verschoben werden."
+parts = ["root", "lane", "row", "title", "note"]
+states = ["cursor", "grabbed", "locked"]
+
+[block.task-card]
+naming = "own"
+reason = "A card of a task on a board; the Open UI Card is the general frame, this one has task parts."
+scope = "block"
+widget = "TaskCard"
+summary = "The card of one task: title, a line of facts, marks and tags."
+summary_de = "Die Karte einer Aufgabe: Titel, Zeile mit Angaben, Markierungen und Labels."
+parts = ["root", "title", "line", "mark", "tags", "tag"]
+states = ["open", "selected", "hover"]
+
+[block.tool-call]
+naming = "own"
+reason = "Our own widget (DESIGN.md); neither ARIA nor Open UI has a component of this shape (a question of an agent about a tool it wants to use)."
+scope = "block"
+widget = "ToolCall"
+summary = "What an agent wants to do, with its risk, and the buttons to allow or refuse."
+summary_de = "Was ein Agent tun will, mit seinem Risiko, und die Kn\u00f6pfe zum Erlauben oder Ablehnen."
+parts = ["list", "root", "head", "name", "kind", "state", "risk", "summary", "options", "details", "caption", "button", "chip-text", "code", "refused"]
+states = ["question", "failed"]
+variants = ["kind-reads", "kind-writes", "kind-runs", "kind-connected", "kind-unknown", "risk-ok", "risk-changes", "risk-high", "risk-unknown"]
+
+[block.transfer-list]
+naming = "own"
+reason = "Our own widget (DESIGN.md); neither ARIA nor Open UI has a component of this shape."
+scope = "block"
+widget = "TransferList"
+summary = "Uploads and downloads with progress and the buttons by state."
+summary_de = "Hoch- und Herunterladen mit Fortschritt und den Kn\u00f6pfen je Zustand."
+parts = ["root", "row", "main", "name", "meta", "reason", "actions", "more", "empty"]
+states = ["queued", "running", "done", "failed"]
+
+[block.text-view]
+naming = "own"
+reason = "Our own widget (DESIGN.md); neither ARIA nor Open UI has a component of this shape (a document; table parts are the block `table`)."
+scope = "block"
+widget = "TextView"
+summary = "A formatted document: headings, paragraphs, lists, quotes, code."
+summary_de = "Ein formatiertes Dokument: \u00dcberschriften, Abs\u00e4tze, Listen, Zitate, Code."
+parts = ["root", "block", "heading", "quote", "code", "codespan", "item", "marker", "rule", "run", "codebox", "codelines"]
+states = ["default"]
+
+[block.board]
+naming = "own"
+reason = "A board of columns of cards (kanban); no standard name."
+scope = "block"
+widget = "fs-components-kanban"
+summary = "The board: a bar, the notice line and the columns of cards."
+summary_de = "Das Brett: Leiste, Hinweiszeile und die Spalten mit Karten."
+parts = ["root", "bar", "notice", "columns"]
+states = ["busy", "empty"]
+
+[block.board-column]
+naming = "own"
+reason = "One column of a board with its head and cards; the user named it as a block of its own."
+scope = "block"
+summary = "One column of a board: head with name and count, the cards, an add row."
+summary_de = "Eine Spalte eines Bretts: Kopf mit Name und Zahl, die Karten, eine Zeile zum Hinzuf\u00fcgen."
+parts = ["root", "head", "name", "count", "cards", "add", "add-text", "entry"]
+states = ["hover", "selected"]
+variants = ["drop-target"]
+
+[block.timeline]
+naming = "own"
+reason = "A time axis with items and arrows between them; no standard name."
+scope = "block"
+widget = "fs-components-timeline"
+summary = "Items on a time axis with the today line and dependency arrows."
+summary_de = "Eintr\u00e4ge auf einer Zeitachse mit Heute-Linie und Abh\u00e4ngigkeitspfeilen."
+parts = ["root", "toolbar", "axis", "body", "scroll", "arrows", "today", "today-arrow", "today-edge", "today-row"]
+states = ["default", "busy"]
+
+[block.map]
+naming = "own"
+reason = "A map with tiles and controls; no ARIA role or Open UI component."
+scope = "block"
+widget = "fs-components-map"
+summary = "The map: attribution line and the zoom controls (tiles are drawn, not styled)."
+summary_de = "Die Karte: Quellenzeile und die Zoom-Bedienung (Kacheln werden gezeichnet, nicht gestaltet)."
+parts = ["attribution", "controls", "control"]
+states = ["default", "busy", "invalid"]

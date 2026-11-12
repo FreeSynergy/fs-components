@@ -1,0 +1,20 @@
+#!/usr/bin/env -S python3 -I
+"""Write HARDCODED-VALUES.md (fixed values in the code, by block, with token proposals). Usage: contract/hardcoded [root] [--check]. Pattern: Facade."""
+import os
+import sys
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "lib"))
+from contractlib import hardreport, model  # noqa: E402
+from contractlib.scan import scan  # noqa: E402
+
+args = [a for a in sys.argv[1:] if not a.startswith("--")]
+root = os.path.abspath(args[0] if args else os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+contract = model.load(root)
+text = hardreport.render(root, contract, scan(root, contract.meta["contract"]["prefixes"])).rstrip("\n") + "\n"
+target = os.path.join(root, "contract", "HARDCODED-VALUES.md")
+if "--check" in sys.argv:
+    have = open(target, encoding="utf-8").read() if os.path.exists(target) else ""
+    print("ok   HARDCODED-VALUES.md is current" if have == text else "FAIL HARDCODED-VALUES.md is out of date: run contract/hardcoded")
+    sys.exit(0 if have == text else 1)
+open(target, "w", encoding="utf-8").write(text)
+print(f"wrote {target}: {text.count(chr(10))} lines")

@@ -1,0 +1,32 @@
+#!/usr/bin/env -S python3 -I
+"""Check the theme contract against the source. Usage: contract/check [root] [--stats]. Exit 1 on any problem. Pattern: Facade."""
+import os
+import sys
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "lib"))
+from contractlib import checks, model, stats  # noqa: E402
+
+
+def main(argv):
+    args = [a for a in argv if not a.startswith("--")]
+    root = os.path.abspath(args[0] if args else os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+    try:
+        contract = model.load(root)
+    except Exception as error:  # a broken TOML file is a finding, not a crash
+        print(f"FAIL the contract files cannot be read: {error}")
+        return 1
+    results, ctx = checks.run_all(contract)
+    failed = 0
+    for title, problems in results:
+        print(("FAIL " if problems else "ok   ") + title)
+        for line in problems[:50]:
+            print("     " + line)
+        if len(problems) > 50:
+            print(f"     ... and {len(problems) - 50} more")
+        failed += bool(problems)
+    if "--stats" in argv or not failed:
+        print(stats.report(ctx))
+    return 1 if failed else 0
+
+
+sys.exit(main(sys.argv[1:]))

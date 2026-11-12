@@ -17,3 +17,6 @@ Thumbs.db
 *.swp
 # local secrets (crates.io token etc. live in ~/.cargo, never here)
 .env
+
+# Python bytecode of contract/ scripts
+__pycache__/

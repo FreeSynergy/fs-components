@@ -1,0 +1,17 @@
+# The theme contract of fs-components (ADR 0074, step 1). Derived from the code of v0.0.12; the version is of the contract.
+[contract]
+version = "0.1"
+status = "draft"
+adr = "0074"
+derived_from = "fs-components v0.0.12"
+# Files that hold the contract, relative to this directory. All of them are TOML and are read in file name order.
+block_files = ["blocks/*.toml"]
+mapping_files = ["mapping/*.toml"]
+exception_file = "exceptions.toml"
+# A name with one of these prefixes anywhere in the source counts as a class or id name (besides `.class("..")`/`.id("..")`).
+prefixes = ["fs-", "craft-", "cn-"]
+
+# Standard states: every block takes the ones that fit from this list (ARIA states first) and names its own beside them.
+[vocabulary]
+states = ["default", "hover", "focus", "cursor", "pressed", "selected", "current", "checked", "expanded", "collapsed",
+          "disabled", "busy", "invalid", "required", "readonly", "open", "editing"]

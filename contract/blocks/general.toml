@@ -1,0 +1,228 @@
+# General blocks: every program uses them. Names are WAI-ARIA roles (naming = "aria"), Open UI names (naming = "open-ui") or
+# our own with a reason (naming = "own"). For aria and open-ui the block name is the role or component name.
+
+[block.button]
+naming = "aria"
+ref = "button"
+scope = "general"
+summary = "A pressable control. Variants carry the look (primary, outline, icon ...), states carry the situation."
+summary_de = "Ein drückbares Bedienelement. Varianten tragen das Aussehen (primary, outline, icon ...), Zustände die Lage."
+parts = ["icon", "label"]
+states = ["hover", "focus", "cursor", "pressed", "disabled", "busy"]
+variants = ["primary", "secondary", "outline", "ghost", "link", "destructive", "small", "icon", "fill", "line"]
+
+[block.textbox]
+naming = "aria"
+ref = "textbox"
+scope = "general"
+summary = "A line or area of editable text with its label, hint and suggestions (Open UI: Text Input)."
+summary_de = "Eine Zeile oder Fläche für Text mit Beschriftung, Hinweis und Vorschlägen (Open UI: Text Input)."
+parts = ["root", "label", "input", "display", "hint", "error", "suggestion"]
+states = ["focus", "disabled", "readonly", "invalid", "required"]
+variants = ["compact", "multiline"]
+
+[block.searchbox]
+naming = "aria"
+ref = "searchbox"
+scope = "general"
+summary = "A text box that filters or finds; the one search field of every program."
+summary_de = "Ein Textfeld, das filtert oder sucht; das eine Suchfeld jedes Programms."
+parts = ["root", "input", "icon", "clear"]
+states = ["focus", "busy", "disabled"]
+
+[block.checkbox]
+naming = "aria"
+ref = "checkbox"
+scope = "general"
+summary = "A two-state choice (on, off) with a label; also the round done mark of a task."
+summary_de = "Eine Ja-Nein-Wahl mit Beschriftung; auch der runde Erledigt-Haken einer Aufgabe."
+parts = ["box", "mark", "label"]
+states = ["checked", "hover", "focus", "disabled"]
+
+[block.link]
+naming = "aria"
+ref = "link"
+scope = "general"
+summary = "Text that goes somewhere (a page, a project), with an optional arrow."
+summary_de = "Text, der irgendwohin führt (Seite, Projekt), mit optionalem Pfeil."
+parts = ["label", "arrow"]
+states = ["hover", "focus", "visited", "disabled"]
+
+[block.menubar]
+naming = "aria"
+ref = "menubar"
+scope = "general"
+summary = "The bar of menus of a window (File, Edit ...); each trigger opens a panel."
+summary_de = "Die Menüleiste eines Fensters (Datei, Bearbeiten ...); jeder Auslöser öffnet ein Panel."
+parts = ["root", "trigger", "panel", "item"]
+states = ["open", "hover", "focus"]
+
+[block.menu]
+naming = "aria"
+ref = "menu"
+scope = "general"
+summary = "A list of commands that opens from a menubar or a button; the entries are menu items."
+summary_de = "Eine Liste von Befehlen, die aus einer Menüleiste oder einem Knopf aufgeht; die Einträge sind Menüeinträge."
+parts = ["root", "item", "separator"]
+states = ["open", "hover", "focus", "current", "disabled"]
+
+[block.tab]
+naming = "aria"
+ref = "tab"
+scope = "general"
+summary = "One tab of a tab list (a file tab, a view switch, a filter chip that switches)."
+summary_de = "Ein Reiter einer Reiterleiste (Datei-Reiter, Ansichtswechsel, Filter, der umschaltet)."
+parts = ["root", "label", "close"]
+states = ["selected", "hover", "focus", "disabled"]
+
+[block.tablist]
+naming = "aria"
+ref = "tablist"
+scope = "general"
+summary = "The row of tabs and what belongs to it (the panel is shown by the frontend)."
+summary_de = "Die Reihe der Reiter samt Zubehör (das Panel zeigt das Frontend)."
+parts = ["root", "row", "panel"]
+states = ["default", "busy"]
+
+[block.tree]
+naming = "aria"
+ref = "tree"
+scope = "general"
+summary = "A hierarchy of items that open and close (folders, pages); the items are tree items."
+summary_de = "Eine Hierarchie aus Einträgen, die auf- und zuklappen (Ordner, Seiten); die Einträge sind Baumeinträge."
+parts = ["root", "item", "toggle", "icon", "label"]
+states = ["expanded", "collapsed", "selected", "focus", "busy"]
+
+[block.grid]
+naming = "aria"
+ref = "grid"
+scope = "general"
+summary = "Rows and columns the person moves through with keys: the list view with head, rows and cells."
+summary_de = "Zeilen und Spalten, durch die man mit Tasten geht: die Listenansicht mit Kopf, Zeilen und Zellen."
+parts = ["root", "head", "row", "cell", "mark", "edge", "empty", "failed"]
+states = ["selected", "hover", "focus", "busy"]
+variants = ["sortable"]
+
+[block.table]
+naming = "aria"
+ref = "table"
+scope = "general"
+summary = "Static rows and columns for reading (a table in a text, a table of packages)."
+summary_de = "Feste Zeilen und Spalten zum Lesen (Tabelle im Text, Tabelle von Paketen)."
+parts = ["root", "head", "row", "cell"]
+states = ["hover", "selected"]
+
+[block.toolbar]
+naming = "aria"
+ref = "toolbar"
+scope = "general"
+summary = "A bar of controls above a surface: search, actions, the room between them."
+summary_de = "Eine Leiste mit Bedienelementen über einer Fläche: Suche, Aktionen, Platz dazwischen."
+parts = ["root", "row", "group", "cell", "search", "action"]
+states = ["default", "busy"]
+
+[block.status]
+naming = "aria"
+ref = "status"
+scope = "general"
+summary = "The status line of a window with its more-panel: what the program does now and what went wrong."
+summary_de = "Die Statuszeile eines Fensters mit Detail-Panel: was das Programm gerade tut und was schiefging."
+parts = ["root", "line", "more", "panel", "text", "problem"]
+states = ["busy", "open", "invalid"]
+
+[block.alert]
+naming = "aria"
+ref = "alert"
+scope = "general"
+summary = "A message the person must see: failed, warning, notice. Severity is the variant."
+summary_de = "Eine Meldung, die man sehen muss: Fehler, Warnung, Hinweis. Die Schwere ist die Variante."
+parts = ["root", "icon", "text", "action"]
+states = ["default", "hover", "focus", "actionable"]
+variants = ["error", "warning", "info"]
+
+[block.note]
+naming = "aria"
+ref = "note"
+scope = "general"
+summary = "Quiet explanatory text beside content (a hint, a footnote); tone is the variant."
+summary_de = "Leiser Erklärtext neben dem Inhalt (Hinweis, Fußnote); der Ton ist die Variante."
+parts = ["root", "text"]
+states = ["default"]
+variants = ["info", "ok", "warning", "error", "quiet", "dim"]
+
+[block.progressbar]
+naming = "aria"
+ref = "progressbar"
+scope = "general"
+summary = "How far something is: a track and a bar, optional label."
+summary_de = "Wie weit etwas ist: Spur und Balken, optional Beschriftung."
+parts = ["track", "bar", "label"]
+states = ["busy", "complete", "failed"]
+
+[block.dialog]
+naming = "aria"
+ref = "dialog"
+scope = "general"
+summary = "A window above the window that asks or shows one thing and is closed again."
+summary_de = "Ein Fenster über dem Fenster, das eines fragt oder zeigt und wieder geschlossen wird."
+parts = ["root", "backdrop", "title", "body", "footer", "close"]
+states = ["open", "busy"]
+
+[block.card]
+naming = "open-ui"
+ref = "card"
+scope = "general"
+summary = "A framed area that holds one thing (a program, a task, a panel). Rich cards are their own blocks."
+summary_de = "Eine umrahmte Fläche für eine Sache (Programm, Aufgabe, Panel). Reiche Karten sind eigene Bausteine."
+parts = ["root", "header", "title", "body", "footer", "badge", "actions"]
+states = ["hover", "selected", "busy", "disabled"]
+variants = ["panel", "shared-lines"]
+
+[block.tag]
+naming = "open-ui"
+ref = "tag"
+scope = "general"
+summary = "A small labelled pill: a filter, a label of a task, a mark. Tone is the variant."
+summary_de = "Eine kleine beschriftete Pille: Filter, Aufgaben-Label, Markierung. Der Ton ist die Variante."
+parts = ["root", "label", "close"]
+states = ["default", "selected", "hover", "disabled"]
+variants = ["neutral", "accent", "success", "warning", "danger"]
+
+[block.badge]
+naming = "open-ui"
+ref = "badge"
+scope = "general"
+summary = "A short status or count on another block (installed, update, a dot)."
+summary_de = "Ein kurzer Status oder eine Zahl an einem anderen Baustein (installiert, Update, Punkt)."
+parts = ["root", "label", "dot"]
+states = ["default"]
+variants = ["info", "success", "warning", "error", "accent"]
+
+[block.avatar]
+naming = "open-ui"
+ref = "avatar"
+scope = "general"
+summary = "A picture or the initials of a person or program."
+summary_de = "Ein Bild oder die Initialen einer Person oder eines Programms."
+parts = ["root", "image", "initials"]
+states = ["default", "online", "away", "offline"]
+variants = ["small", "large", "color-0", "color-1", "color-2", "color-3", "color-4", "color-5", "color-6"]
+
+[block.breadcrumb]
+naming = "open-ui"
+ref = "breadcrumb"
+scope = "general"
+summary = "The path to where you are, each step a link, the last one is the place itself."
+summary_de = "Der Weg bis hierher, jeder Schritt ein Link, der letzte ist der Ort selbst."
+parts = ["root", "item", "separator", "current"]
+states = ["hover", "focus", "current"]
+
+[block.text]
+naming = "open-ui"
+ref = "text"
+scope = "general"
+summary = "Type styles of running text and labels (capitals, mono, dim); the variant is the style."
+summary_de = "Schriftstile für Fließtext und Beschriftungen (Versalien, Mono, gedimmt); die Variante ist der Stil."
+parts = ["run"]
+states = ["default"]
+variants = ["caps", "caps-dim", "mono", "sub", "quiet", "ok", "warning", "info", "error", "title", "strong"]
