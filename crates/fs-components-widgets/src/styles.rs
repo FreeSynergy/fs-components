@@ -16,6 +16,7 @@ pub fn styles() -> String {
         list_view::STYLES,
         avatar_group::STYLES,
         badge::STYLES,
+        fs_components_primitives::SEARCH_FIELD_STYLES,
         transfer_list::STYLES,
         sortable_list::STYLES,
         lightbox::STYLES,

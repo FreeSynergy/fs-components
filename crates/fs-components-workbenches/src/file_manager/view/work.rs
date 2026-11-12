@@ -24,7 +24,7 @@ use crate::file_manager::state::FilesState;
 
 const ROW_HEIGHT: f32 = 36.0;
 const MORE_HEIGHT: f32 = 48.0;
-const TILE: (f32, f32) = (128.0, 112.0);
+const TILE: (f32, f32) = (128.0, 132.0);
 /// Below this width the list has only the name and the size.
 const ALL_COLUMNS_FROM: f32 = 420.0;
 
@@ -62,7 +62,7 @@ fn head_column(state: &FilesState, title: &str, width: ColumnWidth, key: SortKey
         SortKey::Type => "type",
         _ => "name",
     };
-    let column = Column::new(title, width).sortable(name);
+    let column = Column::new(title, width).sortable(name).with_id(name);
     if state.sort().key == key {
         column.ordered(state.sort().descending)
     } else {
@@ -79,7 +79,12 @@ fn list_view(state: &FilesState, width: f32) -> (Vec<Column>, Vec<Row>) {
         if sortable {
             head_column(state, title, width, key)
         } else {
-            Column::new(title, width)
+            Column::new(title, width).with_id(match key {
+                SortKey::Modified => "modified",
+                SortKey::Size => "size",
+                SortKey::Type => "type",
+                _ => "name",
+            })
         }
     };
     // Name, Size, Modified, Type: what a person looks for first comes first.
@@ -224,6 +229,7 @@ pub(in crate::file_manager) fn work(
                 .when_empty(empty_text(state))
                 .on_select(select)
                 .on_head(actions.on_key(FilesState::sort_by_head))
+                .columns_layout(state.columns().clone(), actions.on_columns())
                 .keys(true)
                 .build(width, left),
         )

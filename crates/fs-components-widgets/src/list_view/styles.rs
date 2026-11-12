@@ -9,6 +9,8 @@ pub const STYLES: &str = r"
 .fs-list-row { display: flex; flex-direction: row; align-items: center; cursor: pointer; }
 .fs-list-row:hover { background: var(--accent-subtle); }
 .fs-list-row-selected { background: var(--selection); color: var(--accent); }
+.fs-list-edge { cursor: col-resize; }
+.fs-list-edge:hover { background: var(--accent-subtle); }
 .fs-list-cell-sortable { cursor: pointer; }
 .fs-list-cell-sortable:hover { color: var(--text-primary); }
 .fs-list-cell { display: flex; flex-direction: row; align-items: center; flex-shrink: 0; height: 100%; overflow: hidden; padding-left: var(--space-3); padding-right: var(--space-2); }

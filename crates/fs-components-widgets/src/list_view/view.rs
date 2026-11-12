@@ -16,6 +16,7 @@ use super::cell::{FIRST_CELL_MARK_ROOM, fit_cell};
 use super::head::HEAD_HEIGHT;
 use super::keys::key_target;
 use super::model::{ListView, OnSelect, Row, RowSource};
+use super::offset::{bring_into_view, settle};
 use super::position::ListPosition;
 use super::window::column_widths;
 use crate::Element;
@@ -29,7 +30,8 @@ const GLYPH_ROOM: f32 = 28.0;
 impl ListView {
     /// The element to place in a layout, filling `width` x `height`.
     #[allow(clippy::cast_precision_loss)] // row positions: see "Limits" in DESIGN.md
-    pub fn build(self, width: f32, height: f32) -> impl Element + use<> {
+    pub fn build(mut self, width: f32, height: f32) -> impl Element + use<> {
+        let parts = self.apply_layout();
         let root = div()
             .class("fs-list")
             .flex_col()
@@ -43,7 +45,7 @@ impl ListView {
         let count = self.source.count();
         let widths = Arc::new(column_widths(&self.columns, width));
         let with_head = self.columns.iter().any(|c| !c.title.is_empty());
-        let head = with_head.then(|| super::head::head(&self, &widths));
+        let head = with_head.then(|| super::head::head(&self, &widths, parts.as_ref()));
         let view = (height - if with_head { HEAD_HEIGHT } else { 0.0 }).max(0.0);
         let root = match head {
             Some(head) => root.child(head),
@@ -78,18 +80,6 @@ impl ListView {
     }
 }
 
-/// Where the list stands now that it is built: the row asked for, else where it was, within the
-/// rows there are now.
-#[allow(clippy::cast_precision_loss)]
-fn settle(position: &ListPosition, total: f32, view: f32, row_height: f32) -> f32 {
-    let was = position
-        .take_wanted()
-        .map_or_else(|| position.offset(), |row| row as f32 * row_height);
-    let offset = was.clamp(0.0, (total - view).max(0.0));
-    position.apply_offset(offset);
-    offset
-}
-
 /// The box as tall as all rows, holding the rows in view.
 #[allow(clippy::cast_precision_loss)]
 fn rows(
@@ -106,6 +96,7 @@ fn rows(
     let cache = RowCache::new(Arc::clone(&list.source));
     let shared = Shared {
         widths: Arc::clone(widths),
+        map: Arc::new(list.cell_map.clone()),
         selected: list.selected.clone(),
         on_select: list.on_select.clone(),
         position: position.clone(),
@@ -139,6 +130,8 @@ fn rows(
 /// What every row of one list needs.
 struct Shared {
     widths: Arc<Vec<f32>>,
+    /// For each shown column, which cell of a row it shows (the columns may be fewer and in another order).
+    map: Arc<Vec<usize>>,
     selected: Option<String>,
     on_select: Option<OnSelect>,
     position: ListPosition,
@@ -156,9 +149,10 @@ impl Shared {
             element = element.class("fs-list-row-selected");
         }
         for (column, width) in self.widths.iter().enumerate() {
-            let cell = row.cells.get(column).map_or("", String::as_str);
-            let mark = row.mark.as_ref().filter(|_| column == 0);
-            let glyph = row.glyph.filter(|_| column == 0);
+            let origin = self.map.get(column).copied().unwrap_or(column);
+            let cell = row.cells.get(origin).map_or("", String::as_str);
+            let mark = row.mark.as_ref().filter(|_| origin == 0);
+            let glyph = row.glyph.filter(|_| origin == 0);
             let room = width
                 - if mark.is_some() {
                     FIRST_CELL_MARK_ROOM
@@ -285,15 +279,4 @@ fn start_row(source: &dyn RowSource, base: Option<String>, cursor: Option<usize>
             .is_ok_and(|rows| rows.first().is_some_and(|r| r.key == key))
     });
     still_there.or_else(|| source.position_of(&key))
-}
-
-#[allow(clippy::cast_precision_loss)]
-fn bring_into_view(position: &ListPosition, row: usize, row_height: f32, view: f32) {
-    let (top, bottom) = (row as f32 * row_height, (row + 1) as f32 * row_height);
-    let offset = position.offset();
-    if top < offset {
-        position.apply_offset(top);
-    } else if bottom > offset + view {
-        position.apply_offset(bottom - view);
-    }
 }

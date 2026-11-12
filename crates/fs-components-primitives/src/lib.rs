@@ -22,4 +22,4 @@ pub use field_data::{
     FieldData, build_scoped_text_area, collect as collect_field_data, dispose_effect_later,
     scroll_ref, scroll_watch,
 };
-pub use search_field::{FieldSize, SearchField};
+pub use search_field::{FieldSize, STYLES as SEARCH_FIELD_STYLES, SearchField};

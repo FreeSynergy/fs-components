@@ -84,7 +84,11 @@ impl FileTile {
             tile = tile.class("fs-tile-selected");
         }
         tile = if let Some(glyph) = self.glyph {
-            let px = (height * 0.45).min(width - 24.0).clamp(24.0, 72.0);
+            let px = if self.plain {
+                (width * 0.56).min(height * 0.56).clamp(24.0, 80.0)
+            } else {
+                (height * 0.45).min(width - 24.0).clamp(24.0, 72.0)
+            };
             tile.child(
                 div()
                     .class("fs-tile-icon")

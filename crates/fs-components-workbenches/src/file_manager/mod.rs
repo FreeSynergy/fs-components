@@ -9,6 +9,7 @@
 mod ask;
 mod carry;
 mod chrome_state;
+mod columns;
 mod command;
 mod confirm;
 mod context;

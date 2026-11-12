@@ -4,7 +4,7 @@
 
 use std::ops::Range;
 
-use super::model::{Column, ColumnWidth};
+use super::column::{Column, ColumnWidth};
 
 /// The height of a row unless the caller says otherwise, in pixels.
 pub const DEFAULT_ROW_HEIGHT: f32 = 32.0;

@@ -89,6 +89,16 @@ impl FileManagerWidget {
         }
     }
 
+    /// Keep the arrangement of the columns (shown, hidden, order, widths) in `store` under `view`, the key of this view
+    /// (ADR 0069), and take what the store holds from an earlier run.
+    pub fn keep_columns_in(
+        &self,
+        store: std::sync::Arc<dyn fs_components_widgets::LayoutStore>,
+        view: &str,
+    ) {
+        locked(&self.state).keep_columns_in(store, view);
+    }
+
     pub(super) fn set_on_pick(&self, handler: PickHandler) {
         *self.on_pick.lock().unwrap_or_else(PoisonError::into_inner) = Some(handler);
     }

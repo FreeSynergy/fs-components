@@ -83,6 +83,8 @@ pub struct FilesState {
     pub(super) new_menu: bool,
     pub(super) details_off: bool,
     pub(super) collapsed: HashSet<String>,
+    pub(super) columns: fs_components_widgets::ColumnLayout,
+    pub(super) column_store: Option<(Arc<dyn fs_components_widgets::LayoutStore>, String)>,
 }
 
 impl FilesState {
@@ -130,6 +132,8 @@ impl FilesState {
             new_menu: false,
             details_off: false,
             collapsed: HashSet::new(),
+            columns: super::columns::default_columns(),
+            column_store: None,
         };
         state.reload_tree();
         state.reload(PAGE);

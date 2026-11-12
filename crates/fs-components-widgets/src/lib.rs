@@ -64,7 +64,10 @@ pub use icon_named::{icon_named, set_icon_theme};
 pub use icon_theme::{IconTheme, default_base_dirs};
 pub use keys::{Handled, Key, KeyEvent};
 pub use lightbox::{LightBox, Media};
-pub use list_view::{Column, ColumnWidth, ListPosition, ListView, Row, RowSource, VecRows};
+pub use list_view::{
+    Column, ColumnLayout, ColumnWidth, FileStore, LayoutStore, ListPosition, ListView, NoStore,
+    Row, RowSource, VecRows,
+};
 pub use participant::{KindLabels, Sender, SenderKind};
 pub use share_dialog::{Choice, Permission, ShareDialog};
 pub use sortable_list::{Content as SortableContent, Item, Lane, SortableList};

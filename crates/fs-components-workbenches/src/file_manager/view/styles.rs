@@ -9,15 +9,15 @@ pub fn styles() -> String {
 }
 
 const LAYOUT: &str = r"
-.fs-files-root { display: flex; background: var(--background); color: var(--text-primary); font-family: var(--font-sans); }
+.fs-files-root { display: flex; background: var(--background); color: var(--text-primary); font-family: var(--font-sans); --border: #e3e3e3; }
 .fs-files-toolbar { padding: var(--space-2) var(--space-3); border-bottom-width: 1px; border-bottom-color: var(--border); background: var(--surface); }
 .fs-files-bar-row { align-items: center; gap: var(--space-2); }
-.fs-files-search-field { flex-grow: 1; flex-basis: 150px; min-width: 0; }
+.fs-files-search-field { flex-grow: 1; flex-basis: 150px; min-width: 0;}
 .fs-files-crumbs { padding: 0 var(--space-3); gap: var(--space-3); border-bottom-width: 1px; border-bottom-color: var(--border); }
 .fs-files-outside { flex-shrink: 0; color: var(--text-secondary); font-size: var(--text-xs); }
 .fs-files-notice { padding: var(--space-2) var(--space-3); background: var(--surface-elevated); color: var(--text-primary); }
 .fs-files-problem { padding: var(--space-2) var(--space-3); background: var(--error-bg); color: var(--text-primary); }
-.fs-files-tree { padding: var(--space-2); border-right-width: 1px; border-right-color: var(--border); background: var(--surface); }
+.fs-files-tree { padding: var(--space-2); border-right-width: 1px; border-right-color: var(--border); background: #f7f7f8; }
 .fs-files-work { border-right-width: 1px; border-right-color: var(--border); background: var(--surface); }
 .fs-files-side-inner { padding: 0; }
 .fs-files-item-bar { align-items: center; gap: var(--space-2); padding: var(--space-3); border-bottom-width: 1px; border-bottom-color: var(--border); }

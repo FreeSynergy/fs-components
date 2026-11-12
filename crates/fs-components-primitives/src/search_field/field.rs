@@ -12,6 +12,13 @@ use blinc_theme::{ColorToken, ThemeState};
 
 use crate::field_data::FieldData;
 
+/// The style sheet of the field. The caret of Blinc's `text_input` is placed from the font the stylesheet gives the
+/// FIELD (only an element with a class or an id is looked up), while the text is drawn in the font it inherits from the
+/// window: a field with no class of its own measured in one font and drew in another, and the caret stood away from
+/// the last character (measured 2026-11-12: 4 to 15 px, against 0 to 2 px in the fields of the type components). The
+/// class and this rule give the field the same font and size for both.
+pub const STYLES: &str = ".fs-body-field { font-family: var(--font-sans); font-size: 14px; }\n";
+
 /// The size of [`FieldSize::Body`].
 const BODY_TEXT: f32 = 14.0;
 const BODY_HEIGHT: f32 = 36.0;
@@ -89,6 +96,7 @@ impl SearchField {
                 .idle_bg_color(theme.color(ColorToken::InputBg))
                 .text_color(theme.color(ColorToken::TextPrimary))
                 .placeholder_color(theme.color(ColorToken::TextTertiary))
+                .class("fs-body-field")
                 .w_full();
             if let Some(handler) = handler {
                 field = field.on_change(move |text| handler(text));

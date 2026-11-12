@@ -62,6 +62,14 @@ impl FileActions {
         })
     }
 
+    /// The callback that takes a new layout of the columns.
+    pub fn on_columns(&self) -> fs_components_widgets::list_view::OnLayout {
+        let apply = Arc::clone(&self.apply);
+        Arc::new(move |layout| {
+            apply(&move |state: &mut FilesState| state.set_columns(layout.clone()));
+        })
+    }
+
     /// The callback of a closure over the state.
     pub fn with(&self, change: impl Fn(&mut FilesState) + Send + Sync + 'static) -> Act {
         let apply = Arc::clone(&self.apply);

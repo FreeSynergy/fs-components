@@ -91,55 +91,28 @@ pub(in crate::file_manager) fn tree_pane(state: &FilesState, actions: &FileActio
     let labels = state.labels();
     let in_trash = state.in_trash();
     let top = !in_trash && state.folder().is_none();
-    let mut groups = div().flex_col().w_full().flex_shrink_0();
-    groups = group(groups, state, actions, ("home", &chrome.group_home), |g| {
-        g.child(place_row(
-            "fs-files-place-top",
-            Glyph::Home,
-            &labels.root,
-            top,
-            actions.with(|s| s.open_folder(None)),
-        ))
-    });
-    groups = group(
-        groups,
+    // Home (the top), Storage (the own storage with its folders under it: the tree is the storage), the trash.
+    let home = group(
+        div().flex_col().w_full().flex_shrink_0(),
         state,
         actions,
-        ("storage", &chrome.group_storage),
+        ("home", &chrome.group_home),
         |g| {
             g.child(place_row(
-                "fs-files-place-storage",
-                Glyph::Drive,
-                &labels.root,
-                false,
+                "fs-files-place-top",
+                Glyph::Home,
+                &chrome.group_home,
+                top,
                 actions.with(|s| s.open_folder(None)),
             ))
         },
     );
-    if state.capabilities().trash {
-        groups = group(
-            groups,
-            state,
-            actions,
-            ("trash", &chrome.group_trash),
-            |g| {
-                g.child(place_row(
-                    "fs-files-place-trash",
-                    Glyph::Trash,
-                    &labels.trash,
-                    in_trash,
-                    actions.plain(FilesState::open_trash),
-                ))
-            },
-        );
-    }
-    pane = pane.child(groups);
-    let mut folders = div().flex_col().w_full().flex_grow().min_h(0.0);
-    folders = group(
-        folders,
+    pane = pane.child(home);
+    let storage = group(
+        div().flex_col().w_full().flex_grow().min_h(0.0),
         state,
         actions,
-        ("folders", &labels.chrome.folders_title),
+        ("storage", &chrome.group_storage),
         |g| {
             let choose = actions.on_key(FilesState::choose_in_tree);
             let current = state.folder().unwrap_or(TOP).to_string();
@@ -156,7 +129,25 @@ pub(in crate::file_manager) fn tree_pane(state: &FilesState, actions: &FileActio
             )
         },
     );
-    pane = pane.child(folders);
+    pane = pane.child(storage);
+    if state.capabilities().trash {
+        let trash = group(
+            div().flex_col().w_full().flex_shrink_0(),
+            state,
+            actions,
+            ("trash", &chrome.group_trash),
+            |g| {
+                g.child(place_row(
+                    "fs-files-place-trash",
+                    Glyph::Trash,
+                    &labels.trash,
+                    in_trash,
+                    actions.plain(FilesState::open_trash),
+                ))
+            },
+        );
+        pane = pane.child(trash);
+    }
     let noop: super::actions::Act = std::sync::Arc::new(|| {});
     pane.child(
         div()
