@@ -12,6 +12,11 @@
 pub mod contact_input;
 pub mod field_data;
 pub mod search_field;
+#[cfg(all(feature = "test-access", not(debug_assertions)))]
+compile_error!(
+    "the feature `test-access` reads the text of the fields and is for test builds only: it is refused in a build without debug assertions (a release build)"
+);
+
 #[cfg(feature = "test-access")]
 pub mod test_access;
 
@@ -22,4 +27,6 @@ pub use field_data::{
     FieldData, build_scoped_text_area, collect as collect_field_data, dispose_effect_later,
     scroll_ref, scroll_watch,
 };
-pub use search_field::{FieldSize, STYLES as SEARCH_FIELD_STYLES, SearchField};
+pub use search_field::{
+    FIELD_FONT_CLASS, FieldSize, STYLES as SEARCH_FIELD_STYLES, SearchField, with_field_font,
+};

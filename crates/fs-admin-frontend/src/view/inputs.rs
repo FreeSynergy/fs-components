@@ -108,7 +108,7 @@ pub fn plain(
     on: OnText,
 ) -> impl Element + use<> {
     let (s, pal) = (look.style, look.palette());
-    text_input(data)
+    fs_components_primitives::with_field_font(text_input(data))
         .id(name)
         .h(s.heights.control)
         .text_size(s.text.body)
@@ -203,6 +203,36 @@ mod tests {
             fp_collect();
             assert_eq!(live(), base, "{basic:?}: the slot gives its signals back");
         }
+    }
+
+    /// The plain input has the font class, so its caret is measured in the font its text is drawn in. Red when
+    /// `with_field_font` is taken out of `plain`.
+    #[test]
+    fn the_plain_input_carries_the_font_class() {
+        use blinc_layout::prelude::ElementBuilder;
+        let _g = crate::view::graph_test_lock();
+        blinc_theme::ThemeState::init(blinc_cn::cn_bundle(), blinc_theme::ColorScheme::Light);
+        if !blinc_core::BlincContextState::is_initialized() {
+            blinc_core::BlincContextState::init(
+                global_graph(),
+                Arc::new(std::sync::Mutex::new(blinc_core::HookState::new())),
+                Arc::new(std::sync::atomic::AtomicBool::new(false)),
+            );
+        }
+        let say = KeysAsText;
+        let look = Look::new(StyleId::Admin, false);
+        let field = FieldDescription::new("f", BasicType::Text).label("f");
+        let keep = fs_components_primitives::FieldData::new();
+        let data = keep.text_input();
+        let on: OnText = Arc::new(|_| {});
+        let built = super::plain(&look, &say, &field, &data, "f-0", on);
+        assert!(
+            built
+                .element_classes()
+                .iter()
+                .any(|c| &**c == fs_components_primitives::FIELD_FONT_CLASS),
+            "no font class on the plain input"
+        );
     }
 
     fn fp_collect() {

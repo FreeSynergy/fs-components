@@ -7,7 +7,7 @@ use std::sync::Arc;
 
 use blinc_cn::components::input::{InputSize, input};
 use blinc_layout::div::div;
-use blinc_layout::widgets::text_input::{SharedTextInputData, text_input};
+use blinc_layout::widgets::text_input::{SharedTextInputData, TextInput, text_input};
 use blinc_theme::{ColorToken, ThemeState};
 
 use crate::field_data::FieldData;
@@ -17,7 +17,20 @@ use crate::field_data::FieldData;
 /// window: a field with no class of its own measured in one font and drew in another, and the caret stood away from
 /// the last character (measured 2026-11-12: 4 to 15 px, against 0 to 2 px in the fields of the type components). The
 /// class and this rule give the field the same font and size for both.
-pub const STYLES: &str = ".fs-body-field { font-family: var(--font-sans); font-size: 14px; }\n";
+pub const STYLES: &str =
+    ".fs-field-font { font-family: var(--font-sans); }\n.fs-body-field { font-family: var(--font-sans); font-size: 14px; }\n";
+
+/// The class that gives a raw `text_input` (one that is not Blinc's `input` of `blinc_cn`, whose `.cn-input` rule
+/// already names the font) the font the caret is measured in. The ONE place of the rule: every raw `text_input` of
+/// these crates goes through [`with_field_font`].
+pub const FIELD_FONT_CLASS: &str = "fs-field-font";
+
+/// Put `field` in the font of the window for the measure of the caret (class [`FIELD_FONT_CLASS`], rule in
+/// [`STYLES`]). Pattern: none (pure function over a builder).
+#[must_use]
+pub fn with_field_font(field: TextInput) -> TextInput {
+    field.class(FIELD_FONT_CLASS)
+}
 
 /// The size of [`FieldSize::Body`].
 const BODY_TEXT: f32 = 14.0;
@@ -88,7 +101,7 @@ impl SearchField {
         let handler = self.on_change.clone();
         if self.size == FieldSize::Body {
             let theme = ThemeState::get();
-            let mut field = text_input(&self.data)
+            let mut field = with_field_font(text_input(&self.data))
                 .h(BODY_HEIGHT)
                 .text_size(BODY_TEXT)
                 .rounded(6.0)

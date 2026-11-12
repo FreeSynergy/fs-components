@@ -144,7 +144,8 @@ impl FieldInput {
                 .say
                 .say(&format!("hint.{}.{}", field.key(), segment.key));
             let on = Arc::clone(inner);
-            let mut input = text_input(&inner.data[i]).bind(&inner.refs[i]);
+            let mut input = fs_components_primitives::with_field_font(text_input(&inner.data[i]))
+                .bind(&inner.refs[i]);
             if let Some(name) = &inner.name {
                 input = input.id(&format!("{name}-{}", segment.key));
             }
