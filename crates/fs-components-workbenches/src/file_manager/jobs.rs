@@ -17,7 +17,7 @@ use fs_components_widgets::transfer_list::State as TransferState;
 
 use super::ask::{Ask, InputAsk};
 use super::command::Command;
-use super::error::{FileError, FileProblem};
+use super::error::FileError;
 use super::labels::FileLabels;
 use super::model::NameRule;
 use super::reports::RescanSummary;
@@ -35,7 +35,7 @@ enum Call {
 }
 
 /// What it gave back.
-enum Reply {
+pub(super) enum Reply {
     Summary(RescanSummary),
     Said(String),
 }
@@ -120,7 +120,15 @@ impl FilesState {
         self.parked.take()
     }
 
-    fn start(&mut self, call: Call, started: Started, row: Option<TransferRow>) -> bool {
+    /// `takes_ask`: the question or input on the screen is the one that started the call (an upload's path, a download's
+    /// path or confirmation), so it closes; a rescan from the bar takes nothing: what is open stays.
+    fn start(
+        &mut self,
+        call: Call,
+        started: Started,
+        row: Option<TransferRow>,
+        takes_ask: bool,
+    ) -> bool {
         if self.running.is_some() {
             self.notice = Some(Notice::Info(self.labels.chrome.busy.clone()));
             return false;
@@ -130,7 +138,9 @@ impl FilesState {
             self.push_row(row);
         }
         self.running = Some(Running { row: key, started });
-        self.ask = Ask::Nothing;
+        if takes_ask {
+            self.ask = Ask::Nothing;
+        }
         self.notice = Some(Notice::Info(self.labels.chrome.running.clone()));
         let job = FileJob {
             source: Arc::clone(&self.source),
@@ -149,7 +159,7 @@ impl FilesState {
 
     /// Bring in what changed outside, below the current folder. The window stays usable.
     pub(super) fn start_rescan(&mut self, folder: Option<String>) {
-        self.start(Call::Rescan(folder), Started::Rescan, None);
+        self.start(Call::Rescan(folder), Started::Rescan, None, false);
     }
 
     /// Upload, the person's input kept in case it does not go.
@@ -164,7 +174,7 @@ impl FilesState {
         };
         let row = self.running_upload_row(path);
         let call = Call::Upload(path.clone(), to.clone(), rule);
-        self.start(call, Started::Upload(command, rule, from), Some(row));
+        self.start(call, Started::Upload(command, rule, from), Some(row), true);
     }
 
     pub(super) fn start_download(
@@ -183,12 +193,12 @@ impl FilesState {
             input,
         };
         let call = Call::Download(key.to_string(), path.to_string(), released);
-        self.start(call, started, Some(row));
+        self.start(call, started, Some(row), true);
     }
 
     pub(super) fn start_resume(&mut self, input: InputAsk, id: &str, path: &str) {
         let call = Call::Resume(id.to_string(), path.to_string());
-        self.start(call, Started::Resume(input, path.to_string()), None);
+        self.start(call, Started::Resume(input, path.to_string()), None, true);
     }
 
     fn running_upload_row(&mut self, path: &str) -> TransferRow {
@@ -225,74 +235,6 @@ impl FilesState {
                 answer,
             ) => self.download_done((&key, &name, &path), released, input, answer),
             (Started::Resume(input, path), answer) => self.resume_done(input, &path, answer),
-        }
-    }
-
-    fn rescan_done(&mut self, answer: Result<Reply, FileError>) {
-        match answer {
-            Ok(Reply::Summary(summary)) => self.rescan_report(summary),
-            Ok(Reply::Said(_)) => self.notice = None,
-            Err(e) => self.failed(&e),
-        }
-    }
-
-    fn download_done(
-        &mut self,
-        (key, name, path): (&str, &str, &str),
-        released: bool,
-        input: Option<InputAsk>,
-        answer: Result<Reply, FileError>,
-    ) {
-        let row = self.next_transfer();
-        match answer {
-            Ok(Reply::Said(place)) => {
-                self.push_row(TransferRow::download(row, name, key, TransferState::Done));
-                self.notice = Some(Notice::Info(FileLabels::fill(
-                    &self.labels.downloaded,
-                    &place,
-                )));
-            }
-            Err(e) if e.problem == FileProblem::MarkedNeedsRelease && !released => {
-                if matches!(self.ask, Ask::Nothing) {
-                    self.ask_download_marked(key, name.to_string(), path);
-                } else {
-                    self.notice = Some(Notice::Problem(e.problem, self.problem_text(&e)));
-                }
-            }
-            Err(e) => {
-                let text = self.problem_text(&e);
-                let failed = TransferState::Failed(text.clone());
-                self.push_row(TransferRow::download(row, name, key, failed));
-                self.notice = Some(Notice::Problem(e.problem, text));
-                // Only into a free place: what the person opened meanwhile is not thrown away.
-                if let Some(input) = input.filter(|_| matches!(self.ask, Ask::Nothing)) {
-                    self.ask = Ask::Input(self.input_with_transfer_error(input));
-                }
-            }
-            Ok(Reply::Summary(_)) => {}
-        }
-    }
-
-    fn resume_done(&mut self, input: InputAsk, path: &str, answer: Result<Reply, FileError>) {
-        match answer {
-            Ok(Reply::Said(name)) => {
-                let key = self.next_transfer();
-                let said = FileLabels::fill(&self.labels.uploaded, &name);
-                self.push_row(TransferRow::upload(key, &said, path, TransferState::Done));
-                self.read_pending();
-                self.after_change();
-                self.notice = Some(Notice::Info(said));
-            }
-            Err(e) => {
-                self.read_pending();
-                if matches!(self.ask, Ask::Nothing) {
-                    self.input_failed(input, &e);
-                } else {
-                    self.after_change();
-                    self.notice = Some(Notice::Problem(e.problem, self.problem_text(&e)));
-                }
-            }
-            Ok(Reply::Summary(_)) => {}
         }
     }
 }
