@@ -344,3 +344,15 @@ Workaround for the Blinc defect ec776dcf (the signals of long-lived field data a
 ## Known assumption: the height of the files band
 
 The files band is a box as high as `band_height` says and it clips what is taller. The answer buttons wrap their words (`wrapping_button`), and the height of a wrapped button is **estimated by characters** (8 px each; `band_size.rs`). The double-press rule (the answer button is never under the point of the first press) depends on where the buttons stand, so on that estimate. It holds for the English texts and the widths that are tested (160, 200, 300 and wider). Another language with longer words may need a line more than estimated and have a button clipped. `files_band_buttons.rs` (`every_question_of_the_band_has_its_buttons_inside_the_window_when_narrow`) lays out every question and requires each button to lie inside the box of the band: an estimate that is too low turns it red. The tests of the double press itself (`files_widget.rs`) check that the answer is not under the first press, not only where it is.
+
+## Craft look and its building blocks (theme-craft, 2026-11-12)
+- **Style `Craft`** (`fs-components-styles`, `styles/craft.rs`, measures in `crates/fs-components-styles/CRAFT-MEASUREMENT.md`): dark, corners 0, 1 px
+  lines, no shadows, white primary, capital mono labels. `styles/craft_sheet.rs` is its sheet (`craft-*` classes, no Blinc). Additive: no existing token changed.
+- **Theme adapter** (`fs-components-render`, `style_theme.rs`): any `Style` becomes a Blinc `Theme` (`StyleTheme`, `style_bundle`); a program calls
+  `use_style(Some(StyleId::Craft))` once, window and picture alike take it. JetBrains Mono (SIL OFL 1.1) lives in `assets/fonts/` with its licence.
+- **Building blocks** (`fs-components-widgets::craft`): `label`, `label_dim`, `button` (square, capitals, `Look::Fill|Line`: the replacement of `ButtonBuilder`
+  text in this look), `cell_button`, `tab`/`tabs`, `badge` (`BadgeTone`), `number_box`, `progress`, `fact`, `heading`, `with_tip`, and the frames
+  `tile`/`tile_head`/`grid`/`tile_columns`, `link`, `section_title`, `bar`/`bar_cell`, `footer`. They hold what a program puts in; the look is the sheet.
+  `fs_components_widgets::styles()` carries the sheet. Tests: `crates/fs-components-widgets/tests/craft.rs`.
+- **Shell** (`fs-components-app`): a `Surface` may bring its own `bar` (it gets the row of menus, so the window has one top line and the menus stay
+  reachable by keyboard) and may say `status_line() == false` when it has a footer of its own. Both have defaults, nothing else changes.

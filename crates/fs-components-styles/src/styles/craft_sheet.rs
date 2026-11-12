@@ -48,6 +48,11 @@ pub const SHEET: &str = r#"
 .craft-link { cursor: pointer; padding: 4px 0 4px 14px; }
 .craft-link:hover { background: var(--accent-subtle); }
 .craft-mono-text { font-family: "JetBrains Mono", "DejaVu Sans Mono", "Noto Sans Mono", monospace; font-size: 12px; color: var(--text-primary); }
+.craft-t-ok { color: var(--success); }
+.craft-t-warn { color: var(--warning); }
+.craft-t-info { color: var(--info); }
+.craft-t-bad { color: var(--error); }
+.craft-t-quiet { color: var(--text-secondary); }
 .craft-panel { border-width: 1px; border-color: var(--border); background: var(--background); }
 "#;
 

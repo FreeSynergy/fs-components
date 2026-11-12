@@ -11,6 +11,7 @@ use crate::{
 /// The CSS of all widgets in this crate; the shell adds it to the theme once.
 pub fn styles() -> String {
     [
+        fs_components_styles::styles::craft_sheet::SHEET,
         text_view::STYLES,
         tree_view::STYLES,
         list_view::STYLES,
