@@ -4,6 +4,8 @@
 
 use std::sync::Arc;
 
+use blinc_layout::div::Div;
+
 use crate::Element;
 
 /// A work area: usually a workbench of `fs-components`.
@@ -17,6 +19,20 @@ pub trait Surface: Send + Sync {
     /// The style sheet this surface needs (theme variables only). Default: none.
     fn styles(&self) -> String {
         String::new()
+    }
+
+    /// A bar of its own in place of the shell's title bar, so the window has one top line that holds the program's own bar
+    /// and its menus. It gets the row of menus the shell would have put into the title bar (`None` when the program has
+    /// no menu; place it, Tab and the arrow keys reach it there) and the width of the window, and returns the bar and
+    /// its height. Default: `None`, the shell draws its title bar.
+    fn bar(&self, _menus: Option<Div>, _width: f32) -> Option<(Div, f32)> {
+        None
+    }
+
+    /// Whether the shell draws its status line below the surface. A surface that has a footer of its own says `false`
+    /// and gets the room. Default: `true`.
+    fn status_line(&self) -> bool {
+        true
     }
 }
 

@@ -25,7 +25,9 @@ use crate::shell::{Shell, Status};
 use crate::status_panel;
 use crate::styles::STYLES;
 use crate::surface::{Screen, Surface};
-use crate::view::{OnSelect, OnStatus, frame, has_nav, main_area, nav, status_line, title_bar};
+use crate::view::{
+    Chrome, OnSelect, OnStatus, frame, has_nav, main_area, nav, status_line, title_bar,
+};
 
 static NEXT_ID: AtomicU64 = AtomicU64::new(1);
 
@@ -99,14 +101,15 @@ impl AppWidget {
     /// The shell filling `width` x `height`, with a live status line. Call it inside the window's
     /// build function.
     pub fn build(&self, width: f32, height: f32) -> impl Element + use<> {
-        let (bar, side, surface, with_nav) = self.parts(&self.on_select(), &self.on_trigger());
+        let (bar, side, surface, with_nav, chrome) =
+            self.parts(&self.on_select(), &self.on_trigger(), width);
         if self.with_shell(Shell::open_menu).is_some() {
             menu_overlay::watch_outside(&self.shell);
         }
         if self.with_shell(Shell::status_overlay).is_some() {
             status_panel::watch_outside(&self.shell);
         }
-        let status = {
+        let status = (chrome.status > 0.0).then(|| {
             let shell = Arc::clone(&self.shell);
             let on_status = status_panel::on_status(&self.shell, width);
             stateful::<NoState>()
@@ -115,9 +118,9 @@ impl AppWidget {
                     let message = locked(&shell).status().cloned();
                     status_line(message.as_ref(), width, &on_status)
                 })
-        };
-        let main = main_area(surface.as_ref(), with_nav, width, height);
-        frame(bar, side, main, status, width, height)
+        });
+        let main = main_area(surface.as_ref(), with_nav, (width, height), chrome);
+        frame(bar, side, main, status, (width, height), chrome)
     }
 
     /// Draw the shell as it is now to a PNG, without a window. The same view functions as in the
@@ -132,11 +135,12 @@ impl AppWidget {
         let on_trigger: OnTrigger = Arc::new(|_, _, _| {});
         let on_status: OnStatus = Arc::new(|_, _| {});
         let build = |w: f32, h: f32| {
-            let (bar, side, surface, with_nav) = self.parts(&on_select, &on_trigger);
-            let main = main_area(surface.as_ref(), with_nav, w, h);
+            let (bar, side, surface, with_nav, chrome) = self.parts(&on_select, &on_trigger, w);
+            let main = main_area(surface.as_ref(), with_nav, (w, h), chrome);
             let message = self.with_shell(|shell| shell.status().cloned());
-            let status = status_line(message.as_ref(), w, &on_status);
-            frame(bar, side, main, status, w, h)
+            let status =
+                (chrome.status > 0.0).then(|| status_line(message.as_ref(), w, &on_status));
+            frame(bar, side, main, status, (w, h), chrome)
         };
         draw_to_png(&canvas, build, || {}, path).map_err(AppError::Picture)
     }
@@ -146,7 +150,8 @@ impl AppWidget {
         &self,
         on_select: &OnSelect,
         on_trigger: &OnTrigger,
-    ) -> (Div, Option<Div>, Option<Arc<dyn Surface>>, bool) {
+        width: f32,
+    ) -> (Div, Option<Div>, Option<Arc<dyn Surface>>, bool, Chrome) {
         let (title, menus, side, surface, with_nav) = {
             let shell = locked(&self.shell);
             let with_nav = has_nav(&shell);
@@ -158,8 +163,22 @@ impl AppWidget {
                 with_nav,
             )
         };
-        let bar = title_bar(&title, menu_bar(&menus, on_trigger));
-        (bar, side, surface, with_nav)
+        // The surface may bring its own bar (it gets the row of menus) and may do without the status line.
+        let (own, status) = surface.as_ref().map_or((None, true), |s| {
+            (s.bar(menu_bar(&menus, on_trigger), width), s.status_line())
+        });
+        let mut chrome = Chrome::default();
+        if !status {
+            chrome.status = 0.0;
+        }
+        let bar = match own {
+            Some((bar, height)) => {
+                chrome.bar = height;
+                bar
+            }
+            None => title_bar(&title, menu_bar(&menus, on_trigger)),
+        };
+        (bar, side, surface, with_nav, chrome)
     }
 
     fn on_select(&self) -> OnSelect {

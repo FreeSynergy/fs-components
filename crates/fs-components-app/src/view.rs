@@ -42,27 +42,47 @@ pub(crate) fn title_bar(title: &str, menus: Option<Div>) -> Div {
     bar
 }
 
-/// Bar above, navigation (if given) left of the main area, status line below.
+/// The heights of what stands above and below the main area: the bar (the shell's title bar or the surface's own) and the
+/// status line (0 when the surface has a footer of its own).
+#[derive(Clone, Copy, Debug)]
+pub(crate) struct Chrome {
+    pub(crate) bar: f32,
+    pub(crate) status: f32,
+}
+
+impl Default for Chrome {
+    fn default() -> Self {
+        Self {
+            bar: BAR_HEIGHT,
+            status: STATUS_HEIGHT,
+        }
+    }
+}
+
+/// Bar above, navigation (if given) left of the main area, status line below (if given).
 pub(crate) fn frame(
     bar: Div,
     nav: Option<impl ElementBuilder + 'static>,
     main: impl ElementBuilder + 'static,
-    status: impl ElementBuilder + 'static,
-    width: f32,
-    height: f32,
+    status: Option<impl ElementBuilder + 'static>,
+    (width, height): (f32, f32),
+    chrome: Chrome,
 ) -> Div {
-    let body = body_height(height);
+    let body = body_height(height, chrome);
     let mut row = div().class("fs-app-row").w(width).h(body).min_h(0.0);
     if let Some(nav) = nav {
         row = row.child(nav);
     }
-    div()
+    let root = div()
         .class("fs-app-root")
         .w(width)
         .h(height)
         .child(bar)
-        .child(row.child(main))
-        .child(status)
+        .child(row.child(main));
+    match status {
+        Some(status) => root.child(status),
+        None => root,
+    }
 }
 
 /// One button per screen; the shown one stands out.
@@ -89,10 +109,10 @@ pub(crate) fn nav(shell: &Shell, on_select: &OnSelect) -> Div {
 pub(crate) fn main_area(
     surface: Option<&Arc<dyn Surface>>,
     with_nav: bool,
-    width: f32,
-    height: f32,
+    (width, height): (f32, f32),
+    chrome: Chrome,
 ) -> Div {
-    let body = body_height(height);
+    let body = body_height(height, chrome);
     let w = if with_nav {
         (width - NAV_WIDTH).max(0.0)
     } else {
@@ -148,6 +168,6 @@ pub(crate) fn status_line(status: Option<&Status>, width: f32, on_status: &OnSta
         .child(inner)
 }
 
-fn body_height(height: f32) -> f32 {
-    (height - BAR_HEIGHT - STATUS_HEIGHT).max(0.0)
+fn body_height(height: f32, chrome: Chrome) -> f32 {
+    (height - chrome.bar - chrome.status).max(0.0)
 }
