@@ -91,3 +91,17 @@ fn a_download_that_failed_leaves_a_rename_being_typed() {
     settle(&mut s);
     assert!(rename_kept(&s));
 }
+
+#[test]
+fn a_rescan_from_the_bar_leaves_a_rename_being_typed() {
+    let shelf = Arc::new(Shelf::new().file("a"));
+    let mut s = FilesState::new(shelf, FileLabels::default(), Variant::Full);
+    s.select("a");
+    s.begin_rename();
+    s.set_input("typed-by-person");
+    s.rescan();
+    assert!(s.is_running());
+    assert!(rename_kept(&s), "the rescan closed the input");
+    settle(&mut s);
+    assert!(rename_kept(&s));
+}

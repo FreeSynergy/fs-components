@@ -17,6 +17,7 @@ mod error;
 mod filter;
 mod input;
 mod jobs;
+mod jobs_done;
 mod labels;
 mod labels_chrome;
 mod labels_default;
