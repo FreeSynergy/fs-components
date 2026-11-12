@@ -14,7 +14,10 @@ use super::error::ShellError;
 use super::picture::{Picture, ScrollInfo, Snapshot, Step};
 use super::setup::styles;
 use crate::reader::Reader;
-use crate::view::{Actions, content, editor_rows, frame, search_box, side_body, tree_nodes};
+use crate::view::{
+    Actions, BlockEditor, Layout, PageTree, confluence, content, editor_rows, frame, new_area,
+    notion, search_box, side_body, tree_nodes,
+};
 
 /// Apply the steps to a reader and write a PNG to `path`.
 ///
@@ -28,6 +31,7 @@ pub fn snapshot(
     let mut reader = Reader::new(picture.source, picture.labels);
     reader.set_export_target(picture.export_target);
     let mut scroll_px = 0_u32;
+    let mut tree = PageTree::new(reader.entries());
     for step in &picture.steps {
         match step {
             Step::Open(p) => reader.open(p),
@@ -42,8 +46,17 @@ pub fn snapshot(
             Step::Cancel => reader.cancel_edit(),
             Step::Export => reader.export(),
             Step::Scroll(px) => scroll_px += px,
+            Step::Expand(key) => tree.toggle(key),
         }
     }
+    if let Some(path) = reader.current_path() {
+        let shown = reader
+            .page_info()
+            .canonical
+            .unwrap_or_else(|| path.to_string());
+        tree.reveal(&shown);
+    }
+    let (layout, labels) = (picture.layout, picture.wiki_labels.clone());
     let physics = Scroll::new().physics();
     let info = Mutex::new(ScrollInfo::default());
     let canvas = Canvas::new(width, height, styles());
@@ -53,8 +66,20 @@ pub fn snapshot(
             &canvas,
             |w, h| {
                 let field = SearchField::new(&reader.labels().search).size(FieldSize::Small);
-                let tree = tree_nodes(reader.entries());
                 let actions = Actions::inert();
+                if layout != Layout::Classic {
+                    return wiki_frame(
+                        layout,
+                        reader,
+                        &tree,
+                        &labels,
+                        physics,
+                        field.build(),
+                        w,
+                        h,
+                    );
+                }
+                let tree = tree_nodes(reader.entries());
                 frame(
                     search_box(&field),
                     side_body(reader, &tree, &actions),
@@ -84,4 +109,47 @@ pub fn snapshot(
         .lock()
         .unwrap_or_else(std::sync::PoisonError::into_inner);
     Ok(Snapshot { reader, scroll })
+}
+
+/// The picture of a wiki layout: the same functions the window's live areas call, with callbacks that do nothing.
+#[allow(clippy::too_many_arguments)] // the pieces of one frame, all different
+fn wiki_frame(
+    layout: Layout,
+    reader: &Reader,
+    tree: &PageTree,
+    labels: &crate::WikiLabels,
+    physics: &blinc_layout::widgets::scroll::SharedScrollPhysics,
+    search: impl blinc_layout::prelude::ElementBuilder + 'static,
+    w: f32,
+    h: f32,
+) -> blinc_layout::div::Div {
+    let actions = Actions::inert();
+    if layout == Layout::Confluence {
+        let area = reader
+            .editing()
+            .map(|e| new_area(&e.draft, &fs_components_primitives::FieldData::new()));
+        return confluence::confluence(
+            search,
+            confluence::side(reader, tree, labels, &actions),
+            confluence::main(reader, labels, &actions, Some(physics), area.as_ref(), h),
+            labels,
+            w,
+            h,
+        );
+    }
+    let blocks = reader.editing().map(|e| BlockEditor::new(e.id, &e.draft));
+    notion::notion(
+        search,
+        notion::side(reader, tree, labels, &actions),
+        notion::main(
+            reader,
+            labels,
+            &actions,
+            Some(physics),
+            blocks.as_ref(),
+            &actions.draft,
+        ),
+        w,
+        h,
+    )
 }

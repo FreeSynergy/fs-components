@@ -28,6 +28,10 @@ pub(crate) struct Actions {
     pub discard: Arc<dyn Fn() + Send + Sync>,
     /// Export the page.
     pub export: Arc<dyn Fn() + Send + Sync>,
+    /// Open or close the folder with this key (wiki layouts).
+    pub toggle: Arc<dyn Fn(&str) + Send + Sync>,
+    /// Open the block with this index for editing (Notion layout).
+    pub block: Arc<dyn Fn(usize) + Send + Sync>,
 }
 
 impl Actions {
@@ -44,6 +48,8 @@ impl Actions {
             export: Arc::new(|| {}),
             restore: Arc::new(|| {}),
             discard: Arc::new(|| {}),
+            toggle: Arc::new(|_| {}),
+            block: Arc::new(|_| {}),
         }
     }
 }

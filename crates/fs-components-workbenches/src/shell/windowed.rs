@@ -33,6 +33,10 @@ pub struct Options {
     pub export_target: Option<String>,
     /// Where drafts are backed up; `None` = no backup.
     pub drafts: Option<Arc<dyn DraftStore>>,
+    /// The frame the reader is drawn in.
+    pub layout: crate::Layout,
+    /// The words of the wiki layouts.
+    pub wiki_labels: crate::WikiLabels,
 }
 
 impl Default for Options {
@@ -44,6 +48,8 @@ impl Default for Options {
             labels: Labels::default(),
             export_target: None,
             drafts: None,
+            layout: crate::Layout::Classic,
+            wiki_labels: crate::WikiLabels::default(),
         }
     }
 }
@@ -62,6 +68,7 @@ pub fn launch(
         options.labels.clone(),
         options.export_target.clone(),
     );
+    widget = widget.layout(options.layout, options.wiki_labels.clone());
     if let Some(store) = &options.drafts {
         widget = widget.drafts(Arc::clone(store));
     }
@@ -89,6 +96,8 @@ impl std::fmt::Debug for Options {
             .field("labels", &self.labels)
             .field("export_target", &self.export_target)
             .field("drafts", &self.drafts.as_ref().map(|_| "DraftStore"))
+            .field("layout", &self.layout)
+            .field("wiki_labels", &self.wiki_labels)
             .finish()
     }
 }

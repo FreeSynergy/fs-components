@@ -11,6 +11,8 @@ pub const STYLES: &str = r"
 .fs-tv-codespan { background: var(--surface-elevated); border-radius: var(--radius-sm); padding-left: 2px; padding-right: 2px; }
 .fs-tv-quote { border-left-width: 3px; border-left-color: var(--border); padding-left: var(--space-3); }
 .fs-tv-code { background: var(--surface-elevated); border-radius: var(--radius-default); padding: var(--space-3); display: flex; flex-direction: column; }
+.fs-tv-codebox { background: #f3f3f1; border-radius: var(--radius-default); }
+.fs-tv-codelines { display: flex; flex-direction: column; padding: var(--space-3); }
 .fs-tv-rule { height: 1px; background: var(--border); margin-top: var(--space-2); }
 .fs-tv-item { display: flex; flex-direction: row; align-items: flex-start; gap: var(--space-1); width: 100%; }
 .fs-tv-item .fs-tv-block { margin-bottom: var(--space-1); }

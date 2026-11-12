@@ -52,6 +52,11 @@ pub(super) fn inline(
     .size(face.size)
     .default_color(look.text);
     let rich = if face.bold { rich.bold() } else { rich };
+    let rich = if look.line > 0.0 {
+        rich.line_height(look.line)
+    } else {
+        rich
+    };
     div().w_full().child(rich)
 }
 

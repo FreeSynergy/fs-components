@@ -4,7 +4,12 @@
 
 /// CSS for the reader layout.
 pub(crate) fn styles() -> String {
-    [LAYOUT, &fs_components_widgets::styles()].concat()
+    [
+        LAYOUT,
+        &super::wiki::styles(),
+        &fs_components_widgets::styles(),
+    ]
+    .concat()
 }
 
 const LAYOUT: &str = r"

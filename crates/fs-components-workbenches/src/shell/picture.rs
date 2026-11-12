@@ -32,6 +32,8 @@ pub enum Step {
     Export,
     /// Scroll the content down by this many pixels (after the layout is known).
     Scroll(u32),
+    /// Open the folder with this key in the page tree (wiki layouts; a folder key ends in `/`).
+    Expand(String),
 }
 
 /// What the scroll area of the content looked like.
@@ -70,6 +72,10 @@ pub struct Picture {
     pub width: u32,
     /// Height in pixels (not 0).
     pub height: u32,
+    /// The frame the reader is drawn in.
+    pub layout: crate::Layout,
+    /// The words of the wiki layouts.
+    pub wiki_labels: crate::WikiLabels,
 }
 
 impl ScrollInfo {
@@ -93,6 +99,8 @@ impl Picture {
             steps: Vec::new(),
             width,
             height,
+            layout: crate::Layout::Classic,
+            wiki_labels: crate::WikiLabels::default(),
         }
     }
 }

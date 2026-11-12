@@ -99,11 +99,21 @@ pub enum Glyph {
     More,
     /// A circle with an i: information.
     Info,
+    /// A clock with a way back: the history of a page.
+    History,
+    /// A globe: the language of a page.
+    Language,
+    /// A star: a favourite.
+    Star,
+    /// A pencil: edit.
+    Edit,
+    /// Lines of different lengths: the outline of a page.
+    Outline,
 }
 
 impl Glyph {
     /// All glyphs, for tests and for icon sheets.
-    pub const ALL: [Glyph; 47] = [
+    pub const ALL: [Glyph; 52] = [
         Glyph::Mail,
         Glyph::Phone,
         Glyph::Person,
@@ -151,6 +161,11 @@ impl Glyph {
         Glyph::Settings,
         Glyph::More,
         Glyph::Info,
+        Glyph::History,
+        Glyph::Language,
+        Glyph::Star,
+        Glyph::Edit,
+        Glyph::Outline,
     ];
 
     /// The outline as SVG path data on a 24 x 24 grid.
@@ -223,6 +238,13 @@ impl Glyph {
             Glyph::Settings => "M4 7h10 M18 7h2 M14 5v4 M4 17h2 M10 17h10 M6 15v4 M4 12h16",
             Glyph::Transfers => "M7 4v14 M3.5 14.5L7 18l3.5-3.5 M17 20V6 M13.5 9.5L17 6l3.5 3.5",
             Glyph::Info => "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z M12 11v6 M12 7.5v.5",
+            Glyph::History => "M4 12a8 8 0 1 0 2.5-5.8 M4 4v4h4 M12 8v4.5l3 2",
+            Glyph::Language => {
+                "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z M3 12h18 M12 3c3 3 3 15 0 18 M12 3c-3 3-3 15 0 18"
+            }
+            Glyph::Star => "M12 4l2.4 5 5.6.7-4.1 3.8 1.1 5.5L12 16.3 7 19l1.1-5.5L4 9.7 9.6 9z",
+            Glyph::Edit => "M5 19l1-4L16.5 4.5a2 2 0 0 1 3 3L9 18z M14.5 6.5l3 3",
+            Glyph::Outline => "M5 6h14 M5 10h10 M5 14h12 M5 18h7",
         }
     }
 
@@ -276,6 +298,11 @@ impl Glyph {
             Glyph::ChevronRight => "chevron-right",
             Glyph::Settings => "settings",
             Glyph::Info => "info",
+            Glyph::History => "history",
+            Glyph::Language => "language",
+            Glyph::Star => "star",
+            Glyph::Edit => "edit",
+            Glyph::Outline => "outline",
         }
     }
 }

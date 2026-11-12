@@ -100,6 +100,11 @@ pub trait DocumentSource: Send + Sync {
     /// # Errors
     /// [`SourceError`] with a reason a person can read.
     fn find(&self, term: &str) -> Result<Vec<Hit>, SourceError>;
+    /// What the source says about the page at `path` beyond its text (languages, state, revisions); the wiki
+    /// layouts show it. The default says nothing.
+    fn page_info(&self, _path: &str) -> crate::PageInfo {
+        crate::PageInfo::default()
+    }
     /// The path to show first, if the source has an opinion.
     fn start(&self) -> Option<String> {
         None
