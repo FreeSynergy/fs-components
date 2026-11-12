@@ -144,6 +144,9 @@ pub fn fields_json() -> String {
 /// Write `text` to a new file beside `path` and rename it over `path`. The side file is made new (a stale one or a
 /// link of that name is removed first, never followed), with mode 0600 and without following a link at the last
 /// part of the name; the rename replaces whatever `path` is (a file or a link), it does not write through it.
+///
+/// # Errors
+/// The side file cannot be removed, made or written, or cannot be renamed over `path`.
 #[cfg(unix)]
 pub fn write_aside(path: &std::path::Path, text: &str) -> std::io::Result<()> {
     use std::io::Write;
@@ -164,6 +167,10 @@ pub fn write_aside(path: &std::path::Path, text: &str) -> std::io::Result<()> {
     std::fs::rename(aside, path)
 }
 
+/// Write `text` to a new file beside `path` and rename it over `path`.
+///
+/// # Errors
+/// The side file cannot be made or written, or cannot be renamed over `path`.
 #[cfg(not(unix))]
 pub fn write_aside(path: &std::path::Path, text: &str) -> std::io::Result<()> {
     let aside = path.with_extension("tmp");

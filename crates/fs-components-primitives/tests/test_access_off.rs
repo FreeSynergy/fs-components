@@ -3,6 +3,7 @@
 //!
 //! Tests: nothing noted while off.
 #![cfg(feature = "test-access")]
+#![allow(clippy::pedantic)]
 
 use fs_components_primitives::FieldData;
 use fs_components_primitives::test_access::{enabled, field_texts, registry_len};
@@ -17,5 +18,5 @@ fn nothing_is_noted_while_the_switch_is_off() {
         let _ = keeper.text_input();
     }
     assert_eq!(registry_len(), 0);
-    assert!(field_texts().is_empty());
+    assert_eq!(field_texts().len(), 0);
 }
