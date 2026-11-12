@@ -123,10 +123,23 @@ fn an_existing_file_or_a_link_of_the_name_is_replaced_never_written_through() {
     symlink(&victim, &out).unwrap();
     symlink(&victim, dir.join("out.tmp")).unwrap();
     write_aside(&out, "{\"fields\":[]}\n").unwrap();
-    assert_eq!(std::fs::read_to_string(&victim).unwrap(), "precious", "written through a link");
-    assert!(!std::fs::symlink_metadata(&out).unwrap().file_type().is_symlink(), "the link must be replaced");
+    assert_eq!(
+        std::fs::read_to_string(&victim).unwrap(),
+        "precious",
+        "written through a link"
+    );
+    assert!(
+        !std::fs::symlink_metadata(&out)
+            .unwrap()
+            .file_type()
+            .is_symlink(),
+        "the link must be replaced"
+    );
     assert_eq!(std::fs::read_to_string(&out).unwrap(), "{\"fields\":[]}\n");
-    assert_eq!(std::fs::metadata(&out).unwrap().permissions().mode() & 0o777, 0o600);
+    assert_eq!(
+        std::fs::metadata(&out).unwrap().permissions().mode() & 0o777,
+        0o600
+    );
     // a second write over an existing plain file
     write_aside(&out, "second").unwrap();
     assert_eq!(std::fs::read_to_string(&out).unwrap(), "second");
@@ -141,5 +154,9 @@ fn the_registry_does_not_grow_without_bound_while_fields_come_and_go() {
         let _field = keeper.text_input();
     }
     // 5000 short-lived fields: only the dead entries of the last stretch are left, never all of them
-    assert!(registry_len() < 1_000, "registry grew to {}", registry_len());
+    assert!(
+        registry_len() < 1_000,
+        "registry grew to {}",
+        registry_len()
+    );
 }

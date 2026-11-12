@@ -16,7 +16,10 @@ use fs_components_styles::StyleId;
 
 fn count(b: &dyn ElementBuilder) -> usize {
     usize::from(b.element_classes().iter().any(|c| &**c == FIELD_FONT_CLASS))
-        + b.children_builders().iter().map(|c| count(c.as_ref())).sum::<usize>()
+        + b.children_builders()
+            .iter()
+            .map(|c| count(c.as_ref()))
+            .sum::<usize>()
 }
 
 #[test]
@@ -31,7 +34,8 @@ fn every_part_input_of_a_field_has_the_font_class_named_or_not() {
     }
     for (kind, parts) in [(Kind::Email, 2), (Kind::Phone, 2)] {
         for named in [false, true] {
-            let mut field = FieldInput::new(kind, Look::new(StyleId::Admin, false), Arc::new(KeysAsText));
+            let mut field =
+                FieldInput::new(kind, Look::new(StyleId::Admin, false), Arc::new(KeysAsText));
             if named {
                 field = field.name("m");
             }

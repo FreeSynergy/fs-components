@@ -13,6 +13,8 @@ use std::collections::{BTreeMap, BTreeSet};
 pub const LEAST_WIDTH: f32 = 48.0;
 /// The same in whole pixels.
 const LEAST_WIDTH_PX: u32 = 48;
+/// The widest column a stored text may give (the same bound `set_width` has).
+const MOST_WIDTH_PX: u32 = 100_000;
 
 /// Order, hidden columns and widths of the columns of one list.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -174,7 +176,7 @@ impl ColumnLayout {
                         && known.contains(key)
                         && let Ok(w) = value.parse::<u32>()
                     {
-                        widths.insert(key.to_string(), w.max(LEAST_WIDTH_PX));
+                        widths.insert(key.to_string(), w.clamp(LEAST_WIDTH_PX, MOST_WIDTH_PX));
                     }
                 }
             }
@@ -244,6 +246,14 @@ mod tests {
         assert_eq!(l.width_of("size"), Some(130.0));
         l.forget_width("size");
         assert_eq!(l.width_of("size"), None);
+    }
+
+    #[test]
+    fn a_stored_width_is_bounded_both_ways_when_the_text_is_read() {
+        // Red without the upper bound: 4294967295 px came back as it was stored.
+        let read = layout().with_text("order=name,size;width.name=4294967295;width.size=3");
+        assert_eq!(read.width_of("name"), Some(100_000.0));
+        assert_eq!(read.width_of("size"), Some(LEAST_WIDTH));
     }
 
     #[test]

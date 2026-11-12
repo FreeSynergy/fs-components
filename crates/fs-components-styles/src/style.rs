@@ -9,6 +9,7 @@ use crate::icons::IconSet;
 use crate::tokens::{Heights, Palette, Radii, Spacing, Type};
 
 /// The styles there are.
+#[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum StyleId {
     /// Dense business data, SAP Fiori (Horizon) measures; generated admin frontends.

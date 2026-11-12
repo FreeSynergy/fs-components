@@ -17,8 +17,7 @@ use crate::field_data::FieldData;
 /// window: a field with no class of its own measured in one font and drew in another, and the caret stood away from
 /// the last character (measured 2026-11-12: 4 to 15 px, against 0 to 2 px in the fields of the type components). The
 /// class and this rule give the field the same font and size for both.
-pub const STYLES: &str =
-    ".fs-field-font { font-family: var(--font-sans); }\n.fs-body-field { font-family: var(--font-sans); font-size: 14px; }\n";
+pub const STYLES: &str = ".fs-field-font { font-family: var(--font-sans); }\n.fs-body-field { font-family: var(--font-sans); font-size: 14px; }\n";
 
 /// The class that gives a raw `text_input` (one that is not Blinc's `input` of `blinc_cn`, whose `.cn-input` rule
 /// already names the font) the font the caret is measured in. The ONE place of the rule: every raw `text_input` of

@@ -76,7 +76,10 @@ fn alive(held: &Held) -> bool {
 
 /// How many entries the registry holds now (live or not yet dropped).
 pub fn registry_len() -> usize {
-    REGISTRY.lock().unwrap_or_else(PoisonError::into_inner).len()
+    REGISTRY
+        .lock()
+        .unwrap_or_else(PoisonError::into_inner)
+        .len()
 }
 
 pub(crate) fn note_input(id: u64, data: &SharedTextInputData) {

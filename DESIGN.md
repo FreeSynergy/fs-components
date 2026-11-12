@@ -356,3 +356,16 @@ The files band is a box as high as `band_height` says and it clips what is talle
   `fs_components_widgets::styles()` carries the sheet. Tests: `crates/fs-components-widgets/tests/craft.rs`.
 - **Shell** (`fs-components-app`): a `Surface` may bring its own `bar` (it gets the row of menus, so the window has one top line and the menus stay
   reachable by keyboard) and may say `status_line() == false` when it has a footer of its own. Both have defaults, nothing else changes.
+
+## v0.0.11 - not additive (read before you update)
+What a program that uses these crates may meet (checked in the main checkouts of the `fs-*` repos on 2026-11-12: nothing there uses these places):
+- `StyleId` has a fifth value, `Craft`, and is now `#[non_exhaustive]`: a `match` outside the crate needs a `_` arm; `StyleId::ALL` is `[StyleId; 5]` (was 4).
+- `Glyph::ALL` has 47 glyphs (was 11). `fs_components_styles::icons` is private; `Cap`, `IconSet`, `Join` and `Glyph` are re-exported from the crate root.
+- The stroke of the Admin icons is 1.2 (was 1.75): the icons look thinner.
+- Every `SearchField` is built inside a `div` (a field of size `Body` too): a layout that counted on the field being the direct child changes.
+- `fs-components-render` has the feature `craft-font` (default on): JetBrains Mono Regular and Bold (about 550 KB) are in the binary through `include_bytes`. A program that does not offer Craft uses `default-features = false` and has neither the font nor the duty below. The crate's licence is now `(MIT OR Apache-2.0) AND OFL-1.1`: **a program that ships the font (feature on) ships the text of the OFL with it** (`crates/fs-components-render/assets/fonts/OFL-JetBrainsMono.txt`), in its package and in its "about" page.
+- Feature `test-access` (primitives, widgets, app) is refused by `compile_error!` in a build without debug assertions; the file it writes is made new with mode 0600 and `O_NOFOLLOW` (a file or a link of that name is replaced, never written through); fields are noted only once `FS_TEST_ACCESS_FILE` is set. Run with `--release` and the feature: a compile error, on purpose (use a debug build, or `cargo test`).
+- A raw `text_input` gets its font for the measure of the caret through ONE function, `fs_components_primitives::with_field_font` (class `fs-field-font`, rule in `SEARCH_FIELD_STYLES`, which `fs_components_widgets::styles()` carries). Fields made with `blinc_cn`'s `input` have `.cn-input`, whose rule in `blinc_cn` names the font. Tests walk the built tree for the class (`primitives/tests/body_field.rs`, `fields/tests/font_class.rs`, admin `inputs.rs`).
+
+### Known limits of the list view (honest)
+The width a stored layout text gives a column is bounded (48 to 100000 px) when it is read. Keys (Alt+arrows, Shift+arrows), dragging an edge or a head and the head's context menu have **no test that presses or drags**; what is tested is the layout they change (`ColumnLayout`, `LayoutStore`) and the model of the order. A defect in the event wiring would not be seen by the tests of this tag.
