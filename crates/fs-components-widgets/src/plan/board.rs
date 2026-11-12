@@ -179,13 +179,18 @@ impl BoardView<'_> {
             ))
             .child(
                 div().flex_1().min_h(0.0).w(main_w).child(
-                    scroll().both_directions().w_full().h_full().content(
-                        div()
-                            .w(inner.max(main_w))
-                            .min_w(inner.max(main_w))
-                            .flex_shrink_0()
-                            .child(columns),
-                    ),
+                    scroll()
+                        .both_directions()
+                        .scrollbar_always()
+                        .w_full()
+                        .h_full()
+                        .content(
+                            div()
+                                .w(inner.max(main_w))
+                                .min_w(inner.max(main_w))
+                                .flex_shrink_0()
+                                .child(columns),
+                        ),
                 ),
             );
         let mut root = div().class("fs-plan-root").flex_row().w(width).h(height);

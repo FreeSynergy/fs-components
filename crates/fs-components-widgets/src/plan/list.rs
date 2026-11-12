@@ -101,23 +101,30 @@ impl ListScreen<'_> {
             }
             page = page.child(block);
         }
-        page = page.child(
-            div()
-                .class("fs-plan-add")
-                .flex_row()
-                .w_full()
-                .child(text("+").class("fs-plan-add-plus"))
-                .child(
-                    self.entry
-                        .build(&format!("{id}-entry"), self.place, self.events),
-                ),
-        );
+        let add = div()
+            .class("fs-plan-add")
+            .flex_row()
+            .w_full()
+            .child(text("+").class("fs-plan-add-plus"))
+            .child(
+                self.entry
+                    .build(&format!("{id}-entry"), self.place, self.events),
+            );
+        let main_w = (width - side).max(0.0);
         let main = div()
             .class("fs-plan-list-main")
-            .w((width - side).max(0.0))
+            .flex_col()
+            .w(main_w)
             .h(height)
             .min_h(0.0)
-            .child(scroll().w_full().h_full().content(page));
+            .child(
+                div()
+                    .flex_1()
+                    .min_h(0.0)
+                    .w(main_w)
+                    .child(scroll().w_full().h_full().content(page)),
+            )
+            .child(add);
         let mut root = div().class("fs-plan-root").flex_row().w(width).h(height);
         if side > 0.0 {
             root = root.child(SideList { items: self.side }.build(

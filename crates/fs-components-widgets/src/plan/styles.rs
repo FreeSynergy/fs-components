@@ -33,7 +33,7 @@ pub const STYLES: &str = r"
 .fs-plan-side-title { font-size: 15px; }
 .fs-plan-side-count { font-size: 13px; color: var(--text-secondary); }
 .fs-plan-columns { display: flex; flex-direction: row; gap: 16px; padding: 16px; align-items: flex-start; }
-.fs-plan-column { background: var(--accent-subtle); border-radius: 10px; padding: 10px; gap: 8px; }
+.fs-plan-column { background: var(--selection); border-radius: 10px; padding: 10px; gap: 8px; }
 .fs-plan-column-head { gap: 10px; padding: 6px 6px 4px 6px; align-items: center; }
 .fs-plan-column-name { font-size: 15px; font-weight: 600; color: var(--text-secondary); }
 .fs-plan-column-count { font-size: 13px; color: var(--text-secondary); }
@@ -92,6 +92,6 @@ pub const STYLES: &str = r"
 .fs-plan-check:hover { border-color: var(--accent); }
 .fs-plan-check-on { background: var(--accent); border-color: var(--accent); }
 .fs-plan-check-mark { font-size: 13px; color: var(--text-inverse); }
-.fs-plan-add { align-items: center; gap: 12px; padding-top: 24px; }
+.fs-plan-add { align-items: center; gap: 12px; padding: 12px 32px 16px 32px; flex-shrink: 0; border-top-width: 1px; border-top-color: var(--border); background: var(--background); }
 .fs-plan-add-plus { font-size: 24px; color: var(--accent); padding-left: 4px; }
 ";
