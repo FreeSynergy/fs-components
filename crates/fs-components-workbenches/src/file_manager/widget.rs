@@ -99,6 +99,11 @@ impl FileManagerWidget {
         locked(&self.state).keep_columns_in(store, view);
     }
 
+    /// Pin the user folders of the storage that are known by these names (see `FilesState::pin_by_names`).
+    pub fn pin_by_names(&self, names: Vec<(fs_components_widgets::PinnedKind, String)>) {
+        locked(&self.state).pin_by_names(names);
+    }
+
     pub(super) fn set_on_pick(&self, handler: PickHandler) {
         *self.on_pick.lock().unwrap_or_else(PoisonError::into_inner) = Some(handler);
     }

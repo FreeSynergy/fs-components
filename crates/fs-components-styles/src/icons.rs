@@ -88,7 +88,11 @@ impl Glyph {
 
     /// The sign on the sheet of a file glyph (what the outline has after the sheet); empty for the others.
     pub fn sign(self) -> &'static str {
-        self.path().strip_prefix(SHEET_OUTLINE).unwrap_or("")
+        match self {
+            // an arrow glyph is its own sign (a pinned folder carries it on its front)
+            Glyph::Download => self.path(),
+            _ => self.path().strip_prefix(SHEET_OUTLINE).unwrap_or(""),
+        }
     }
 }
 

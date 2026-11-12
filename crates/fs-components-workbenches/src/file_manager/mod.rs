@@ -23,6 +23,7 @@ mod labels_fill;
 mod model;
 mod navigate;
 mod picker;
+mod pinned;
 mod reading;
 mod reports;
 mod select;

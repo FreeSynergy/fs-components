@@ -5,13 +5,10 @@
 
 use blinc_layout::div::{Div, div};
 use blinc_layout::text;
-use blinc_layout::widgets::scroll::scroll;
-use fs_components_widgets::TreeView;
 use fs_components_widgets::breadcrumb::{Breadcrumb, Crumb};
 use fs_components_widgets::icon::{Glyph, Tone, icon};
 
 use super::actions::FileActions;
-use crate::file_manager::context::Variant;
 use crate::file_manager::labels::FileLabels;
 use crate::file_manager::side::Place;
 use crate::file_manager::state::{FilesState, Notice};
@@ -78,98 +75,8 @@ pub(in crate::file_manager) fn status_line(state: &FilesState) -> Div {
         .child(text(said).no_cursor())
 }
 
-/// The sidebar: groups that fold (home, storage, trash, folders), the folder tree, and the settings at the bottom.
-pub(in crate::file_manager) fn tree_pane(state: &FilesState, actions: &FileActions) -> Div {
-    let mut pane = div().flex_col().w_full().h_full();
-    if let Some(problem) = state.tree_problem() {
-        pane = pane.child(div().class("fs-files-failed-line").child(text(problem)));
-    }
-    if state.variant() == Variant::Picker {
-        return pane;
-    }
-    let chrome = &state.labels().chrome;
-    let labels = state.labels();
-    let in_trash = state.in_trash();
-    let top = !in_trash && state.folder().is_none();
-    // Home (the top), Storage (the own storage with its folders under it: the tree is the storage), the trash.
-    let home = group(
-        div().flex_col().w_full().flex_shrink_0(),
-        state,
-        actions,
-        ("home", &chrome.group_home),
-        |g| {
-            g.child(place_row(
-                "fs-files-place-top",
-                Glyph::Home,
-                &chrome.group_home,
-                top,
-                actions.with(|s| s.open_folder(None)),
-            ))
-        },
-    );
-    pane = pane.child(home);
-    let storage = group(
-        div().flex_col().w_full().flex_grow().min_h(0.0),
-        state,
-        actions,
-        ("storage", &chrome.group_storage),
-        |g| {
-            let choose = actions.on_key(FilesState::choose_in_tree);
-            let current = state.folder().unwrap_or(TOP).to_string();
-            let tree = TreeView::new(state.tree_nodes())
-                .selected(current)
-                .on_select(move |key| choose(key))
-                .build();
-            g.child(
-                div()
-                    .w_full()
-                    .flex_grow()
-                    .min_h(0.0)
-                    .child(scroll().w_full().h_full().content(tree)),
-            )
-        },
-    );
-    pane = pane.child(storage);
-    if state.capabilities().trash {
-        let trash = group(
-            div().flex_col().w_full().flex_shrink_0(),
-            state,
-            actions,
-            ("trash", &chrome.group_trash),
-            |g| {
-                g.child(place_row(
-                    "fs-files-place-trash",
-                    Glyph::Trash,
-                    &labels.trash,
-                    in_trash,
-                    actions.plain(FilesState::open_trash),
-                ))
-            },
-        );
-        pane = pane.child(trash);
-    }
-    let noop: super::actions::Act = std::sync::Arc::new(|| {});
-    pane.child(
-        div()
-            .id("fs-files-place-settings")
-            .class("fs-files-place fs-files-place-off")
-            .flex_shrink_0()
-            .flex_row()
-            .items_center()
-            .gap(2.0)
-            .w_full()
-            .attr(
-                "title",
-                format!("{} ({})", chrome.settings, chrome.coming_soon),
-            )
-            .on_click(move |_| noop())
-            .child(icon(Glyph::Settings, 18.0, Tone::Muted))
-            .child(text(&chrome.settings).no_cursor()),
-    )
-}
-
 /// A group of the sidebar: its title with the arrow that folds it, and what it holds while it is open.
-fn group(
+pub(super) fn group(
     into: Div,
     state: &FilesState,
     actions: &FileActions,
@@ -204,7 +111,13 @@ fn group(
     into.child(inner)
 }
 
-fn place_row(id: &str, glyph: Glyph, word: &str, current: bool, act: super::actions::Act) -> Div {
+pub(super) fn place_row(
+    id: &str,
+    glyph: Glyph,
+    word: &str,
+    current: bool,
+    act: super::actions::Act,
+) -> Div {
     let one = div().id(id.to_string()).class("fs-files-place");
     let one = if current {
         one.class("fs-files-place-current")
@@ -212,6 +125,7 @@ fn place_row(id: &str, glyph: Glyph, word: &str, current: bool, act: super::acti
         one
     };
     one.w_full()
+        .h(super::sidebar::ROW)
         .flex_row()
         .justify_start()
         .items_center()

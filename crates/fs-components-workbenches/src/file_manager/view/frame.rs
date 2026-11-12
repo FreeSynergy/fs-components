@@ -30,7 +30,7 @@ const CHAR_WIDTH: f32 = 7.5;
 /// Height of a line of a message.
 const LINE_HEIGHT: f32 = 22.0;
 /// The body never gets less than this, so the bars above and the band below cannot overlap.
-pub(super) const STATUS_HEIGHT: f32 = 30.0;
+pub(super) const STATUS_HEIGHT: f32 = 28.0;
 const LEAST_BODY: f32 = 96.0;
 
 /// What is worked out.

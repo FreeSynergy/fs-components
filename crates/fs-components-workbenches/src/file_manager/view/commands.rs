@@ -30,7 +30,7 @@ pub(in crate::file_manager) fn commands_height(state: &FilesState, width: f32) -
         }
         used += wide;
     }
-    lines * ICON_BUTTON + 8.0
+    lines * ICON_BUTTON + 12.0
 }
 
 /// The command bar.

@@ -124,3 +124,50 @@ pub fn kind_icon(glyph: Glyph, px: f32) -> Option<Div> {
         sheet(px, glyph, kind)
     })
 }
+
+/// The folders of a person that a file window pins at the side (the user folders of the desktop).
+#[non_exhaustive]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PinnedKind {
+    /// The desktop.
+    Desktop,
+    /// What was downloaded.
+    Downloads,
+    /// Documents.
+    Documents,
+    /// Pictures.
+    Pictures,
+    /// Music.
+    Music,
+    /// Videos.
+    Videos,
+}
+
+impl PinnedKind {
+    /// The colour of the folder and the sign laid on its front (none for the desktop).
+    fn look(self) -> (u32, Option<Glyph>) {
+        match self {
+            PinnedKind::Desktop => (0x003B_82C4, None),
+            PinnedKind::Downloads => (0x002F_9E6E, Some(Glyph::Download)),
+            PinnedKind::Documents => (0x00C4_8A2A, Some(Glyph::FileDoc)),
+            PinnedKind::Pictures => (0x0045_8F8A, Some(Glyph::FileImage)),
+            PinnedKind::Music => (0x00A0_5BB5, Some(Glyph::FileAudio)),
+            PinnedKind::Videos => (0x00C0_504D, Some(Glyph::FileVideo)),
+        }
+    }
+}
+
+/// A folder in the colour of its kind with a small white sign on its front: the icon of a pinned user folder.
+pub fn pinned_icon(kind: PinnedKind, px: f32) -> Div {
+    let (rgb, sign) = kind.look();
+    let colour = colour(Rgba::hex(rgb));
+    let mut icon = folder(px, colour);
+    if let Some(glyph) = sign {
+        let set = style(StyleId::Admin).icons;
+        let svg = svg(set.svg_sign(glyph, Rgba::hex(0x00FF_FFFF), Some(px * 0.62)))
+            .size(px * 0.62, px * 0.62)
+            .color(Color::rgba(1.0, 1.0, 1.0, 1.0));
+        icon = icon.child(boxed(px * 0.19, px * 0.3, px * 0.62, px * 0.62).child(svg));
+    }
+    icon
+}

@@ -34,6 +34,10 @@ pub struct ChromeLabels {
     pub group_storage: String,
     /// Default: `Trash`.
     pub group_trash: String,
+    /// Default: `Network`.
+    pub group_network: String,
+    /// Default: `Nothing connected yet`.
+    pub network_empty: String,
     /// Default: `Settings`.
     pub settings: String,
     /// Default: `Search`.
@@ -74,6 +78,8 @@ impl Default for ChromeLabels {
             group_pinned: s("Pinned"),
             group_storage: s("Storage"),
             group_trash: s("Trash"),
+            group_network: s("Network"),
+            network_empty: s("Nothing connected yet"),
             settings: s("Settings"),
             search_tip: s("Search"),
             places: s("Places"),

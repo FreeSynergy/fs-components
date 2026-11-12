@@ -60,6 +60,7 @@ pub use file_preview::{Fact, FilePreview, PreviewContent, SafeText, picture_fits
 pub use file_tile::{FileTile, TileGrid};
 pub use icon::{Glyph, Tone, icon};
 pub use icon_export::{export_theme, index_theme};
+pub use icon_kind::{PinnedKind, pinned_icon};
 pub use icon_named::{icon_named, set_icon_theme};
 pub use icon_theme::{IconTheme, default_base_dirs};
 pub use keys::{Handled, Key, KeyEvent};
