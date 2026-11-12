@@ -253,14 +253,19 @@ impl FilesState {
                 )));
             }
             Err(e) if e.problem == FileProblem::MarkedNeedsRelease && !released => {
-                self.ask_download_marked(key, name.to_string(), path);
+                if matches!(self.ask, Ask::Nothing) {
+                    self.ask_download_marked(key, name.to_string(), path);
+                } else {
+                    self.notice = Some(Notice::Problem(e.problem, self.problem_text(&e)));
+                }
             }
             Err(e) => {
                 let text = self.problem_text(&e);
                 let failed = TransferState::Failed(text.clone());
                 self.push_row(TransferRow::download(row, name, key, failed));
                 self.notice = Some(Notice::Problem(e.problem, text));
-                if let Some(input) = input {
+                // Only into a free place: what the person opened meanwhile is not thrown away.
+                if let Some(input) = input.filter(|_| matches!(self.ask, Ask::Nothing)) {
                     self.ask = Ask::Input(self.input_with_transfer_error(input));
                 }
             }
@@ -280,7 +285,12 @@ impl FilesState {
             }
             Err(e) => {
                 self.read_pending();
-                self.input_failed(input, &e);
+                if matches!(self.ask, Ask::Nothing) {
+                    self.input_failed(input, &e);
+                } else {
+                    self.after_change();
+                    self.notice = Some(Notice::Problem(e.problem, self.problem_text(&e)));
+                }
             }
             Ok(Reply::Summary(_)) => {}
         }

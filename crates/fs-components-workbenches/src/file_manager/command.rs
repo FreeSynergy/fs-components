@@ -76,8 +76,12 @@ impl FilesState {
     ) {
         match done {
             Ok(said) => {
-                self.ask = Ask::Nothing;
-                self.carrying = None;
+                // An upload closed its input when it started, and carries nothing: what the person has opened since
+                // (a rename, a move on its way, a question) is not ours to close.
+                if !matches!(command, Command::Upload(..)) {
+                    self.ask = Ask::Nothing;
+                    self.carrying = None;
+                }
                 self.transfer_done(&command, &said);
                 self.after_change();
                 self.notice = Some(Notice::Info(said));
@@ -88,6 +92,12 @@ impl FilesState {
 
     fn not_run(&mut self, command: Command, rule: NameRule, from: Option<InputAsk>, e: &FileError) {
         self.transfer_failed(&command, e);
+        if matches!(command, Command::Upload(..)) && !matches!(self.ask, Ask::Nothing) {
+            // Something else is open now: it keeps the keyboard; the failure is said on the line.
+            self.after_change();
+            self.notice = Some(Notice::Problem(e.problem, self.problem_text(e)));
+            return;
+        }
         if e.problem == FileProblem::NameConflict
             && rule == NameRule::Refuse
             && self.capabilities.keep_both
@@ -108,7 +118,9 @@ impl FilesState {
             self.after_change();
             return;
         }
-        self.carrying = None;
+        if !matches!(command, Command::Upload(..)) {
+            self.carrying = None;
+        }
         self.failed(e);
     }
 

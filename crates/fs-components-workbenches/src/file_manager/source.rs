@@ -1,9 +1,10 @@
 //! Where the file manager gets its files.
 //!
 //! Pattern: Strategy — the workbench depends on this trait only (an Adapter over a program's core
-//! implements it). The trait is synchronous and called on the interface thread, like `DocumentSource`:
-//! a long upload, download or rescan freezes the window while it runs. This is provisional (see
-//! DESIGN.md); a later version runs them on a worker. Paths are text the person typed: the source
+//! implements it). The trait is synchronous: the workbench calls the long ones (rescan, upload, download, going on
+//! with an upload) from a worker, so the window stays free (`jobs.rs`; one at a time), and the short ones on the
+//! interface thread, where a slow source holds the window for its time limit (DESIGN.md). Paths are text the person
+//! typed: the source
 //! checks them, the workbench does not look inside.
 
 use super::error::FileError;

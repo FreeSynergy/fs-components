@@ -8,7 +8,7 @@ What is different here: the pieces know nothing about our programs. A contact li
 
 ## What it can do today
 
-Latest tag: `v0.0.11`.
+Latest tag: `v0.0.12` (set after review; `v0.0.11` before it).
 
 - Primitives and widgets: search field, text view, tree view, list view (only the visible rows exist), calendar view (month, week, day, agenda), avatar group, transfer list, sortable list, lightbox, breadcrumb, file tile and preview, a share dialog (dialog only), task card.
 - Charts: a subset of Vega-Lite (bar, line, area, point, arc) with a text alternative and colour-blind-safe checking.
