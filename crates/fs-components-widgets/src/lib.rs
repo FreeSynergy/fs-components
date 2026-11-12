@@ -36,6 +36,7 @@ pub mod message_composer;
 pub mod message_list;
 pub mod participant;
 mod picture;
+pub mod plan;
 pub mod share_dialog;
 mod softwrap;
 pub mod sortable_list;

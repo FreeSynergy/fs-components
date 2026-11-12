@@ -374,3 +374,17 @@ What a program that uses these crates may meet (checked in the main checkouts of
 ### Known limits of the list view (honest)
 The width a stored layout text gives a column is bounded (48 to 100000 px) when it is read. Keys (Alt+arrows, Shift+arrows), dragging an edge or a head and the head's context menu have **no test that presses or drags**; what is tested is the layout they change (`ColumnLayout`, `LayoutStore`) and the model of the order. A defect in the event wiring would not be seen by the tests of this tag.
 - Dependencies: fs-interfaces and fs-types come from `fs-interfaces` tag `v0.0.19` (one source in `Cargo.lock`; v0.0.19 is compatible with v0.0.18), Blinc from `fs-blinc-3.1`.
+
+## v0.0.13 - plan widgets (branch `tasks-visual`, based on v0.0.12, work in progress)
+
+**Additive.** A new module `fs-components-widgets/src/plan/` (`Chip`, `initials_circle`, `PlanCard`, `BoardView` with `board_layout`, `tabs_element` with locked tabs, `SideList`, `Entry` with Enter, `Events`, `redraw`) and its own sheet `plan::STYLES`, joined in `styles()` after `task_card::STYLES`. **Not additive: nothing.** No older widget, no `StyleId`, no default value changed; the larger text (15 px titles, 12 px chips) is literal pixels in the plan sheet only, so Store, Files and People look as before (not measured by picture here; the sheet adds only `.fs-plan-*` rules). Both screens are done: the board (A) and the day list (B: `ListScreen`, `Section`, `TaskLine`, `list_layout`); own drawings in `plan/icons.rs` (outline icons named as freedesktop icons: `mail-inbox`, `starred`, `x-office-calendar`, `view-list`, `folder`, `emblem-ok`, `emblem-default`, `view-grid`; the `-symbolic` kind, one drawing for the light and the dark theme). The panel has "Move to" (`Events.act`); initials circles take the colour of the Craft style (`accent_index`). Test `the_plan_sheet_touches_only_its_own_classes` is the additive proof; the whole widgets test suite (pixel tests of the avatar group, list-view, calendar, file widgets) passes on this branch.
+
+| Widget | Pattern | Data in | Out |
+|---|---|---|---|
+| `Chip` | Value object | text, `Tone` | pill |
+| `PlanCard` | Adapter | title, code, due chip, people, chips, note, muted, selected | card, click = `Events.pick` |
+| `BoardView` | Template method | tabs, projects, columns, panel, creating, entry | tabs + project list + tinted columns + "+ Create" + panel only when a card is chosen |
+| `tabs_element` | Adapter | `Tab` (locked = weak, no handler, hint as title) | row of tabs |
+| `Entry` | Adapter over `text_input` | placeholder | one line; Enter calls `Events.enter(place, trimmed text)`, empties the line, draws again |
+
+Tests: `tests/plan_logic.rs` (sizes, Enter text, column heading, tones). **Harness limits, named:** the drawing and the clicks are not asserted here; they were seen in pictures of `fs-tasks` (headless `--snapshot`); the real window run and the typing test are open. Icons: none yet in the plan widgets (the freedesktop names are for the list screen).
