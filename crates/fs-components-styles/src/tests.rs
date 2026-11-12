@@ -139,3 +139,24 @@ fn the_numbers_of_the_measurement_sheets_are_kept() {
         );
     }
 }
+
+#[test]
+fn craft_is_sharp_dark_and_has_a_mono_face_and_stable_accents() {
+    use crate::styles::craft;
+    let s = style(StyleId::Craft);
+    assert_eq!(
+        (s.radii.control, s.radii.card, s.radii.overlay),
+        (0.0, 0.0, 0.0)
+    );
+    assert!(s.effects_dark.card_shadow.is_none() && s.effects_dark.overlay_shadow.is_none());
+    assert_eq!(s.dark.ground, crate::Rgba::hex(0x121316));
+    assert_eq!(craft::MONO[0], "JetBrains Mono");
+    assert_eq!(
+        craft::accent_index("fs-tasks"),
+        craft::accent_index("fs-tasks")
+    );
+    assert!(craft::accent_index("fs-tasks") < craft::ACCENTS.len());
+    assert_eq!(craft::ACCENTS.len(), craft::ACCENTS_TEXT.len());
+    assert_eq!(StyleId::from_name("craft"), Some(StyleId::Craft));
+    assert_ne!(craft::extras(true).line, craft::extras(false).line);
+}

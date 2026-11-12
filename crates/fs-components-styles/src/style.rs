@@ -19,15 +19,18 @@ pub enum StyleId {
     Apple,
     /// Measures after Microsoft's Fluent 2.
     Windows,
+    /// A dark launcher look: sharp corners, 1 px lines, tiles that share their lines, small mono capitals (`styles/craft.rs`).
+    Craft,
 }
 
 impl StyleId {
     /// All styles in a fixed order.
-    pub const ALL: [StyleId; 4] = [
+    pub const ALL: [StyleId; 5] = [
         StyleId::Admin,
         StyleId::Simple,
         StyleId::Apple,
         StyleId::Windows,
+        StyleId::Craft,
     ];
 
     /// Stable name for settings files and tests.
@@ -37,6 +40,7 @@ impl StyleId {
             StyleId::Simple => "simple",
             StyleId::Apple => "apple",
             StyleId::Windows => "windows",
+            StyleId::Craft => "craft",
         }
     }
 
@@ -164,7 +168,7 @@ pub trait StyleCatalog {
     fn get(&self, id: StyleId) -> Option<&Style>;
 }
 
-/// The four styles built in.
+/// The styles built in.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Builtin;
 
@@ -177,13 +181,14 @@ impl StyleCatalog for Builtin {
 /// The built-in style with this id.
 pub fn style(id: StyleId) -> &'static Style {
     use std::sync::OnceLock;
-    static ALL: OnceLock<[Style; 4]> = OnceLock::new();
+    static ALL: OnceLock<[Style; 5]> = OnceLock::new();
     let all = ALL.get_or_init(|| {
         [
             crate::styles::admin::build(),
             crate::styles::simple::build(),
             crate::styles::apple::build(),
             crate::styles::windows::build(),
+            crate::styles::craft::build(),
         ]
     });
     match id {
@@ -191,5 +196,6 @@ pub fn style(id: StyleId) -> &'static Style {
         StyleId::Simple => &all[1],
         StyleId::Apple => &all[2],
         StyleId::Windows => &all[3],
+        StyleId::Craft => &all[4],
     }
 }
