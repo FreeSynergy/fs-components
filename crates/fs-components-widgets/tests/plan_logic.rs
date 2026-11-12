@@ -71,3 +71,20 @@ fn every_tone_has_its_own_class() {
         "a missing callback does nothing"
     );
 }
+
+#[test]
+fn the_plan_sheet_touches_only_its_own_classes() {
+    // Additive proof for the older programs: every rule of the plan sheet is about a `.fs-plan-` class, so no other
+    // widget (Store, Files, People) is restyled by it, and the joined sheet of the crate only grew by this block.
+    for line in fs_components_widgets::plan::STYLES
+        .lines()
+        .filter(|l| l.contains('{'))
+    {
+        assert!(
+            line.trim_start().starts_with(".fs-plan-"),
+            "foreign rule: {line}"
+        );
+    }
+    let all = fs_components_widgets::styles();
+    assert!(all.contains(fs_components_widgets::plan::STYLES));
+}

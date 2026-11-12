@@ -83,6 +83,12 @@ impl Detail {
 /// The side panel of the chosen card: it exists only while a card is chosen.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Panel {
+    /// Names the card for the host.
+    pub key: String,
+    /// "Move to": the places the card can go, `locked` for one it cannot.
+    pub moves: Vec<Tab>,
+    /// The key of the place it is in.
+    pub here: String,
     /// The title of the card.
     pub title: String,
     /// A sentence under the title (the reason a task waits).

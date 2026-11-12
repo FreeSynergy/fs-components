@@ -18,6 +18,8 @@ pub struct SideItem {
     pub count: Option<usize>,
     /// Drawn as the one chosen.
     pub selected: bool,
+    /// The name of a small drawing in front of the text (`mail-inbox`), or empty.
+    pub icon: String,
 }
 
 impl SideItem {
@@ -28,7 +30,15 @@ impl SideItem {
             title: title.into(),
             count,
             selected: false,
+            icon: String::new(),
         }
+    }
+
+    /// The same line with a small drawing in front.
+    #[must_use]
+    pub fn icon(mut self, name: &str) -> Self {
+        self.icon = name.into();
+        self
     }
 
     /// A heading of a group.
@@ -66,6 +76,9 @@ impl SideList<'_> {
                 .id(format!("{id}-{}", item.key));
             if item.selected {
                 line = line.class("fs-plan-side-selected");
+            }
+            if super::icons::has_icon(&item.icon) {
+                line = line.child(super::icons::plan_icon(&item.icon, 20.0));
             }
             line = line
                 .child(text(item.title.clone()).class("fs-plan-side-title"))

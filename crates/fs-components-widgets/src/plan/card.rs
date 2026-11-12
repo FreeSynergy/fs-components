@@ -67,6 +67,7 @@ impl PlanCard {
             card = card.child(row);
         }
         let mut facts = div().class("fs-plan-facts").flex_row().w_full();
+        facts = facts.child(super::icons::plan_icon("emblem-default", 16.0));
         if !self.code.is_empty() {
             facts = facts.child(text(self.code.clone()).class("fs-plan-code"));
         }
@@ -88,6 +89,10 @@ impl PlanCard {
 pub fn initials_circle(name: &str) -> Div {
     div()
         .class("fs-plan-initials")
+        .class(format!(
+            "fs-plan-tile-{}",
+            fs_components_styles::styles::craft::accent_index(name)
+        ))
         .attr("title", name)
         .child(text(avatar_group_initials(name)).class("fs-plan-initials-text"))
 }

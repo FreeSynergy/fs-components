@@ -116,6 +116,28 @@ fn panel(view: &BoardView, panel: &Panel, width: f32, id: &str) -> Div {
             }),
     );
     body = body.child(text(panel.title.clone()).class("fs-plan-panel-title"));
+    if !panel.moves.is_empty() {
+        let mut row = div().class("fs-plan-moves").flex_row().flex_wrap();
+        for m in &panel.moves {
+            let mut one = div()
+                .class("fs-plan-move")
+                .id(format!("{id}-move-{}", m.key));
+            if m.key == panel.here {
+                one = one.class("fs-plan-move-here");
+            }
+            let (act, card, to) = (view.events.act.clone(), panel.key.clone(), m.key.clone());
+            one = one.on_click(move |_| {
+                if let Some(act) = &act {
+                    act(&card, &to);
+                    super::events::redraw();
+                }
+            });
+            row = row.child(one.child(text(m.title.clone()).class("fs-plan-tab-text")));
+        }
+        body = body
+            .child(text("Move to").class("fs-plan-detail-label"))
+            .child(row);
+    }
     if let Some(note) = &panel.note {
         body = body.child(div().class("fs-plan-panel-note").child(text(note.clone())));
     }

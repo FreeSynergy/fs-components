@@ -28,6 +28,8 @@ pub struct Events {
     pub create: Option<Say>,
     /// A title was entered: the place (column key or list key) and the text.
     pub enter: Option<Say2>,
+    /// The card of the panel is to move to a place: the card's key and the place's key.
+    pub act: Option<Say2>,
     /// The panel was closed.
     pub close: Option<Arc<dyn Fn() + Send + Sync>>,
 }
