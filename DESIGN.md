@@ -369,3 +369,4 @@ What a program that uses these crates may meet (checked in the main checkouts of
 
 ### Known limits of the list view (honest)
 The width a stored layout text gives a column is bounded (48 to 100000 px) when it is read. Keys (Alt+arrows, Shift+arrows), dragging an edge or a head and the head's context menu have **no test that presses or drags**; what is tested is the layout they change (`ColumnLayout`, `LayoutStore`) and the model of the order. A defect in the event wiring would not be seen by the tests of this tag.
+- Dependencies: fs-interfaces and fs-types come from `fs-interfaces` tag `v0.0.19` (one source in `Cargo.lock`; v0.0.19 is compatible with v0.0.18), Blinc from `fs-blinc-3.1`.
