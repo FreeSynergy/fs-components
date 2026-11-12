@@ -77,7 +77,7 @@ fn column(view: &BoardView, col: &Column, id: &str, width: f32) -> Div {
             .class("fs-plan-create")
             .id(format!("{id}-{}-create", col.key))
             .child(text(format!("+ {}", view.create)).class("fs-plan-create-text"))
-            .on_click(move |_| tell(&create, &key))
+            .on_click(move |_| tell(create.as_ref(), &key))
     };
     div()
         .class("fs-plan-column")
@@ -162,6 +162,7 @@ impl BoardView<'_> {
         for col in self.columns {
             columns = columns.child(column(self, col, id, col_w));
         }
+        #[allow(clippy::cast_precision_loss)] // a few columns
         let inner = (col_w + 16.0) * self.columns.len().max(1) as f32 + 16.0;
         let board = div()
             .flex_col()

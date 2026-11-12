@@ -81,7 +81,8 @@ impl PlanCard {
             }
         }
         let (pick, key) = (events.pick.clone(), self.key.clone());
-        card.child(facts).on_click(move |_| tell(&pick, &key))
+        card.child(facts)
+            .on_click(move |_| tell(pick.as_ref(), &key))
     }
 }
 

@@ -42,7 +42,7 @@ pub fn redraw() {
 }
 
 /// Run `f` of `events` with `key`, then draw again.
-pub(super) fn tell(f: &Option<Say>, key: &str) {
+pub(super) fn tell(f: Option<&Say>, key: &str) {
     if let Some(f) = f {
         f(key);
         redraw();

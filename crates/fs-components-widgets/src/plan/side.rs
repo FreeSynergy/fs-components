@@ -87,7 +87,7 @@ impl SideList<'_> {
                 line = line.child(text(n.to_string()).class("fs-plan-side-count"));
             }
             let (pick, key) = (events.pick.clone(), item.key.clone());
-            col = col.child(line.on_click(move |_| tell(&pick, &key)));
+            col = col.child(line.on_click(move |_| tell(pick.as_ref(), &key)));
         }
         col
     }

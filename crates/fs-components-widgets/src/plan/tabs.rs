@@ -23,7 +23,7 @@ pub fn tabs_element(tabs: &[Tab], active: &str, soon: &str, id: &str, events: &E
                 .attr("data-locked", "true");
         } else {
             let (pick, key) = (events.tab.clone(), tab.key.clone());
-            one = one.on_click(move |_| tell(&pick, &key));
+            one = one.on_click(move |_| tell(pick.as_ref(), &key));
         }
         row = row.child(one.child(text(tab.title.clone()).class("fs-plan-tab-text")));
     }

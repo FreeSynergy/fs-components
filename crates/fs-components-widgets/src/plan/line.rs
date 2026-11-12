@@ -64,7 +64,7 @@ impl TaskLine {
             body = body.child(text(sub.clone()).class("fs-plan-line-sub"));
         }
         let mut head = div().class("fs-plan-line-head").flex_row().w_full();
-        head = head.child(boxed.on_click(move |_| tell(&tick, &k1)));
+        head = head.child(boxed.on_click(move |_| tell(tick.as_ref(), &k1)));
         let mut main = div()
             .class("fs-plan-line-main")
             .flex_row()
@@ -74,7 +74,7 @@ impl TaskLine {
         if let Some(chip) = &self.chip {
             main = main.child(chip_element(chip));
         }
-        head = head.child(main.on_click(move |_| tell(&open, &k2)));
+        head = head.child(main.on_click(move |_| tell(open.as_ref(), &k2)));
         let mut line = div().class("fs-plan-line").flex_col().w_full();
         if self.muted {
             line = line.class("fs-plan-muted");
