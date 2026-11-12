@@ -3,8 +3,15 @@ name = "fs-components-render"
 description = "FreeSynergy rendering base: theme bundle, fonts and drawing an element to a PNG without a window; used by workbenches and the app shell, knows neither"
 version.workspace = true
 edition.workspace = true
-license.workspace = true
+# The code is MIT OR Apache-2.0; the bundled JetBrains Mono (assets/fonts, feature `craft-font`) is SIL OFL 1.1.
+license = "(MIT OR Apache-2.0) AND OFL-1.1"
 rust-version.workspace = true
+
+[features]
+# JetBrains Mono (about 550 KB, SIL OFL 1.1) inside the binary for the Craft style. On by default; a program that does
+# not offer Craft turns it off (`default-features = false`) and carries neither the font nor the duty of the licence text.
+default = ["craft-font"]
+craft-font = []
 
 [dependencies]
 fs-components-styles = { path = "../fs-components-styles" }

@@ -5,7 +5,9 @@
 
 use blinc_layout::widgets::text_input::InputType;
 use fs_components_primitives::FieldData;
-use fs_components_primitives::test_access::{field_texts, fields_json, start_from_env};
+use fs_components_primitives::test_access::{
+    enable, field_texts, fields_json, registry_len, start_from_env,
+};
 
 fn set(data: &blinc_layout::widgets::text_input::SharedTextInputData, text: &str) {
     data.lock().unwrap().value = text.to_string();
@@ -21,6 +23,7 @@ fn texts_of(keeper_ids: &[u64]) -> Vec<String> {
 
 #[test]
 fn the_text_of_a_field_is_read_exactly_and_a_secret_field_gives_nothing() {
+    enable();
     let keeper = FieldData::new();
     let plain = keeper.text_input();
     let named = keeper.text_input_with_placeholder("Name");
@@ -60,6 +63,7 @@ fn the_text_of_a_field_is_read_exactly_and_a_secret_field_gives_nothing() {
 
 #[test]
 fn a_wrong_text_is_not_the_text_that_was_typed() {
+    enable();
     // The counter test of the typing test in miniature: what is read is what is in the field, not what was meant.
     let keeper = FieldData::new();
     let field = keeper.text_input();
@@ -79,6 +83,7 @@ fn the_writer_writes_the_file_whole_when_the_environment_names_one() {
     // SAFETY: this test is the only one of this binary that reads or sets the variable, and it runs before the
     // thread of the writer exists.
     unsafe { std::env::set_var("FS_TEST_ACCESS_FILE", &path) };
+    enable();
     let keeper = FieldData::new();
     let field = keeper.text_input();
     set(&field, "typed");
@@ -101,4 +106,40 @@ fn the_writer_writes_the_file_whole_when_the_environment_names_one() {
         assert_eq!(mode, 0o600, "only the owner may read it");
     }
     let _ = std::fs::remove_file(&path);
+}
+
+#[cfg(unix)]
+#[test]
+fn an_existing_file_or_a_link_of_the_name_is_replaced_never_written_through() {
+    use fs_components_primitives::test_access::write_aside;
+    use std::os::unix::fs::{PermissionsExt, symlink};
+    let dir = std::env::temp_dir().join(format!("fs-ta-link-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(&dir).unwrap();
+    let victim = dir.join("victim.txt");
+    std::fs::write(&victim, "precious").unwrap();
+    // the answer file is a link to the victim, and the side file is a link to the victim too
+    let out = dir.join("out.json");
+    symlink(&victim, &out).unwrap();
+    symlink(&victim, dir.join("out.tmp")).unwrap();
+    write_aside(&out, "{\"fields\":[]}\n").unwrap();
+    assert_eq!(std::fs::read_to_string(&victim).unwrap(), "precious", "written through a link");
+    assert!(!std::fs::symlink_metadata(&out).unwrap().file_type().is_symlink(), "the link must be replaced");
+    assert_eq!(std::fs::read_to_string(&out).unwrap(), "{\"fields\":[]}\n");
+    assert_eq!(std::fs::metadata(&out).unwrap().permissions().mode() & 0o777, 0o600);
+    // a second write over an existing plain file
+    write_aside(&out, "second").unwrap();
+    assert_eq!(std::fs::read_to_string(&out).unwrap(), "second");
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+#[test]
+fn the_registry_does_not_grow_without_bound_while_fields_come_and_go() {
+    enable();
+    for _ in 0..5_000 {
+        let keeper = FieldData::new();
+        let _field = keeper.text_input();
+    }
+    // 5000 short-lived fields: only the dead entries of the last stretch are left, never all of them
+    assert!(registry_len() < 1_000, "registry grew to {}", registry_len());
 }

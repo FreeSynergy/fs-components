@@ -16,3 +16,7 @@ blinc_layout.workspace = true
 blinc_cn.workspace = true
 blinc_theme.workspace = true
 fs-interfaces = { workspace = true, features = ["values"] }
+
+[target.'cfg(unix)'.dependencies]
+# O_NOFOLLOW for the file of the feature `test-access`.
+libc = "0.2"

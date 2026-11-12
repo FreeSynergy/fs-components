@@ -27,6 +27,7 @@ pub fn register_fonts() {
 
 /// `JetBrains` Mono (SIL OFL 1.1, `assets/fonts/OFL-JetBrainsMono.txt`) for the style that wants a mono face for its labels
 /// (Craft). Once per process, and only when that style is chosen.
+#[cfg(feature = "craft-font")]
 fn register_style_fonts() {
     static ONCE: Once = Once::new();
     if chosen_style_wants_mono() {
@@ -41,6 +42,11 @@ fn register_style_fonts() {
     }
 }
 
+/// Without the feature `craft-font` the Craft style keeps the system's mono face; no font is registered.
+#[cfg(not(feature = "craft-font"))]
+fn register_style_fonts() {}
+
+#[cfg(feature = "craft-font")]
 fn chosen_style_wants_mono() -> bool {
     crate::chosen_style() == Some(fs_components_styles::StyleId::Craft)
 }
