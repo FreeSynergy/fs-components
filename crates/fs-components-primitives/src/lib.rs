@@ -12,6 +12,8 @@
 pub mod contact_input;
 pub mod field_data;
 pub mod search_field;
+#[cfg(feature = "test-access")]
+pub mod test_access;
 
 pub use contact_input::{
     OnChange as ContactOnChange, email_input, email_problem, phone_input, phone_problem,

@@ -35,6 +35,8 @@ impl Default for WindowOptions {
 /// [`AppError::Window`] if the window or the graphics cannot be started.
 pub fn launch(options: WindowOptions, app: AppWidget) -> Result<(), AppError> {
     register_fonts();
+    #[cfg(feature = "test-access")]
+    fs_components_widgets::test_access::start_from_env();
     let config = WindowConfig {
         title: app.with_shell(|shell| shell.title().to_owned()),
         width: options.width,

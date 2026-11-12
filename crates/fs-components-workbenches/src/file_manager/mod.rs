@@ -8,6 +8,7 @@
 
 mod ask;
 mod carry;
+mod chrome_state;
 mod command;
 mod confirm;
 mod context;
@@ -15,6 +16,7 @@ mod error;
 mod filter;
 mod input;
 mod labels;
+mod labels_chrome;
 mod labels_default;
 mod labels_fill;
 mod model;
@@ -40,6 +42,7 @@ pub use error::{FileError, FileProblem};
 pub use filter::FilterDraft;
 pub use fs_components_widgets::file_preview::{Fact, PreviewContent};
 pub use labels::FileLabels;
+pub use labels_chrome::ChromeLabels;
 pub use model::{
     EntryKind, EntryPage, EntryRef, FileEntry, FolderInfo, ListFilter, ListRequest, NameRule,
     PageMark, Scope, SortKey, SortOrder,

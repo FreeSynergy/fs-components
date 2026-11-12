@@ -158,6 +158,7 @@ fn the_toolbar_is_inside_the_window_at_every_width() {
         if width < 560.0 {
             h.click("tools");
         }
+        h.click("new");
         for what in [
             "filter",
             "view-list",
@@ -167,7 +168,7 @@ fn the_toolbar_is_inside_the_window_at_every_width() {
             "upload",
             "rescan",
             "transfers",
-            "sort-size",
+            "sort",
         ] {
             let (left, top, right, bottom) = h.edges(what);
             assert!(

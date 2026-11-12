@@ -6,6 +6,10 @@ edition.workspace = true
 license.workspace = true
 rust-version.workspace = true
 
+[features]
+# A read-only way for a test to ask what is typed into the text fields (see `src/test_access.rs`). Never in a release.
+test-access = []
+
 [dependencies]
 blinc_core.workspace = true
 blinc_layout.workspace = true

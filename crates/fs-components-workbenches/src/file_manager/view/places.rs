@@ -1,4 +1,4 @@
-//! The smaller areas: the message line, the way to here, the tree.
+//! The smaller areas: the message line, the way to here, the status line, the sidebar.
 //!
 //! Pattern: Adapter — `breadcrumb` and `tree-view` over the state. The line with the way says that
 //! changes from outside do not come in by themselves.
@@ -28,7 +28,6 @@ pub(in crate::file_manager) fn notice_line(notice: &Notice, name: &str) -> Div {
         .child(text(notice.text()))
 }
 
-/// The way to where the person is. It says that changes from outside do not come in by themselves.
 /// The way to where the person is, as a breadcrumb that fits `room`.
 pub(in crate::file_manager) fn crumbs(
     state: &FilesState,
@@ -59,26 +58,27 @@ pub(in crate::file_manager) fn crumbs(
 /// The line at the bottom: how many things are here, and what is selected.
 pub(in crate::file_manager) fn status_line(state: &FilesState) -> Div {
     let labels = state.labels();
-    let mut line = div().flex_row().items_center().gap(4.0).w_full().child(
-        text(FileLabels::fill(
-            &labels.status_items,
-            &state.rows().len().to_string(),
-        ))
-        .no_cursor(),
-    );
+    let mut said = FileLabels::fill(&labels.status_items, &state.rows().len().to_string());
     if let Some(entry) = state.selected_entry() {
-        let mut said = FileLabels::fill(&labels.status_selected, "1");
+        said = format!(
+            "{said}  |  {}",
+            FileLabels::fill(&labels.status_selected, "1")
+        );
         if entry.kind == crate::file_manager::model::EntryKind::File {
             said = format!(
                 "{said}, {}",
                 fs_components_widgets::transfer_list::format_bytes(entry.size)
             );
         }
-        line = line.child(text(said).no_cursor());
     }
-    line
+    div()
+        .flex_row()
+        .items_center()
+        .w_full()
+        .child(text(said).no_cursor())
 }
 
+/// The sidebar: groups that fold (home, storage, trash, folders), the folder tree, and the settings at the bottom.
 pub(in crate::file_manager) fn tree_pane(state: &FilesState, actions: &FileActions) -> Div {
     let mut pane = div().flex_col().w_full().h_full();
     if let Some(problem) = state.tree_problem() {
@@ -87,73 +87,150 @@ pub(in crate::file_manager) fn tree_pane(state: &FilesState, actions: &FileActio
     if state.variant() == Variant::Picker {
         return pane;
     }
-    let choose = actions.on_key(FilesState::choose_in_tree);
-    let current = state.folder().unwrap_or(TOP).to_string();
-    let tree = TreeView::new(state.tree_nodes())
-        .selected(current)
-        .on_select(move |key| choose(key))
-        .build();
-    let places = places_group(state, actions);
-    pane.child(places).child(
-        div()
-            .w_full()
-            .flex_grow()
-            .min_h(0.0)
-            .child(scroll().w_full().h_full().content(tree)),
-    )
-}
-
-/// The places, in groups: where the files are (the own storage), and the trash. A place that the source
-/// does not have is not shown.
-fn places_group(state: &FilesState, actions: &FileActions) -> Div {
+    let chrome = &state.labels().chrome;
     let labels = state.labels();
     let in_trash = state.in_trash();
-    let row = |id: &str, glyph: Glyph, word: &str, current: bool, act: super::actions::Act| {
-        let one = div().id(id.to_string()).class("fs-files-place");
-        let one = if current {
-            one.class("fs-files-place-current")
-        } else {
-            one
-        };
-        one.w_full()
-            .flex_row()
-            .justify_start()
-            .items_center()
-            .gap(2.0)
-            .attr("tabindex", "0")
-            .on_click(move |_| act())
-            .child(icon(
-                glyph,
-                18.0,
-                if current { Tone::Accent } else { Tone::Kind },
-            ))
-            .child(text(word).no_cursor())
-    };
-    let title = |word: &str| {
-        div()
-            .class("fs-files-section-title")
-            .child(text(word).no_cursor())
-    };
-    let mut group = div()
-        .flex_col()
-        .w_full()
-        .flex_shrink_0()
-        .child(title(&labels.places))
-        .child(row(
+    let top = !in_trash && state.folder().is_none();
+    let mut groups = div().flex_col().w_full().flex_shrink_0();
+    groups = group(groups, state, actions, ("home", &chrome.group_home), |g| {
+        g.child(place_row(
             "fs-files-place-top",
             Glyph::Home,
             &labels.root,
-            !in_trash && state.folder().is_none(),
+            top,
             actions.with(|s| s.open_folder(None)),
-        ));
+        ))
+    });
+    groups = group(
+        groups,
+        state,
+        actions,
+        ("storage", &chrome.group_storage),
+        |g| {
+            g.child(place_row(
+                "fs-files-place-storage",
+                Glyph::Drive,
+                &labels.root,
+                false,
+                actions.with(|s| s.open_folder(None)),
+            ))
+        },
+    );
     if state.capabilities().trash {
-        group = group.child(row(
-            "fs-files-place-trash",
-            Glyph::Trash,
-            &labels.trash,
-            in_trash,
-            actions.plain(FilesState::open_trash),
-        ));
+        groups = group(
+            groups,
+            state,
+            actions,
+            ("trash", &chrome.group_trash),
+            |g| {
+                g.child(place_row(
+                    "fs-files-place-trash",
+                    Glyph::Trash,
+                    &labels.trash,
+                    in_trash,
+                    actions.plain(FilesState::open_trash),
+                ))
+            },
+        );
     }
-    group.child(title(&labels.folders_title))
+    pane = pane.child(groups);
+    let mut folders = div().flex_col().w_full().flex_grow().min_h(0.0);
+    folders = group(
+        folders,
+        state,
+        actions,
+        ("folders", &labels.chrome.folders_title),
+        |g| {
+            let choose = actions.on_key(FilesState::choose_in_tree);
+            let current = state.folder().unwrap_or(TOP).to_string();
+            let tree = TreeView::new(state.tree_nodes())
+                .selected(current)
+                .on_select(move |key| choose(key))
+                .build();
+            g.child(
+                div()
+                    .w_full()
+                    .flex_grow()
+                    .min_h(0.0)
+                    .child(scroll().w_full().h_full().content(tree)),
+            )
+        },
+    );
+    pane = pane.child(folders);
+    let noop: super::actions::Act = std::sync::Arc::new(|| {});
+    pane.child(
+        div()
+            .id("fs-files-place-settings")
+            .class("fs-files-place fs-files-place-off")
+            .flex_shrink_0()
+            .flex_row()
+            .items_center()
+            .gap(2.0)
+            .w_full()
+            .attr(
+                "title",
+                format!("{} ({})", chrome.settings, chrome.coming_soon),
+            )
+            .on_click(move |_| noop())
+            .child(icon(Glyph::Settings, 18.0, Tone::Muted))
+            .child(text(&chrome.settings).no_cursor()),
+    )
+}
+
+/// A group of the sidebar: its title with the arrow that folds it, and what it holds while it is open.
+fn group(
+    into: Div,
+    state: &FilesState,
+    actions: &FileActions,
+    (key, title): (&'static str, &str),
+    rows: impl FnOnce(Div) -> Div,
+) -> Div {
+    let folded = state.group_folded(key);
+    let toggle = actions.on_key(FilesState::toggle_group);
+    let header = div()
+        .id(format!("fs-files-group-{key}"))
+        .class("fs-files-section-title")
+        .flex_row()
+        .items_center()
+        .gap(1.0)
+        .w_full()
+        .attr("tabindex", "0")
+        .on_click(move |_| toggle(key))
+        .child(icon(
+            if folded {
+                Glyph::ChevronRight
+            } else {
+                Glyph::Down
+            },
+            12.0,
+            Tone::Muted,
+        ))
+        .child(text(title).no_cursor());
+    let mut inner = div().flex_col().w_full().child(header);
+    if !folded {
+        inner = rows(inner);
+    }
+    into.child(inner)
+}
+
+fn place_row(id: &str, glyph: Glyph, word: &str, current: bool, act: super::actions::Act) -> Div {
+    let one = div().id(id.to_string()).class("fs-files-place");
+    let one = if current {
+        one.class("fs-files-place-current")
+    } else {
+        one
+    };
+    one.w_full()
+        .flex_row()
+        .justify_start()
+        .items_center()
+        .gap(2.0)
+        .attr("tabindex", "0")
+        .on_click(move |_| act())
+        .child(icon(
+            glyph,
+            18.0,
+            if current { Tone::Accent } else { Tone::Kind },
+        ))
+        .child(text(word).no_cursor())
 }

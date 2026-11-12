@@ -4,6 +4,7 @@
 //! this is the one place that turns a glyph into a Blinc element, so every widget and workbench draws icons alike.
 //! A file kind has its own colour, so a folder or a picture is known at a glance; the rest follows the theme.
 
+use blinc_layout::div::div;
 use blinc_layout::svg::svg;
 use blinc_theme::{ColorToken, ThemeState};
 use fs_components_styles::{Rgba, StyleId, style};
@@ -41,7 +42,7 @@ fn rgba(c: blinc_core::Color) -> Rgba {
 /// The colour of the kind of file a glyph shows; other glyphs have none and read as text.
 pub fn kind_colour(glyph: Glyph) -> Option<Rgba> {
     Some(Rgba::hex(match glyph {
-        Glyph::Folder => 0x00E0_A31F,
+        Glyph::Folder => 0x00F1_B531,
         Glyph::FileImage => 0x002F_9E6E,
         Glyph::FileText => 0x006B_7A8C,
         Glyph::FileArchive => 0x00A0_6B2C,
@@ -57,6 +58,27 @@ pub fn kind_colour(glyph: Glyph) -> Option<Rgba> {
     }))
 }
 
+/// The colour of a tone (`glyph`: the kind it shows, if the tone is `Kind`).
+pub(crate) fn tone_colour(tone: Tone, glyph: Option<Glyph>) -> blinc_core::Color {
+    let theme = ThemeState::get();
+    match tone {
+        Tone::Kind => glyph.and_then(kind_colour).map_or_else(
+            || theme.color(ColorToken::TextPrimary),
+            |c| {
+                blinc_core::Color::rgba(
+                    f32::from(c.r) / 255.0,
+                    f32::from(c.g) / 255.0,
+                    f32::from(c.b) / 255.0,
+                    f32::from(c.a) / 255.0,
+                )
+            },
+        ),
+        Tone::Normal => theme.color(ColorToken::TextPrimary),
+        Tone::Muted => theme.color(ColorToken::TextSecondary),
+        Tone::Accent => theme.color(ColorToken::Primary),
+    }
+}
+
 /// The icon `glyph`, `px` pixels square, in `tone`.
 pub fn icon(glyph: Glyph, px: f32, tone: Tone) -> impl Element + use<> {
     let theme = ThemeState::get();
@@ -69,15 +91,22 @@ pub fn icon(glyph: Glyph, px: f32, tone: Tone) -> impl Element + use<> {
         Tone::Accent => rgba(theme.color(ColorToken::Primary)),
     };
     let set = style(StyleId::Admin).icons;
-    svg(set.svg(glyph, colour, Some(px)))
-        .size(px, px)
-        .color(blinc_core::Color::rgba(
-            f32::from(colour.r) / 255.0,
-            f32::from(colour.g) / 255.0,
-            f32::from(colour.b) / 255.0,
-            f32::from(colour.a) / 255.0,
-        ))
-        .stroke_width(set.stroke)
+    if tone == Tone::Kind
+        && let Some(kind) = super::icon_kind::kind_icon(glyph, px)
+    {
+        return div().flex_shrink_0().child(kind);
+    }
+    div().flex_shrink_0().child(
+        svg(set.svg(glyph, colour, Some(px)))
+            .size(px, px)
+            .color(blinc_core::Color::rgba(
+                f32::from(colour.r) / 255.0,
+                f32::from(colour.g) / 255.0,
+                f32::from(colour.b) / 255.0,
+                f32::from(colour.a) / 255.0,
+            ))
+            .stroke_width(set.stroke),
+    )
 }
 
 /// The glyph of a media type: what a folder or a file of this kind looks like. `None` = a folder is asked with

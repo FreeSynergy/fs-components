@@ -23,6 +23,7 @@
 pub mod color;
 pub mod effects;
 mod glyph;
+mod glyph_names;
 mod icons;
 pub mod style;
 pub mod styles;
@@ -31,6 +32,7 @@ pub mod tokens;
 pub use color::Rgba;
 pub use effects::{Effects, FocusRing, Shadow, Surface};
 pub use glyph::Glyph;
+pub use glyph_names::IconContext;
 pub use icons::{Cap, IconSet, Join};
 pub use style::{Builtin, Demand, Provenance, Style, StyleCatalog, StyleId, style};
 pub use tokens::{Heights, Palette, Radii, Spacing, Type};

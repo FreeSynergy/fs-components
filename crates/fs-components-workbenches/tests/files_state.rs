@@ -160,3 +160,56 @@ fn a_media_type_is_shown_as_a_short_word_and_an_unknown_one_as_file() {
     entry.media_type = "text/markdown".into();
     assert_eq!(s.type_word(&entry), "Markdown");
 }
+
+#[test]
+fn back_forward_and_up_walk_the_places_and_the_menus_are_switches() {
+    let (_, mut s) = state(
+        Shelf::new()
+            .folder("d", None)
+            .folder("e", Some("d"))
+            .file_in("x", Some("e")),
+    );
+    assert!(!s.can_go_back() && !s.can_go_forward() && !s.can_go_up());
+    s.open_folder(Some("d"));
+    s.open_folder(Some("e"));
+    assert!(s.can_go_back() && s.can_go_up());
+    s.go_up();
+    assert_eq!(s.folder(), Some("d"));
+    s.go_back();
+    assert_eq!(s.folder(), Some("e"), "back goes to where the person was");
+    assert!(s.can_go_forward());
+    s.go_forward();
+    assert_eq!(s.folder(), Some("d"));
+    s.open_trash();
+    s.go_up();
+    assert_eq!(s.folder(), None, "up from the trash is the top");
+
+    assert!(!s.new_menu_open() && s.details_on() && !s.group_folded("home"));
+    s.toggle_new_menu();
+    s.toggle_details();
+    s.toggle_group("home");
+    assert!(s.new_menu_open() && !s.details_on() && s.group_folded("home"));
+    s.toggle_group("home");
+    assert!(!s.group_folded("home"));
+}
+
+#[test]
+fn the_next_order_goes_round_name_modified_size_type() {
+    use fs_components_workbenches::file_manager::SortKey;
+    let (_, mut s) = state(Shelf::new().file("a"));
+    let mut seen = vec![s.sort().key];
+    for _ in 0..4 {
+        s.next_sort();
+        seen.push(s.sort().key);
+    }
+    assert_eq!(
+        seen,
+        [
+            SortKey::Name,
+            SortKey::Modified,
+            SortKey::Size,
+            SortKey::Type,
+            SortKey::Name
+        ]
+    );
+}

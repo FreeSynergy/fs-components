@@ -65,7 +65,9 @@ impl FieldData {
         Self::default()
     }
 
-    fn make<T>(&self, f: impl FnOnce() -> T) -> T {
+    /// Make something under a scope of its own; answers it and its number (the number is what the registry of the
+    /// feature `test-access` notes the field by).
+    fn make_noted<T>(&self, f: impl FnOnce() -> T) -> (T, u64) {
         collect();
         let owner = Owner::default();
         let id = NEXT.fetch_add(1, Ordering::Relaxed);
@@ -75,22 +77,37 @@ impl FieldData {
             .lock()
             .unwrap_or_else(PoisonError::into_inner)
             .push(id);
-        owner.run(f)
+        (owner.run(f), id)
     }
 
     /// The data of a one-line input.
     pub fn text_input(&self) -> SharedTextInputData {
-        self.make(text_input_data)
+        let (data, id) = self.make_noted(text_input_data);
+        #[cfg(feature = "test-access")]
+        crate::test_access::note_input(id, &data);
+        #[cfg(not(feature = "test-access"))]
+        let _ = id;
+        data
     }
 
     /// The data of a one-line input showing `placeholder` while empty.
     pub fn text_input_with_placeholder(&self, placeholder: &str) -> SharedTextInputData {
-        self.make(|| text_input_data_with_placeholder(placeholder))
+        let (data, id) = self.make_noted(|| text_input_data_with_placeholder(placeholder));
+        #[cfg(feature = "test-access")]
+        crate::test_access::note_input(id, &data);
+        #[cfg(not(feature = "test-access"))]
+        let _ = id;
+        data
     }
 
     /// The state of a many-line input.
     pub fn text_area(&self) -> SharedTextAreaState {
-        self.make(text_area_state)
+        let (state, id) = self.make_noted(text_area_state);
+        #[cfg(feature = "test-access")]
+        crate::test_access::note_area(id, &state);
+        #[cfg(not(feature = "test-access"))]
+        let _ = id;
+        state
     }
 }
 

@@ -6,6 +6,10 @@ edition.workspace = true
 license.workspace = true
 rust-version.workspace = true
 
+[features]
+# The window starts the writer of `FS_TEST_ACCESS_FILE` (see `fs-components-primitives`). Never in a release.
+test-access = ["fs-components-widgets/test-access"]
+
 [dependencies]
 fs-components-render = { path = "../fs-components-render" }
 fs-components-widgets = { path = "../fs-components-widgets" }

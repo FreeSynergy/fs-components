@@ -43,6 +43,8 @@ impl Notice {
 
 /// Folders and files, the selection, and what is being asked.
 #[derive(Clone)]
+// The state machine of a window: its switches (a menu open, the details shown, a move in progress ...) are independent.
+#[allow(clippy::struct_excessive_bools)]
 pub struct FilesState {
     pub(super) source: Arc<dyn FileSource>,
     pub(super) labels: Arc<FileLabels>,
@@ -78,6 +80,9 @@ pub struct FilesState {
     pub(super) back: Vec<Place>,
     pub(super) forward: Vec<Place>,
     pub(super) moving: bool,
+    pub(super) new_menu: bool,
+    pub(super) details_off: bool,
+    pub(super) collapsed: HashSet<String>,
 }
 
 impl FilesState {
@@ -122,6 +127,9 @@ impl FilesState {
             back: Vec::new(),
             forward: Vec::new(),
             moving: false,
+            new_menu: false,
+            details_off: false,
+            collapsed: HashSet::new(),
         };
         state.reload_tree();
         state.reload(PAGE);

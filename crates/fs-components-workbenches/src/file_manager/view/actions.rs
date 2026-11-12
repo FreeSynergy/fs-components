@@ -150,8 +150,20 @@ pub(super) fn icon_button(
     id: String,
     glyph: Glyph,
     tip: &str,
+    flags: (bool, bool),
+    act: &Act,
+) -> Div {
+    icon_button_marked(id, glyph, tip, flags, act, None)
+}
+
+/// [`icon_button`] with a badge (a dot or a number) on its corner.
+pub(super) fn icon_button_marked(
+    id: String,
+    glyph: Glyph,
+    tip: &str,
     (on, enabled): (bool, bool),
     act: &Act,
+    mark: Option<Div>,
 ) -> Div {
     let act = Arc::clone(act);
     let key = blinc_layout::InstanceKey::explicit(format!("fs-files-tip-{id}"));
@@ -178,8 +190,9 @@ pub(super) fn icon_button(
     };
     let with_tip =
         blinc_cn::components::tooltip::TooltipBuilder::with_key(trigger, key).text(tip.to_string());
-    div()
+    let mut holder = div()
         .id(id)
+        .relative()
         .flex_shrink_0()
         .w(ICON_BUTTON)
         .h(ICON_BUTTON)
@@ -189,8 +202,41 @@ pub(super) fn icon_button(
                 act();
             }
         })
-        .child(with_tip)
+        .child(with_tip);
+    if let Some(mark) = mark {
+        holder = holder.child(mark);
+    }
+    holder
 }
 
 /// The width and height of an icon button.
 pub(in crate::file_manager) const ICON_BUTTON: f32 = 36.0;
+
+/// The "New" button: a plus, the word and an arrow that says there is a menu. `open` shows it pressed.
+pub(super) fn text_menu_button(id: String, word: &str, open: bool, act: &Act) -> Div {
+    let act = Arc::clone(act);
+    let mut one = div()
+        .id(id)
+        .class("fs-files-new-btn")
+        .flex_shrink_0()
+        .flex_row()
+        .items_center()
+        .gap(1.5)
+        .h(ICON_BUTTON)
+        .attr("tabindex", "0");
+    if open {
+        one = one.class("fs-files-icon-btn-on");
+    }
+    one.on_click(move |_| act())
+        .child(
+            div()
+                .pointer_events_none()
+                .child(icon(Glyph::Plus, 18.0, Tone::Accent)),
+        )
+        .child(blinc_layout::text(word).no_cursor().pointer_events_none())
+        .child(
+            div()
+                .pointer_events_none()
+                .child(icon(Glyph::Down, 14.0, Tone::Muted)),
+        )
+}

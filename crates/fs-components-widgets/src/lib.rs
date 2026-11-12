@@ -14,12 +14,19 @@
 
 pub mod agent_tree;
 pub mod avatar_group;
+pub mod badge;
 pub mod breadcrumb;
 pub mod calendar_view;
 pub mod drafts;
 pub mod file_preview;
 pub mod file_tile;
+#[cfg(feature = "test-access")]
+pub use fs_components_primitives::test_access;
 pub mod icon;
+mod icon_export;
+mod icon_kind;
+mod icon_named;
+pub mod icon_theme;
 pub mod keys;
 pub mod lightbox;
 pub mod list_view;
@@ -44,6 +51,7 @@ pub use avatar_group::{AvatarGroup, Person, Presence};
 pub use avatar_group::{
     MAX_SHOWN as AVATAR_GROUP_MAX_SHOWN, Size, initials as avatar_group_initials,
 };
+pub use badge::{badge_count, badge_dot};
 pub use breadcrumb::{Breadcrumb, Crumb};
 pub use calendar_view::{
     CalendarItem, CalendarNames, CalendarPosition, CalendarView, Day, Moment, Picked, ViewRange,
@@ -51,6 +59,9 @@ pub use calendar_view::{
 pub use file_preview::{Fact, FilePreview, PreviewContent, SafeText, picture_fits, safe_text};
 pub use file_tile::{FileTile, TileGrid};
 pub use icon::{Glyph, Tone, icon};
+pub use icon_export::{export_theme, index_theme};
+pub use icon_named::{icon_named, set_icon_theme};
+pub use icon_theme::{IconTheme, default_base_dirs};
 pub use keys::{Handled, Key, KeyEvent};
 pub use lightbox::{LightBox, Media};
 pub use list_view::{Column, ColumnWidth, ListPosition, ListView, Row, RowSource, VecRows};

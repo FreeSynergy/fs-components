@@ -5,6 +5,8 @@
 /// CSS of the tile and the grid: only theme variables.
 pub const STYLES: &str = r"
 .fs-tile { padding: var(--space-2); gap: var(--space-1); border-radius: var(--radius-default); border-width: 1px; border-color: var(--border); background: var(--surface); cursor: pointer; }
+.fs-tile-plain { border-width: 0px; background: transparent; }
+.fs-tile-plain.fs-tile-selected { background: var(--selection); }
 .fs-tile:hover { background: var(--accent-subtle); }
 .fs-tile-selected { background: var(--selection); border-color: var(--accent); }
 .fs-tile-icon { padding: var(--space-2); }

@@ -139,6 +139,16 @@ impl Harness {
         (b.x, b.y, b.x + b.width, b.y + b.height)
     }
 
+    /// The middle of the element with exactly this id (one that is not named `<name>-<what>`).
+    pub fn centre_of_id(&self, id: &str) -> (f32, f32) {
+        let node = self
+            .tree
+            .query_by_id(id)
+            .unwrap_or_else(|| panic!("no element {id}"));
+        let b = self.tree.get_absolute_bounds(node).expect("bounds");
+        (b.x + b.width / 2.0, b.y + b.height / 2.0)
+    }
+
     /// The edges of the button itself, the first child of the element `<name>-<what>` (which is its frame).
     pub fn button_edges(&self, what: &str) -> (f32, f32, f32, f32) {
         let id = self.id(what);

@@ -89,13 +89,21 @@ pub enum Glyph {
     Filter,
     /// Two arrows, one up and one down: what is being sent and received.
     Transfers,
+    /// A chevron pointing down: open, fold out.
+    Down,
+    /// A chevron pointing right: folded, a step in a path.
+    ChevronRight,
+    /// A slider: settings.
+    Settings,
+    /// Three dots: more.
+    More,
     /// A circle with an i: information.
     Info,
 }
 
 impl Glyph {
     /// All glyphs, for tests and for icon sheets.
-    pub const ALL: [Glyph; 43] = [
+    pub const ALL: [Glyph; 47] = [
         Glyph::Mail,
         Glyph::Phone,
         Glyph::Person,
@@ -138,6 +146,10 @@ impl Glyph {
         Glyph::Download,
         Glyph::Filter,
         Glyph::Transfers,
+        Glyph::Down,
+        Glyph::ChevronRight,
+        Glyph::Settings,
+        Glyph::More,
         Glyph::Info,
     ];
 
@@ -205,6 +217,10 @@ impl Glyph {
             Glyph::Upload => "M12 16V5 M7 9.5L12 5l5 4.5 M5 15v4h14v-4",
             Glyph::Download => "M12 5v11 M7 11.5l5 5 5-5 M5 15v4h14v-4",
             Glyph::Filter => "M4 5h16l-6 8v6l-4-2v-4z",
+            Glyph::More => "M5 12h.5 M12 12h.5 M19 12h.5",
+            Glyph::Down => "M6 9l6 6 6-6",
+            Glyph::ChevronRight => "M9 6l6 6-6 6",
+            Glyph::Settings => "M4 7h10 M18 7h2 M14 5v4 M4 17h2 M10 17h10 M6 15v4 M4 12h16",
             Glyph::Transfers => "M7 4v14 M3.5 14.5L7 18l3.5-3.5 M17 20V6 M13.5 9.5L17 6l3.5 3.5",
             Glyph::Info => "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z M12 11v6 M12 7.5v.5",
         }
@@ -255,6 +271,10 @@ impl Glyph {
             Glyph::Download => "download",
             Glyph::Filter => "filter",
             Glyph::Transfers => "transfers",
+            Glyph::More => "more",
+            Glyph::Down => "down",
+            Glyph::ChevronRight => "chevron-right",
+            Glyph::Settings => "settings",
             Glyph::Info => "info",
         }
     }

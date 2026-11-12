@@ -24,7 +24,7 @@ use crate::file_manager::state::FilesState;
 
 const ROW_HEIGHT: f32 = 36.0;
 const MORE_HEIGHT: f32 = 48.0;
-const TILE: (f32, f32) = (168.0, 152.0);
+const TILE: (f32, f32) = (128.0, 112.0);
 /// Below this width the list has only the name and the size.
 const ALL_COLUMNS_FROM: f32 = 420.0;
 
@@ -143,7 +143,7 @@ fn grid(
         .map(|e| {
             FileTile::new(e.key.clone(), e.name.clone(), state.type_word(e))
                 .with_glyph(glyph_of(&e.media_type, e.kind == EntryKind::Folder))
-                .with_lines(vec![size_cell(e)])
+                .plain()
                 .with_marks(marks(state, e))
         })
         .collect();

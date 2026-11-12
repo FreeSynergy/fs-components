@@ -1,5 +1,6 @@
-//! The words the file manager shows. Pattern: none — every text comes from the caller (ADR 0053); `{}` is replaced by what it talks about.
-//! The defaults are neutral English, in `labels_default.rs`.
+//! The words the file manager shows.
+//!
+//! Pattern: none — every text comes from the caller (ADR 0053); `{}` is replaced by what it talks about.
 
 /// Texts of the file manager. Build by `Default` and assigning fields.
 #[non_exhaustive]
@@ -113,18 +114,8 @@ pub struct FileLabels {
     pub status_items: String,
     /// Default: `{} selected`.
     pub status_selected: String,
-    /// Default: `Places`.
-    pub places: String,
-    /// Default: `Folders`.
-    pub folders_title: String,
-    /// Default: `Back`.
-    pub nav_back: String,
-    /// Default: `Forward`.
-    pub nav_forward: String,
-    /// Default: `Up one folder`.
-    pub nav_up: String,
-    /// Default: `Reload`.
-    pub nav_reload: String,
+    /// The words of the tabs, the command bar and the sidebar.
+    pub chrome: super::labels_chrome::ChromeLabels,
     /// Default: `Folder`.
     pub folder_word: String,
     /// Default: `File`.

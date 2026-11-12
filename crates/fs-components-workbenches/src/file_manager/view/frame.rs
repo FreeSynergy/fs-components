@@ -11,7 +11,9 @@ use blinc_layout::div::{Div, div};
 use blinc_layout::prelude::ElementBuilder;
 
 use super::band_size::band_height;
-use super::nav::{NAV_HEIGHT, commands_height};
+use super::commands::commands_height;
+use super::nav::NAV_HEIGHT;
+use super::tabs::TABS_HEIGHT;
 use crate::file_manager::state::FilesState;
 
 /// Below this width one pane is shown at a time.
@@ -37,6 +39,7 @@ pub(in crate::file_manager) struct Sizes {
     pub width: f32,
     pub bar: f32,
     pub commands: f32,
+    pub tabs: f32,
     pub notice: f32,
     pub body: f32,
     pub tree: f32,
@@ -55,6 +58,11 @@ pub(super) fn text_height(chars: usize, width: f32) -> f32 {
 pub(in crate::file_manager) fn sizes(state: &FilesState, width: f32, height: f32) -> Sizes {
     let bar = NAV_HEIGHT;
     let commands = commands_height(state, width);
+    let tabs = if state.variant() == crate::file_manager::context::Variant::Picker {
+        0.0
+    } else {
+        TABS_HEIGHT
+    };
     let notice = state
         .notice()
         .map_or(0.0, |n| text_height(n.text().chars().count(), width) + 16.0);
@@ -64,7 +72,7 @@ pub(in crate::file_manager) fn sizes(state: &FilesState, width: f32, height: f32
     } else {
         STATUS_HEIGHT
     };
-    let body = (height - bar - commands - notice - band - status).max(LEAST_BODY);
+    let body = (height - tabs - bar - commands - notice - band - status).max(LEAST_BODY);
     let one_pane = width < ONE_PANE_BELOW;
     let picker = state.variant() == crate::file_manager::context::Variant::Picker;
     let tree = if width < TREE_BELOW || picker {
@@ -81,7 +89,7 @@ pub(in crate::file_manager) fn sizes(state: &FilesState, width: f32, height: f32
         } else {
             (width, 0.0)
         }
-    } else if state.selected_key().is_none()
+    } else if (state.selected_key().is_none() || !state.details_on())
         && matches!(state.side(), super::super::side::Side::Item)
     {
         // nothing to show beside the list: the list takes the room
@@ -93,6 +101,7 @@ pub(in crate::file_manager) fn sizes(state: &FilesState, width: f32, height: f32
         width,
         bar,
         commands,
+        tabs,
         notice,
         body,
         tree,
@@ -102,9 +111,10 @@ pub(in crate::file_manager) fn sizes(state: &FilesState, width: f32, height: f32
 }
 
 /// Everything. The areas are ready made; one with no room is not added.
-pub(in crate::file_manager) fn frame<A, B, C, D, E, F, G, H>(
+#[allow(clippy::too_many_lines)] // one column of areas, each with its box: splitting scatters the order
+pub(in crate::file_manager) fn frame<A, B, C, D, E, F, G, H, I>(
     (sizes, height): (Sizes, f32),
-    (bar, crumbs, notice): (A, B, Option<C>),
+    (tabs, bar, crumbs, notice): (Option<I>, A, B, Option<C>),
     (tree, work, side): (D, E, F),
     (status, band): (Option<H>, Option<G>),
 ) -> Div
@@ -117,6 +127,7 @@ where
     F: ElementBuilder + 'static,
     G: ElementBuilder + 'static,
     H: ElementBuilder + 'static,
+    I: ElementBuilder + 'static,
 {
     let Sizes { width, body, .. } = sizes;
     let mut root = div()
@@ -124,7 +135,18 @@ where
         .flex_col()
         .w(width)
         .h(height)
-        .overflow_clip()
+        .overflow_clip();
+    if let Some(tabs) = tabs {
+        root = root.child(
+            div()
+                .class("fs-files-tabs-row")
+                .flex_shrink_0()
+                .w(width)
+                .h(sizes.tabs)
+                .child(tabs),
+        );
+    }
+    let mut root = root
         .child(
             div()
                 .class("fs-files-toolbar")

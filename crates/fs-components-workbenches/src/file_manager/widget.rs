@@ -24,7 +24,7 @@ use super::source::FileSource;
 use super::state::FilesState;
 use super::view::{
     PickHandler, band, command_row, frame, nav_row, notice_line, side, sizes, status_line,
-    tree_pane, work,
+    tabs_row, tree_pane, work,
 };
 use crate::input_slots::InputSlots;
 
@@ -143,6 +143,8 @@ impl FileManagerWidget {
         let name = self.element_name();
         let measured = sizes(&snapshot, width, height);
         let search = self.field_for(&snapshot).build();
+        let tabs = (snapshot.variant() != super::context::Variant::Picker)
+            .then(|| tabs_row(&snapshot, &name, width));
         let bar = nav_row(&snapshot, &name, &actions, search, width);
         let crumbs = command_row(&snapshot, &name, &actions, width);
         let notice = snapshot.notice().map(|n| notice_line(n, &name));
@@ -187,7 +189,7 @@ impl FileManagerWidget {
         let questions = band(&snapshot, &name, &actions, &self.slots, width);
         frame(
             (measured, height),
-            (bar, crumbs, notice),
+            (tabs, bar, crumbs, notice),
             (tree, live, side_area),
             (status, questions),
         )

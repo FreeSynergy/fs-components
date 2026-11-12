@@ -126,7 +126,7 @@ pub fn build() -> Style {
             },
         },
         icons: IconSet {
-            stroke: 1.75,
+            stroke: 1.5,
             cap: Cap::Butt,
             join: Join::Miter,
             size: 20.0,

@@ -26,6 +26,8 @@ pub struct FileTile {
     pub lines: Vec<String>,
     /// Markings that must be seen at once, in the caller's words.
     pub marks: Vec<String>,
+    /// Without a frame: the icon big, the name centred below it, the selection a filled ground, no box.
+    pub plain: bool,
 }
 
 impl FileTile {
@@ -53,6 +55,13 @@ impl FileTile {
         self
     }
 
+    /// Without a frame: the tile of a file manager (icon, centred name, filled ground when selected).
+    #[must_use]
+    pub fn plain(mut self) -> Self {
+        self.plain = true;
+        self
+    }
+
     /// With these markings.
     #[must_use]
     pub fn with_marks(mut self, marks: Vec<String>) -> Self {
@@ -68,6 +77,9 @@ impl FileTile {
             .w(width)
             .h(height)
             .overflow_clip();
+        if self.plain {
+            tile = tile.class("fs-tile-plain").items_center();
+        }
         if selected {
             tile = tile.class("fs-tile-selected");
         }
@@ -103,12 +115,15 @@ impl FileTile {
             }
             tile = tile.child(row);
         }
-        tile = tile.child(
-            text(fit_cell(&self.name, width))
-                .class("fs-tile-name")
-                .no_wrap()
-                .no_cursor(),
-        );
+        let name = text(fit_cell(&self.name, width))
+            .class("fs-tile-name")
+            .no_wrap()
+            .no_cursor();
+        tile = if self.plain {
+            tile.child(div().flex_row().justify_center().w_full().child(name))
+        } else {
+            tile.child(name)
+        };
         for line in &self.lines {
             tile = tile.child(
                 text(fit_cell(line, width))
