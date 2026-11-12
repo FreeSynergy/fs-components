@@ -31,27 +31,49 @@ impl FilesState {
     /// Run a change. A taken name asks what to do and changes nothing; a bad name goes back to the
     /// input it came from, which stays as typed; anything else says why and reads again.
     pub(super) fn run(&mut self, command: Command, rule: NameRule, from: Option<InputAsk>) {
-        let source = self.source.clone();
-        let done = match &command {
+        if matches!(command, Command::Upload(..)) {
+            // The long one: on a worker, the answer comes back through `finish`.
+            self.start_upload(command, rule, from);
+            return;
+        }
+        let done = self.call_now(&command, rule);
+        self.settled(command, rule, from, done);
+    }
+
+    /// The short changes: the call is made here, with the source's own time limit.
+    fn call_now(&self, command: &Command, rule: NameRule) -> Result<String, FileError> {
+        let source = &self.source;
+        let labels = &self.labels;
+        match command {
             Command::Rename(entry, name) => source
                 .rename(entry, name, rule)
-                .map(|n| FileLabels::fill(&self.labels.renamed, &n)),
+                .map(|n| FileLabels::fill(&labels.renamed, &n)),
             Command::Move(entry, to) => source
                 .move_to(entry, to.as_deref(), rule)
-                .map(|n| FileLabels::fill(&self.labels.moved, &n)),
+                .map(|n| FileLabels::fill(&labels.moved, &n)),
             Command::Copy(key, to) => source
                 .copy_to(key, to.as_deref(), rule)
-                .map(|n| FileLabels::fill(&self.labels.copied, &n)),
+                .map(|n| FileLabels::fill(&labels.copied, &n)),
             Command::Restore(key) => source
                 .restore(key, rule)
-                .map(|n| FileLabels::fill(&self.labels.restored, &n)),
+                .map(|n| FileLabels::fill(&labels.restored, &n)),
             Command::RestoreTo(key, to) => source
                 .restore_to(key, to.as_deref(), rule)
-                .map(|n| FileLabels::fill(&self.labels.restored, &n)),
+                .map(|n| FileLabels::fill(&labels.restored, &n)),
             Command::Upload(path, to) => source
                 .upload(path, to.as_deref(), rule)
-                .map(|n| FileLabels::fill(&self.labels.uploaded, &n)),
-        };
+                .map(|n| FileLabels::fill(&labels.uploaded, &n)),
+        }
+    }
+
+    /// What came of a change: said, or asked, or given back to the input it came from.
+    pub(super) fn settled(
+        &mut self,
+        command: Command,
+        rule: NameRule,
+        from: Option<InputAsk>,
+        done: Result<String, FileError>,
+    ) {
         match done {
             Ok(said) => {
                 self.ask = Ask::Nothing;

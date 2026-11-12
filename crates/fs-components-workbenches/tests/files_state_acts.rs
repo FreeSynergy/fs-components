@@ -7,7 +7,7 @@ mod files_common;
 
 use std::sync::Arc;
 
-use files_common::Shelf;
+use files_common::{Shelf, settle};
 use fs_components_widgets::transfer_list::{Action, Outcome};
 use fs_components_workbenches::file_manager::{
     Ask, CarryKind, Confirm, FileLabels, FilePicker, FileProblem, FilesState, Notice,
@@ -85,6 +85,7 @@ fn a_marked_file_says_so_when_named_and_its_download_needs_a_second_act() {
     s.set_input("/there/m.txt");
     s.submit_input();
     s.really();
+    settle(&mut s);
     assert_eq!(
         shelf.downloads.lock().unwrap().as_slice(),
         [("m".to_string(), "/there/m.txt".to_string(), true)]
@@ -221,6 +222,7 @@ fn an_unfinished_upload_can_go_on_and_dismissing_it_only_asks() {
     assert!(matches!(s.ask(), Ask::Input(_)));
     s.set_input("/there/big.iso");
     s.submit_input();
+    settle(&mut s);
     assert!(shelf.pending.lock().unwrap().is_empty());
     assert!(notice(&s).contains("u1"));
 }

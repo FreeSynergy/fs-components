@@ -1,14 +1,14 @@
 //! Uploads, downloads, unfinished uploads, and the rescan.
 //!
-//! Pattern: State — the source's calls block until they are done (provisional, DESIGN.md), so a row
-//! never shows a transfer running: it shows what came of it. The rows are this session's, plus what the
+//! Pattern: State — the long calls run on a worker (`jobs.rs`), so a row shows a transfer running and then what
+//! came of it. The rows are this session's, plus what the
 //! source says is unfinished. Dismissing an unfinished upload would throw bytes away, so it only asks.
 
 use std::sync::Arc;
 
 use fs_components_widgets::transfer_list::{Action, Outcome, State as TransferState, Transfer};
 
-use super::ask::{Ask, Confirm, InputAsk};
+use super::ask::{Ask, Confirm};
 use super::command::Command;
 use super::error::{FileError, FileProblem};
 use super::labels::FileLabels;
@@ -29,12 +29,12 @@ impl FilesState {
         &self.transfers
     }
 
-    fn next_transfer(&mut self) -> String {
+    pub(super) fn next_transfer(&mut self) -> String {
         self.transfer_counter += 1;
         format!("t{}", self.transfer_counter)
     }
 
-    fn push_row(&mut self, row: TransferRow) {
+    pub(super) fn push_row(&mut self, row: TransferRow) {
         let mut rows = self.transfers.as_ref().clone();
         rows.push(row);
         self.transfers = Arc::new(rows);
@@ -101,61 +101,6 @@ impl FilesState {
         }
     }
 
-    /// Write a file out; `release_marked` only after the person's explicit act. Tells whether it went.
-    pub(super) fn download_now(
-        &mut self,
-        key: &str,
-        name: &str,
-        path: &str,
-        release_marked: bool,
-    ) -> bool {
-        let row = self.next_transfer();
-        match self.source.download(key, path, release_marked) {
-            Ok(place) => {
-                self.ask = Ask::Nothing;
-                self.push_row(TransferRow::download(row, name, key, TransferState::Done));
-                self.notice = Some(Notice::Info(FileLabels::fill(
-                    &self.labels.downloaded,
-                    &place,
-                )));
-                true
-            }
-            Err(e) if e.problem == FileProblem::MarkedNeedsRelease && !release_marked => {
-                self.ask_download_marked(key, name.to_string(), path);
-                false
-            }
-            Err(e) => {
-                let text = self.problem_text(&e);
-                self.push_row(TransferRow::download(
-                    row,
-                    name,
-                    key,
-                    TransferState::Failed(text.clone()),
-                ));
-                self.notice = Some(Notice::Problem(e.problem, text));
-                false
-            }
-        }
-    }
-
-    pub(super) fn resume_now(&mut self, input: InputAsk, id: &str, path: &str) {
-        match self.source.resume_upload(id, path) {
-            Ok(name) => {
-                self.ask = Ask::Nothing;
-                let key = self.next_transfer();
-                let said = FileLabels::fill(&self.labels.uploaded, &name);
-                self.push_row(TransferRow::upload(key, &said, path, TransferState::Done));
-                self.read_pending();
-                self.after_change();
-                self.notice = Some(Notice::Info(said));
-            }
-            Err(e) => {
-                self.read_pending();
-                self.input_failed(input, &e);
-            }
-        }
-    }
-
     pub(super) fn drop_now(&mut self, id: &str, name: &str) {
         match self.source.drop_upload(id) {
             Ok(()) => {
@@ -206,23 +151,24 @@ impl FilesState {
         }
     }
 
-    /// Bring in what changed outside, below the current folder. Holds the window until it is done. It
-    /// deletes nothing: what is missing is reported, and its record stays.
+    /// Bring in what changed outside, below the current folder. It runs on a worker: the window stays usable and
+    /// shows "running"; a second start meanwhile is refused. It deletes nothing: what is missing is reported, and
+    /// its record stays.
     pub fn rescan(&mut self) {
         if !self.capabilities.rescan {
             return;
         }
         let here = self.folder().map(str::to_string);
-        match self.source.rescan(here.as_deref()) {
-            Ok(summary) => {
-                self.report = Some(Arc::new(summary));
-                self.side = Side::Report;
-                self.detail_open = true;
-                self.after_change();
-                self.notice = Some(Notice::Info(self.labels.rescan_done.clone()));
-            }
-            Err(e) => self.failed(&e),
-        }
+        self.start_rescan(here);
+    }
+
+    /// The answer of a rescan.
+    pub(super) fn rescan_report(&mut self, summary: RescanSummary) {
+        self.report = Some(Arc::new(summary));
+        self.side = Side::Report;
+        self.detail_open = true;
+        self.after_change();
+        self.notice = Some(Notice::Info(self.labels.rescan_done.clone()));
     }
 
     /// What the last rescan found.

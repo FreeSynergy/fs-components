@@ -164,7 +164,7 @@ impl FilesState {
             InputKind::DownloadPath { key, name } => {
                 self.submit_download(input, &key, &name, &value);
             }
-            InputKind::ResumePath { id } => self.resume_now(input, &id, &value),
+            InputKind::ResumePath { id } => self.start_resume(input, &id, &value),
         }
     }
 
@@ -199,14 +199,8 @@ impl FilesState {
             Ok(Some(entry)) if entry.is_marked() => {
                 self.ask_download_marked(key, self.named(&entry), path);
             }
-            Ok(Some(_)) => {
-                if !self.download_now(key, name, path, false) {
-                    // A source that knows better than its listing has the last word.
-                    if !matches!(self.ask, Ask::Confirm(_)) {
-                        self.ask = Ask::Input(self.input_with_transfer_error(input));
-                    }
-                }
-            }
+            // On a worker; a source that knows better than its listing has the last word when it answers.
+            Ok(Some(_)) => self.start_download((key, name, path), false, Some(input)),
             Ok(None) => {
                 self.ask = Ask::Nothing;
                 self.after_change();
@@ -224,7 +218,7 @@ impl FilesState {
         });
     }
 
-    fn input_with_transfer_error(&self, mut input: InputAsk) -> InputAsk {
+    pub(super) fn input_with_transfer_error(&self, mut input: InputAsk) -> InputAsk {
         input.error = self.notice.as_ref().map(|n| n.text().to_string());
         input
     }

@@ -41,6 +41,35 @@ pub struct Shelf {
     pub unreadable: Mutex<Vec<String>>,
     /// Trashed things that cannot be purged.
     pub stays: Mutex<Vec<String>>,
+    /// While shut, the long calls (rescan, upload, download, resume) wait: a server that takes its time.
+    pub gate: Gate,
+}
+
+/// A door the long calls of the shelf wait at.
+pub struct Gate(std::sync::Mutex<bool>, std::sync::Condvar);
+
+impl Default for Gate {
+    fn default() -> Self {
+        Self(Mutex::new(true), std::sync::Condvar::new())
+    }
+}
+
+impl Gate {
+    pub fn shut(&self) {
+        *self.0.lock().unwrap() = false;
+    }
+
+    pub fn open(&self) {
+        *self.0.lock().unwrap() = true;
+        self.1.notify_all();
+    }
+
+    pub fn pass(&self) {
+        let mut open = self.0.lock().unwrap();
+        while !*open {
+            open = self.1.wait(open).unwrap();
+        }
+    }
 }
 
 fn not_found() -> FileError {
@@ -48,6 +77,12 @@ fn not_found() -> FileError {
 }
 
 impl Shelf {
+    /// The start of a long call: it waits at the gate, then the shelf may be broken.
+    pub fn long(&self) -> Result<(), FileError> {
+        self.gate.pass();
+        self.check()
+    }
+
     pub fn new() -> Self {
         let shelf = Self::default();
         *shelf.page_size.lock().unwrap() = 50;
@@ -193,5 +228,12 @@ pub fn kind_of(shelf: &Shelf, key: &str) -> EntryKind {
         EntryKind::Folder
     } else {
         EntryKind::File
+    }
+}
+
+/// The long calls made one after the other, where a test has no window and no worker.
+pub fn settle(state: &mut fs_components_workbenches::file_manager::FilesState) {
+    while let Some(job) = state.take_job() {
+        state.finish(job.run());
     }
 }

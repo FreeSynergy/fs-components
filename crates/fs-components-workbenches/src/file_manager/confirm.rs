@@ -106,7 +106,7 @@ impl FilesState {
                 return;
             }
             Confirm::DownloadMarked { key, name, path } => {
-                self.download_now(key, name, path, true);
+                self.start_download((key, name, path), true, None);
                 return;
             }
             Confirm::DropUpload { id, name } => {

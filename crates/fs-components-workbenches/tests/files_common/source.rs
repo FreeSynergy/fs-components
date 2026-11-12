@@ -236,7 +236,7 @@ impl FileSource for Shelf {
     }
 
     fn rescan(&self, _folder: Option<&str>) -> Result<RescanSummary, FileError> {
-        self.check()?;
+        self.long()?;
         Ok(RescanSummary::default())
     }
 
@@ -246,7 +246,7 @@ impl FileSource for Shelf {
         folder: Option<&str>,
         rule: NameRule,
     ) -> Result<String, FileError> {
-        self.check()?;
+        self.long()?;
         let name = self.free_name(folder, path.rsplit('/').next().unwrap_or(path), "", rule)?;
         self.things.lock().unwrap().insert(
             format!("up-{name}"),
@@ -270,7 +270,7 @@ impl FileSource for Shelf {
     }
 
     fn resume_upload(&self, id: &str, _path: &str) -> Result<String, FileError> {
-        self.check()?;
+        self.long()?;
         self.pending.lock().unwrap().retain(|p| p.id != id);
         self.wrote();
         Ok(id.to_string())
@@ -284,7 +284,7 @@ impl FileSource for Shelf {
     }
 
     fn download(&self, key: &str, path: &str, release_marked: bool) -> Result<String, FileError> {
-        self.check()?;
+        self.long()?;
         let thing = self.thing(key).ok_or_else(not_found)?;
         if thing.marked && !release_marked {
             return Err(FileError::new(FileProblem::MarkedNeedsRelease, "marked"));

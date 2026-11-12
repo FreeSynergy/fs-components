@@ -58,6 +58,10 @@ pub struct ChromeLabels {
     pub changes_found: String,
     /// Default: `{} transfers are open`; what is said of the number on the transfers button.
     pub transfers_open: String,
+    /// Default: `Running...`; shown while a long call (rescan, upload, download) is on its way.
+    pub running: String,
+    /// Default: `Still running; wait until it is done.`; said to a second start.
+    pub busy: String,
 }
 
 impl Default for ChromeLabels {
@@ -90,6 +94,8 @@ impl Default for ChromeLabels {
             nav_reload: s("Reload"),
             changes_found: s("The rescan found changes"),
             transfers_open: s("{} transfers are open"),
+            running: s("Running..."),
+            busy: s("Still running; wait until it is done."),
         }
     }
 }

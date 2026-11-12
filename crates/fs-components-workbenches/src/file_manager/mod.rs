@@ -16,6 +16,7 @@ mod context;
 mod error;
 mod filter;
 mod input;
+mod jobs;
 mod labels;
 mod labels_chrome;
 mod labels_default;
@@ -43,6 +44,7 @@ pub use context::{FileView, FilesContext, PickedFile, Variant};
 pub use error::{FileError, FileProblem};
 pub use filter::FilterDraft;
 pub use fs_components_widgets::file_preview::{Fact, PreviewContent};
+pub use jobs::{FileJob, JobDone, Launcher};
 pub use labels::FileLabels;
 pub use labels_chrome::ChromeLabels;
 pub use model::{

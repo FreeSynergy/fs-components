@@ -74,6 +74,7 @@ impl FileManagerWidget {
         let id = NEXT_ID.fetch_add(1, Ordering::Relaxed);
         let placeholder = labels.search.clone();
         let state = Arc::new(Mutex::new(FilesState::new(source, labels, variant)));
+        locked(&state).set_launcher(worker_launcher(&state, id));
         let typed_search = Arc::new(AtomicBool::new(false));
         let field = search_field(&state, &typed_search, id, &placeholder);
         Self {
@@ -209,6 +210,27 @@ impl FileManagerWidget {
             (status, questions),
         )
     }
+}
+
+/// Runs each long call on a worker of its own, with no lock held; the answer goes in under the lock and the window
+/// is drawn again from the worker. The state is held weakly: a closed window does not wait for a call.
+fn worker_launcher(state: &Arc<Mutex<FilesState>>, id: u64) -> super::jobs::Launcher {
+    let weak = Arc::downgrade(state);
+    Arc::new(move |job| {
+        let weak = weak.clone();
+        std::thread::Builder::new()
+            .name("fs-files-job".into())
+            .spawn(move || {
+                let done = job.run();
+                if let Some(state) = weak.upgrade() {
+                    locked(&state).finish(done);
+                }
+                bump_list(id);
+                rebuild();
+            })
+            .map(|_| ())
+            .map_err(|e| e.to_string())
+    })
 }
 
 pub(super) fn locked(state: &Mutex<FilesState>) -> MutexGuard<'_, FilesState> {
