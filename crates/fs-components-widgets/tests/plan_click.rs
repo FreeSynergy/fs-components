@@ -18,13 +18,14 @@ fn events(log: &Log) -> Events {
         let log = Arc::clone(log);
         Arc::new(move |k: &str| log.lock().unwrap().push(format!("{tag}:{k}")))
     };
-    let mut e = Events::default();
-    e.tick = Some(say("tick", log));
-    e.open = Some(say("open", log));
-    e.pick = Some(say("pick", log));
-    e.create = Some(say("create", log));
-    e.tab = Some(say("tab", log));
-    e
+    Events {
+        tick: Some(say("tick", log)),
+        open: Some(say("open", log)),
+        pick: Some(say("pick", log)),
+        create: Some(say("create", log)),
+        tab: Some(say("tab", log)),
+        ..Events::default()
+    }
 }
 
 #[test]
