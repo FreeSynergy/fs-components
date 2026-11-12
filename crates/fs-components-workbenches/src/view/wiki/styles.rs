@@ -47,8 +47,8 @@ const FRAME_A: &str = r"
 .fs-wk-a-space { padding: 14px 16px 6px 16px; gap: 2px; }
 .fs-wk-a-space-name { font-weight: 700; font-size: 15px; }
 .fs-wk-a-crumbs { height: 44px; padding: 0 28px; }
-.fs-wk-a-page { padding: 8px 40px 48px 40px; gap: 14px; max-width: 880px; }
-.fs-wk-a-title { font-size: 30px; font-weight: 700; line-height: 1.25; }
+.fs-wk-a-page { padding: 8px 40px 48px 40px; gap: 14px; max-width: 760px; }
+.fs-wk-a-title { font-size: 34px; font-weight: 700; line-height: 1.25; }
 .fs-wk-a-meta { gap: 18px; padding-bottom: 6px; }
 .fs-wk-a-right { width: 270px; border-left-width: 1px; border-left-color: var(--border); background: var(--surface); }
 .fs-wk-a-sep { height: 1px; background: var(--border); }
@@ -64,7 +64,8 @@ const FRAME_B: &str = r"
 .fs-wk-row-quiet.fs-wk-row-here { background: #ebe9e4; color: var(--text-primary); }
 .fs-wk-b-top { height: 44px; padding: 0 16px; gap: 12px; }
 .fs-wk-b-page { padding: 72px 24px 120px 24px; gap: 14px; }
-.fs-wk-b-title { font-size: 44px; font-weight: 800; line-height: 1.2; }
+.fs-wk-b-title { font-size: 40px; font-weight: 800; line-height: 1.2; }
+.fs-wk-b-icon { padding-bottom: 8px; }
 .fs-wk-b-meta { gap: 14px; padding-bottom: 8px; }
 .fs-wk-ticks { width: 40px; padding: 120px 10px 0 0; gap: 9px; }
 ";

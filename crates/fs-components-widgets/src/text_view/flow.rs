@@ -37,7 +37,13 @@ pub(super) struct Style {
 
 /// The flow of runs of `inline`.
 pub(super) fn flow(inline: &Inline, face: Face, look: &Look, on_link: Option<&LinkHandler>) -> Div {
-    let mut row = div().flex_row().flex_wrap().items_baseline().w_full();
+    // Code (mono) never wraps: its runs stay on one line and the block scrolls sideways.
+    let mut row = div().flex_row().items_baseline();
+    row = if face.mono && look.wide_code {
+        row.flex_shrink_0()
+    } else {
+        row.flex_wrap().w_full()
+    };
     for (piece, style) in runs(inline, face) {
         if piece == "\n" {
             // A hard line break: a full-width, empty line end forces the next run onto a new line.
@@ -62,7 +68,11 @@ fn run(piece: &str, style: &Style, face: Face, look: &Look, on_link: Option<&Lin
         face.size
     };
     let mut t = text(piece).size(size).color(color);
-    let may_wrap = face.cell || piece.chars().count() > LONG_RUN;
+    if look.line > 0.0 && !face.mono {
+        t = t.line_height(look.line);
+    }
+    let never = face.mono && look.wide_code;
+    let may_wrap = !never && (face.cell || piece.chars().count() > LONG_RUN);
     if !may_wrap {
         t = t.no_wrap();
     }

@@ -64,18 +64,20 @@ pub(super) fn tree_scroll(
         } else {
             line = line.child(div().w(14.0));
         }
-        if look == Look::Icons {
-            let glyph = if node.folder {
-                Glyph::Folder
-            } else {
-                Glyph::FileText
-            };
-            line = line.child(icon(
+        let glyph = if node.folder {
+            Glyph::Folder
+        } else {
+            Glyph::FileText
+        };
+        line = match look {
+            Look::Icons => line.child(icon(
                 glyph,
                 17.0,
                 if node.folder { Tone::Kind } else { Tone::Muted },
-            ));
-        }
+            )),
+            // The quiet tree: a small icon before every page and folder (the place where the emoji of a page goes).
+            Look::Quiet => line.child(icon(glyph, 16.0, Tone::Kind)),
+        };
         let label = text(&node.label).no_cursor();
         line = line.child(if node.folder {
             label.class("fs-wk-folder")

@@ -23,6 +23,7 @@ pub fn open_external(url: &str) {
 pub struct TextView {
     blocks: Vec<Block>,
     on_link: Option<LinkHandler>,
+    reading: bool,
 }
 
 impl TextView {
@@ -31,6 +32,7 @@ impl TextView {
         Self {
             blocks,
             on_link: None,
+            reading: false,
         }
     }
 
@@ -41,9 +43,21 @@ impl TextView {
         self
     }
 
+    /// The reading profile (wiki pages): 16 px text at line height 1.5, larger headings, code blocks that never wrap but
+    /// scroll sideways.
+    #[must_use]
+    pub fn reading(mut self) -> Self {
+        self.reading = true;
+        self
+    }
+
     /// The element to place in a layout.
     pub fn build(&self) -> impl Element + use<> {
-        let look = look::Look::current();
+        let look = if self.reading {
+            look::Look::reading()
+        } else {
+            look::Look::current()
+        };
         blocks::blocks(&self.blocks, &look, self.on_link.as_ref(), 0).class("fs-tv")
     }
 }

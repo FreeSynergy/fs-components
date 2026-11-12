@@ -127,7 +127,9 @@ pub(crate) fn main(
         .child(icon(Glyph::Star, 18.0, Tone::Muted));
     let mut page = div().class("fs-wk-b-page").flex_col().w_full();
     if let Some(document) = document {
-        page = page.child(text(&title).class("fs-wk-b-title").no_cursor());
+        page = page
+            .child(page_icon(info.emoji.as_deref()))
+            .child(text(&title).class("fs-wk-b-title").no_cursor());
         let meta = div()
             .class("fs-wk-b-meta")
             .flex_row()
@@ -178,6 +180,15 @@ pub(crate) fn main(
         .child(edge)
 }
 
+/// The big icon above the title: the emoji the page chose, else the icon of a page.
+fn page_icon(emoji: Option<&str>) -> Div {
+    let holder = div().class("fs-wk-b-icon").flex_row().items_center();
+    match emoji {
+        Some(e) => holder.child(text(e).size(64.0).no_cursor()),
+        None => holder.child(icon(Glyph::FileText, 64.0, Tone::Kind)),
+    }
+}
+
 /// The blocks of a page, one element each; a click on a block starts editing there.
 fn block_list(blocks: &[Block], actions: &Actions) -> Div {
     let mut column = div().flex_col().w_full().gap(1.0);
@@ -194,7 +205,12 @@ fn block_list(blocks: &[Block], actions: &Actions) -> Div {
                 .class("fs-wk-block")
                 .w_full()
                 .on_click(move |_| edit(i))
-                .child(TextView::new(vec![block.clone()]).on_link(handler).build()),
+                .child(
+                    TextView::new(vec![block.clone()])
+                        .reading()
+                        .on_link(handler)
+                        .build(),
+                ),
         );
     }
     column

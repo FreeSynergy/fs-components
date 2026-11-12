@@ -84,6 +84,8 @@ pub struct PageInfo {
     pub updated: Option<String>,
     /// The revisions, newest first.
     pub revisions: Vec<RevisionRow>,
+    /// An emoji the page chose for itself (shown big above the title and in the tree); none = the icon of a page.
+    pub emoji: Option<String>,
 }
 
 /// The words of the wiki layouts (the caller's, like [`Labels`](crate::Labels)).

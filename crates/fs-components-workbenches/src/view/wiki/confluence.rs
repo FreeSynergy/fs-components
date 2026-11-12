@@ -171,7 +171,12 @@ pub(crate) fn main(
         if let Some(band) = notice_band(&info) {
             page = page.child(band);
         }
-        page = page.child(TextView::new(body(document)).on_link(handler).build());
+        page = page.child(
+            TextView::new(body(document))
+                .reading()
+                .on_link(handler)
+                .build(),
+        );
     } else if let Shown::Failed { reason, .. } = reader.shown() {
         page = page.child(div().class("fs-rd-failed").child(text(reason.clone())));
     } else {

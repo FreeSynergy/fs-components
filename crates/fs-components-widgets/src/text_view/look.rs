@@ -14,6 +14,10 @@ pub(super) struct Look {
     pub base: f32,
     pub small: f32,
     pub heading: [f32; 6],
+    /// Line height as a MULTIPLIER of the font size (Blinc reads `line_height` so, never as pixels); 0 = the engine's own.
+    pub line: f32,
+    /// Code blocks do not wrap: they scroll sideways.
+    pub wide_code: bool,
 }
 
 impl Look {
@@ -34,6 +38,20 @@ impl Look {
                 t.text_base,
                 t.text_base,
             ],
+            line: 0.0,
+            wide_code: false,
+        }
+    }
+
+    /// The reading profile of a wiki page: 16 px body at 1.5, headings 36 / 28 / 22 / 18, code scrolls sideways.
+    pub fn reading() -> Self {
+        Self {
+            base: 16.0,
+            small: 13.5,
+            heading: [36.0, 28.0, 22.0, 18.0, 16.0, 16.0],
+            line: 1.5,
+            wide_code: true,
+            ..Self::current()
         }
     }
 }
