@@ -1,0 +1,14 @@
+#!/usr/bin/env -S python3 -I
+"""Prove that every check of `contract/check` can fail: break a copy in many ways. Usage: contract/selftest [root]. Pattern: Facade."""
+import os
+import sys
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "lib"))
+from contractlib import mutations  # noqa: E402
+
+root = os.path.abspath(sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+problems = mutations.selftest(root)
+for line in problems:
+    print("FAIL " + line)
+print("selftest: " + ("FAILED" if problems else f"all {len(mutations.MUTATIONS)} mutations were caught"))
+sys.exit(1 if problems else 0)

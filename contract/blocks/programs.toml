@@ -1,0 +1,111 @@
+# Program-specific blocks: the rich blocks of one program (naming = "own", reason given). Scope program.
+
+[block.program-card]
+naming = "own"
+reason = "The user's example (ADR 0074): the card of a program in the Store; Open UI Card is the general frame."
+scope = "program"
+summary = "The card of one program in the Store: icon, title, summary, badge, action."
+summary_de = "Die Karte eines Programms im Store: Symbol, Titel, Kurzbeschreibung, Marke, Aktion."
+parts = ["root", "icon", "title", "summary", "badge", "action", "head", "version"]
+states = ["installed", "update", "offered", "busy", "selected", "hover"]
+
+[block.program-row]
+naming = "own"
+reason = "One program as a row of a list or table in the Store (compact view, table view)."
+scope = "program"
+summary = "One program as a row: name, version, badge, action."
+summary_de = "Ein Programm als Zeile: Name, Version, Marke, Aktion."
+parts = ["root", "list", "icon", "name", "summary", "version", "badge", "action", "cell", "count", "search", "filters"]
+states = ["installed", "update", "busy", "selected", "hover"]
+
+[block.program-detail]
+naming = "own"
+reason = "The page of one program in the Store (description, versions, requirements)."
+scope = "program"
+summary = "The page of one program: head, description, install progress, what to know."
+summary_de = "Die Seite eines Programms: Kopf, Beschreibung, Installationsfortschritt, Wissenswertes."
+parts = ["root", "head", "heading", "sub", "track", "preview", "facts"]
+states = ["busy", "invalid"]
+
+[block.install-job]
+naming = "own"
+reason = "What the Store shows while it installs or updates; no standard name."
+scope = "program"
+summary = "The running install or update: its phases and the one that is now."
+summary_de = "Die laufende Installation oder das Update: die Phasen und die aktuelle."
+parts = ["root", "phases", "phase", "track"]
+states = ["busy", "failed", "done", "current"]
+
+[block.place]
+naming = "own"
+reason = "One entry of the file places (home, pinned folder, trash, settings); the user named rich blocks of the file manager."
+scope = "program"
+summary = "One place in the sidebar of the file manager."
+summary_de = "Ein Ort in der Seitenleiste des Dateimanagers."
+parts = ["root", "icon", "label"]
+states = ["current", "disabled", "hover", "selected"]
+variants = ["top", "trash", "settings", "network", "pinned"]
+
+[block.command-band]
+naming = "own"
+reason = "The band of the file manager that asks, confirms or takes a name; no standard name."
+scope = "program"
+summary = "The band of the file manager: the question, the typed name, the buttons."
+summary_de = "Das Band des Dateimanagers: die Frage, der getippte Name, die Kn\u00f6pfe."
+parts = ["root", "inner", "row", "input", "status", "notice", "problem", "outside"]
+states = ["busy", "invalid"]
+
+[block.chat]
+naming = "own"
+reason = "The window of a conversation with an assistant (llm chat workbench)."
+scope = "program"
+summary = "The conversation window: history at the side, the text, the dock with the input, the stop button."
+summary_de = "Das Unterhaltungsfenster: Verlauf an der Seite, der Text, das Dock mit der Eingabe, der Stopp-Knopf."
+parts = ["root", "main", "side", "sidehead", "head", "headtext", "title", "meta", "extras", "dock", "stop", "stopbox", "attention"]
+states = ["busy", "attention"]
+
+[block.task-row]
+naming = "own"
+reason = "One task as a line in a list (Aufgabenzeile); the user named it as a block of its own."
+scope = "program"
+summary = "One task as a line: done mark, title, a sub line, facts and labels."
+summary_de = "Eine Aufgabe als Zeile: Erledigt-Haken, Titel, Unterzeile, Angaben und Labels."
+parts = ["root", "head", "main", "title", "sub", "reason", "more", "facts", "code"]
+states = ["hover", "selected", "checked", "muted"]
+
+[block.quick-add]
+naming = "own"
+reason = "The row at the end of a list that adds an entry (Things 3 style); no standard name."
+scope = "program"
+summary = "The always-present row for adding the next entry."
+summary_de = "Die immer vorhandene Zeile zum Hinzuf\u00fcgen des n\u00e4chsten Eintrags."
+parts = ["root", "plus", "field"]
+states = ["default", "focus", "busy"]
+
+[block.page-tree-row]
+naming = "own"
+reason = "One row of the page tree of the wiki (Seitenbaum-Zeile); the user named it as a block of its own."
+scope = "program"
+summary = "One page in the wiki tree: grip, icon, title, state dot."
+summary_de = "Eine Seite im Wiki-Baum: Griff, Symbol, Titel, Zustandspunkt."
+parts = ["root", "grip", "icon", "label", "dot", "ticks", "tick", "folder", "state"]
+states = ["current", "quiet", "selected", "hover", "expanded", "collapsed"]
+variants = ["dot-ok", "dot-old", "dot-other"]
+
+[block.page-block]
+naming = "own"
+reason = "One block of a page being edited (paragraph, heading ...) in the wiki block editor."
+scope = "program"
+summary = "One editable block of a wiki page, with its grip."
+summary_de = "Ein bearbeitbarer Block einer Wiki-Seite mit Griff."
+parts = ["root", "list", "grip", "band"]
+states = ["editing", "hover"]
+
+[block.revision-row]
+naming = "own"
+reason = "One earlier version of a wiki page in the history panel."
+scope = "program"
+summary = "One row of the page history."
+summary_de = "Eine Zeile des Seitenverlaufs."
+parts = ["root"]
+states = ["current", "hover"]

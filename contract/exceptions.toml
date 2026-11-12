@@ -1,0 +1,19 @@
+# Names that appear in the source but are no class or id of a visual element. Each has its reason.
+[not-a-class]
+"craft-font" = "cargo feature of fs-components-render, not a class"
+"fs-admin-command" = "name of a worker thread (`.name(..)`)"
+"fs-admin-reconnect" = "name of a worker thread (`.name(..)`)"
+"fs-app-menu-outside" = "key of a Blinc state value (outside click), not an element"
+"fs-app-status-outside" = "key of a Blinc state value (outside click), not an element"
+"fs-components" = "crate name in a string of fs-components-render"
+"fs-files-job" = "name of a worker thread (`.name(..)`)"
+"fs-lightbox" = "id of a widget handle (`id: ..`), not a class"
+"fs-map-tile" = "name of a worker thread (`.name(..)`)"
+"fs-map-watchdog" = "name of a worker thread (`.name(..)`)"
+"fs-share" = "id of a widget handle (`id: ..`), not a class"
+"fs-sortable" = "id of a widget handle (`id: ..`), not a class"
+"fs-toolcall" = "id of a widget handle (`id: ..`), not a class"
+"tabindex=0" = "BUG, not a class: `.class(\"tabindex=0\")` in file_manager/view/actions.rs tries to set an attribute; to be replaced by a real focus API in step 4"
+
+# Class names that have no place in the contract yet. Empty on purpose: a new name must be mapped or explained here.
+[unmapped]
