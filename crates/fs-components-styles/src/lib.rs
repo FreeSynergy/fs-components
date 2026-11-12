@@ -23,6 +23,7 @@
 pub mod color;
 pub mod effects;
 mod glyph;
+mod glyph_label;
 mod glyph_names;
 mod icons;
 pub mod style;

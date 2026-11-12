@@ -1,7 +1,8 @@
-# Names of other places, mapped now so the contract covers them: the in-flight branches of fs-components (read only) and the
-# Store (fs-store). The check does not look for these in this repository.
+# Names of other places, mapped now so the contract covers them: the Store (fs-store). The check does not look for these in
+# this repository. The names of the former in-flight branches `tasks-visual` and `wiki-frontends-1` are merged (v0.0.13) and
+# are now checked against the source like every name of this repository.
 
-[coming.tasks-visual.provisional]
+[map.provisional]
 "fs-plan-add" = "quick-add.root"
 "fs-plan-add-plus" = "quick-add.plus"
 "fs-plan-big-note" = "note.root"
@@ -81,7 +82,6 @@
 "fs-plan-tile-5" = "avatar/color-5"
 "fs-plan-tile-6" = "avatar/color-6"
 
-[coming.wiki-frontends-1.provisional]
 "fs-tv-codebox" = "text-view.codebox"
 "fs-tv-codelines" = "text-view.codelines"
 "fs-wk-a-brand" = "toolbar.cell"
@@ -137,7 +137,7 @@
 "fs-wk-ticks" = "page-tree-row.ticks"
 "fs-wk-tree" = "tree.root"
 
-[coming.wiki-frontends-1.remove]
+[map.remove]
 "fs-wk-a-sep" = "-"
 
 [external.fs-store.provisional]
