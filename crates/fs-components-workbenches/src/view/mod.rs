@@ -11,11 +11,16 @@ mod results;
 mod sidebar;
 mod styles;
 mod tree_build;
+mod wiki;
 
 pub(crate) use actions::Actions;
 pub(crate) use content::content;
-pub(crate) use editor::{editor_rows, new_area};
+pub(crate) use editor::{editor, editor_rows, new_area};
 pub(crate) use frame::frame;
+pub(crate) use results::results as results_list;
 pub(crate) use sidebar::{search_box, side_body};
 pub(crate) use styles::styles;
 pub(crate) use tree_build::tree_nodes;
+pub use wiki::Layout;
+pub(crate) use wiki::{BlockEditor, PageTree};
+pub(crate) use wiki::{confluence, notion};

@@ -138,6 +138,15 @@ const NAMES: &[(Glyph, &str, IconContext)] = &[
     ),
     (Glyph::More, "freesynergy-more", IconContext::Actions),
     (Glyph::Info, "dialog-information", IconContext::Status),
+    (Glyph::History, "document-open-recent", IconContext::Actions),
+    (
+        Glyph::Language,
+        "freesynergy-language",
+        IconContext::Actions,
+    ),
+    (Glyph::Star, "starred", IconContext::Status),
+    (Glyph::Edit, "document-edit", IconContext::Actions),
+    (Glyph::Outline, "freesynergy-outline", IconContext::Actions),
 ];
 
 impl Glyph {

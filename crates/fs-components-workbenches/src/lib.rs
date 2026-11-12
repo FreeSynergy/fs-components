@@ -19,6 +19,7 @@ pub mod file_manager;
 mod input_slots;
 mod labels;
 pub mod llm_chat;
+mod page_info;
 mod page_scroll;
 pub mod people;
 pub mod reader;
@@ -29,12 +30,14 @@ mod view;
 
 pub use error::{ErrorKind, SourceError};
 pub use labels::Labels;
+pub use page_info::{LangChoice, PageInfo, PageState, RevisionRow, WikiLabels};
 pub use reader::{Draft, DraftStore, Editing, Outcome, Reader, Shown};
 pub use shell::{
     Options, Picture, ReaderWidget, ScrollInfo, ShellError, Snapshot, Step, launch, register_fonts,
     snapshot, styles,
 };
 pub use source::{DocumentSource, EditableText, Entry, Hit, LinkTarget};
+pub use view::Layout;
 
 /// The documents the reader shows, in the neutral model of the widgets.
 pub use fs_components_widgets::{Align, Block, Document, Inline, ListItem, Mark, MarkKind};

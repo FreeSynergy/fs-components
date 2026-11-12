@@ -1,0 +1,107 @@
+//! The wiki layouts of the reader widget: the same two live areas (side, main) in another frame.
+//!
+//! Pattern: Strategy — `build_wiki` is what `build` does for a layout other than the plain one; the state (reader, tree,
+//! block editor) is the widget's, this file only draws and wires.
+
+use std::sync::{Arc, PoisonError};
+
+use blinc_layout::prelude::NoState;
+use blinc_layout::stateful::stateful;
+
+use super::{ReaderWidget, locked, state};
+use crate::reader::Reader;
+use crate::view::{BlockEditor, Layout, confluence, notion};
+
+impl ReaderWidget {
+    /// The wiki layouts: the same two live areas (side, main) in another frame.
+    pub(super) fn build_wiki(&self, width: f32, height: f32) -> blinc_layout::div::Div {
+        let (id, reader) = (self.id, &self.reader);
+        let (page_v, side_v) = (state(id, "page"), state(id, "side"));
+        let actions = self.actions();
+        let labels = self.wiki_labels.clone();
+        let layout = self.layout;
+        let side = {
+            let (reader, tree, actions, labels) = (
+                Arc::clone(reader),
+                Arc::clone(&self.tree),
+                actions.clone(),
+                labels.clone(),
+            );
+            stateful::<NoState>()
+                .deps([side_v.id()])
+                .on_state(move |_| {
+                    let reader = locked(&reader);
+                    let mut tree = tree.lock().unwrap_or_else(PoisonError::into_inner);
+                    if let Some(path) = reader.current_path() {
+                        tree.reveal_once(
+                            &reader
+                                .page_info()
+                                .canonical
+                                .unwrap_or_else(|| path.to_string()),
+                        );
+                    }
+                    if layout == Layout::Confluence {
+                        confluence::side(&reader, &tree, &labels, &actions)
+                    } else {
+                        notion::side(&reader, &tree, &labels, &actions)
+                    }
+                })
+        };
+        let main = {
+            let (reader, actions, labels, this) = (
+                Arc::clone(reader),
+                actions.clone(),
+                labels.clone(),
+                self.clone(),
+            );
+            stateful::<NoState>()
+                .deps([page_v.id()])
+                .on_state(move |_| {
+                    let reader = locked(&reader);
+                    if layout == Layout::Confluence {
+                        let area = this.sync_area(&reader);
+                        confluence::main(&reader, &labels, &actions, None, area.as_ref(), height)
+                    } else {
+                        this.sync_blocks(&reader);
+                        let blocks = this.blocks.lock().unwrap_or_else(PoisonError::into_inner);
+                        notion::main(
+                            &reader,
+                            &labels,
+                            &actions,
+                            None,
+                            blocks.as_ref(),
+                            &actions.draft,
+                        )
+                    }
+                })
+        };
+        let (back, save) = (Arc::clone(&actions.back), Arc::clone(&actions.save));
+        let search = self.field.build();
+        let ui = if layout == Layout::Confluence {
+            confluence::confluence(search, side, main, &labels, width, height)
+        } else {
+            notion::notion(search, side, main, width, height)
+        };
+        if self.keys {
+            ui.on_key_down(move |e| match e.key_code {
+                0x25 if e.alt => back(),
+                0x53 if e.ctrl => save(),
+                _ => {}
+            })
+        } else {
+            ui
+        }
+    }
+
+    /// Keep the block editor of the edit in progress (made when an edit starts, dropped when it ends).
+    pub(super) fn sync_blocks(&self, reader: &Reader) {
+        let mut slot = self.blocks.lock().unwrap_or_else(PoisonError::into_inner);
+        let Some(editing) = reader.editing() else {
+            *slot = None;
+            return;
+        };
+        if slot.as_ref().is_none_or(|b| b.edit != editing.id) {
+            *slot = Some(BlockEditor::new(editing.id, &editing.draft));
+        }
+    }
+}

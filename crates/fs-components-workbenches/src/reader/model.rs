@@ -106,6 +106,13 @@ impl Reader {
         }
     }
 
+    /// What the source says about the page shown (languages, state, revisions); empty when nothing is shown.
+    pub fn page_info(&self) -> crate::PageInfo {
+        self.current_path()
+            .map(|p| self.source.page_info(p))
+            .unwrap_or_default()
+    }
+
     /// Is there a document to go back to?
     pub fn can_go_back(&self) -> bool {
         !self.history.is_empty()

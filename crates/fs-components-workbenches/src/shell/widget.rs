@@ -15,13 +15,17 @@ use blinc_layout::prelude::NoState;
 use blinc_layout::stateful::stateful;
 use blinc_layout::widgets::text_area::SharedTextAreaState;
 use fs_components_primitives::{FieldSize, SearchField};
-use fs_components_widgets::Element;
-use fs_components_widgets::open_external;
 
 use crate::labels::Labels;
-use crate::reader::{DraftStore, Outcome, Reader};
+use crate::page_info::WikiLabels;
+use crate::reader::{DraftStore, Reader};
 use crate::source::DocumentSource;
-use crate::view::{Actions, content, editor_rows, frame, new_area, side_body, tree_nodes};
+use crate::view::{
+    BlockEditor, Layout, PageTree, content, editor_rows, frame, new_area, side_body, tree_nodes,
+};
+
+mod actions;
+mod wiki;
 
 static NEXT_ID: AtomicU64 = AtomicU64::new(1);
 
@@ -33,6 +37,10 @@ pub struct ReaderWidget {
     field: SearchField,
     area: Arc<Mutex<Option<AreaSlot>>>,
     keys: bool,
+    layout: Layout,
+    wiki_labels: WikiLabels,
+    tree: Arc<Mutex<PageTree>>,
+    blocks: Arc<Mutex<Option<BlockEditor>>>,
 }
 
 /// The text area of the edit in progress: tied to that edit (its id), so an edit of another
@@ -71,7 +79,25 @@ impl ReaderWidget {
             field,
             area: Arc::new(Mutex::new(None)),
             keys: true,
+            layout: Layout::Classic,
+            wiki_labels: WikiLabels::default(),
+            tree: Arc::new(Mutex::new(PageTree::default())),
+            blocks: Arc::new(Mutex::new(None)),
         }
+    }
+
+    /// Draw the reader in a wiki layout (page tree, head with language switch, outline, block editor) with these words.
+    /// The tree is built from the list of the source once, here; folders open on demand.
+    #[must_use]
+    pub fn layout(mut self, layout: Layout, labels: WikiLabels) -> Self {
+        self.layout = layout;
+        self.wiki_labels = labels;
+        let tree = {
+            let r = locked(&self.reader);
+            PageTree::new(r.entries())
+        };
+        *self.tree.lock().unwrap_or_else(PoisonError::into_inner) = tree;
+        self
     }
 
     /// Back the drafts of edits up into `store` (see [`DraftStore`]): after a pause in typing
@@ -148,7 +174,10 @@ impl ReaderWidget {
     /// gets new keys, the old one's callbacks, signals and backup thread keep running, and the
     /// state of the old one is lost. Inside the reader the sidebar rebuilds its tree with each
     /// redraw, which gives the tree new framework keys (see DESIGN.md).
-    pub fn build(&self, width: f32, height: f32) -> impl Element + use<> {
+    pub fn build(&self, width: f32, height: f32) -> blinc_layout::div::Div {
+        if self.layout != Layout::Classic {
+            return self.build_wiki(width, height);
+        }
         let (id, reader) = (self.id, &self.reader);
         let page_v = state(id, "page");
         let side_v = state(id, "side");
@@ -223,47 +252,6 @@ impl ReaderWidget {
         let area = self.sync_area(&locked(&self.reader))?;
         let text = area.lock().unwrap_or_else(PoisonError::into_inner).value();
         Some(text)
-    }
-
-    /// The callbacks that change the shared reader and ask the areas to draw again.
-    fn actions(&self) -> Actions {
-        let id = self.id;
-        let simple = |change: fn(&mut Reader)| -> Arc<dyn Fn() + Send + Sync> {
-            let reader = Arc::clone(&self.reader);
-            Arc::new(move || {
-                change(&mut locked(&reader));
-                bump(id, "page");
-                bump(id, "side");
-            })
-        };
-        let (open_r, follow_r, draft_r) = (
-            Arc::clone(&self.reader),
-            Arc::clone(&self.reader),
-            Arc::clone(&self.reader),
-        );
-        Actions {
-            open: Arc::new(move |path| {
-                locked(&open_r).open(path);
-                bump(id, "page");
-            }),
-            follow: Arc::new(move |href| {
-                let outcome = locked(&follow_r).follow(href);
-                if let Outcome::External(url) = outcome {
-                    open_external(&url);
-                }
-                bump(id, "page");
-                bump(id, "side"); // the tree marks the page that is now open
-            }),
-            back: simple(Reader::back), // draws both areas (the tree marks the page)
-            edit: simple(Reader::begin_edit),
-            // Typing is remembered but does not redraw: the text area keeps its own cursor.
-            draft: Arc::new(move |text| locked(&draft_r).set_draft(text)),
-            save: simple(Reader::save),
-            cancel: simple(Reader::cancel_edit),
-            export: simple(Reader::export),
-            restore: simple(Reader::restore_backup),
-            discard: simple(Reader::discard_backup),
-        }
     }
 }
 
