@@ -1,7 +1,7 @@
 //! A code block.
 //!
-//! Pattern: Adapter — lines of monospace text in a box styled by the theme. Long lines wrap, so
-//! nothing is cut off.
+//! Pattern: Adapter — lines of monospace text in a box styled by the theme. A line never wraps (a
+//! diagram would break): every code block, in every profile, scrolls sideways inside its own width.
 
 use blinc_layout::div::{Div, div};
 use blinc_layout::text;
@@ -15,11 +15,8 @@ use crate::text::Inline;
 
 /// The element of a code block.
 pub(super) fn code(source: &str, look: &Look) -> Div {
-    let mut block = div().class("fs-tv-block").class("fs-tv-code");
-    if look.wide_code {
-        // The sideways box carries the ground; the lines inside only keep their padding.
-        block = div().class("fs-tv-codelines");
-    }
+    // The sideways box carries the ground; the lines inside only keep their padding.
+    let mut block = div().class("fs-tv-codelines");
     for line in source.trim_end_matches('\n').split('\n') {
         let shown = if line.is_empty() { " " } else { line };
         if needs_fallback(line) {
@@ -42,10 +39,7 @@ pub(super) fn code(source: &str, look: &Look) -> Div {
             );
         }
     }
-    if look.wide_code {
-        return sideways(block, source, look);
-    }
-    block
+    sideways(block, source, look)
 }
 
 /// The block in a box that scrolls sideways, scrollbar always shown (a diagram is never broken at the edge).

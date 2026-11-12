@@ -161,7 +161,7 @@ scope = "block"
 widget = "TextView"
 summary = "A formatted document: headings, paragraphs, lists, quotes, code."
 summary_de = "Ein formatiertes Dokument: \u00dcberschriften, Abs\u00e4tze, Listen, Zitate, Code."
-parts = ["root", "block", "heading", "quote", "code", "codespan", "item", "marker", "rule", "run", "codebox", "codelines"]
+parts = ["root", "block", "heading", "quote", "code", "codespan", "item", "marker", "rule", "run", "codelines"]
 states = ["default"]
 
 [block.board]

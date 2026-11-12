@@ -43,8 +43,7 @@ impl TextView {
         self
     }
 
-    /// The reading profile (wiki pages): 16 px text at line height 1.5, larger headings, code blocks that never wrap but
-    /// scroll sideways.
+    /// The reading profile (wiki pages): 16 px text at line height 1.5, larger headings.
     #[must_use]
     pub fn reading(mut self) -> Self {
         self.reading = true;

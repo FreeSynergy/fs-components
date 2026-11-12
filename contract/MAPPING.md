@@ -4,7 +4,7 @@ Generated from `contract/mapping/*.toml` by `contract/render`. Do not edit. Stat
 
 | Origin | mapped | provisional | remove |
 |---|---|---|---|
-| here | 303 | 268 | 46 |
+| here | 303 | 267 | 46 |
 | coming | 0 | 0 | 0 |
 | external | 0 | 45 | 45 |
 
@@ -189,7 +189,6 @@ Test-only names (outside the contract): 58. Exceptions: 14.
 | `fs-plan-card-selected` | `task-card:selected` | block | provisional |
 | `fs-tv-block` | `text-view.block` | block | mapped |
 | `fs-tv-code` | `text-view.code` | block | mapped |
-| `fs-tv-codebox` | `text-view.codebox` | block | provisional |
 | `fs-tv-codelines` | `text-view.codelines` | block | provisional |
 | `fs-tv-codespan` | `text-view.codespan` | block | mapped |
 | `fs-tv-heading` | `text-view.heading` | block | mapped |

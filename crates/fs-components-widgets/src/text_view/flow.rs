@@ -39,7 +39,7 @@ pub(super) struct Style {
 pub(super) fn flow(inline: &Inline, face: Face, look: &Look, on_link: Option<&LinkHandler>) -> Div {
     // Code (mono) never wraps: its runs stay on one line and the block scrolls sideways.
     let mut row = div().flex_row().items_baseline();
-    row = if face.mono && look.wide_code {
+    row = if face.mono {
         row.flex_shrink_0()
     } else {
         row.flex_wrap().w_full()
@@ -71,8 +71,7 @@ fn run(piece: &str, style: &Style, face: Face, look: &Look, on_link: Option<&Lin
     if look.line > 0.0 && !face.mono {
         t = t.line_height(look.line);
     }
-    let never = face.mono && look.wide_code;
-    let may_wrap = !never && (face.cell || piece.chars().count() > LONG_RUN);
+    let may_wrap = !face.mono && (face.cell || piece.chars().count() > LONG_RUN);
     if !may_wrap {
         t = t.no_wrap();
     }
