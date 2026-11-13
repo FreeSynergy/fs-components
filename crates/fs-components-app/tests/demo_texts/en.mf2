@@ -1,0 +1,6 @@
+# The words of the demo window in the picture test (every visible word comes from here, never from the code).
+demo-title = FreeSynergy Demo
+demo-view-tiles = Tiles
+demo-view-list = List
+demo-frontend-storefront = Storefront
+demo-frontend-compact = Compact

@@ -91,7 +91,7 @@ impl LanguageSetting {
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(None),
             Err(e) => return Err(format!("cannot read {shown}: {e}")),
         }
-        let mut file = match std::fs::File::open(&self.file) {
+        let mut file = match open_for_reading(&self.file) {
             Ok(file) => file,
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(None),
             Err(e) => return Err(format!("cannot read {shown}: {e}")),
@@ -172,5 +172,45 @@ fn create_new(path: &Path) -> std::io::Result<std::fs::File> {
             open()
         }
         other => other,
+    }
+}
+
+/// Open for reading without waiting: on Linux with `O_NONBLOCK`, so that a pipe put in place of the file between the check and the
+/// open is opened at once (and then refused by the check on the open file) instead of waiting for a writer for ever. For a
+/// regular file the flag changes nothing. Other systems keep the plain open.
+fn open_for_reading(path: &Path) -> std::io::Result<std::fs::File> {
+    let mut options = std::fs::OpenOptions::new();
+    options.read(true);
+    #[cfg(target_os = "linux")]
+    {
+        use std::os::unix::fs::OpenOptionsExt;
+        /// `O_NONBLOCK` of Linux (`0o4000`); no new dependency for one constant.
+        const O_NONBLOCK: i32 = 0o4000;
+        options.custom_flags(O_NONBLOCK);
+    }
+    options.open(path)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::open_for_reading;
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn a_pipe_is_opened_at_once_and_is_no_regular_file() {
+        let dir = std::env::temp_dir().join(format!("fs-words-nonblock-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        let fifo = dir.join("language");
+        if !std::process::Command::new("mkfifo").arg(&fifo).status().is_ok_and(|s| s.success()) {
+            eprintln!("skipped: no mkfifo");
+            return;
+        }
+        // Without the flag this open waits for a writer for ever (the test would hang).
+        let file = open_for_reading(&fifo).unwrap();
+        assert!(!file.metadata().unwrap().is_file());
+        std::fs::write(dir.join("real"), "de").unwrap();
+        assert!(open_for_reading(&dir.join("real")).unwrap().metadata().unwrap().is_file());
+        let _ = std::fs::remove_dir_all(dir);
     }
 }

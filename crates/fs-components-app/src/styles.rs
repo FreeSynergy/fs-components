@@ -14,6 +14,15 @@ pub(crate) const NAV_WIDTH: f32 = 200.0;
 pub(crate) const MENU_WIDTH: f32 = 220.0;
 /// Height of a line of a menu in pixels, for keeping a panel inside the window.
 pub(crate) const MENU_LINE_HEIGHT: f32 = 36.0;
+/// The narrowest and the widest a panel of a next level is, in pixels (it is as wide as its longest line, within these).
+pub(crate) const SUB_MIN_WIDTH: f32 = 140.0;
+pub(crate) const SUB_MAX_WIDTH: f32 = 360.0;
+/// What a line adds to its text: its paddings (2 x 12 px) and a little room so the text never touches the edge.
+pub(crate) const MENU_CHROME: f32 = 36.0;
+/// Width of the arrow on a line that opens a next level.
+pub(crate) const ARROW_WIDTH: f32 = 18.0;
+/// The room Blinc keeps between an overlay and the window's edge.
+pub(crate) const SIDE_MARGIN: f32 = 8.0;
 /// Width of the column of check marks in a group of lines, in pixels.
 pub(crate) const MARK_WIDTH: f32 = 18.0;
 /// Text size of the menus in pixels.

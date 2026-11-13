@@ -1,0 +1,6 @@
+# Die Woerter des Demo-Fensters im Bildtest (jedes sichtbare Wort kommt von hier, nie aus dem Code).
+demo-title = FreeSynergy Demo
+demo-view-tiles = Kacheln
+demo-view-list = Liste
+demo-frontend-storefront = Schaufenster
+demo-frontend-compact = Kompakt

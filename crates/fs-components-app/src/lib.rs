@@ -17,6 +17,8 @@ mod language;
 mod menu;
 mod menu_overlay;
 mod menu_view;
+#[cfg(test)]
+mod menu_view_tests;
 mod new_file;
 mod quit;
 mod shell;

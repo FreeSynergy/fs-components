@@ -85,9 +85,9 @@ fn the_next_level_does_not_move_the_panel_and_stays_inside_the_window() {
 
 #[test]
 fn where_the_right_has_no_room_the_next_level_folds_to_the_left_of_the_panel() {
-    // English, View > Frontends in 640 px: the panel stands at about 281..501, the right side has no room (501 + 220 + 8 > 640)
-    // and the left has (281 - 220 = 61).
-    let (_, panel, sub) = with_level("en_US.UTF-8", 640.0, 1, "fs.frontends");
+    // English, View > Frontends in 600 px: the panel stands at about 263..483, the right side has no room (483 + 140 + 8 > 600:
+    // the next level is as wide as its short lines need, 140 px at least) and the left has (263 - 140 = 123).
+    let (_, panel, sub) = with_level("en_US.UTF-8", 600.0, 1, "fs.frontends");
     assert!(
         sub.0 + sub.2 <= panel.0 + 1.0,
         "folded to the left: {panel:?} {sub:?}"

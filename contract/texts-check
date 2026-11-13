@@ -9,6 +9,9 @@ Usage: contract/texts-check [root] [--all] [--selftest]. Exit 1 on any finding. 
       every id in en AND de, the same `$variables`, no empty message, de differs from en unless the id is listed under [same]
       in contract/texts-exceptions.toml (a name, a unit). Heuristic (the variables are found by text, not by the MF2 parser);
       the exact check is `fs_components_mf2::check_pairs`, which every crate with texts runs as a test.
+  Tests and examples are skipped (they use English fixtures on purpose), EXCEPT a file that says `texts-check: scan` in a comment:
+      a demo or picture test that shows a window to a person in two languages (`tests/language_picture.rs`) must take every
+      visible word from `.mf2` files, because a hard coded English menu word there is exactly the "mixed language" finding.
 Heuristic on purpose: it finds candidates, a person judges; an accepted case goes into the exception file WITH a reason.
 CI runs it as a warning until the migration of the programs is done (step 6), then it is hard."""
 import os
@@ -102,6 +105,21 @@ def check_mf2(root, same):
     return problems
 
 
+MARKER = "texts-check: scan"
+
+
+def marked_files(root):
+    """Test and example files that opt in to the scan with a comment `texts-check: scan`."""
+    for base, dirs, names in os.walk(root):
+        dirs[:] = [d for d in dirs if d not in ("target", ".git", "temp", "contract")]
+        if os.path.basename(base) not in ("tests", "examples") and "tests" not in base.split(os.sep) and "examples" not in base.split(os.sep):
+            continue
+        for n in names:
+            path = os.path.join(base, n)
+            if n.endswith(".rs") and MARKER in open(path, encoding="utf-8", errors="replace").read():
+                yield path
+
+
 def files(root):
     for base, dirs, names in os.walk(root):
         dirs[:] = [d for d in dirs if d not in ("target", ".git", "tests", "examples", "temp", "contract", "todo")]
@@ -113,7 +131,7 @@ def files(root):
 def run(root, exc):
     r1, r2 = [], []
     lits = set(exc.get("literal", {}))
-    for path in files(root):
+    for path in [*files(root), *marked_files(root)]:
         rel = os.path.relpath(path, root)
         text = code_of(path)
         for rx in (CALL, ASSIGN):
@@ -145,6 +163,9 @@ def selftest():
         "good": ({"crates/x/texts/" + k: v for k, v in ok.items()}, (0, 0, 0)),
         "bad_call": (rs('fn f() { text("Reload the catalog"); }\n'), (1, 0, 0)),
         "menu": (rs('fn f() { MenuEntry::new("open", "Open the file"); }\n'), (1, 0, 0)),
+        "demo_marked": ({"crates/x/tests/demo.rs": '// texts-check: scan\nfn f() { MenuEntry::new("tiles", "Tiles"); }\n'}, (1, 0, 0)),
+        "demo_unmarked": ({"crates/x/tests/demo.rs": 'fn f() { MenuEntry::new("tiles", "Tiles"); }\n'}, (0, 0, 0)),
+        "demo_marked_clean": ({"crates/x/tests/demo.rs": '// texts-check: scan\nfn f() { MenuEntry::new("tiles", texts.plain("demo-tiles")); }\n'}, (0, 0, 0)),
         "words_table": ({"crates/x/src/words.rs": 'pub const X: &str = "Install now";\n'}, (0, 1, 0)),
         "test_module": (rs('fn f() {}\n#[cfg(test)]\nmod t { fn g() { text("Only a test text"); } }\n'), (0, 0, 0)),
         "no_de": ({"t/en.mf2": "a = Reload\n"}, (0, 0, 1)),

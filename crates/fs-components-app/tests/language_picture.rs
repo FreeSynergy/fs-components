@@ -7,6 +7,10 @@
 //! this branch and the group of the shell (frontend-umbau group 10) is paused, so the pictures are looked at and asserted by
 //! pixel difference only.
 
+// texts-check: scan
+//   (this file shows a window in two languages: the gate `contract/texts-check` reads it too, so every visible word here comes
+//   from `demo_texts/{en,de}.mf2` and a hard coded English menu word would be a finding)
+
 #[path = "menu_common/mod.rs"]
 mod menu_common;
 
@@ -18,6 +22,7 @@ use fs_components_app::{
     AppWidget, FileLanguageControl, FrontendItem, MenuEntry, Screen, StandardCallbacks,
     StandardMenus,
 };
+use fs_components_mf2::{Mf2Texts, Source};
 use fs_components_render::{Canvas, RenderError, draw_to_png};
 use fs_components_words::{LanguageSetting, Locale};
 use image::RgbaImage;
@@ -26,6 +31,12 @@ use menu_common::{Harness, composed};
 
 const SIZE: (u32, u32) = (640, 300);
 const SIZE_F: (f32, f32) = (640.0, 300.0);
+
+/// The words of the demo window: the same ids in German and English, checked by `check_pairs` below.
+const DEMO: &[Source] = &[
+    Source { language: "en", text: include_str!("demo_texts/en.mf2") },
+    Source { language: "de", text: include_str!("demo_texts/de.mf2") },
+];
 
 fn app(lang: &str, dir: &std::path::Path) -> AppWidget {
     let env: HashMap<String, String> = HashMap::from([("LANG".to_owned(), lang.to_owned())]);
@@ -36,19 +47,21 @@ fn app(lang: &str, dir: &std::path::Path) -> AppWidget {
         Arc::new(env),
         vec![tag("de"), tag("en")],
     ));
+    let locale = fs_components_app_resolve(&control);
+    let words = Mf2Texts::new(DEMO, &locale);
     let app = AppWidget::new(
-        "FreeSynergy Demo",
-        vec![Screen::new("one", "One", Arc::new(Target::default()))],
+        words.plain("demo-title"),
+        vec![Screen::new("one", "one", Arc::new(Target::default()))],
     )
     .unwrap();
-    let mut standard = StandardMenus::new(fs_components_app_resolve(&control));
+    let mut standard = StandardMenus::new(locale);
     standard.views = vec![
-        MenuEntry::new("tiles", "Tiles"),
-        MenuEntry::new("list", "List"),
+        MenuEntry::new("tiles", words.plain("demo-view-tiles")),
+        MenuEntry::new("list", words.plain("demo-view-list")),
     ];
     standard.frontends = vec![
-        FrontendItem::new("storefront", "Storefront"),
-        FrontendItem::new("compact", "Compact"),
+        FrontendItem::new("storefront", words.plain("demo-frontend-storefront")),
+        FrontendItem::new("compact", words.plain("demo-frontend-compact")),
     ];
     standard.active_frontend = Some("storefront".into());
     standard.language = Some(control);
@@ -169,4 +182,30 @@ fn a_narrow_window_folds_the_next_level_to_the_left_and_keeps_the_panel_under_it
         }
         let _ = std::fs::remove_dir_all(dir);
     }
+}
+
+#[test]
+fn the_demo_words_are_paired_so_no_word_of_the_picture_is_in_one_language_only() {
+    assert_eq!(fs_components_mf2::check_pairs(DEMO), Vec::<String>::new());
+}
+
+/// The View menu alone, open: the program's own views in the language (Kacheln, Liste / Tiles, List), then Frontends.
+#[test]
+fn the_view_menu_names_the_views_in_the_language_of_the_window() {
+    let mut shots = Vec::new();
+    for (lang, short) in [("de_DE.UTF-8", "de"), ("en_US.UTF-8", "en")] {
+        let dir = std::env::temp_dir().join(format!("fs-app-lang-view-{short}-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        let mut h = Harness::new(app(lang, &dir), SIZE_F.0, SIZE_F.1);
+        h.click("fs-app-menu-1");
+        let Some(picture) = draw(&h.app, &format!("shell-{short}-view.png")) else {
+            return;
+        };
+        let lines: Vec<_> = h.app.with_shell(|s| s.menus()[1].entries.iter().map(|e| e.label.clone()).collect());
+        shots.push((picture, lines));
+        let _ = std::fs::remove_dir_all(dir);
+    }
+    assert_eq!(shots[0].1[..2], ["Kacheln", "Liste"]);
+    assert_eq!(shots[1].1[..2], ["Tiles", "List"]);
+    assert_ne!(shots[0].0, shots[1].0);
 }

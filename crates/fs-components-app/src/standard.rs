@@ -32,8 +32,12 @@ pub(crate) const LANGUAGE: &str = "fs.language.";
 pub struct FrontendItem {
     /// Stable name; the callback receives it.
     pub id: String,
-    /// What the menu shows (the name of the frontend, in the program's language).
+    /// What the menu shows when no name in the reader's language is given: the name of the frontend. A proper name
+    /// (Storefront, Compact) may stay as it is in every language.
     pub label: String,
+    /// The name of the frontend in other languages, `(language tag, name)`: a frontend that has a translated display name
+    /// brings it, and the menu takes the one that fits the language of the shell (`de-AT`, then `de`), else `label`.
+    pub names: Vec<(String, String)>,
     /// Shown, but cannot be chosen (not installed completely, not supported here).
     pub disabled: bool,
 }
@@ -44,8 +48,30 @@ impl FrontendItem {
         Self {
             id: id.into(),
             label: label.into(),
+            names: Vec::new(),
             disabled: false,
         }
+    }
+
+    /// The same, with its name in this language (`de`, `de-AT` ...).
+    #[must_use]
+    pub fn named_in(mut self, language: &str, name: impl Into<String>) -> Self {
+        self.names.push((language.to_owned(), name.into()));
+        self
+    }
+
+    /// The name to show in `locale`: the most specific translated name of the chain (`de-AT`, `de`), else the plain label.
+    pub fn label_for(&self, locale: &Locale) -> &str {
+        locale
+            .chain()
+            .iter()
+            .find_map(|tag| {
+                self.names
+                    .iter()
+                    .find(|(l, _)| Locale::parse(l).is_ok_and(|l| l == *tag))
+                    .map(|(_, name)| name.as_str())
+            })
+            .unwrap_or(&self.label)
     }
 
     /// The same, shown but not to be chosen.
@@ -201,7 +227,7 @@ pub(crate) fn build(standard: &StandardMenus) -> Vec<Menu> {
             .frontends
             .iter()
             .map(|f| {
-                let entry = MenuEntry::new(format!("{FRONTEND}{}", f.id), f.label.clone())
+                let entry = MenuEntry::new(format!("{FRONTEND}{}", f.id), f.label_for(&standard.locale))
                     .checked(standard.active_frontend.as_deref() == Some(f.id.as_str()));
                 if f.disabled { entry.disabled() } else { entry }
             })

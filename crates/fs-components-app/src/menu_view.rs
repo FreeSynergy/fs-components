@@ -9,10 +9,14 @@ use std::sync::Arc;
 
 use blinc_layout::div::{Div, div};
 use blinc_layout::text;
+use blinc_layout::text_measure::measure_text;
 use blinc_theme::{RadiusToken, ThemeState};
 
 use crate::menu::{Menu, MenuEntry};
-use crate::styles::{MARK_WIDTH, MENU_GAP, MENU_LINE_HEIGHT, MENU_TEXT, MENU_WIDTH};
+use crate::styles::{
+    ARROW_WIDTH, MARK_WIDTH, MENU_CHROME, MENU_GAP, MENU_LINE_HEIGHT, MENU_TEXT, SIDE_MARGIN, SUB_MAX_WIDTH,
+    SUB_MIN_WIDTH,
+};
 
 /// What a press on a menu in the bar does: which menu, and where its panel would start.
 pub(crate) type OnTrigger = Arc<dyn Fn(usize, f32, f32) + Send + Sync>;
@@ -37,11 +41,48 @@ pub(crate) const PANEL_ID: &str = "fs-app-menu-panel";
 /// The element id of the panel of the next level.
 pub(crate) const SUB_PANEL_ID: &str = "fs-app-menu-sub-panel";
 
-/// The size of a panel, for keeping it inside the window. Long labels wrap, so the height is a floor.
-pub(crate) fn panel_size(entries: &[MenuEntry]) -> (f32, f32) {
+/// The size of a panel `width` wide, for keeping it inside the window. Long labels wrap, so the height is a floor.
+pub(crate) fn panel_size(entries: &[MenuEntry], width: f32) -> (f32, f32) {
     #[allow(clippy::cast_precision_loss)] // a menu has far fewer lines than 2^23
     let lines = entries.len() as f32;
-    (MENU_WIDTH, lines * MENU_LINE_HEIGHT)
+    (width, lines * MENU_LINE_HEIGHT)
+}
+
+/// How wide the panel of a next level must be for its longest line not to wrap: the widest label measured with the font of the
+/// menus, plus the paddings, the column of marks and the arrow where there are some; at least `SUB_MIN_WIDTH`, at most
+/// `SUB_MAX_WIDTH`, and never wider than the window less its margins. Needs Blinc's text measurer (set up by the window).
+pub(crate) fn content_width(entries: &[MenuEntry], window: f32) -> f32 {
+    let text = entries
+        .iter()
+        .map(|e| measure_text(&e.label, MENU_TEXT).width)
+        .fold(0.0, f32::max);
+    let marks = if entries.iter().any(|e| e.checked) { MARK_WIDTH } else { 0.0 };
+    let arrow = if entries.iter().any(|e| !e.children.is_empty()) { ARROW_WIDTH } else { 0.0 };
+    let wide = (text + marks + arrow + MENU_CHROME).clamp(SUB_MIN_WIDTH, SUB_MAX_WIDTH);
+    if window > 0.0 { wide.min((window - 2.0 * SIDE_MARGIN).max(1.0)) } else { wide }
+}
+
+/// Does the next level of a line fold to the left of its panel? Yes where it would end beyond the window on the right.
+/// `left` and `width` are the line's (the panel's), `sub` the width of the next level. One rule for the place of the next
+/// level and for the direction of the arrow, so they cannot disagree.
+pub(crate) fn folds_left(left: f32, width: f32, sub: f32, window: f32) -> bool {
+    window > 0.0 && left + width + sub + SIDE_MARGIN > window
+}
+
+/// The arrow on a line that opens a next level: to the right, or to the left where the next level folds to the left.
+pub(crate) fn arrow(left: bool) -> &'static str {
+    if left { "\u{25c2}" } else { "\u{25b8}" }
+}
+
+/// What a panel needs to know besides its entries.
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub(crate) struct Look {
+    /// The position of the line whose next level is open.
+    pub(crate) open_sub: Option<usize>,
+    /// The next level folds to the left of this panel.
+    pub(crate) arrow_left: bool,
+    /// The width of the panel in pixels.
+    pub(crate) width: f32,
 }
 
 /// The row of menus; `None` if there is nothing to show, then the title bar stays as it was.
@@ -81,16 +122,17 @@ fn trigger(index: usize, menu: &Menu, on_trigger: &OnTrigger) -> Div {
 }
 
 /// The panel of an open menu. Builds plain elements only: it runs under the lock of Blinc's overlay stack.
-pub(crate) fn panel(index: usize, menu: &Menu, calls: &Callbacks) -> Div {
-    one_panel(PANEL_ID, index, &menu.entries, calls)
+pub(crate) fn panel(index: usize, menu: &Menu, look: Look, calls: &Callbacks) -> Div {
+    one_panel(PANEL_ID, index, &menu.entries, look, calls)
 }
 
 /// The panel of the next level, in an overlay of its own (so it can be moved or folded to the left without moving the first).
-pub(crate) fn sub_panel(index: usize, entries: &[MenuEntry], calls: &Callbacks) -> Div {
-    one_panel(SUB_PANEL_ID, index, entries, calls)
+pub(crate) fn sub_panel(index: usize, entries: &[MenuEntry], width: f32, calls: &Callbacks) -> Div {
+    let look = Look { width, ..Look::default() };
+    one_panel(SUB_PANEL_ID, index, entries, look, calls)
 }
 
-fn one_panel(id: &str, index: usize, entries: &[MenuEntry], calls: &Callbacks) -> Div {
+fn one_panel(id: &str, index: usize, entries: &[MenuEntry], look: Look, calls: &Callbacks) -> Div {
     let radius = ThemeState::get().radius(RadiusToken::Md);
     let marks = entries.iter().any(|e| e.checked);
     let mut panel = div()
@@ -103,17 +145,24 @@ fn one_panel(id: &str, index: usize, entries: &[MenuEntry], calls: &Callbacks) -
         .rounded(radius)
         .overflow_clip()
         .h_fit()
-        .w(MENU_WIDTH);
+        .w(look.width);
     for (position, entry) in entries.iter().enumerate() {
-        panel = panel.child(line(index, position, entry, marks, calls));
+        panel = panel.child(line(index, position, entry, (marks, look), calls));
     }
     panel
 }
 
 /// A line takes a press even when disabled: a line without a handler could keep the handler of the
-/// line it replaces (`DESIGN.md`), and the shell refuses a disabled entry anyway. A line with a next level opens it
-/// ; a line in a group with a chosen one leaves room for the mark.
-fn line(index: usize, position: usize, entry: &MenuEntry, marks: bool, calls: &Callbacks) -> Div {
+/// line it replaces (`DESIGN.md`), and the shell refuses a disabled entry anyway. A line with a next level opens it, shows an
+/// arrow towards the side it opens to, and says `aria-expanded` while it is open; a line in a group with a chosen one leaves
+/// room for the mark.
+pub(crate) fn line(
+    index: usize,
+    position: usize,
+    entry: &MenuEntry,
+    (marks, look): (bool, Look),
+    calls: &Callbacks,
+) -> Div {
     let (choose, sub, id) = (
         Arc::clone(&calls.choose),
         Arc::clone(&calls.sub),
@@ -127,7 +176,7 @@ fn line(index: usize, position: usize, entry: &MenuEntry, marks: bool, calls: &C
     }
     row = row.child(div().flex_grow().child(label(&entry.label)));
     if opens {
-        row = row.child(label("\u{25b8}"));
+        row = row.child(label(arrow(look.arrow_left)));
     }
     let mut line = div()
         .id(format!("fs-app-menu-entry-{}", entry.id))
@@ -145,6 +194,7 @@ fn line(index: usize, position: usize, entry: &MenuEntry, marks: bool, calls: &C
         .attr_when("disabled", "", entry.disabled)
         .attr_when("aria-checked", "true", entry.checked)
         .attr_when("aria-haspopup", "menu", opens)
+        .attr_when("aria-expanded", "true", opens && look.open_sub == Some(position))
         .w_full()
         .h_fit()
         // The same as `.cn-menubar-item`: class rules can drop on a rebuilt overlay (a note in `blinc_cn`).

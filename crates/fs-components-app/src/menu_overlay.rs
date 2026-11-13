@@ -14,10 +14,11 @@ use blinc_layout::widgets::overlay_stack::{OverlayBuilder, OverlayHandle};
 
 use crate::menu::MenuEntry;
 use crate::menu_view::{
-    Anchor, BAR_ID, Callbacks, PANEL_ID, SUB_PANEL_ID, panel, panel_size, sub_panel,
+    Anchor, BAR_ID, Callbacks, Look, PANEL_ID, SUB_PANEL_ID, content_width, folds_left, panel,
+    panel_size, sub_panel,
 };
 use crate::shell::Shell;
-use crate::styles::MENU_WIDTH;
+use crate::styles::{MENU_WIDTH, SIDE_MARGIN};
 use crate::widget::locked;
 
 /// The key of the one registration for a press outside.
@@ -83,26 +84,29 @@ pub(crate) fn toggle_sub(
     }
     let Some(children) = children else { return };
     let index = locked(shell).open_menu().unwrap_or(0);
-    let raw = show_sub(shell, index, children, sub_position(anchor), calls);
+    let window = window_width();
+    let width = content_width(&children, window);
+    let at = sub_position(anchor, width, window);
+    let raw = show_sub(shell, index, children, (at, width), calls);
     locked(shell).set_sub_overlay(raw);
     watch_outside(shell);
 }
 
-/// Where the next level starts: at the right edge of the line, level with it; at its left edge minus the width if the window
-/// ends before the right-hand place does (never off the window).
-fn sub_position((left, top, width): Anchor) -> (f32, f32) {
-    let window = overlay_stack().lock().map_or(f32::MAX, |s| s.viewport().0);
-    let right = left + width;
-    let x = if window > 0.0 && right + MENU_WIDTH + SIDE_MARGIN > window {
-        (left - MENU_WIDTH).max(SIDE_MARGIN)
+fn window_width() -> f32 {
+    overlay_stack().lock().map_or(0.0, |s| s.viewport().0)
+}
+
+/// Where the next level starts: at the right edge of the line, level with it; at the left edge of the line minus its own width
+/// if the window ends before the right-hand place does (`folds_left`), but never off the window.
+fn sub_position(anchor: Anchor, sub: f32, window: f32) -> (f32, f32) {
+    let (left, top, line) = anchor;
+    let x = if folds_left(left, line, sub, window) {
+        (left - sub).max(SIDE_MARGIN)
     } else {
-        right
+        left + line
     };
     (x, top)
 }
-
-/// The room Blinc keeps between an overlay and the window's edge.
-const SIDE_MARGIN: f32 = 8.0;
 
 /// Ask for a press outside the bar and the panel. Blinc forgets this at every full rebuild, so the
 /// build asks again while a menu is open.
@@ -124,11 +128,22 @@ fn show(
     calls: &Callbacks,
 ) -> u64 {
     let calls = calls.clone();
-    let (width, height) = panel_size(&menu.entries);
+    let window = window_width();
+    // Where Blinc will put the panel: it moves one that would cross the right edge.
+    let left = if window > 0.0 { x.min(window - MENU_WIDTH - SIDE_MARGIN).max(SIDE_MARGIN) } else { x };
+    let widest = menu
+        .entries
+        .iter()
+        .filter(|e| !e.children.is_empty())
+        .map(|e| content_width(&e.children, window))
+        .fold(0.0, f32::max);
+    let arrow_left = widest > 0.0 && folds_left(left, MENU_WIDTH, widest, window);
+    let (width, height) = panel_size(&menu.entries, MENU_WIDTH);
     let raw = overlay_stack()
         .lock()
         .map_or(0, |stack| stack.peek_next_handle_id());
     let shell = Arc::clone(shell);
+    let reader = Arc::clone(&shell);
     OverlayBuilder::dropdown()
         .at(x, y)
         .size(width, height)
@@ -149,7 +164,13 @@ fn show(
                 OverlayHandle::from_raw(sub).close();
             }
         })
-        .content(move || panel(index, &menu, &calls))
+        .content(move || {
+            // Drawn again when the next level opens or closes (the stack rebuilds all its entries), so the line that opens it
+            // says `aria-expanded` as long as it is open. The shell's lock is taken inside the stack's, as `on_close` does.
+            let open_sub = locked(&reader).open_sub();
+            let look = Look { open_sub, arrow_left, width: MENU_WIDTH };
+            panel(index, &menu, look, &calls)
+        })
         .show()
         .raw()
 }
@@ -158,11 +179,11 @@ fn show_sub(
     shell: &Arc<Mutex<Shell>>,
     index: usize,
     entries: Vec<MenuEntry>,
-    (x, y): (f32, f32),
+    ((x, y), width): ((f32, f32), f32),
     calls: &Callbacks,
 ) -> u64 {
     let calls = calls.clone();
-    let (width, height) = panel_size(&entries);
+    let (width, height) = panel_size(&entries, width);
     let raw = overlay_stack()
         .lock()
         .map_or(0, |stack| stack.peek_next_handle_id());
@@ -179,7 +200,7 @@ fn show_sub(
                 shell.clear_open_sub();
             }
         })
-        .content(move || sub_panel(index, &entries, &calls))
+        .content(move || sub_panel(index, &entries, width, &calls))
         .show()
         .raw()
 }
