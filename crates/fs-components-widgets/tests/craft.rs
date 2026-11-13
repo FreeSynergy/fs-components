@@ -56,7 +56,7 @@ fn a_tile_is_as_wide_as_asked_and_its_button_is_34_high() {
 #[test]
 fn the_tiles_draw_with_ink_on_a_background() {
     let _g = serial();
-    let img = draw(sample(), 420, 320, "craft-tile");
+    let img = draw(sample(), 420, 320, "craft-tile.png");
     let bg = background(&img);
     assert!(ink(&img, (0, 0, 420, 320), bg) > 200);
 }
