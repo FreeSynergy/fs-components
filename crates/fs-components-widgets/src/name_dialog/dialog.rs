@@ -42,12 +42,12 @@ pub struct NameDialog {
 }
 
 impl NameDialog {
-    /// A dialog for `purpose`; `about` fills the `{}` of the title (the parent page, the old name).
+    /// A dialog for `purpose`; `about` is the MF2 argument of the title (the parent page, the old name).
     pub fn new(labels: &Labels, purpose: Purpose, about: &str) -> Self {
         let title = match purpose {
             Purpose::NewPage => labels.new_page.clone(),
-            Purpose::SubPage => labels.sub_page.replacen("{}", about, 1),
-            Purpose::Rename => labels.rename.replacen("{}", about, 1),
+            Purpose::SubPage => labels.title_about("name-dialog-sub-page", about),
+            Purpose::Rename => labels.title_about("name-dialog-rename", about),
         };
         Self {
             id: "name-dialog".to_owned(),

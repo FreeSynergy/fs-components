@@ -26,9 +26,13 @@ pub(super) enum Look {
     Quiet,
 }
 
-/// One step of the space scale per level (a class, so the step is the theme's), in one box: no gap between steps.
-fn indent(depth: u16) -> Div {
-    let mut steps = div().flex_row().flex_shrink_0();
+/// One step of the space scale (`--space-3`) per level, in one box that every row has (also at depth 0, empty), so the
+/// row's gap lies once before the title at every depth: a child stands exactly one step right of its parent.
+fn indent(depth: u16, key: &str) -> Div {
+    let mut steps = div()
+        .id(format!("fs-wk-steps-{key}"))
+        .flex_row()
+        .flex_shrink_0();
     for _ in 0..depth {
         steps = steps.child(div().class("fs-wk-indent"));
     }
@@ -62,9 +66,7 @@ pub(super) fn tree_scroll(
             .items_center()
             .w_full()
             .id(format!("fs-wk-row-{}", node.key));
-        if node.depth > 0 {
-            line = line.child(indent(node.depth));
-        }
+        line = line.child(indent(node.depth, &node.key));
         if look == Look::Quiet {
             line = line.class("fs-wk-row-quiet");
         }

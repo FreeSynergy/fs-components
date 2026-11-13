@@ -82,13 +82,14 @@ impl BlockEditor {
         Self { edit, areas }
     }
 
-    /// Is the first block a level-1 heading (`# `)? It is then the title of the page.
-    pub fn lead_heading(&self) -> bool {
+    /// Is the first block a level-1 heading (`# `) that says the `title` (same comparison as `leads_with_title`)?
+    /// Only then it is the title of the page; another first heading stays a normal block.
+    pub fn lead_heading(&self, title: &str) -> bool {
         self.areas.first().is_some_and(|(a, _)| {
-            a.lock()
-                .unwrap_or_else(PoisonError::into_inner)
-                .value()
-                .starts_with("# ")
+            let value = a.lock().unwrap_or_else(PoisonError::into_inner).value();
+            value
+                .strip_prefix("# ")
+                .is_some_and(|rest| rest.trim() == title.trim())
         })
     }
 

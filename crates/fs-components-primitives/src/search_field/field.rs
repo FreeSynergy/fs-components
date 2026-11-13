@@ -93,13 +93,21 @@ impl SearchField {
     }
 
     /// Put `text` in the field with all of it selected (typing replaces it, an arrow key keeps it), as a field opens
-    /// with a name to change. Does not call the change handler: the caller set it.
+    /// with a name to change. Does not call the change handler: the caller set it. The undo history is emptied, so
+    /// Ctrl+Z cannot bring back an older text; the scroll position goes back to the start.
     pub fn set_text(&self, text: &str) {
         let mut d = self
             .data
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
+        // Blinc keeps both stacks private. Undo everything (undo stack empty), then one edit clears the redo stack;
+        // its single undo entry holds the very text set below, so Ctrl+Z changes nothing.
+        while d.undo() {}
         text.clone_into(&mut d.value);
+        d.move_to_end(false);
+        d.insert("-");
+        text.clone_into(&mut d.value);
+        d.scroll_offset_x = 0.0;
         d.select_all();
     }
 
@@ -145,5 +153,34 @@ impl SearchField {
             field = field.on_change(move |text| handler(text));
         }
         div().w_full().child(field)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::SearchField;
+
+    #[test]
+    fn set_text_forgets_the_undo_history() {
+        let field = SearchField::new("name");
+        {
+            let mut d = field.data.lock().unwrap();
+            d.insert("old");
+            d.insert(" text");
+        }
+        field.set_text("new");
+        let mut d = field.data.lock().unwrap();
+        // Redo has nothing; undo may step, but never to an older text.
+        assert!(!d.redo());
+        d.undo();
+        assert_eq!(d.value, "new");
+        assert!(!d.undo());
+    }
+
+    #[test]
+    fn set_text_without_history_still_sets() {
+        let field = SearchField::new("name");
+        field.set_text("李雷 ß");
+        assert_eq!(field.text(), "李雷 ß");
     }
 }

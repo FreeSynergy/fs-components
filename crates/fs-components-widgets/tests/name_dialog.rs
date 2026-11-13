@@ -69,6 +69,16 @@ fn the_title_follows_the_purpose() {
 }
 
 #[test]
+fn the_name_goes_in_as_an_argument_not_by_replacing_braces() {
+    // A name with braces comes out as it is; a `{}` replace would have treated it as a hole.
+    let l = Labels::default();
+    let dialog = NameDialog::new(&l, Purpose::Rename, "a {} b {$about}");
+    let title = dialog.title();
+    assert!(title.contains("a {} b {$about}"), "{title}");
+    assert!(title.starts_with("Rename"), "{title}");
+}
+
+#[test]
 fn enter_takes_the_trimmed_name_and_escape_leaves() {
     let _g = serial();
     let log = Log::default();

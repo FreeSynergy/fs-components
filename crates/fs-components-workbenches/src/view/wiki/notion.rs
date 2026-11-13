@@ -129,7 +129,7 @@ pub(crate) fn main(
     if let Some(document) = document {
         // While editing, a first block that is a level-1 heading IS the title: drawn once, as that block.
         let title_is_block =
-            matches!((reader.editing(), blocks), (Some(_), Some(b)) if b.lead_heading());
+            matches!((reader.editing(), blocks), (Some(_), Some(b)) if b.lead_heading(&title));
         page = page.child(page_icon(info.emoji.as_deref()));
         if !title_is_block {
             page = page.child(text(&title).class("fs-wk-b-title").no_cursor());

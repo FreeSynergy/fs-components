@@ -103,9 +103,15 @@ fn a_child_stands_one_step_right_of_its_parent() {
         let laid = laid_out(&open_handbook(), look, &log);
         let parent = x_of(&laid, "fs-wk-arrow-handbook.md");
         let child = x_of(&laid, "fs-wk-arrow-handbook/chapter-one.md");
+        // The step is the width of the child's indent box: exactly one `--space-3`, no extra gap on top.
+        let node = laid
+            .query_by_id("fs-wk-steps-handbook/chapter-one.md")
+            .expect("indent box");
+        let step = laid.get_absolute_bounds(node).expect("bounds").width;
+        assert!(step > 8.0, "the step is missing ({step})");
         assert!(
-            child >= parent + 16.0,
-            "the child is not indented ({child} against {parent})"
+            ((child - parent) - step).abs() < 0.5,
+            "the child is not exactly one step right ({child} against {parent}, step {step})"
         );
     }
 }
