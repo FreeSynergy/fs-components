@@ -8,9 +8,11 @@ pub(crate) fn styles() -> String {
 
 const SHARED: &str = r"
 .fs-wk-root { display: flex; background: #ffffff; color: var(--text-primary); font-family: var(--font-sans); }
-.fs-wk-row { height: 30px; gap: 6px; padding-right: 8px; border-radius: 6px; cursor: pointer; }
+.fs-wk-row { height: 30px; gap: var(--space-1); padding-left: var(--space-1); padding-right: 8px; border-radius: 6px; cursor: pointer; }
 .fs-wk-row:hover { background: var(--accent-subtle); }
 .fs-wk-row-here { background: var(--selection); color: var(--accent); }
+.fs-wk-body { gap: var(--space-1); }
+.fs-wk-indent { width: var(--space-3); flex-shrink: 0; }
 .fs-wk-folder { font-weight: 600; }
 .fs-wk-panel { padding: 16px; gap: 6px; }
 .fs-wk-panel-title { font-size: 12px; font-weight: 700; color: var(--text-secondary); padding-bottom: 4px; }

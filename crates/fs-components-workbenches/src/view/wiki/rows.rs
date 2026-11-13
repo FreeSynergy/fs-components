@@ -10,6 +10,10 @@ use fs_components_widgets::icon::{Glyph, Tone, icon};
 use super::tree::PageTree;
 use crate::view::Actions;
 
+/// Width of the arrow place (and of the blank that stands in for it), the size of its icon: the title of a row
+/// starts at the same x whether the row has an arrow or not.
+const ARROW: f32 = 14.0;
+
 /// Most rows built at once: a guard, the open folders of a real tree stay far below.
 const MOST_ROWS: usize = 1500;
 
@@ -48,7 +52,15 @@ pub(super) fn tree_scroll(
             .flex_row()
             .items_center()
             .w_full()
-            .pl(f32::from(node.depth) * 4.0 + 2.0);
+            .id(format!("fs-wk-row-{}", node.key));
+        // One step of the space scale per level (a class, so the step is the theme's), in one box: no gap between steps.
+        if node.depth > 0 {
+            let mut steps = div().flex_row().flex_shrink_0();
+            for _ in 0..node.depth {
+                steps = steps.child(div().class("fs-wk-indent"));
+            }
+            line = line.child(steps);
+        }
         if look == Look::Quiet {
             line = line.class("fs-wk-row-quiet");
         }
@@ -69,14 +81,23 @@ pub(super) fn tree_scroll(
             } else {
                 Glyph::ChevronRight
             };
-            let arrow = div().child(icon(chevron, 14.0, Tone::Muted));
+            let arrow = div()
+                .w(ARROW)
+                .flex_shrink_0()
+                .id(format!("fs-wk-arrow-{}", node.key))
+                .child(icon(chevron, ARROW, Tone::Muted));
             line = line.child(if plain_folder {
                 arrow
             } else {
                 arrow.on_click(move |_| toggle())
             });
         } else {
-            line = line.child(div().w(14.0));
+            line = line.child(
+                div()
+                    .w(ARROW)
+                    .flex_shrink_0()
+                    .id(format!("fs-wk-arrow-{}", node.key)),
+            );
         }
         let glyph = if plain_folder {
             Glyph::Folder
@@ -96,11 +117,15 @@ pub(super) fn tree_scroll(
             label
         };
         line = if node.folder && node.page {
-            // The title part opens the page; the arrow before it expands.
+            // Everything after the arrow, down to the free rest of the row, opens the page; the arrow expands.
             line.child(
                 div()
                     .flex_row()
+                    .flex_1()
+                    .h_full()
                     .items_center()
+                    .class("fs-wk-body")
+                    .id(format!("fs-wk-title-{}", node.key))
                     .on_click(move |_| open())
                     .child(kind)
                     .child(label),

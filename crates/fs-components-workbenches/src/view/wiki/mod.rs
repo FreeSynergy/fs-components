@@ -14,6 +14,8 @@ mod rows;
 mod styles;
 mod tree;
 #[cfg(test)]
+mod rows_tests;
+#[cfg(test)]
 mod tree_tests;
 
 pub(crate) use blocks::BlockEditor;
