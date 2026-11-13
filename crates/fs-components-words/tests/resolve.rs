@@ -102,25 +102,44 @@ fn a_broken_setting_file_is_reported_and_the_chain_goes_on_for_every_caller() {
     let d = std::env::temp_dir().join(format!("fs-words-resolve-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&d);
     std::fs::create_dir_all(&d).unwrap();
-    let (own, shared) = (LanguageSetting::new(d.join("own")), LanguageSetting::new(d.join("shared")));
+    let (own, shared) = (
+        LanguageSetting::new(d.join("own")),
+        LanguageSetting::new(d.join("shared")),
+    );
     let e = env(&[("LANG", "de_DE.UTF-8")]);
     // Both files good: the override wins, nothing to report.
     own.save(Some(&loc("en"))).unwrap();
     shared.save(Some(&loc("ja"))).unwrap();
     let r = load_and_resolve(Some(&own), Some(&shared), &e, SUPPORTED);
-    assert_eq!((r.chosen.locale.to_string(), r.chosen.source, r.problems.len()), ("en".into(), S::Program, 0));
+    assert_eq!(
+        (
+            r.chosen.locale.to_string(),
+            r.chosen.source,
+            r.problems.len()
+        ),
+        ("en".into(), S::Program, 0)
+    );
     // The override is broken: reported, the shared setting answers.
     std::fs::write(own.file(), "###").unwrap();
     let r = load_and_resolve(Some(&own), Some(&shared), &e, SUPPORTED);
-    assert_eq!((r.chosen.locale.to_string(), r.chosen.source), ("ja".into(), S::Shared));
+    assert_eq!(
+        (r.chosen.locale.to_string(), r.chosen.source),
+        ("ja".into(), S::Shared)
+    );
     assert_eq!(r.problems.len(), 1);
     // Both broken: two reports, the environment answers.
     std::fs::write(shared.file(), "x".repeat(500)).unwrap();
     let r = load_and_resolve(Some(&own), Some(&shared), &e, SUPPORTED);
-    assert_eq!((r.chosen.locale.to_string(), r.chosen.source), ("de-DE".into(), S::Environment("LANG")));
+    assert_eq!(
+        (r.chosen.locale.to_string(), r.chosen.source),
+        ("de-DE".into(), S::Environment("LANG"))
+    );
     assert_eq!(r.problems.len(), 2);
     // No place for a setting at all: the environment, no report.
     let r = load_and_resolve(None, None, &e, SUPPORTED);
-    assert_eq!((r.chosen.source, r.problems.len()), (S::Environment("LANG"), 0));
+    assert_eq!(
+        (r.chosen.source, r.problems.len()),
+        (S::Environment("LANG"), 0)
+    );
     let _ = std::fs::remove_dir_all(d);
 }

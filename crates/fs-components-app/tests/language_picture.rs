@@ -15,7 +15,8 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use fs_components_app::{
-    AppWidget, FileLanguageControl, FrontendItem, MenuEntry, Screen, StandardCallbacks, StandardMenus,
+    AppWidget, FileLanguageControl, FrontendItem, MenuEntry, Screen, StandardCallbacks,
+    StandardMenus,
 };
 use fs_components_render::{Canvas, RenderError, draw_to_png};
 use fs_components_words::{LanguageSetting, Locale};
@@ -35,13 +36,24 @@ fn app(lang: &str, dir: &std::path::Path) -> AppWidget {
         Arc::new(env),
         vec![tag("de"), tag("en")],
     ));
-    let app = AppWidget::new("FreeSynergy Demo", vec![Screen::new("one", "One", Arc::new(Target::default()))]).unwrap();
+    let app = AppWidget::new(
+        "FreeSynergy Demo",
+        vec![Screen::new("one", "One", Arc::new(Target::default()))],
+    )
+    .unwrap();
     let mut standard = StandardMenus::new(fs_components_app_resolve(&control));
-    standard.views = vec![MenuEntry::new("tiles", "Tiles"), MenuEntry::new("list", "List")];
-    standard.frontends = vec![FrontendItem::new("storefront", "Storefront"), FrontendItem::new("compact", "Compact")];
+    standard.views = vec![
+        MenuEntry::new("tiles", "Tiles"),
+        MenuEntry::new("list", "List"),
+    ];
+    standard.frontends = vec![
+        FrontendItem::new("storefront", "Storefront"),
+        FrontendItem::new("compact", "Compact"),
+    ];
     standard.active_frontend = Some("storefront".into());
     standard.language = Some(control);
-    app.set_standard_menus(standard, StandardCallbacks::new(|_| {})).unwrap();
+    app.set_standard_menus(standard, StandardCallbacks::new(|_| {}))
+        .unwrap();
     app
 }
 
@@ -51,8 +63,10 @@ fn fs_components_app_resolve(control: &FileLanguageControl) -> Locale {
 }
 
 fn out_dir() -> PathBuf {
-    let dir = std::env::var_os("FS_COMP_SHOTS")
-        .map_or_else(|| std::env::temp_dir().join(format!("fs-app-lang-{}", std::process::id())), PathBuf::from);
+    let dir = std::env::var_os("FS_COMP_SHOTS").map_or_else(
+        || std::env::temp_dir().join(format!("fs-app-lang-{}", std::process::id())),
+        PathBuf::from,
+    );
     std::fs::create_dir_all(&dir).unwrap();
     dir
 }
@@ -100,16 +114,24 @@ fn the_standard_menus_in_german_and_english_differ_in_the_words_and_open_a_next_
         return;
     };
     let bar_differs = (0..SIZE.0).any(|x| de[0].get_pixel(x, 22) != en[0].get_pixel(x, 22));
-    assert!(bar_differs, "the words of the bar are drawn in the language");
+    assert!(
+        bar_differs,
+        "the words of the bar are drawn in the language"
+    );
     for (lang, [closed, language, frontends]) in [("de", &de), ("en", &en)] {
         for (name, open) in [("language", language), ("frontends", frontends)] {
             // An open menu with its next level covers part of the work area that the closed window shows empty.
-            let covered = (60..SIZE.1 - 40).any(|y| (150..560).any(|x| open.get_pixel(x, y) != closed.get_pixel(x, y)));
+            let covered = (60..SIZE.1 - 40)
+                .any(|y| (150..560).any(|x| open.get_pixel(x, y) != closed.get_pixel(x, y)));
             assert!(covered, "{lang}: the {name} menu is drawn over the window");
         }
         assert_ne!(language, frontends, "{lang}: two different menus");
     }
     for (x, y) in [(20, 280), (620, 200)] {
-        assert_eq!(de[0].get_pixel(x, y), en[0].get_pixel(x, y), "the work area at {x},{y} is the same in both languages");
+        assert_eq!(
+            de[0].get_pixel(x, y),
+            en[0].get_pixel(x, y),
+            "the work area at {x},{y} is the same in both languages"
+        );
     }
 }

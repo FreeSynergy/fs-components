@@ -174,14 +174,54 @@ fn every_pairing_rule_fires_on_its_own_fault() {
 
 #[test]
 fn a_source_language_is_normalised_so_de_at_in_any_case_is_the_same() {
-    let en = Source { language: "EN", text: "a = A" };
-    let de = Source { language: "de-at", text: "a = Ein A" };
-    assert_eq!(check_pairs(&[en, de]), ["no source for de".to_owned()], "de-AT is not de");
+    let en = Source {
+        language: "EN",
+        text: "a = A",
+    };
+    let de = Source {
+        language: "de-at",
+        text: "a = Ein A",
+    };
+    assert_eq!(
+        check_pairs(&[en, de]),
+        ["no source for de".to_owned()],
+        "de-AT is not de"
+    );
     let texts = Mf2Texts::new(&[en, de], &Locale::parse("de-AT").unwrap());
-    assert_eq!(texts.plain("a"), "Ein A", "the source named de-at serves the locale de-AT");
+    assert_eq!(
+        texts.plain("a"),
+        "Ein A",
+        "the source named de-at serves the locale de-AT"
+    );
     // Two names for one language, and a name that is no tag, are faults.
-    let twice = [Source { language: "en", text: "a = A" }, Source { language: "EN", text: "a = B" }, Source { language: "de", text: "a = A" }];
-    assert!(check_pairs(&twice).iter().any(|p| p.contains("two sources")));
-    let bad = [Source { language: "en", text: "a = A" }, Source { language: "de_DE", text: "a = A" }];
+    let twice = [
+        Source {
+            language: "en",
+            text: "a = A",
+        },
+        Source {
+            language: "EN",
+            text: "a = B",
+        },
+        Source {
+            language: "de",
+            text: "a = A",
+        },
+    ];
+    assert!(
+        check_pairs(&twice)
+            .iter()
+            .any(|p| p.contains("two sources"))
+    );
+    let bad = [
+        Source {
+            language: "en",
+            text: "a = A",
+        },
+        Source {
+            language: "de_DE",
+            text: "a = A",
+        },
+    ];
     assert!(check_pairs(&bad).iter().any(|p| p.contains("de_DE")));
 }

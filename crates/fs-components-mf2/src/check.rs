@@ -15,11 +15,7 @@ type Vars = BTreeSet<String>;
 
 fn read(source: &Source, language: &str, problems: &mut Vec<String>) -> BTreeMap<String, Vars> {
     let (list, found) = entries(source.text);
-    problems.extend(
-        found
-            .into_iter()
-            .map(|p| format!("{language}: {p}")),
-    );
+    problems.extend(found.into_iter().map(|p| format!("{language}: {p}")));
     let mut out = BTreeMap::new();
     for e in list {
         match mf2::compile_str(&e.message, language) {

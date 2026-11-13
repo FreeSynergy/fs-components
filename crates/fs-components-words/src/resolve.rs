@@ -121,10 +121,12 @@ pub fn load_and_resolve(
 ) -> Resolved {
     let mut problems = Vec::new();
     let mut read = |s: Option<&LanguageSetting>| {
-        s.and_then(|s| s.load().unwrap_or_else(|why| {
-            problems.push(why);
-            None
-        }))
+        s.and_then(|s| {
+            s.load().unwrap_or_else(|why| {
+                problems.push(why);
+                None
+            })
+        })
     };
     let (program, shared) = (read(program), read(shared));
     Resolved {

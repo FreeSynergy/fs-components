@@ -59,7 +59,12 @@ impl FileLanguageControl {
         env: Arc<dyn Env + Send + Sync>,
         available: Vec<Locale>,
     ) -> Self {
-        Self { program, shared, env, available }
+        Self {
+            program,
+            shared,
+            env,
+            available,
+        }
     }
 
     fn file(&self, scope: Scope) -> Option<&LanguageSetting> {
@@ -84,11 +89,18 @@ impl LanguageControl for FileLanguageControl {
 
     fn resolve(&self) -> Resolved {
         let supported: Vec<&str> = self.available.iter().map(Locale::primary).collect();
-        load_and_resolve(self.program.as_ref(), self.shared.as_ref(), self.env.as_ref(), &supported)
+        load_and_resolve(
+            self.program.as_ref(),
+            self.shared.as_ref(),
+            self.env.as_ref(),
+            &supported,
+        )
     }
 
     fn choose(&self, scope: Scope, choice: &LanguageChoice) -> Result<Locale, String> {
-        let file = self.file(scope).ok_or("there is no folder to keep the language in")?;
+        let file = self
+            .file(scope)
+            .ok_or("there is no folder to keep the language in")?;
         match choice {
             LanguageChoice::System => file.save(None)?,
             LanguageChoice::Language(locale) => file.save(Some(locale))?,

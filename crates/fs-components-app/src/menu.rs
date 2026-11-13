@@ -38,7 +38,11 @@ impl MenuEntry {
 
     /// A line that opens a next level of lines. It is no choice itself: its `id` is only a name for the element, and
     /// the handler never receives it.
-    pub fn submenu(id: impl Into<String>, label: impl Into<String>, children: Vec<MenuEntry>) -> Self {
+    pub fn submenu(
+        id: impl Into<String>,
+        label: impl Into<String>,
+        children: Vec<MenuEntry>,
+    ) -> Self {
         Self {
             children,
             ..Self::new(id, label)

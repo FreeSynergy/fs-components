@@ -35,8 +35,12 @@ fn base(xdg: Option<OsString>, home: Option<OsString>) -> Option<PathBuf> {
 /// A program name is an identifier: lower-case letters, digits and `-`, starting with a letter or digit. It becomes a folder
 /// name, so no `/`, no `..`, no absolute path.
 fn name_ok(name: &str) -> bool {
-    name.bytes().next().is_some_and(|b| b.is_ascii_lowercase() || b.is_ascii_digit())
-        && name.bytes().all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-')
+    name.bytes()
+        .next()
+        .is_some_and(|b| b.is_ascii_lowercase() || b.is_ascii_digit())
+        && name
+            .bytes()
+            .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-')
 }
 
 impl LanguageSetting {
@@ -53,12 +57,18 @@ impl LanguageSetting {
 
     /// The override of `program`, from `$XDG_CONFIG_HOME` and `$HOME`. `None` if the name is no identifier (see
     /// `name_ok`: `a-z`, `0-9`, `-`) or there is no folder to keep it in.
-    pub fn program(program: &str, xdg_config: Option<OsString>, home: Option<OsString>) -> Option<Self> {
+    pub fn program(
+        program: &str,
+        xdg_config: Option<OsString>,
+        home: Option<OsString>,
+    ) -> Option<Self> {
         if !name_ok(program) {
             return None;
         }
         let dir = base(xdg_config, home)?;
-        Some(Self::new(dir.join("freesynergy").join(program).join("language")))
+        Some(Self::new(
+            dir.join("freesynergy").join(program).join("language"),
+        ))
     }
 
     /// The file.
@@ -90,7 +100,8 @@ impl LanguageSetting {
         if bytes.len() as u64 > MAX_BYTES {
             return Err(format!("{shown} holds no language: too large"));
         }
-        let text = String::from_utf8(bytes).map_err(|_| format!("{shown} holds no language: not text"))?;
+        let text =
+            String::from_utf8(bytes).map_err(|_| format!("{shown} holds no language: not text"))?;
         let tag = text.trim();
         if tag.is_empty() {
             return Ok(None);
@@ -114,9 +125,14 @@ impl LanguageSetting {
                 _ => Ok(()),
             };
         };
-        let dir = self.file.parent().ok_or_else(|| format!("{}: no folder", self.file.display()))?;
+        let dir = self
+            .file
+            .parent()
+            .ok_or_else(|| format!("{}: no folder", self.file.display()))?;
         std::fs::create_dir_all(dir).map_err(fail)?;
-        let temp = self.file.with_extension(format!("{}.tmp", std::process::id()));
+        let temp = self
+            .file
+            .with_extension(format!("{}.tmp", std::process::id()));
         let written = create_new(&temp).and_then(|mut f| {
             f.write_all(format!("{locale}\n").as_bytes())?;
             f.sync_all()
@@ -133,7 +149,12 @@ impl LanguageSetting {
 
 /// A new file; a leftover of a crashed run under the same name (not a folder) is removed once, a link is removed, not followed.
 fn create_new(path: &Path) -> std::io::Result<std::fs::File> {
-    let open = || std::fs::OpenOptions::new().write(true).create_new(true).open(path);
+    let open = || {
+        std::fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(path)
+    };
     match open() {
         Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {
             std::fs::remove_file(path)?;

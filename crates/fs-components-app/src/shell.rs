@@ -160,7 +160,11 @@ impl Shell {
             .and_then(|m| m.entries.get(position))
             .is_some_and(|e| !e.children.is_empty() && !e.disabled);
         if has {
-            self.open_sub = if self.open_sub == Some(position) { None } else { Some(position) };
+            self.open_sub = if self.open_sub == Some(position) {
+                None
+            } else {
+                Some(position)
+            };
         }
         has
     }

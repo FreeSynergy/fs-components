@@ -42,7 +42,11 @@ pub struct FrontendItem {
 impl FrontendItem {
     /// A frontend that can be chosen.
     pub fn new(id: impl Into<String>, label: impl Into<String>) -> Self {
-        Self { id: id.into(), label: label.into(), disabled: false }
+        Self {
+            id: id.into(),
+            label: label.into(),
+            disabled: false,
+        }
     }
 
     /// The same, shown but not to be chosen.
@@ -73,7 +77,14 @@ pub struct StandardMenus {
 impl StandardMenus {
     /// Standard menus in this language, with Settings and nothing else yet.
     pub fn new(locale: Locale) -> Self {
-        Self { locale, views: Vec::new(), settings: true, frontends: Vec::new(), active_frontend: None, language: None }
+        Self {
+            locale,
+            views: Vec::new(),
+            settings: true,
+            frontends: Vec::new(),
+            active_frontend: None,
+            language: None,
+        }
     }
 }
 
@@ -90,7 +101,11 @@ pub struct StandardCallbacks {
 impl StandardCallbacks {
     /// `on_entry` gets the id of a line of the program: its own views, `fs.settings`, `fs.help`, `fs.about`.
     pub fn new(on_entry: impl Fn(&str) + Send + Sync + 'static) -> Self {
-        Self { entry: Arc::new(move |id: &str| on_entry(id)), frontend: Arc::new(|_| {}), language: Arc::new(|_| {}) }
+        Self {
+            entry: Arc::new(move |id: &str| on_entry(id)),
+            frontend: Arc::new(|_| {}),
+            language: Arc::new(|_| {}),
+        }
     }
 
     /// `on_frontend` gets the id of the frontend chosen; the shell then marks it.
@@ -123,10 +138,22 @@ fn say(texts: &Mf2Texts, id: &str) -> String {
 
 fn language_menu(texts: &Mf2Texts, control: &dyn LanguageControl) -> MenuEntry {
     let now = control.current(Scope::Program);
-    let mut children = vec![MenuEntry::new(format!("{LANGUAGE}system"), say(texts, "shell-language-system")).checked(now == LanguageChoice::System)];
+    let mut children = vec![
+        MenuEntry::new(
+            format!("{LANGUAGE}system"),
+            say(texts, "shell-language-system"),
+        )
+        .checked(now == LanguageChoice::System),
+    ];
     for language in control.available() {
         let checked = now == LanguageChoice::Language(language.clone());
-        children.push(MenuEntry::new(format!("{LANGUAGE}{language}"), language_name(texts, &language)).checked(checked));
+        children.push(
+            MenuEntry::new(
+                format!("{LANGUAGE}{language}"),
+                language_name(texts, &language),
+            )
+            .checked(checked),
+        );
     }
     MenuEntry::submenu("fs.language", say(texts, "shell-language"), children)
 }
@@ -153,14 +180,21 @@ fn build(standard: &StandardMenus) -> Vec<Menu> {
                 if f.disabled { entry.disabled() } else { entry }
             })
             .collect();
-        view.push(MenuEntry::submenu("fs.frontends", say(&texts, "shell-frontends"), children));
+        view.push(MenuEntry::submenu(
+            "fs.frontends",
+            say(&texts, "shell-frontends"),
+            children,
+        ));
     }
     vec![
         Menu::new(say(&texts, "shell-menu-program"), program),
         Menu::new(say(&texts, "shell-menu-view"), view),
         Menu::new(
             say(&texts, "shell-menu-help"),
-            vec![MenuEntry::new(HELP, say(&texts, "shell-help")), MenuEntry::new(ABOUT, say(&texts, "shell-about"))],
+            vec![
+                MenuEntry::new(HELP, say(&texts, "shell-help")),
+                MenuEntry::new(ABOUT, say(&texts, "shell-about")),
+            ],
         ),
     ]
 }
@@ -171,8 +205,18 @@ impl AppWidget {
     ///
     /// # Errors
     /// [`AppError::DuplicateMenuEntry`] if the program's views use an id twice (or an id of the shell).
-    pub fn set_standard_menus(&self, standard: StandardMenus, callbacks: StandardCallbacks) -> Result<(), AppError> {
-        *self.standard.lock().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(Installed { standard, callbacks });
+    pub fn set_standard_menus(
+        &self,
+        standard: StandardMenus,
+        callbacks: StandardCallbacks,
+    ) -> Result<(), AppError> {
+        *self
+            .standard
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(Installed {
+            standard,
+            callbacks,
+        });
         self.install_standard()
     }
 
@@ -203,7 +247,12 @@ impl AppWidget {
     }
 
     fn change(&self, edit: impl FnOnce(&mut Installed)) -> Result<(), AppError> {
-        match self.standard.lock().unwrap_or_else(std::sync::PoisonError::into_inner).as_mut() {
+        match self
+            .standard
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .as_mut()
+        {
             Some(installed) => edit(installed),
             None => return Err(AppError::NoStandardMenus),
         }
@@ -212,8 +261,13 @@ impl AppWidget {
 
     fn install_standard(&self) -> Result<(), AppError> {
         let menus = {
-            let guard = self.standard.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
-            let Some(installed) = guard.as_ref() else { return Err(AppError::NoStandardMenus) };
+            let guard = self
+                .standard
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            let Some(installed) = guard.as_ref() else {
+                return Err(AppError::NoStandardMenus);
+            };
             build(&installed.standard)
         };
         let this = self.clone();
@@ -223,7 +277,10 @@ impl AppWidget {
     /// One id of the standard menus: the shell answers its own, the rest goes to the program.
     fn answer(&self, id: &str) {
         let (callbacks, control) = {
-            let guard = self.standard.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+            let guard = self
+                .standard
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
             let Some(i) = guard.as_ref() else { return };
             (i.callbacks.clone(), i.standard.language.clone())
         };
@@ -241,7 +298,12 @@ impl AppWidget {
         }
     }
 
-    fn change_language(&self, control: &dyn LanguageControl, tag: &str, callbacks: &StandardCallbacks) {
+    fn change_language(
+        &self,
+        control: &dyn LanguageControl,
+        tag: &str,
+        callbacks: &StandardCallbacks,
+    ) {
         let choice = if tag == "system" {
             LanguageChoice::System
         } else if let Ok(locale) = Locale::parse(tag) {
@@ -259,14 +321,20 @@ impl AppWidget {
             Err(why) => {
                 let locale = self.with_standard(|s| s.locale.clone());
                 let text = shell_texts(&locale.unwrap_or_else(Locale::english));
-                let message = text.say(&TextId::new("shell-language-failed"), &Args::new().text("reason", why));
+                let message = text.say(
+                    &TextId::new("shell-language-failed"),
+                    &Args::new().text("reason", why),
+                );
                 self.set_status(Some(Status::Problem(message.text().to_owned())));
             }
         }
     }
 
     fn with_standard<T>(&self, read: impl FnOnce(&StandardMenus) -> T) -> Option<T> {
-        let guard = self.standard.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let guard = self
+            .standard
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         guard.as_ref().map(|i| read(&i.standard))
     }
 }

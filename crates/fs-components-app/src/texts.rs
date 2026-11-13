@@ -27,7 +27,11 @@ pub(crate) fn shell_texts(locale: &Locale) -> Mf2Texts {
 /// The name of a language in that language (`Deutsch`); the tag itself for a language the shell has no name for.
 pub(crate) fn language_name(texts: &Mf2Texts, language: &Locale) -> String {
     let id = format!("language-name-{}", language.as_str().to_ascii_lowercase());
-    let said = fs_components_words::Words::say(texts, &id.as_str().into(), &fs_components_words::Args::new());
+    let said = fs_components_words::Words::say(
+        texts,
+        &id.as_str().into(),
+        &fs_components_words::Args::new(),
+    );
     if said.is_found() {
         said.text().to_owned()
     } else {

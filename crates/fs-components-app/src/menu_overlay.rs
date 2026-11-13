@@ -31,12 +31,7 @@ pub(crate) fn close(shell: &Mutex<Shell>) {
 }
 
 /// Open this menu; if it is the open one, close it. Another open menu closes first.
-pub(crate) fn toggle(
-    shell: &Arc<Mutex<Shell>>,
-    index: usize,
-    at: (f32, f32),
-    calls: &Callbacks,
-) {
+pub(crate) fn toggle(shell: &Arc<Mutex<Shell>>, index: usize, at: (f32, f32), calls: &Callbacks) {
     let was_open = locked(shell).open_menu() == Some(index);
     close(shell);
     if was_open {
@@ -63,8 +58,16 @@ pub(crate) fn toggle_sub(shell: &Arc<Mutex<Shell>>, position: usize, calls: &Cal
         if !shell.toggle_sub(position) {
             return;
         }
-        let Some(index) = shell.open_menu() else { return };
-        (index, shell.menus()[index].clone(), shell.open_sub(), shell.open_at(), shell.take_overlay())
+        let Some(index) = shell.open_menu() else {
+            return;
+        };
+        (
+            index,
+            shell.menus()[index].clone(),
+            shell.open_sub(),
+            shell.open_at(),
+            shell.take_overlay(),
+        )
     };
     // The old overlay goes first; its close callback sees that it is no longer the shell's and does nothing.
     if let Some(raw) = old {
@@ -79,7 +82,11 @@ pub(crate) fn toggle_sub(shell: &Arc<Mutex<Shell>>, position: usize, calls: &Cal
 /// build asks again while a menu is open.
 pub(crate) fn watch_outside(shell: &Arc<Mutex<Shell>>) {
     let shell = Arc::clone(shell);
-    let inside = [BAR_ID.to_owned(), PANEL_ID.to_owned(), SUB_PANEL_ID.to_owned()];
+    let inside = [
+        BAR_ID.to_owned(),
+        PANEL_ID.to_owned(),
+        SUB_PANEL_ID.to_owned(),
+    ];
     click_outside::register_click_outside_multi(OUTSIDE_KEY, &inside, move || close(&shell));
 }
 

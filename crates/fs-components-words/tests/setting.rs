@@ -47,8 +47,13 @@ fn the_files_follow_the_xdg_rule() {
 
 #[test]
 fn a_program_name_is_an_identifier_never_a_path() {
-    for bad in ["", "../x", "..", ".", "/etc", "a/b", "Tasks", "-x", "a b", "a\u{e4}", "x/../y", "a.b"] {
-        assert!(LanguageSetting::program(bad, os("/c"), os("/h")).is_none(), "{bad:?}");
+    for bad in [
+        "", "../x", "..", ".", "/etc", "a/b", "Tasks", "-x", "a b", "a\u{e4}", "x/../y", "a.b",
+    ] {
+        assert!(
+            LanguageSetting::program(bad, os("/c"), os("/h")).is_none(),
+            "{bad:?}"
+        );
     }
     assert!(LanguageSetting::program("fs-files2", os("/c"), os("/h")).is_some());
 }
@@ -135,7 +140,11 @@ fn a_planted_link_at_the_temporary_name_is_not_followed() {
     let temp = d.join(format!("language.{}.tmp", std::process::id()));
     std::os::unix::fs::symlink(&victim, &temp).unwrap();
     s.save(Some(&Locale::parse("de").unwrap())).unwrap();
-    assert_eq!(std::fs::read_to_string(&victim).unwrap(), "keep me", "the link was replaced, not written through");
+    assert_eq!(
+        std::fs::read_to_string(&victim).unwrap(),
+        "keep me",
+        "the link was replaced, not written through"
+    );
     assert_eq!(s.load().unwrap().unwrap().to_string(), "de");
     let _ = std::fs::remove_dir_all(d);
 }

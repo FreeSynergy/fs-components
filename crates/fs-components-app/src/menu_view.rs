@@ -12,7 +12,9 @@ use blinc_layout::text;
 use blinc_theme::{RadiusToken, ThemeState};
 
 use crate::menu::{Menu, MenuEntry};
-use crate::styles::{MARK_WIDTH, MENU_GAP, MENU_LINE_HEIGHT, MENU_LINE_PITCH, MENU_TEXT, MENU_WIDTH};
+use crate::styles::{
+    MARK_WIDTH, MENU_GAP, MENU_LINE_HEIGHT, MENU_LINE_PITCH, MENU_TEXT, MENU_WIDTH,
+};
 
 /// What a press on a menu in the bar does: which menu, and where its panel would start.
 pub(crate) type OnTrigger = Arc<dyn Fn(usize, f32, f32) + Send + Sync>;
@@ -138,7 +140,11 @@ fn line(
     (marks, open_sub): (bool, Option<usize>),
     calls: &Callbacks,
 ) -> Div {
-    let (choose, sub, id) = (Arc::clone(&calls.choose), Arc::clone(&calls.sub), entry.id.clone());
+    let (choose, sub, id) = (
+        Arc::clone(&calls.choose),
+        Arc::clone(&calls.sub),
+        entry.id.clone(),
+    );
     let opens = !entry.children.is_empty();
     let mut row = div().flex_row().items_center().w_full().h_fit();
     if marks {
@@ -153,7 +159,14 @@ fn line(
         .id(format!("fs-app-menu-entry-{}", entry.id))
         .class("cn-menu-item")
         .class("cn-menubar-item")
-        .attr("role", if entry.checked { "menuitemradio" } else { "menuitem" })
+        .attr(
+            "role",
+            if entry.checked {
+                "menuitemradio"
+            } else {
+                "menuitem"
+            },
+        )
         .attr("tabindex", "-1")
         .attr_when("disabled", "", entry.disabled)
         .attr_when("aria-checked", "true", entry.checked)
