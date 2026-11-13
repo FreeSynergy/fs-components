@@ -10,7 +10,7 @@ use blinc_layout::click_outside;
 use blinc_layout::overlay_state::overlay_stack;
 use blinc_layout::widgets::overlay_stack::{OverlayBuilder, OverlayHandle};
 
-use crate::menu_view::{BAR_ID, OnChoose, PANEL_ID, panel, panel_size};
+use crate::menu_view::{BAR_ID, Callbacks, PANEL_ID, SUB_PANEL_ID, panel, panel_size};
 use crate::shell::Shell;
 use crate::widget::locked;
 
@@ -35,7 +35,7 @@ pub(crate) fn toggle(
     shell: &Arc<Mutex<Shell>>,
     index: usize,
     at: (f32, f32),
-    on_choose: &OnChoose,
+    calls: &Callbacks,
 ) {
     let was_open = locked(shell).open_menu() == Some(index);
     close(shell);
@@ -47,9 +47,30 @@ pub(crate) fn toggle(
         if !shell.open(index) {
             return;
         }
+        shell.set_open_at(at);
         shell.menus()[index].clone()
     };
-    let raw = show(shell, index, menu, at, on_choose);
+    let raw = show(shell, index, menu, (at, None), calls);
+    locked(shell).set_overlay(raw);
+    watch_outside(shell);
+}
+
+/// The next level of a line of the open menu opens, or closes if it was open: the panel is drawn again. Does nothing if
+/// no menu is open or the line has no children.
+pub(crate) fn toggle_sub(shell: &Arc<Mutex<Shell>>, position: usize, calls: &Callbacks) {
+    let (index, menu, sub, at, old) = {
+        let mut shell = locked(shell);
+        if !shell.toggle_sub(position) {
+            return;
+        }
+        let Some(index) = shell.open_menu() else { return };
+        (index, shell.menus()[index].clone(), shell.open_sub(), shell.open_at(), shell.take_overlay())
+    };
+    // The old overlay goes first; its close callback sees that it is no longer the shell's and does nothing.
+    if let Some(raw) = old {
+        OverlayHandle::from_raw(raw).close();
+    }
+    let raw = show(shell, index, menu, (at, sub), calls);
     locked(shell).set_overlay(raw);
     watch_outside(shell);
 }
@@ -58,7 +79,7 @@ pub(crate) fn toggle(
 /// build asks again while a menu is open.
 pub(crate) fn watch_outside(shell: &Arc<Mutex<Shell>>) {
     let shell = Arc::clone(shell);
-    let inside = [BAR_ID.to_owned(), PANEL_ID.to_owned()];
+    let inside = [BAR_ID.to_owned(), PANEL_ID.to_owned(), SUB_PANEL_ID.to_owned()];
     click_outside::register_click_outside_multi(OUTSIDE_KEY, &inside, move || close(&shell));
 }
 
@@ -66,11 +87,11 @@ fn show(
     shell: &Arc<Mutex<Shell>>,
     index: usize,
     menu: crate::menu::Menu,
-    (x, y): (f32, f32),
-    on_choose: &OnChoose,
+    ((x, y), sub): ((f32, f32), Option<usize>),
+    calls: &Callbacks,
 ) -> u64 {
-    let on_choose = Arc::clone(on_choose);
-    let (width, height) = panel_size(&menu);
+    let calls = calls.clone();
+    let (width, height) = panel_size(&menu, sub);
     let raw = overlay_stack()
         .lock()
         .map_or(0, |stack| stack.peek_next_handle_id());
@@ -88,7 +109,7 @@ fn show(
                 click_outside::unregister_click_outside(OUTSIDE_KEY);
             }
         })
-        .content(move || panel(index, &menu, &on_choose))
+        .content(move || panel(index, &menu, sub, &calls))
         .show()
         .raw()
 }

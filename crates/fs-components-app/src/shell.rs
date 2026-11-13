@@ -29,6 +29,8 @@ pub struct Shell {
     menus: Vec<Menu>,
     handler: Option<MenuHandler>,
     open_menu: Option<usize>,
+    open_sub: Option<usize>,
+    open_at: (f32, f32),
     overlay: Option<u64>,
     status_overlay: Option<u64>,
 }
@@ -52,6 +54,8 @@ impl Shell {
             menus: Vec::new(),
             handler: None,
             open_menu: None,
+            open_sub: None,
+            open_at: (0.0, 0.0),
             overlay: None,
             status_overlay: None,
         })
@@ -103,7 +107,7 @@ impl Shell {
         handler: impl Fn(&str) + Send + Sync + 'static,
     ) -> Result<(), AppError> {
         let mut seen = HashSet::new();
-        for entry in menus.iter().flat_map(|menu| &menu.entries) {
+        for entry in menus.iter().flat_map(Menu::all_entries) {
             if !seen.insert(entry.id.as_str()) {
                 return Err(AppError::DuplicateMenuEntry(entry.id.clone()));
             }
@@ -111,6 +115,7 @@ impl Shell {
         self.menus = menus;
         self.handler = Some(Arc::new(handler));
         self.open_menu = None;
+        self.open_sub = None;
         Ok(())
     }
 
@@ -130,6 +135,7 @@ impl Shell {
         let can = self.menus.get(index).is_some_and(|m| !m.entries.is_empty());
         if can {
             self.open_menu = Some(index);
+            self.open_sub = None;
         }
         can
     }
@@ -137,6 +143,34 @@ impl Shell {
     /// Mark no menu as open.
     pub fn close_menu(&mut self) {
         self.open_menu = None;
+        self.open_sub = None;
+    }
+
+    /// The position (in the open menu) of the line whose next level is open.
+    pub fn open_sub(&self) -> Option<usize> {
+        self.open_sub
+    }
+
+    /// Open the next level of the line at `position` of the open menu, or close it if it is the open one. Returns `false`
+    /// and changes nothing if no menu is open or that line has no children.
+    pub fn toggle_sub(&mut self, position: usize) -> bool {
+        let has = self
+            .open_menu
+            .and_then(|i| self.menus.get(i))
+            .and_then(|m| m.entries.get(position))
+            .is_some_and(|e| !e.children.is_empty() && !e.disabled);
+        if has {
+            self.open_sub = if self.open_sub == Some(position) { None } else { Some(position) };
+        }
+        has
+    }
+
+    pub(crate) fn open_at(&self) -> (f32, f32) {
+        self.open_at
+    }
+
+    pub(crate) fn set_open_at(&mut self, at: (f32, f32)) {
+        self.open_at = at;
     }
 
     /// The handler to run for this entry; `None` if the entry is unknown or disabled. Run it after
@@ -144,8 +178,8 @@ impl Shell {
     pub fn handler_for(&self, id: &str) -> Option<MenuHandler> {
         self.menus
             .iter()
-            .flat_map(|menu| &menu.entries)
-            .any(|entry| entry.id == id && !entry.disabled)
+            .flat_map(Menu::all_entries)
+            .any(|entry| entry.id == id && !entry.disabled && entry.children.is_empty())
             .then(|| self.handler.clone())
             .flatten()
     }

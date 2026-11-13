@@ -33,7 +33,7 @@ pub use fallback::Fallback;
 pub use locale::{Locale, LocaleError};
 pub use localized::Localized;
 pub use plural_rules::{EnglishPlural, PluralCategory, PluralRules, PolishPlural};
-pub use resolve::{Chosen, Env, LanguageSource, ProcessEnv, resolve};
+pub use resolve::{Chosen, Env, LanguageSource, ProcessEnv, Resolved, load_and_resolve, resolve};
 pub use said::Said;
 pub use setting::LanguageSetting;
 pub use text_id::TextId;

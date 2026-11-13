@@ -7,7 +7,7 @@
 
 use std::collections::HashMap;
 
-use crate::Locale;
+use crate::{LanguageSetting, Locale};
 
 /// Where the chosen language came from.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -99,4 +99,36 @@ pub fn resolve(
         };
     }
     posix("LANG").unwrap_or_else(|| chosen(&Locale::english(), LanguageSource::Fallback))
+}
+
+/// The chosen language and what went wrong on the way.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Resolved {
+    /// The language to speak.
+    pub chosen: Chosen,
+    /// One message per setting file that could not be used (unreadable, too large, no language tag). The caller shows them
+    /// once; the chain went on without that file.
+    pub problems: Vec<String>,
+}
+
+/// Read the two setting files and [`resolve`]: the one place that turns "broken file" into "no setting, go on down the chain",
+/// so every program does the same. `None` for a setting means the program has no place to keep it.
+pub fn load_and_resolve(
+    program: Option<&LanguageSetting>,
+    shared: Option<&LanguageSetting>,
+    env: &dyn Env,
+    supported: &[&str],
+) -> Resolved {
+    let mut problems = Vec::new();
+    let mut read = |s: Option<&LanguageSetting>| {
+        s.and_then(|s| s.load().unwrap_or_else(|why| {
+            problems.push(why);
+            None
+        }))
+    };
+    let (program, shared) = (read(program), read(shared));
+    Resolved {
+        chosen: resolve(program.as_ref(), shared.as_ref(), env, supported),
+        problems,
+    }
 }

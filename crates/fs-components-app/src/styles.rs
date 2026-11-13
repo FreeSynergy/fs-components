@@ -14,6 +14,11 @@ pub(crate) const NAV_WIDTH: f32 = 200.0;
 pub(crate) const MENU_WIDTH: f32 = 220.0;
 /// Height of a line of a menu in pixels, for keeping a panel inside the window.
 pub(crate) const MENU_LINE_HEIGHT: f32 = 36.0;
+/// The measured distance between two lines of a panel in pixels (41 with the Craft style), to put the next level level with
+/// its line. An estimate: a theme with taller lines moves it by the difference.
+pub(crate) const MENU_LINE_PITCH: f32 = 40.5;
+/// Width of the column of check marks in a group of lines, in pixels.
+pub(crate) const MARK_WIDTH: f32 = 18.0;
 /// Text size of the menus in pixels.
 pub(crate) const MENU_TEXT: f32 = 14.0;
 /// Room between the title bar's menu and its panel in pixels.

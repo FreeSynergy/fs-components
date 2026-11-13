@@ -38,6 +38,8 @@ pub struct AppWidget {
     pub(crate) shell: Arc<Mutex<Shell>>,
     /// Closes the window; set by `launch` (see `quit.rs`).
     pub(crate) quit: crate::quit::QuitSlot,
+    /// What `set_standard_menus` was given (see `standard.rs`).
+    pub(crate) standard: crate::standard::Slot,
 }
 
 impl AppWidget {
@@ -50,6 +52,7 @@ impl AppWidget {
             id: NEXT_ID.fetch_add(1, Ordering::Relaxed),
             shell: Arc::new(Mutex::new(Shell::new(title, screens)?)),
             quit: crate::quit::QuitSlot::default(),
+            standard: crate::standard::Slot::default(),
         })
     }
 

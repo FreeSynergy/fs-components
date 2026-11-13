@@ -1,0 +1,5 @@
+# Accepted cases of contract/texts-check, each with its reason. A key is `file:text` ([literal]) or a message id ([same]).
+[literal]
+"crates/fs-components-app/src/language.rs:there is no folder to keep the language in" = "technical cause of a failed save, shown after the translated sentence shell-language-failed ({$reason}); translating the causes (file errors come from the operating system in English) is open"
+
+[same]

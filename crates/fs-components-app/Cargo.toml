@@ -11,8 +11,10 @@ rust-version.workspace = true
 test-access = ["fs-components-widgets/test-access"]
 
 [dependencies]
+fs-components-mf2 = { path = "../fs-components-mf2" }
 fs-components-render = { path = "../fs-components-render" }
 fs-components-widgets = { path = "../fs-components-widgets" }
+fs-components-words = { path = "../fs-components-words" }
 blinc_app.workspace = true
 blinc_cn.workspace = true
 blinc_core.workspace = true

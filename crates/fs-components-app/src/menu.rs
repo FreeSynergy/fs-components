@@ -18,6 +18,10 @@ pub struct MenuEntry {
     pub label: String,
     /// Shown, but cannot be chosen.
     pub disabled: bool,
+    /// Marked as the chosen one of a group of lines (the shell draws the mark; the label stays the plain name).
+    pub checked: bool,
+    /// The next level: a line with children opens them instead of choosing itself.
+    pub children: Vec<MenuEntry>,
 }
 
 impl MenuEntry {
@@ -27,6 +31,32 @@ impl MenuEntry {
             id: id.into(),
             label: label.into(),
             disabled: false,
+            checked: false,
+            children: Vec::new(),
+        }
+    }
+
+    /// A line that opens a next level of lines. It is no choice itself: its `id` is only a name for the element, and
+    /// the handler never receives it.
+    pub fn submenu(id: impl Into<String>, label: impl Into<String>, children: Vec<MenuEntry>) -> Self {
+        Self {
+            children,
+            ..Self::new(id, label)
+        }
+    }
+
+    /// The same entry, marked (or not) as the chosen one.
+    #[must_use]
+    pub fn checked(mut self, on: bool) -> Self {
+        self.checked = on;
+        self
+    }
+
+    /// This entry and all below it, depth first.
+    pub(crate) fn walk<'a>(&'a self, out: &mut Vec<&'a MenuEntry>) {
+        out.push(self);
+        for child in &self.children {
+            child.walk(out);
         }
     }
 
@@ -55,5 +85,16 @@ impl Menu {
             label: label.into(),
             entries,
         }
+    }
+}
+
+impl Menu {
+    /// All entries of this menu, also those of the next levels, depth first.
+    pub(crate) fn all_entries(&self) -> Vec<&MenuEntry> {
+        let mut out = Vec::new();
+        for entry in &self.entries {
+            entry.walk(&mut out);
+        }
+        out
     }
 }

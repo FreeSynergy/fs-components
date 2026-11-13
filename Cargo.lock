@@ -998,8 +998,10 @@ dependencies = [
  "blinc_core",
  "blinc_layout",
  "blinc_theme",
+ "fs-components-mf2",
  "fs-components-render",
  "fs-components-widgets",
+ "fs-components-words",
  "image",
 ]
 

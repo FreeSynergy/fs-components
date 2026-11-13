@@ -36,13 +36,21 @@ fn the_files_follow_the_xdg_rule() {
     );
     assert_eq!(shared(os("rel"), os("rel")), None);
     assert_eq!(shared(None, None), None);
-    let own = LanguageSetting::program("tasks", os("/d"), os("/h")).unwrap();
-    assert_eq!(own.file(), PathBuf::from("/d/freesynergy/tasks/language"));
-    let own = LanguageSetting::program("wiki", None, os("/h")).unwrap();
+    let own = LanguageSetting::program("tasks", os("/c"), os("/h")).unwrap();
+    assert_eq!(own.file(), PathBuf::from("/c/freesynergy/tasks/language"));
+    let own = LanguageSetting::program("wiki-2", None, os("/h")).unwrap();
     assert_eq!(
         own.file(),
-        PathBuf::from("/h/.local/share/freesynergy/wiki/language")
+        PathBuf::from("/h/.config/freesynergy/wiki-2/language")
     );
+}
+
+#[test]
+fn a_program_name_is_an_identifier_never_a_path() {
+    for bad in ["", "../x", "..", ".", "/etc", "a/b", "Tasks", "-x", "a b", "a\u{e4}", "x/../y", "a.b"] {
+        assert!(LanguageSetting::program(bad, os("/c"), os("/h")).is_none(), "{bad:?}");
+    }
+    assert!(LanguageSetting::program("fs-files2", os("/c"), os("/h")).is_some());
 }
 
 #[test]
@@ -100,5 +108,34 @@ fn a_broken_file_is_an_error_not_a_language_and_a_blank_one_is_no_setting() {
     std::fs::remove_file(s.file()).unwrap();
     std::fs::create_dir(s.file()).unwrap();
     assert!(s.load().unwrap_err().contains("cannot read"));
+    let _ = std::fs::remove_dir_all(d);
+}
+
+#[test]
+fn a_file_larger_than_a_tag_or_no_regular_file_is_refused_unread() {
+    let d = dir("limit");
+    let s = LanguageSetting::new(d.join("language"));
+    std::fs::write(s.file(), "de\n".repeat(100)).unwrap();
+    assert!(s.load().unwrap_err().contains("too large"));
+    std::fs::write(s.file(), [0xff, 0xfe, b'd']).unwrap();
+    assert!(s.load().unwrap_err().contains("not text"));
+    // A link to a folder (a stand-in for a pipe or a device) is no regular file.
+    std::fs::remove_file(s.file()).unwrap();
+    std::os::unix::fs::symlink(&d, s.file()).unwrap();
+    assert!(s.load().unwrap_err().contains("not a regular file"));
+    let _ = std::fs::remove_dir_all(d);
+}
+
+#[test]
+fn a_planted_link_at_the_temporary_name_is_not_followed() {
+    let d = dir("planted");
+    let s = LanguageSetting::new(d.join("language"));
+    let victim = d.join("victim");
+    std::fs::write(&victim, "keep me").unwrap();
+    let temp = d.join(format!("language.{}.tmp", std::process::id()));
+    std::os::unix::fs::symlink(&victim, &temp).unwrap();
+    s.save(Some(&Locale::parse("de").unwrap())).unwrap();
+    assert_eq!(std::fs::read_to_string(&victim).unwrap(), "keep me", "the link was replaced, not written through");
+    assert_eq!(s.load().unwrap().unwrap().to_string(), "de");
     let _ = std::fs::remove_dir_all(d);
 }

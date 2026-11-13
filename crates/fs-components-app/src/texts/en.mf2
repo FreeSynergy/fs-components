@@ -1,0 +1,16 @@
+# The words of the standard shell (ADR 0065), English (ADR 0057: MessageFormat 2). Every id needs a German twin in de.mf2.
+shell-menu-program = Program
+shell-menu-view = View
+shell-menu-help = Help
+shell-settings = Settings
+shell-quit = Quit
+shell-help = Help
+shell-about = About
+shell-language = Language
+shell-language-system = System language (default)
+shell-frontends = Frontends
+shell-language-saved = Language changed. The menus use it now; the rest of the window changes at the next start.
+shell-language-failed = The language could not be saved: {$reason}
+# The name of a language in that language: never translated.
+language-name-en = English
+language-name-de = Deutsch

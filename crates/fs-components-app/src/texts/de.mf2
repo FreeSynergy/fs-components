@@ -1,0 +1,16 @@
+# Die Woerter der Standard-Fensterhuelle (ADR 0065), Deutsch (ADR 0057: MessageFormat 2). Jede Kennung braucht ihr englisches Gegenstueck in en.mf2.
+shell-menu-program = Programm
+shell-menu-view = Ansicht
+shell-menu-help = Hilfe
+shell-settings = Einstellungen
+shell-quit = Beenden
+shell-help = Hilfe
+shell-about = Über
+shell-language = Sprache
+shell-language-system = Systemsprache (Standard)
+shell-frontends = Frontends
+shell-language-saved = Sprache geändert. Die Menüs verwenden sie sofort, der Rest des Fensters beim nächsten Start.
+shell-language-failed = Die Sprache konnte nicht gespeichert werden: {$reason}
+# Der Name einer Sprache in dieser Sprache: wird nie uebersetzt.
+language-name-en = English
+language-name-de = Deutsch

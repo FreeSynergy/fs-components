@@ -1,68 +1,66 @@
-//! SKELETON of the language gate (docs/language-and-frontend-menu.md, section 2): the same window drawn once per language.
+//! The language gate for the shell: the same window with the standard menus drawn once per language (fake environment
+//! `LANG=de_DE.UTF-8` and `LANG=en_US.UTF-8`), closed, with Program > Language open and with View > Frontends open.
 //!
-//! Tests: Pixel tests — skipped (with a message) where there is no graphics adapter. Pictures of both languages stay in
-//! `FS_COMP_SHOTS` if that is set (the "images of both" for the strategy: `shell-de.png`, `shell-en.png`).
-//!
-//! Skeleton, named: the language comes from a table in this file, because the `Locale` API of the design does not exist yet.
-//! When it does, `bar` takes a `Locale` and the loop below runs over `["de", "en"]` with `LANG` unset and the setting
-//! given explicitly (a test never reads the real environment). The comparison against stored pictures follows with
-//! `fs-components-pictures` (branch frontend-umbau-3).
+//! Tests: Pixel tests — skipped (with a message) where there is no graphics adapter. The pictures stay in `FS_COMP_SHOTS` if that is
+//! set (`shell-<language>-bar.png`, `-language.png`, `-frontends.png`); the strategy looks at them. A comparison against stored
+//! reference pictures (`fs-components-pictures` of branch frontend-umbau-3: `Group::check`) is not used here: that crate is not on
+//! this branch and the group of the shell (frontend-umbau group 10) is paused, so the pictures are looked at and asserted by
+//! pixel difference only.
 
 #[path = "menu_common/mod.rs"]
 mod menu_common;
 
+use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use blinc_layout::div::div;
-use fs_components_app::{AppWidget, Element, Menu, MenuEntry, Screen, Surface};
+use fs_components_app::{
+    AppWidget, FileLanguageControl, FrontendItem, MenuEntry, Screen, StandardCallbacks, StandardMenus,
+};
 use fs_components_render::{Canvas, RenderError, draw_to_png};
+use fs_components_words::{LanguageSetting, Locale};
 use image::RgbaImage;
-use menu_common::composed;
+use menu_common::fixture::{Target, entry};
+use menu_common::{Harness, composed};
 
-const SIZE: (u32, u32) = (640, 240);
+const SIZE: (u32, u32) = (640, 300);
+const SIZE_F: (f32, f32) = (640.0, 300.0);
 
-struct Blank;
-
-impl Surface for Blank {
-    fn build(&self, width: f32, height: f32) -> Box<dyn Element> {
-        Box::new(div().class("t-blank").w(width).h(height))
-    }
-    fn styles(&self) -> String {
-        ".t-blank { background: var(--error-bg); }".to_owned()
-    }
+fn app(lang: &str, dir: &std::path::Path) -> AppWidget {
+    let env: HashMap<String, String> = HashMap::from([("LANG".to_owned(), lang.to_owned())]);
+    let tag = |t| Locale::parse(t).unwrap();
+    let control = Arc::new(FileLanguageControl::new(
+        Some(LanguageSetting::new(dir.join("own").join("language"))),
+        None,
+        Arc::new(env),
+        vec![tag("de"), tag("en")],
+    ));
+    let app = AppWidget::new("FreeSynergy Demo", vec![Screen::new("one", "One", Arc::new(Target::default()))]).unwrap();
+    let mut standard = StandardMenus::new(fs_components_app_resolve(&control));
+    standard.views = vec![MenuEntry::new("tiles", "Tiles"), MenuEntry::new("list", "List")];
+    standard.frontends = vec![FrontendItem::new("storefront", "Storefront"), FrontendItem::new("compact", "Compact")];
+    standard.active_frontend = Some("storefront".into());
+    standard.language = Some(control);
+    app.set_standard_menus(standard, StandardCallbacks::new(|_| {})).unwrap();
+    app
 }
 
-/// The menu bar of the standard shell (ADR 0065) in one language: Program, View, Help.
-fn bar(lang: &str) -> Vec<Menu> {
-    let t = |en: &'static str, de: &'static str| if lang == "de" { de } else { en };
-    vec![
-        Menu::new(
-            t("Program", "Programm"),
-            vec![MenuEntry::new("quit", t("Quit", "Beenden"))],
-        ),
-        Menu::new(
-            t("View", "Ansicht"),
-            vec![MenuEntry::new("view", t("Tiles", "Kacheln"))],
-        ),
-        Menu::new(
-            t("Help", "Hilfe"),
-            vec![MenuEntry::new("about", t("About", "Über"))],
-        ),
-    ]
+fn fs_components_app_resolve(control: &FileLanguageControl) -> Locale {
+    use fs_components_app::LanguageControl;
+    control.resolve().chosen.locale
 }
 
-fn draw(lang: &str) -> Option<RgbaImage> {
-    let dir = std::env::var_os("FS_COMP_SHOTS").map_or_else(
-        || std::env::temp_dir().join(format!("fs-app-lang-{}", std::process::id())),
-        PathBuf::from,
-    );
+fn out_dir() -> PathBuf {
+    let dir = std::env::var_os("FS_COMP_SHOTS")
+        .map_or_else(|| std::env::temp_dir().join(format!("fs-app-lang-{}", std::process::id())), PathBuf::from);
     std::fs::create_dir_all(&dir).unwrap();
-    let path = dir.join(format!("shell-{lang}.png"));
-    let app = AppWidget::new("Title", vec![Screen::new("one", "First", Arc::new(Blank))]).unwrap();
-    app.set_menus(bar(lang), |_| {}).unwrap();
+    dir
+}
+
+fn draw(app: &AppWidget, name: &str) -> Option<RgbaImage> {
+    let path = out_dir().join(name);
     let canvas = Canvas::new(SIZE.0, SIZE.1, app.styles());
-    match draw_to_png(&canvas, |w, h| composed(&app, w, h), || {}, &path) {
+    match draw_to_png(&canvas, |w, h| composed(app, w, h), || {}, &path) {
         Err(RenderError::NoGraphics(why)) => {
             eprintln!("skipped: {why}");
             None
@@ -78,22 +76,40 @@ fn draw(lang: &str) -> Option<RgbaImage> {
     }
 }
 
+/// Closed, language submenu open, frontends submenu open.
+fn three(lang: &str, short: &str) -> Option<[RgbaImage; 3]> {
+    let dir = std::env::temp_dir().join(format!("fs-app-lang-pic-{short}-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    let mut h = Harness::new(app(lang, &dir), SIZE_F.0, SIZE_F.1);
+    let closed = draw(&h.app, &format!("shell-{short}-bar.png"))?;
+    h.click("fs-app-menu-0");
+    h.click(&entry("fs.language"));
+    let language = draw(&h.app, &format!("shell-{short}-language.png"))?;
+    h.click("fs-app-menu-0");
+    h.settle();
+    h.click("fs-app-menu-1");
+    h.click(&entry("fs.frontends"));
+    let frontends = draw(&h.app, &format!("shell-{short}-frontends.png"))?;
+    let _ = std::fs::remove_dir_all(dir);
+    Some([closed, language, frontends])
+}
+
 #[test]
-fn the_same_window_in_german_and_english_differs_in_the_bar_and_nowhere_else() {
-    let _one = menu_common::serial();
-    let (Some(de), Some(en)) = (draw("de"), draw("en")) else {
+fn the_standard_menus_in_german_and_english_differ_in_the_words_and_open_a_next_level() {
+    let (Some(de), Some(en)) = (three("de_DE.UTF-8", "de"), three("en_US.UTF-8", "en")) else {
         return;
     };
-    let bar_differs = (0..SIZE.0).any(|x| de.get_pixel(x, 22) != en.get_pixel(x, 22));
-    assert!(
-        bar_differs,
-        "the words of the bar are drawn in the language"
-    );
-    for (x, y) in [(100, 200), (400, 200), (630, 230)] {
-        assert_eq!(
-            de.get_pixel(x, y),
-            en.get_pixel(x, y),
-            "the work area at {x},{y} is the same"
-        );
+    let bar_differs = (0..SIZE.0).any(|x| de[0].get_pixel(x, 22) != en[0].get_pixel(x, 22));
+    assert!(bar_differs, "the words of the bar are drawn in the language");
+    for (lang, [closed, language, frontends]) in [("de", &de), ("en", &en)] {
+        for (name, open) in [("language", language), ("frontends", frontends)] {
+            // An open menu with its next level covers part of the work area that the closed window shows empty.
+            let covered = (60..SIZE.1 - 40).any(|y| (150..560).any(|x| open.get_pixel(x, y) != closed.get_pixel(x, y)));
+            assert!(covered, "{lang}: the {name} menu is drawn over the window");
+        }
+        assert_ne!(language, frontends, "{lang}: two different menus");
+    }
+    for (x, y) in [(20, 280), (620, 200)] {
+        assert_eq!(de[0].get_pixel(x, y), en[0].get_pixel(x, y), "the work area at {x},{y} is the same in both languages");
     }
 }

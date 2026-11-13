@@ -14,6 +14,8 @@ pub enum AppError {
     DuplicateScreen(String),
     /// Two menu entries have this id.
     DuplicateMenuEntry(String),
+    /// `set_frontends` or `set_active_frontend` before `set_standard_menus`.
+    NoStandardMenus,
     /// The window or its graphics could not be started.
     Window(String),
     /// The picture could not be drawn.
@@ -25,6 +27,7 @@ impl fmt::Display for AppError {
         match self {
             Self::DuplicateScreen(id) => write!(f, "two screens have the id {id:?}"),
             Self::DuplicateMenuEntry(id) => write!(f, "two menu entries have the id {id:?}"),
+            Self::NoStandardMenus => write!(f, "the standard menus are not set"),
             Self::Window(why) => write!(f, "window: {why}"),
             Self::Picture(why) => write!(f, "picture: {why}"),
         }

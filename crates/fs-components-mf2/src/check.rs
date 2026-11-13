@@ -7,20 +7,22 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::Source;
+use fs_components_words::Locale;
+
 use crate::source::entries;
 
 type Vars = BTreeSet<String>;
 
-fn read(source: &Source, problems: &mut Vec<String>) -> BTreeMap<String, Vars> {
+fn read(source: &Source, language: &str, problems: &mut Vec<String>) -> BTreeMap<String, Vars> {
     let (list, found) = entries(source.text);
     problems.extend(
         found
             .into_iter()
-            .map(|p| format!("{}: {p}", source.language)),
+            .map(|p| format!("{language}: {p}")),
     );
     let mut out = BTreeMap::new();
     for e in list {
-        match mf2::compile_str(&e.message, source.language) {
+        match mf2::compile_str(&e.message, language) {
             Ok(c) => {
                 let vars = c
                     .manifest
@@ -30,10 +32,7 @@ fn read(source: &Source, problems: &mut Vec<String>) -> BTreeMap<String, Vars> {
                     .unwrap_or_default();
                 out.insert(e.id, vars);
             }
-            Err(why) => problems.push(format!(
-                "{}: {} (line {}): {why}",
-                source.language, e.id, e.line
-            )),
+            Err(why) => problems.push(format!("{language}: {} (line {}): {why}", e.id, e.line)),
         }
     }
     out
@@ -44,18 +43,30 @@ fn read(source: &Source, problems: &mut Vec<String>) -> BTreeMap<String, Vars> {
 /// language has and the other lacks, and a message whose variables differ from English.
 pub fn check_pairs(sources: &[Source]) -> Vec<String> {
     let mut problems = Vec::new();
-    let all: Vec<_> = sources
-        .iter()
-        .map(|s| (s.language, read(s, &mut problems)))
-        .collect();
-    let Some(english) = all.iter().find(|(l, _)| *l == "en").map(|(_, m)| m) else {
+    let mut all: Vec<(String, _)> = Vec::new();
+    for source in sources {
+        // `de-at` and `de-AT` are the same language: the name is normalised before anything is compared.
+        match Locale::parse(source.language) {
+            Ok(tag) => {
+                let name = tag.to_string();
+                if all.iter().any(|(l, _)| *l == name) {
+                    problems.push(format!("{name}: given by two sources"));
+                } else {
+                    let messages = read(source, &name, &mut problems);
+                    all.push((name, messages));
+                }
+            }
+            Err(why) => problems.push(format!("{:?}: {why}", source.language)),
+        }
+    }
+    let Some(english) = all.iter().find(|(l, _)| l == "en").map(|(_, m)| m) else {
         problems.push("no source for en".to_owned());
         return problems;
     };
-    if !all.iter().any(|(l, _)| *l == "de") {
+    if !all.iter().any(|(l, _)| l == "de") {
         problems.push("no source for de".to_owned());
     }
-    for (language, messages) in all.iter().filter(|(l, _)| *l != "en") {
+    for (language, messages) in all.iter().filter(|(l, _)| l != "en") {
         for (id, vars) in english {
             match messages.get(id) {
                 None => problems.push(format!("{id}: in en, missing in {language}")),

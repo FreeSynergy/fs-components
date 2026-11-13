@@ -103,7 +103,7 @@ impl Mf2Texts {
             if chain.iter().any(|l| l.tag == tag.as_str()) {
                 continue;
             }
-            if let Some(s) = sources.iter().find(|s| s.language == tag.as_str()) {
+            if let Some(s) = sources.iter().find(|s| Locale::parse(s.language).is_ok_and(|l| l == tag)) {
                 let messages = entries(s.text)
                     .0
                     .into_iter()

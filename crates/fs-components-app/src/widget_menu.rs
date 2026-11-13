@@ -10,7 +10,7 @@ use blinc_core::BlincContextState;
 use crate::error::AppError;
 use crate::menu::Menu;
 use crate::menu_overlay;
-use crate::menu_view::{OnChoose, OnTrigger};
+use crate::menu_view::{Callbacks, OnChoose, OnSub, OnTrigger};
 use crate::shell::Shell;
 use crate::widget::{AppWidget, locked};
 
@@ -52,7 +52,24 @@ impl AppWidget {
     pub(crate) fn on_trigger(&self) -> OnTrigger {
         let this = self.clone();
         Arc::new(move |index, x, y| {
-            menu_overlay::toggle(&this.shell, index, (x, y), &this.on_choose());
+            menu_overlay::toggle(&this.shell, index, (x, y), &this.callbacks());
+        })
+    }
+
+    fn callbacks(&self) -> Callbacks {
+        Callbacks {
+            choose: self.on_choose(),
+            sub: self.on_sub(),
+        }
+    }
+
+    /// A line with a next level opens it, only while its menu is open (as `on_choose`).
+    fn on_sub(&self) -> OnSub {
+        let this = self.clone();
+        Arc::new(move |index, position| {
+            if this.with_shell(Shell::open_menu) == Some(index) {
+                menu_overlay::toggle_sub(&this.shell, position, &this.callbacks());
+            }
         })
     }
 
