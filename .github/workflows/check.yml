@@ -14,3 +14,16 @@ jobs:
       # Software Vulkan (lavapipe) for the tests that open a graphics adapter, and the fonts the tests measure
       # text with (the width tests need the metrics of the machines the code is written on).
       apt-packages: "mesa-vulkan-drivers libvulkan1 fonts-dejavu-core fonts-noto-core"
+
+  # B-L step 3: the text gate (every visible text in de and en, no hard coded UI text) as a WARNING only: the findings
+  # of the old tables are not fixed yet (step 6). The self test of the script itself is hard. Step 7 removes the
+  # continue-on-error and the --warn.
+  texts-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Self test of the gate (hard)
+        run: python3 -I contract/texts-check --selftest
+      - name: Texts gate (warning)
+        continue-on-error: true
+        run: python3 -I contract/texts-check . --warn

@@ -131,6 +131,8 @@ Strategy default 7: the gate runs in CI **as a warning** until step 6 is done, t
 | 6 | Programs one run each, picture pair `LANG=de`/`LANG=en`, gate hard for that crate: **Store first (0.0.17: `Store`/`Help` constants, about 216 constants plus 23 `Lang` functions, drop `Lang` and the `FS_LANG` read, rename Face)**, Wiki (15 fields, menu words, three environment reads; `--lang` stays as override), Tasks (33 plus plan view), then Files, People, Groups, Calendar, Maps, Whiteboard, Messenger | program repos (10 `-app` crates) | 5 | per program 3 to 10 | medium; Store the largest |
 | 7 | Gate hard everywhere; remove the old per-program reads | all | 6 | few | low |
 
+**Gate stages (step 3, built):** `.github/workflows/check.yml` has its own job `texts-check`. Step 3 (now): the self test (`contract/texts-check --selftest`) runs hard (a wrong exit code breaks the build); the gate itself runs with `--warn` and `continue-on-error: true`: always exit 0, `::warning::` annotations with the counts R1/R2/R3 (first three findings as examples) and a summary in the job summary. Existing findings (R1 1, R2 449 on 2026-11-13) are not fixed here. Step 7 (hard): remove `--warn` and `continue-on-error`, so a finding breaks the build; per program repo hard from its step 6.
+
 Numbers: R2 candidates today components 449, Store 294, Wiki 30, Tasks 45; the seven smaller programs are not counted (run the gate on them in step 3).
 
 ## 6. Open decisions (for strategy and the person)

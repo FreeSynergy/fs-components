@@ -1,7 +1,8 @@
 #!/usr/bin/env -S python3 -I
 """Gate for B-L: every visible text exists in German AND English, and no UI text is hard coded.
 
-Usage: contract/texts-check [root] [--all] [--selftest]. Exit 1 on any finding. Pattern: Facade over three small rules.
+Usage: contract/texts-check [root] [--all] [--warn] [--selftest]. Exit 1 on any finding; `--warn` always exits 0 and prints
+::warning:: annotations (R1/R2/R3 counts) plus a summary to $GITHUB_STEP_SUMMARY when set. Pattern: Facade over three small rules.
   R1  hard coded UI string: a string literal given to a call that shows it (text, label, title, tooltip, placeholder, Menu::new,
       MenuEntry::new, Status::Info/Problem, ...) in code that is not a test.
   R2  single-language table: a file named words*/labels*/lang* with UI literals (the English-only tables that move to .mf2).
@@ -191,9 +192,33 @@ def selftest():
     return 1 if bad else 0
 
 
+def warn_lines(results):
+    """GitHub annotations: one `::warning::` per rule with findings (the first three as examples), and a total line."""
+    out = []
+    for i, (title, problems) in enumerate(results, 1):
+        if problems:
+            out.append(f"::warning title=texts-check R{i}::{title}: {len(problems)} findings, e.g. " + " | ".join(problems[:3]))
+    out.append(f"::notice title=texts-check::findings R1/R2/R3 = " + "/".join(str(len(p)) for _, p in results))
+    return out
+
+
+def selftest_warn():
+    """`--warn` exits 0 with a finding and prints one annotation for the rule; without a finding only the notice."""
+    with tempfile.TemporaryDirectory() as d:
+        os.makedirs(os.path.join(d, "crates/x/src"))
+        with open(os.path.join(d, "crates/x/src/f.rs"), "w", encoding="utf-8") as f:
+            f.write('fn f() { text("Reload the catalog"); }\n')
+        results = run(d, {})
+    lines = warn_lines(results)
+    good = sum(l.startswith("::warning title=texts-check R1") for l in lines) == 1 and lines[-1].endswith("= 1/0/0")
+    clean = warn_lines([("R1", []), ("R2", []), ("R3", [])]) == ["::notice title=texts-check::findings R1/R2/R3 = 0/0/0"]
+    print(("ok   " if good and clean else "FAIL ") + "selftest warn: annotations")
+    return 0 if good and clean else 1
+
+
 def main(argv):
     if "--selftest" in argv:
-        return selftest()
+        return selftest() | selftest_warn()
     args = [a for a in argv if not a.startswith("--")]
     root = os.path.abspath(args[0] if args else os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
     results = run(root, load_exceptions(root))
@@ -204,6 +229,13 @@ def main(argv):
         for line in problems[: (10 ** 6 if "--all" in argv else 5)]:
             print("     " + line)
     print(f"findings: {total}")
+    if "--warn" in argv:
+        lines = warn_lines(results)
+        print("\n".join(lines))
+        if os.environ.get("GITHUB_STEP_SUMMARY"):
+            with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as f:
+                f.write("### texts-check (warning only)\n" + "\n".join(f"- {t}: {len(p)}" for t, p in results) + "\n")
+        return 0
     return 1 if total else 0
 
 
