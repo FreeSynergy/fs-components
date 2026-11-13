@@ -12,9 +12,7 @@ use blinc_layout::text;
 use blinc_theme::{RadiusToken, ThemeState};
 
 use crate::menu::{Menu, MenuEntry};
-use crate::styles::{
-    MARK_WIDTH, MENU_GAP, MENU_LINE_HEIGHT, MENU_TEXT, MENU_WIDTH,
-};
+use crate::styles::{MARK_WIDTH, MENU_GAP, MENU_LINE_HEIGHT, MENU_TEXT, MENU_WIDTH};
 
 /// What a press on a menu in the bar does: which menu, and where its panel would start.
 pub(crate) type OnTrigger = Arc<dyn Fn(usize, f32, f32) + Send + Sync>;
@@ -115,13 +113,7 @@ fn one_panel(id: &str, index: usize, entries: &[MenuEntry], calls: &Callbacks) -
 /// A line takes a press even when disabled: a line without a handler could keep the handler of the
 /// line it replaces (`DESIGN.md`), and the shell refuses a disabled entry anyway. A line with a next level opens it
 /// ; a line in a group with a chosen one leaves room for the mark.
-fn line(
-    index: usize,
-    position: usize,
-    entry: &MenuEntry,
-    marks: bool,
-    calls: &Callbacks,
-) -> Div {
+fn line(index: usize, position: usize, entry: &MenuEntry, marks: bool, calls: &Callbacks) -> Div {
     let (choose, sub, id) = (
         Arc::clone(&calls.choose),
         Arc::clone(&calls.sub),
@@ -161,7 +153,11 @@ fn line(
         .child(row)
         .on_click(move |ctx| {
             if opens {
-                sub(index, position, (ctx.bounds_x, ctx.bounds_y, ctx.bounds_width));
+                sub(
+                    index,
+                    position,
+                    (ctx.bounds_x, ctx.bounds_y, ctx.bounds_width),
+                );
             } else {
                 choose(index, &id);
             }

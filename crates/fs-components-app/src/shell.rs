@@ -173,7 +173,6 @@ impl Shell {
         self.open_sub = None;
     }
 
-
     /// The handler to run for this entry; `None` if the entry is unknown or disabled. Run it after
     /// letting go of the shell, so it may change the shell.
     pub fn handler_for(&self, id: &str) -> Option<MenuHandler> {

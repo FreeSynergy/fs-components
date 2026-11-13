@@ -16,8 +16,8 @@ use crate::menu::MenuEntry;
 use crate::menu_view::{
     Anchor, BAR_ID, Callbacks, PANEL_ID, SUB_PANEL_ID, panel, panel_size, sub_panel,
 };
-use crate::styles::MENU_WIDTH;
 use crate::shell::Shell;
+use crate::styles::MENU_WIDTH;
 use crate::widget::locked;
 
 /// The key of the one registration for a press outside.
