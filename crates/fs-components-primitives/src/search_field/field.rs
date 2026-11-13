@@ -83,6 +83,31 @@ impl SearchField {
         self
     }
 
+    /// What is typed now.
+    pub fn text(&self) -> String {
+        self.data
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .value
+            .clone()
+    }
+
+    /// Put `text` in the field with all of it selected (typing replaces it, an arrow key keeps it), as a field opens
+    /// with a name to change. Does not call the change handler: the caller set it.
+    pub fn set_text(&self, text: &str) {
+        let mut d = self
+            .data
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        text.clone_into(&mut d.value);
+        d.select_all();
+    }
+
+    /// Give the keyboard to the field on the next frame (after it is in the tree).
+    pub fn focus(&self) {
+        blinc_layout::widgets::text_input::focus_text_input_deferred(&self.data);
+    }
+
     /// Report every change of the text.
     #[must_use]
     pub fn on_change(mut self, handler: OnChange) -> Self {

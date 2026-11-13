@@ -4,7 +4,7 @@
 
 use crate::{
     agent_tree, avatar_group, badge, breadcrumb, calendar_view, file_preview, file_tile, lightbox,
-    list_view, message_composer, message_list, participant, plan, share_dialog, sortable_list,
+    list_view, message_composer, message_list, name_dialog, participant, plan, share_dialog, sortable_list,
     task_card, text_view, tool_call, transfer_list, tree_view,
 };
 
@@ -22,6 +22,7 @@ pub fn styles() -> String {
         sortable_list::STYLES,
         lightbox::STYLES,
         share_dialog::STYLES,
+        name_dialog::STYLES,
         tool_call::STYLES,
         participant::STYLES,
         message_list::STYLES,

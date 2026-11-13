@@ -34,6 +34,7 @@ pub mod list_view;
 pub mod live;
 pub mod message_composer;
 pub mod message_list;
+pub mod name_dialog;
 pub mod participant;
 mod picture;
 pub mod plan;
@@ -71,6 +72,7 @@ pub use list_view::{
     Column, ColumnLayout, ColumnWidth, FileStore, LayoutStore, ListPosition, ListView, NoStore,
     Row, RowSource, VecRows,
 };
+pub use name_dialog::{NameDialog, Purpose as NamePurpose};
 pub use participant::{KindLabels, Sender, SenderKind};
 pub use share_dialog::{Choice, Permission, ShareDialog};
 pub use sortable_list::{Content as SortableContent, Item, Lane, SortableList};
