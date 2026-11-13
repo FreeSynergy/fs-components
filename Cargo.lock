@@ -1088,6 +1088,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "fs-components-pictures"
+version = "0.0.13"
+dependencies = [
+ "blinc_core",
+ "blinc_layout",
+ "blinc_theme",
+ "fs-components-charts",
+ "fs-components-fields",
+ "fs-components-kanban",
+ "fs-components-primitives",
+ "fs-components-render",
+ "fs-components-styles",
+ "fs-components-widgets",
+ "image",
+ "wgpu",
+]
+
+[[package]]
 name = "fs-components-primitives"
 version = "0.0.13"
 dependencies = [
