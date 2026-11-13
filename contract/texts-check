@@ -1,0 +1,152 @@
+#!/usr/bin/env -S python3 -I
+"""Gate for B-L: every visible text exists in German AND English, and no UI text is hard coded.
+
+Usage: contract/texts-check [root] [--stats] [--selftest]. Exit 1 on any finding. Pattern: Facade over three small rules.
+  R1  hard coded UI string: a string literal given to a call that shows it (text, label, title, tooltip, placeholder, Menu::new,
+      MenuEntry::new, Status::Info/Problem, ...) in code that is not a test.
+  R2  single-language table: a file named words*/labels*/lang* with UI literals outside a `texts!` block (the English-only tables).
+  R3  `texts!` entries: each needs `en:` and `de:`, equal `{placeholders}`, not empty, and `de` differs from `en` unless the
+      text is listed under [same] in contract/texts-exceptions.toml (one word, a name, a unit).
+Heuristic on purpose: it finds candidates, a person judges; an accepted case goes into the exception file WITH a reason.
+Until the migration is done the gate runs with --stats (counts, exit 0 only when 0); the target is 0 findings."""
+import os
+import re
+import sys
+import tempfile
+import tomllib
+
+CALL = re.compile(r'\b(?:text|label|title|heading|tooltip|placeholder|button|aria_label|caption|hint|'
+                  r'Menu::new|MenuEntry::new|Status::Info|Status::Problem|set_title|with_label)\s*\(\s*(?:(?:"[^"]*"|[^"(),]+),\s*)?"((?:[^"\\]|\\.)*)"')
+ASSIGN = re.compile(r'=\s*(?:s\(|String::from\()?\s*"((?:[^"\\]|\\.)*)"\s*\)?\s*(?:\.into\(\)|\.to_string\(\)|\.to_owned\(\))')
+LITERAL = re.compile(r'"((?:[^"\\]|\\.)*)"')
+TABLE_FILE = re.compile(r'(^|/)(words|labels|lang)[^/]*\.rs$')
+GROUP = re.compile(r'\{((?:[^{}]|\{\w+\})*?\b(?:en|de)\s*:(?:[^{}]|\{\w+\})*)\}', re.S)
+FIELD = re.compile(r'\b(en|de)\s*:\s*"((?:[^"\\]|\\.)*)"')
+PLACE = re.compile(r'\{(\w+)\}')
+
+
+def is_ui(lit):
+    """A literal a person reads: has a letter, and is not a path, option, id or format-only string."""
+    if len(lit) < 2 or not re.search(r'[A-Za-zÀ-￿]', lit):
+        return False
+    if re.fullmatch(r'[a-z0-9_.\-/:]+', lit) or lit.startswith(("--", "fs-", "http", "/", "#", ".")) or "::" in lit:
+        return False
+    return " " in lit or lit[0].isupper()
+
+
+def code_of(path):
+    """The file without its test module (everything from the first `#[cfg(test)]`) and without comment lines."""
+    text = open(path, encoding="utf-8", errors="replace").read()
+    cut = text.find("#[cfg(test)]")
+    text = text if cut < 0 else text[:cut]
+    return "\n".join("" if ln.lstrip().startswith("//") else ln for ln in text.split("\n"))
+
+
+def line_of(text, pos):
+    return text.count("\n", 0, pos) + 1
+
+
+def blocks(text):
+    """`texts!` blocks: the spans are blanked out for R2 so that a table with both languages is not a finding."""
+    return [m for m in re.finditer(r'texts!\s*\{', text)]
+
+
+def strip_tables(text):
+    out, pos = [], 0
+    for m in blocks(text):
+        depth, i = 1, m.end()
+        while i < len(text) and depth:
+            depth += {"{": 1, "}": -1}.get(text[i], 0)
+            i += 1
+        out.append(text[pos:m.start()] + re.sub(r"[^\n]", " ", text[m.start():i]))
+        pos = i
+    return "".join(out) + text[pos:]
+
+
+def files(root):
+    for base, dirs, names in os.walk(root):
+        dirs[:] = [d for d in dirs if d not in ("target", ".git", "tests", "examples", "temp", "contract", "todo")]
+        for n in names:
+            if n.endswith(".rs"):
+                yield os.path.join(base, n)
+
+
+def run(root, exc):
+    r1, r2, r3 = [], [], []
+    same, lits = set(exc.get("same", {})), set(exc.get("literal", {}))
+    for path in files(root):
+        rel = os.path.relpath(path, root)
+        text = code_of(path)
+        tables_gone = strip_tables(text)
+        for rx in (CALL, ASSIGN):
+            for m in rx.finditer(tables_gone):
+                if is_ui(m.group(1)) and f"{rel}:{m.group(1)}" not in lits:
+                    r1.append(f"{rel}:{line_of(text, m.start())}: hard coded UI text {m.group(1)!r}")
+        if TABLE_FILE.search(rel):
+            for m in LITERAL.finditer(tables_gone):
+                if is_ui(m.group(1)) and f"{rel}:{m.group(1)}" not in lits:
+                    r2.append(f"{rel}:{line_of(text, m.start())}: literal outside a texts! table {m.group(1)!r}")
+        for g in GROUP.finditer(text):
+            found = {k: v for k, v in FIELD.findall(g.group(1))}
+            where = f"{rel}:{line_of(text, g.start())}"
+            for lang in ("en", "de"):
+                if not found.get(lang, "").strip():
+                    r3.append(f"{where}: language {lang} missing or empty")
+            if len(found) == 2:
+                if set(PLACE.findall(found["en"])) != set(PLACE.findall(found["de"])):
+                    r3.append(f"{where}: placeholders differ between en and de")
+                if found["en"] == found["de"] and found["en"] not in same and len(found["en"].split()) > 1:
+                    r3.append(f"{where}: de equals en ({found['en']!r}); translate it or list it under [same]")
+    return [("R1 no hard coded UI text", r1), ("R2 no single-language table", r2), ("R3 every text in en and de", r3)]
+
+
+def load_exceptions(root):
+    path = os.path.join(root, "contract", "texts-exceptions.toml")
+    if not os.path.exists(path):
+        return {}
+    with open(path, "rb") as f:
+        return tomllib.load(f)
+
+
+def selftest():
+    """Mutation check: a good tree passes, and each bad file is found by exactly the rule that is meant."""
+    cases = {
+        "ok.rs": ('texts! { A { en: "Reload {n}", de: "Neu laden {n}" } }\nfn f() { text(id) }\n', (0, 0, 0)),
+        "bad_call.rs": ('fn f() { text("Reload the catalog"); }\n', (1, 0, 0)),
+        "words_a.rs": ('pub const X: &str = "Install now";\n', (0, 1, 0)),
+        "no_de.rs": ('texts! { A { en: "Reload" } }\n', (0, 0, 1)),
+        "no_en.rs": ('texts! { A { de: "Neu laden" } }\n', (0, 0, 1)),
+        "place.rs": ('texts! { A { en: "Hello {n}", de: "Hallo {m}" } }\n', (0, 0, 1)),
+        "same.rs": ('texts! { A { en: "Not translated", de: "Not translated" } }\n', (0, 0, 1)),
+        "in_test.rs": ('fn f() {}\n#[cfg(test)]\nmod t { fn g() { text("Only a test text"); } }\n', (0, 0, 0)),
+        "menu.rs": ('fn f() { MenuEntry::new("open", "Open the file"); }\n', (1, 0, 0)),
+    }
+    bad = 0
+    for name, (src, want) in cases.items():
+        with tempfile.TemporaryDirectory() as d:
+            os.makedirs(os.path.join(d, "crates", "x", "src"))
+            with open(os.path.join(d, "crates", "x", "src", name), "w", encoding="utf-8") as f:
+                f.write(src)
+            got = tuple(len(p) for _, p in run(d, {}))
+        print(("ok   " if got == want else "FAIL ") + f"selftest {name}: found {got}, wanted {want}")
+        bad += got != want
+    return 1 if bad else 0
+
+
+def main(argv):
+    if "--selftest" in argv:
+        return selftest()
+    args = [a for a in argv if not a.startswith("--")]
+    root = os.path.abspath(args[0] if args else os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+    results = run(root, load_exceptions(root))
+    total = 0
+    for title, problems in results:
+        total += len(problems)
+        print(("FAIL " if problems else "ok   ") + f"{title} ({len(problems)})")
+        for line in problems[: (10 ** 6 if "--all" in argv else 5)]:
+            print("     " + line)
+    print(f"findings: {total}")
+    return 1 if total else 0
+
+
+sys.exit(main(sys.argv[1:]))
