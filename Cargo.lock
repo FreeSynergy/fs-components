@@ -1093,6 +1093,7 @@ version = "0.0.13"
 dependencies = [
  "fs-components-words",
  "mf2",
+ "serde_json",
 ]
 
 [[package]]

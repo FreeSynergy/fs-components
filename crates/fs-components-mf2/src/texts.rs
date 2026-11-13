@@ -23,7 +23,7 @@ static FUNCTIONS: [(&str, &dyn Function); 5] = [
     ("percent", &mf2::fn_number::PERCENT),
     ("offset", &mf2::fn_number::OFFSET),
 ];
-static REGISTRY: Registry = Registry::new(&FUNCTIONS);
+static REGISTRY: Registry = Registry::new(&FUNCTIONS).with_numbers(&mf2::fn_number::NUMBERS);
 /// No isolation marks (U+2066 to U+2069) around inserted values: they are for mixed left-to-right and right-to-left text, and
 /// only show as boxes in a font that lacks them. Right to left is not supported yet (DESIGN); a language that needs it
 /// switches this on.
