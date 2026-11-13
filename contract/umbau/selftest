@@ -20,6 +20,8 @@ PROBES = (  # (name, code appended to badge.rs, kind, expected rise)
     ("Color::rgba in Rust", '\nfn _p() { let _ = Color::rgba(0.1, 0.2, 0.3, 1.0); }\n', "color", 1),
     ("px spacing in CSS", '\nconst _P: &str = ".fs-badge { padding: 7px; }";\n', "spacing", 1),
     ("px size in CSS", '\nconst _P: &str = ".fs-badge { width: 77px; }";\n', "size", 1),
+    ("zero spacing sets nothing", '\nconst _P: &str = ".fs-badge { padding: 0px; }";\n', "spacing", 0),
+    ("opacity 1 sets nothing", '\nconst _P: &str = ".fs-badge { opacity: 1.0; }";\n', "opacity", 0),
     ("a token is no fixed value", '\nconst _P: &str = ".fs-badge { color: var(--text); padding: var(--space-s); }";\n', "color", 0),
 )
 
@@ -50,6 +52,19 @@ def main():
             base = now
             print(("ok   " if got == rise else "FAIL ") + f"{name}: {kind} +{got} (expected +{rise})")
             failures += [] if got == rise else [name]
+        exc = os.path.join(tmp, "contract", "exceptions.toml")
+        before = count(tmp)["fixed"]
+        with open(exc, "a", encoding="utf-8") as handle:
+            handle.write('"crates/fs-components-widgets/src/badge.rs" = "content: probe"\n')
+        now = count(tmp)["fixed"]
+        ok = now["color"] == 0 and before["color"] > 0 and now["spacing"] == before["spacing"]
+        print(("ok   " if ok else "FAIL ") + f"[data-colours]: colours {before['color']} -> {now['color']}, spacing {before['spacing']} -> {now['spacing']} (colours only)")
+        failures += [] if ok else ["data-colours"]
+        text = open(exc, encoding="utf-8").read().replace("[fixed-values]\n", '[fixed-values]\n"crates/fs-components-widgets/src/badge.rs" = "content: probe"\n', 1)
+        open(exc, "w", encoding="utf-8").write(text.replace('[data-colours]\n"crates/fs-components-widgets/src/badge.rs" = "content: probe"\n', "[data-colours]\n"))
+        ok = sum(count(tmp)["fixed"].values()) == 0  # every kind of the file is left out
+        print(("ok   " if ok else "FAIL ") + "[fixed-values]: a listed file is not counted at all")
+        failures += [] if ok else ["fixed-values"]
         prepend(os.path.join(tmp, FILE), '\nfn _p() { let _ = div().class("fs-mutant-z"); }\n')
         now = count(tmp)
         got = now["names_not_in_contract"] - base["names_not_in_contract"]
