@@ -18,12 +18,24 @@ pub(crate) fn tree_nodes(entries: &[Entry]) -> Vec<TreeNode> {
 }
 
 fn insert(level: &mut Vec<TreeNode>, parts: &[&str], depth: usize, entry: &Entry) {
+    let folder = parts[..=depth].join("/");
+    let (key, page) = (format!("{folder}/"), format!("{folder}.md"));
     if depth + 1 == parts.len() {
-        level.push(TreeNode::new(entry.path.clone(), entry.title.clone()));
+        // The folder of the same name (the sub-pages) was there first: the page takes its place, children kept.
+        let waiting = folder.strip_suffix(".md").and_then(|stem| {
+            let stem = format!("{stem}/");
+            level.iter_mut().find(|n| n.key == stem)
+        });
+        if let Some(n) = waiting {
+            n.key.clone_from(&entry.path);
+            n.label.clone_from(&entry.title);
+        } else {
+            level.push(TreeNode::new(entry.path.clone(), entry.title.clone()));
+        }
         return;
     }
-    let key = format!("{}/", parts[..=depth].join("/"));
-    let at = if let Some(i) = level.iter().position(|n| n.key == key) {
+    // A folder `a/` is the page `a.md` when there is one.
+    let at = if let Some(i) = level.iter().position(|n| n.key == key || n.key == page) {
         i
     } else {
         level.push(TreeNode::new(key, parts[depth]));
@@ -40,6 +52,21 @@ mod tests {
         Entry {
             path: path.into(),
             title: path.rsplit('/').next().unwrap().into(),
+        }
+    }
+
+    #[test]
+    fn a_page_and_its_sub_pages_are_one_node() {
+        for list in [
+            [e("handbook.md"), e("handbook/one.md"), e("notes.md")],
+            [e("handbook/one.md"), e("handbook.md"), e("notes.md")],
+        ] {
+            let tree = tree_nodes(&list);
+            assert_eq!(tree.len(), 2);
+            assert_eq!(tree[0].key, "handbook.md");
+            assert_eq!(tree[0].children.len(), 1);
+            assert_eq!(tree[0].children[0].key, "handbook/one.md");
+            assert_eq!(tree[1].key, "notes.md");
         }
     }
 

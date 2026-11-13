@@ -6,16 +6,20 @@
 
 use std::collections::HashSet;
 
+use super::fold::fold;
 use crate::source::Entry;
 
 /// One node of the arena.
 #[derive(Clone, Debug)]
 pub(crate) struct Node {
-    /// Path of a page, or the path plus `/` of a folder.
+    /// Path of a page (also one with sub-pages), or the path plus `/` of a folder.
     pub key: String,
     pub label: String,
     pub depth: u16,
+    /// Has children (or is a folder): can be opened and closed.
     pub folder: bool,
+    /// Is a page that can be read (a leaf, or a page with sub-pages); a plain folder is not.
+    pub page: bool,
     /// Index after the last descendant.
     pub end: usize,
 }
@@ -36,44 +40,10 @@ pub(crate) struct Row<'a> {
 }
 
 impl PageTree {
-    /// The tree of `entries` (path order is kept), everything closed.
+    /// The tree of `entries` (path order is kept), everything closed. A page `a.md` and the folder `a/` are one node.
     pub fn new(entries: &[Entry]) -> Self {
-        let mut nodes: Vec<Node> = Vec::with_capacity(entries.len() + entries.len() / 4);
-        let mut stack: Vec<(String, usize)> = Vec::new(); // (folder key, node index)
-        for entry in entries {
-            let parts: Vec<&str> = entry.path.split('/').collect();
-            let folders = parts.len() - 1;
-            // Keep the folders that this path continues.
-            let mut keep = 0;
-            while keep < stack.len()
-                && keep < folders
-                && stack[keep].0 == format!("{}/", parts[..=keep].join("/"))
-            {
-                keep += 1;
-            }
-            close(&mut nodes, &mut stack, keep);
-            for depth in keep..folders {
-                let key = format!("{}/", parts[..=depth].join("/"));
-                nodes.push(Node {
-                    key: key.clone(),
-                    label: parts[depth].to_string(),
-                    depth: u16::try_from(depth).unwrap_or(u16::MAX),
-                    folder: true,
-                    end: 0,
-                });
-                stack.push((key, nodes.len() - 1));
-            }
-            nodes.push(Node {
-                key: entry.path.clone(),
-                label: entry.title.clone(),
-                depth: u16::try_from(folders).unwrap_or(u16::MAX),
-                folder: false,
-                end: nodes.len() + 1,
-            });
-        }
-        close(&mut nodes, &mut stack, 0);
         Self {
-            nodes,
+            nodes: fold(entries),
             open: HashSet::new(),
             pages: entries.len(),
             revealed: String::new(),
@@ -96,7 +66,10 @@ impl PageTree {
     pub fn reveal(&mut self, path: &str) {
         let parts: Vec<&str> = path.split('/').collect();
         for depth in 0..parts.len().saturating_sub(1) {
-            self.open.insert(format!("{}/", parts[..=depth].join("/")));
+            let folder = parts[..=depth].join("/");
+            // The way may lead through a folder or through the page of the same name.
+            self.open.insert(format!("{folder}.md"));
+            self.open.insert(format!("{folder}/"));
         }
     }
 
@@ -124,16 +97,6 @@ impl PageTree {
             };
         }
         out
-    }
-}
-
-/// End the folders above depth `keep`: their subtree ends at the next node to be pushed.
-fn close(nodes: &mut [Node], stack: &mut Vec<(String, usize)>, keep: usize) {
-    let end = nodes.len();
-    while stack.len() > keep {
-        if let Some((_, at)) = stack.pop() {
-            nodes[at].end = end;
-        }
     }
 }
 

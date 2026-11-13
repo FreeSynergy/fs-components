@@ -6,12 +6,15 @@
 
 pub(crate) mod blocks;
 pub(crate) mod confluence;
+mod fold;
 mod head;
 pub(crate) mod notion;
 mod outline;
 mod rows;
 mod styles;
 mod tree;
+#[cfg(test)]
+mod tree_tests;
 
 pub(crate) use blocks::BlockEditor;
 pub(crate) use styles::styles;
