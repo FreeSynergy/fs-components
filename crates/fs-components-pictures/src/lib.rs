@@ -8,7 +8,11 @@
 
 #![deny(missing_docs)]
 #![warn(clippy::pedantic)]
-#![allow(clippy::must_use_candidate, clippy::module_name_repetitions)]
+// Test support: failing loudly (panic) is its job.
+#![allow(
+    clippy::must_use_candidate, clippy::module_name_repetitions, clippy::missing_panics_doc,
+    clippy::many_single_char_names // pixel coordinates and channels
+)]
 
 pub mod compare;
 pub mod gpu;

@@ -24,7 +24,7 @@ pub fn icd_file() -> Option<PathBuf> {
         .filter(|p| {
             p.file_name()
                 .and_then(|n| n.to_str())
-                .is_some_and(|n| n.starts_with("lvp_icd") && n.ends_with(".json"))
+                .is_some_and(|n| n.starts_with("lvp_icd") && n.rsplit('.').next().is_some_and(|e| e.eq_ignore_ascii_case("json")))
         })
         .min()
 }

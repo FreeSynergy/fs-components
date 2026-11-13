@@ -16,6 +16,8 @@ use image::{ImageEncoder, RgbaImage, codecs::png};
 use crate::compare::{Report, Tolerance, compare, diff_image};
 use crate::gpu::force_software;
 
+static COUNTER: AtomicU32 = AtomicU32::new(0);
+
 /// What came of one picture.
 #[derive(Debug)]
 pub enum Verdict {
@@ -77,7 +79,6 @@ impl Group {
     {
         force_software()?;
         use_style(Some(StyleId::Craft));
-        static COUNTER: AtomicU32 = AtomicU32::new(0);
         let tmp = std::env::temp_dir().join(format!(
             "fs-umbau-{}-{}.png",
             std::process::id(),
