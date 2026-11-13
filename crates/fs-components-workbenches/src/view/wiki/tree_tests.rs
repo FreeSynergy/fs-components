@@ -29,7 +29,12 @@ fn shape(t: &PageTree) -> Vec<String> {
                 (true, true) => '-',
                 (true, false) => '+',
             };
-            format!("{} {} {mark}{}", n.depth, n.label, if n.page { "*" } else { "" })
+            format!(
+                "{} {} {mark}{}",
+                n.depth,
+                n.label,
+                if n.page { "*" } else { "" }
+            )
         })
         .collect()
 }
@@ -60,7 +65,13 @@ fn the_order_of_the_list_does_not_matter() {
     let mut t = PageTree::new(&list);
     t.toggle("handbook.md");
     assert_eq!(t.rows(100).len(), 4);
-    assert_eq!(t.rows(100).iter().filter(|r| r.node.label == "handbook").count(), 0);
+    assert_eq!(
+        t.rows(100)
+            .iter()
+            .filter(|r| r.node.label == "handbook")
+            .count(),
+        0
+    );
 }
 
 #[test]

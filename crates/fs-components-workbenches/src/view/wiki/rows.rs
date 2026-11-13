@@ -97,7 +97,14 @@ pub(super) fn tree_scroll(
         };
         line = if node.folder && node.page {
             // The title part opens the page; the arrow before it expands.
-            line.child(div().flex_row().items_center().on_click(move |_| open()).child(kind).child(label))
+            line.child(
+                div()
+                    .flex_row()
+                    .items_center()
+                    .on_click(move |_| open())
+                    .child(kind)
+                    .child(label),
+            )
         } else {
             line.child(kind).child(label)
         };
