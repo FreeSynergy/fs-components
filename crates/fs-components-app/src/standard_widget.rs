@@ -10,7 +10,9 @@ use crate::AppWidget;
 use crate::error::AppError;
 use crate::language::{LanguageChoice, LanguageControl, Scope};
 use crate::shell::Status;
-use crate::standard::{FRONTEND, FrontendItem, Installed, LANGUAGE, QUIT, StandardCallbacks, StandardMenus, build, say};
+use crate::standard::{
+    FRONTEND, FrontendItem, Installed, LANGUAGE, QUIT, StandardCallbacks, StandardMenus, build, say,
+};
 use crate::texts::shell_texts;
 
 impl AppWidget {

@@ -9,7 +9,10 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
-use fs_components_app::{AppWidget, FileLanguageControl, FrontendItem, LanguageControl, Menu, Screen, StandardCallbacks, StandardMenus};
+use fs_components_app::{
+    AppWidget, FileLanguageControl, FrontendItem, LanguageControl, Menu, Screen, StandardCallbacks,
+    StandardMenus,
+};
 use fs_components_words::{LanguageSetting, Locale};
 
 use super::Harness;
@@ -101,4 +104,3 @@ pub fn menus(app: &AppWidget) -> Vec<Menu> {
 pub fn labels(entries: &[fs_components_app::MenuEntry]) -> Vec<&str> {
     entries.iter().map(|e| e.label.as_str()).collect()
 }
-

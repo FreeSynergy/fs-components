@@ -7,8 +7,8 @@
 #![allow(dead_code)]
 
 pub mod fixture;
-pub mod standard;
 mod input;
+pub mod standard;
 
 use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 

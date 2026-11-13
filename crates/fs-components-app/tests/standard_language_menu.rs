@@ -132,4 +132,3 @@ fn the_settings_page_changes_all_programs_through_the_same_object() {
     );
     let _ = std::fs::remove_dir_all(f.dir);
 }
-
