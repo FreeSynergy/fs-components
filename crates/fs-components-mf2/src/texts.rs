@@ -47,7 +47,10 @@ pub struct Mf2Texts {
 impl Language {
     fn say(&self, id: &str, args: &Args) -> Option<String> {
         let source = self.messages.get(id)?;
-        let mut cache = self.compiled.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let mut cache = self
+            .compiled
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         let compiled = cache
             .entry(id.to_owned())
             .or_insert_with(|| mf2::compile_str(source, &self.tag).ok())
@@ -60,7 +63,12 @@ impl Language {
             .map(|(n, text)| arg_of(args.get(n), text))
             .collect();
         let (mut out, mut errors) = (String::new(), Vec::new());
-        Formatter::new(&compiled.catalog, &REGISTRY, &CONTEXT).write(Compiled::ID, &values, &mut out, &mut errors);
+        Formatter::new(&compiled.catalog, &REGISTRY, &CONTEXT).write(
+            Compiled::ID,
+            &values,
+            &mut out,
+            &mut errors,
+        );
         (errors.is_empty() && !out.trim().is_empty()).then_some(out)
     }
 }
@@ -96,8 +104,16 @@ impl Mf2Texts {
                 continue;
             }
             if let Some(s) = sources.iter().find(|s| s.language == tag.as_str()) {
-                let messages = entries(s.text).0.into_iter().map(|e| (e.id, e.message)).collect();
-                chain.push(Language { tag: tag.to_string(), messages, compiled: Mutex::default() });
+                let messages = entries(s.text)
+                    .0
+                    .into_iter()
+                    .map(|e| (e.id, e.message))
+                    .collect();
+                chain.push(Language {
+                    tag: tag.to_string(),
+                    messages,
+                    compiled: Mutex::default(),
+                });
             }
         }
         Self { chain }

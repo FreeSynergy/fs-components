@@ -37,9 +37,18 @@ impl Surface for Blank {
 fn bar(lang: &str) -> Vec<Menu> {
     let t = |en: &'static str, de: &'static str| if lang == "de" { de } else { en };
     vec![
-        Menu::new(t("Program", "Programm"), vec![MenuEntry::new("quit", t("Quit", "Beenden"))]),
-        Menu::new(t("View", "Ansicht"), vec![MenuEntry::new("view", t("Tiles", "Kacheln"))]),
-        Menu::new(t("Help", "Hilfe"), vec![MenuEntry::new("about", t("About", "Über"))]),
+        Menu::new(
+            t("Program", "Programm"),
+            vec![MenuEntry::new("quit", t("Quit", "Beenden"))],
+        ),
+        Menu::new(
+            t("View", "Ansicht"),
+            vec![MenuEntry::new("view", t("Tiles", "Kacheln"))],
+        ),
+        Menu::new(
+            t("Help", "Hilfe"),
+            vec![MenuEntry::new("about", t("About", "Über"))],
+        ),
     ]
 }
 
@@ -76,8 +85,15 @@ fn the_same_window_in_german_and_english_differs_in_the_bar_and_nowhere_else() {
         return;
     };
     let bar_differs = (0..SIZE.0).any(|x| de.get_pixel(x, 22) != en.get_pixel(x, 22));
-    assert!(bar_differs, "the words of the bar are drawn in the language");
+    assert!(
+        bar_differs,
+        "the words of the bar are drawn in the language"
+    );
     for (x, y) in [(100, 200), (400, 200), (630, 230)] {
-        assert_eq!(de.get_pixel(x, y), en.get_pixel(x, y), "the work area at {x},{y} is the same");
+        assert_eq!(
+            de.get_pixel(x, y),
+            en.get_pixel(x, y),
+            "the work area at {x},{y} is the same"
+        );
     }
 }

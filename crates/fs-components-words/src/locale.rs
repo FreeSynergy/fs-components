@@ -63,7 +63,9 @@ impl Locale {
                 let head = c.next().map(|h| h.to_ascii_uppercase()).unwrap_or_default();
                 out.push(format!("{head}{}", c.as_str()));
                 stage = 1;
-            } else if stage <= 1 && ((n == 2 && alpha(part)) || (n == 3 && part.bytes().all(|b| b.is_ascii_digit()))) {
+            } else if stage <= 1
+                && ((n == 2 && alpha(part)) || (n == 3 && part.bytes().all(|b| b.is_ascii_digit())))
+            {
                 out.push(lower.to_ascii_uppercase());
                 stage = 2;
             } else if stage <= 2 && (n >= 5 || (n == 4 && part.as_bytes()[0].is_ascii_digit())) {

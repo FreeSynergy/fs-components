@@ -24,7 +24,10 @@ pub(crate) struct Entry {
 }
 
 fn id_ok(id: &str) -> bool {
-    !id.is_empty() && id.bytes().all(|b| b.is_ascii_alphanumeric() || matches!(b, b'-' | b'_' | b'.'))
+    !id.is_empty()
+        && id
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || matches!(b, b'-' | b'_' | b'.'))
 }
 
 /// The entries of a text and the problems on the way (a line that is no entry, an id given twice, an empty message).
@@ -52,7 +55,11 @@ pub(crate) fn entries(text: &str) -> (Vec<Entry>, Vec<String>) {
             } else if out.iter().any(|e| e.id == id) {
                 problems.push(format!("line {n}: {id} is given twice"));
             } else {
-                out.push(Entry { id: id.to_owned(), message: rest.trim().to_owned(), line: n });
+                out.push(Entry {
+                    id: id.to_owned(),
+                    message: rest.trim().to_owned(),
+                    line: n,
+                });
             }
         } else {
             problems.push(format!("line {n}: no `=`"));

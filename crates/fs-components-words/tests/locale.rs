@@ -20,8 +20,21 @@ fn a_tag_is_normalised() {
 #[test]
 fn what_is_no_tag_is_refused() {
     for bad in [
-        "", "d", "de_DE", "de--AT", "de-", "-de", "1de", "de-Hans-Hant", "de-AT-DE", "de-A", "deutsch1", "de-Latn-x",
-        "toolonglang", "de-\u{e4}t", "de AT",
+        "",
+        "d",
+        "de_DE",
+        "de--AT",
+        "de-",
+        "-de",
+        "1de",
+        "de-Hans-Hant",
+        "de-AT-DE",
+        "de-A",
+        "deutsch1",
+        "de-Latn-x",
+        "toolonglang",
+        "de-\u{e4}t",
+        "de AT",
     ] {
         assert!(Locale::parse(bad).is_err(), "{bad:?} must be refused");
     }

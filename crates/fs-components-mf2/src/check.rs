@@ -13,15 +13,27 @@ type Vars = BTreeSet<String>;
 
 fn read(source: &Source, problems: &mut Vec<String>) -> BTreeMap<String, Vars> {
     let (list, found) = entries(source.text);
-    problems.extend(found.into_iter().map(|p| format!("{}: {p}", source.language)));
+    problems.extend(
+        found
+            .into_iter()
+            .map(|p| format!("{}: {p}", source.language)),
+    );
     let mut out = BTreeMap::new();
     for e in list {
         match mf2::compile_str(&e.message, source.language) {
             Ok(c) => {
-                let vars = c.manifest.slots.first().map(|s| s.iter().cloned().collect()).unwrap_or_default();
+                let vars = c
+                    .manifest
+                    .slots
+                    .first()
+                    .map(|s| s.iter().cloned().collect())
+                    .unwrap_or_default();
                 out.insert(e.id, vars);
             }
-            Err(why) => problems.push(format!("{}: {} (line {}): {why}", source.language, e.id, e.line)),
+            Err(why) => problems.push(format!(
+                "{}: {} (line {}): {why}",
+                source.language, e.id, e.line
+            )),
         }
     }
     out
@@ -32,7 +44,10 @@ fn read(source: &Source, problems: &mut Vec<String>) -> BTreeMap<String, Vars> {
 /// language has and the other lacks, and a message whose variables differ from English.
 pub fn check_pairs(sources: &[Source]) -> Vec<String> {
     let mut problems = Vec::new();
-    let all: Vec<_> = sources.iter().map(|s| (s.language, read(s, &mut problems))).collect();
+    let all: Vec<_> = sources
+        .iter()
+        .map(|s| (s.language, read(s, &mut problems)))
+        .collect();
     let Some(english) = all.iter().find(|(l, _)| *l == "en").map(|(_, m)| m) else {
         problems.push("no source for en".to_owned());
         return problems;
@@ -45,7 +60,9 @@ pub fn check_pairs(sources: &[Source]) -> Vec<String> {
             match messages.get(id) {
                 None => problems.push(format!("{id}: in en, missing in {language}")),
                 Some(other) if other != vars => {
-                    problems.push(format!("{id}: variables differ, en {vars:?}, {language} {other:?}"));
+                    problems.push(format!(
+                        "{id}: variables differ, en {vars:?}, {language} {other:?}"
+                    ));
                 }
                 Some(_) => {}
             }

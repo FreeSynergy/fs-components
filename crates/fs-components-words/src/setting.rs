@@ -42,9 +42,15 @@ impl LanguageSetting {
     }
 
     /// The override of `program`, from `$XDG_DATA_HOME` and `$HOME`.
-    pub fn program(program: &str, xdg_data: Option<OsString>, home: Option<OsString>) -> Option<Self> {
+    pub fn program(
+        program: &str,
+        xdg_data: Option<OsString>,
+        home: Option<OsString>,
+    ) -> Option<Self> {
         let dir = base(xdg_data, home, ".local/share")?;
-        Some(Self::new(dir.join("freesynergy").join(program).join("language")))
+        Some(Self::new(
+            dir.join("freesynergy").join(program).join("language"),
+        ))
     }
 
     /// The file.
@@ -87,7 +93,9 @@ impl LanguageSetting {
         if let Some(dir) = self.file.parent() {
             std::fs::create_dir_all(dir).map_err(fail)?;
         }
-        let temp = self.file.with_extension(format!("{}.tmp", std::process::id()));
+        let temp = self
+            .file
+            .with_extension(format!("{}.tmp", std::process::id()));
         let written = std::fs::File::create(&temp).and_then(|mut f| {
             f.write_all(format!("{locale}\n").as_bytes())?;
             f.sync_all()

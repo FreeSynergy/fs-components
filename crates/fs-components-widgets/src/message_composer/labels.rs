@@ -29,15 +29,25 @@ pub struct Labels {
 
 /// The two language files of the composer; `fs_components_mf2::check_pairs(TEXTS)` must be empty (a test asserts it).
 pub const TEXTS: &[Source] = &[
-    Source { language: "en", text: include_str!("texts/en.mf2") },
-    Source { language: "de", text: include_str!("texts/de.mf2") },
+    Source {
+        language: "en",
+        text: include_str!("texts/en.mf2"),
+    },
+    Source {
+        language: "de",
+        text: include_str!("texts/de.mf2"),
+    },
 ];
 
 impl Localized for Labels {
     /// The composer's words in `locale`. `failed` and `draft_failed` keep their `{}` where the reason goes, as before.
     fn for_locale(locale: &Locale) -> Self {
         let t = Mf2Texts::new(TEXTS, locale);
-        let with_reason = |id: &str| t.say(&TextId::new(id), &Args::new().text("reason", "{}")).text().to_owned();
+        let with_reason = |id: &str| {
+            t.say(&TextId::new(id), &Args::new().text("reason", "{}"))
+                .text()
+                .to_owned()
+        };
         Self {
             placeholder: t.plain("composer-placeholder"),
             send: t.plain("composer-send"),
