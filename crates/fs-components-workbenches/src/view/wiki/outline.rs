@@ -8,32 +8,48 @@ use fs_components_widgets::{Block, Document};
 
 use crate::page_info::{PageInfo, RevisionRow, WikiLabels};
 
-/// The headings of `document` as (level, text), in order. A first level-1 heading that equals the title is the title itself,
-/// not an entry.
+/// Does the document start with a level-1 heading that is its title? Then the layout draws that heading big above the text
+/// and it is not drawn again as a block. A first heading that says something else stays a block.
+pub(super) fn leads_with_title(document: &Document) -> bool {
+    matches!(
+        document.blocks.first(),
+        Some(Block::Heading { level: 1, text }) if text.text.trim() == document.title.trim()
+    )
+}
+
+/// The headings of `document` as (level, text), in order, without the title heading (see [`leads_with_title`]).
 pub(super) fn headings(document: &Document) -> Vec<(u8, String)> {
+    let skip = usize::from(leads_with_title(document));
+    document
+        .blocks
+        .iter()
+        .skip(skip)
+        .filter_map(|block| match block {
+            Block::Heading { level, text } => Some((*level, text.text.clone())),
+            _ => None,
+        })
+        .collect()
+}
+
+/// What the outline panel lists: the title (a heading too) and then the headings.
+pub(super) fn outline_entries(document: &Document) -> Vec<(u8, String)> {
     let mut out = Vec::new();
-    for (i, block) in document.blocks.iter().enumerate() {
-        if let Block::Heading { level, text } = block {
-            if i == 0 && *level == 1 {
-                continue;
-            }
-            out.push((*level, text.text.clone()));
-        }
+    if leads_with_title(document) {
+        out.push((1, document.title.trim().to_owned()));
     }
+    out.extend(headings(document));
     out
 }
 
-/// The blocks below the title: a leading level-1 heading is dropped (the layout draws the title big above).
+/// The blocks below the title: a leading title heading is dropped (the layout draws the title big above).
 pub(super) fn body(document: &Document) -> Vec<Block> {
-    match document.blocks.first() {
-        Some(Block::Heading { level: 1, .. }) => document.blocks[1..].to_vec(),
-        _ => document.blocks.clone(),
-    }
+    let skip = usize::from(leads_with_title(document));
+    document.blocks[skip..].to_vec()
 }
 
 /// The outline panel (Confluence layout): one row per heading, indented by level.
 pub(super) fn outline_panel(document: &Document, labels: &WikiLabels) -> Div {
-    let list = headings(document);
+    let list = outline_entries(document);
     let mut column = div().class("fs-wk-panel").flex_col().w_full();
     column = column.child(text(&labels.outline).class("fs-wk-panel-title").no_cursor());
     if list.is_empty() {

@@ -12,7 +12,7 @@ use fs_components_widgets::{Block, LinkHandler, TextView};
 use super::blocks::BlockEditor;
 use super::confluence::canonical;
 use super::head::{crumbs, lang_switch, notice_band, state_chip};
-use super::outline::ticks;
+use super::outline::{body, ticks};
 use super::rows::{Look, tree_scroll};
 use super::tree::PageTree;
 use crate::page_info::WikiLabels;
@@ -127,9 +127,13 @@ pub(crate) fn main(
         .child(icon(Glyph::Star, 18.0, Tone::Muted));
     let mut page = div().class("fs-wk-b-page").flex_col().w_full();
     if let Some(document) = document {
-        page = page
-            .child(page_icon(info.emoji.as_deref()))
-            .child(text(&title).class("fs-wk-b-title").no_cursor());
+        // While editing, a first block that is a level-1 heading IS the title: drawn once, as that block.
+        let title_is_block =
+            matches!((reader.editing(), blocks), (Some(_), Some(b)) if b.lead_heading());
+        page = page.child(page_icon(info.emoji.as_deref()));
+        if !title_is_block {
+            page = page.child(text(&title).class("fs-wk-b-title").no_cursor());
+        }
         let meta = div()
             .class("fs-wk-b-meta")
             .flex_row()
@@ -142,7 +146,7 @@ pub(crate) fn main(
         if let (Some(_), Some(blocks)) = (reader.editing(), blocks) {
             page = page.child(blocks.view(labels, report));
         } else {
-            page = page.child(block_list(document.blocks.as_slice(), actions));
+            page = page.child(block_list(&body(document), actions));
         }
     } else if let Shown::Failed { reason, .. } = reader.shown() {
         page = page.child(div().class("fs-rd-failed").child(text(reason.clone())));
@@ -192,11 +196,7 @@ fn page_icon(emoji: Option<&str>) -> Div {
 /// The blocks of a page, one element each; a click on a block starts editing there.
 fn block_list(blocks: &[Block], actions: &Actions) -> Div {
     let mut column = div().flex_col().w_full().gap(1.0);
-    let rest = match blocks.first() {
-        Some(Block::Heading { level: 1, .. }) => &blocks[1..],
-        _ => blocks,
-    };
-    for (i, block) in rest.iter().enumerate() {
+    for (i, block) in blocks.iter().enumerate() {
         let edit = actions.block.clone();
         let follow = actions.follow.clone();
         let handler: LinkHandler = std::sync::Arc::new(move |href| follow(href));

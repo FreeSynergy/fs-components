@@ -103,7 +103,10 @@ fn a_child_stands_one_step_right_of_its_parent() {
         let laid = laid_out(&open_handbook(), look, &log);
         let parent = x_of(&laid, "fs-wk-arrow-handbook.md");
         let child = x_of(&laid, "fs-wk-arrow-handbook/chapter-one.md");
-        assert!(child >= parent + 16.0, "the child is not indented ({child} against {parent})");
+        assert!(
+            child >= parent + 16.0,
+            "the child is not indented ({child} against {parent})"
+        );
     }
 }
 

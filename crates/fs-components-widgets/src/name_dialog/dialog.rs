@@ -150,7 +150,11 @@ impl NameDialog {
             .id(&self.id)
             .class("fs-nd")
             .child(text(self.title.clone()).class("fs-nd-title"))
-            .child(div().id(format!("{}-field", self.id)).child(self.field.build()))
+            .child(
+                div()
+                    .id(format!("{}-field", self.id))
+                    .child(self.field.build()),
+            )
             .child(buttons)
             // The field keeps the keyboard while typing; Enter and Escape reach the dialog as broadcast keys.
             .on_key_down(move |ctx| match ctx.key_code {

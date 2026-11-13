@@ -10,11 +10,13 @@ mod fold;
 mod head;
 pub(crate) mod notion;
 mod outline;
+#[cfg(test)]
+mod outline_tests;
 mod rows;
-mod styles;
-mod tree;
 #[cfg(test)]
 mod rows_tests;
+mod styles;
+mod tree;
 #[cfg(test)]
 mod tree_tests;
 

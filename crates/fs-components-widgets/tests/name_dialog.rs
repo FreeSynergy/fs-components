@@ -73,12 +73,18 @@ fn both_languages_have_every_text_with_the_same_placeholders() {
 #[test]
 fn the_title_follows_the_purpose() {
     let l = Labels::default();
-    assert_eq!(NameDialog::new(&l, Purpose::NewPage, "x").title(), "New page");
+    assert_eq!(
+        NameDialog::new(&l, Purpose::NewPage, "x").title(),
+        "New page"
+    );
     assert_eq!(
         NameDialog::new(&l, Purpose::SubPage, "Guide").title(),
         "New sub-page of Guide"
     );
-    assert_eq!(NameDialog::new(&l, Purpose::Rename, "Old").title(), "Rename Old");
+    assert_eq!(
+        NameDialog::new(&l, Purpose::Rename, "Old").title(),
+        "Rename Old"
+    );
 }
 
 #[test]
@@ -89,11 +95,18 @@ fn enter_takes_the_trimmed_name_and_escape_leaves() {
     let (mut tree, mut input) = open(&d);
     assert_eq!(d.text(), "Start");
     type_in(&mut tree, "  Guide ");
-    assert_eq!(d.text(), "  Guide ", "the preset name was selected: typing replaces it");
+    assert_eq!(
+        d.text(),
+        "  Guide ",
+        "the preset name was selected: typing replaces it"
+    );
     input.key(&mut tree, 13);
     assert_eq!(*log.lock().unwrap(), ["name Guide"]);
     input.key(&mut tree, 27);
-    assert_eq!(log.lock().unwrap().last().map(String::as_str), Some("cancel"));
+    assert_eq!(
+        log.lock().unwrap().last().map(String::as_str),
+        Some("cancel")
+    );
 }
 
 #[test]
@@ -163,6 +176,9 @@ fn the_picture_in_both_languages() {
         let labels = Labels::from_words(&catalog);
         let d = NameDialog::new(&labels, Purpose::SubPage, "Handbook").initial("Chapter one");
         let img = draw(d.build(), 480, 220, &format!("name-dialog-{lang}.png"));
-        assert!(ink(&img, (0, 0, 480, 220), background(&img)) > 2500, "{lang}");
+        assert!(
+            ink(&img, (0, 0, 480, 220), background(&img)) > 2500,
+            "{lang}"
+        );
     }
 }

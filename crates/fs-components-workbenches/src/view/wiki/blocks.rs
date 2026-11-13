@@ -82,6 +82,16 @@ impl BlockEditor {
         Self { edit, areas }
     }
 
+    /// Is the first block a level-1 heading (`# `)? It is then the title of the page.
+    pub fn lead_heading(&self) -> bool {
+        self.areas.first().is_some_and(|(a, _)| {
+            a.lock()
+                .unwrap_or_else(PoisonError::into_inner)
+                .value()
+                .starts_with("# ")
+        })
+    }
+
     /// The column of blocks. `report` gets the whole text after each change.
     pub fn view(&self, labels: &WikiLabels, report: &Arc<dyn Fn(&str) + Send + Sync>) -> Div {
         let mut column = div().class("fs-wk-blocks").flex_col().w_full().gap(1.0);

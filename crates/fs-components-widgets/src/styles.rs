@@ -4,8 +4,8 @@
 
 use crate::{
     agent_tree, avatar_group, badge, breadcrumb, calendar_view, file_preview, file_tile, lightbox,
-    list_view, message_composer, message_list, name_dialog, participant, plan, share_dialog, sortable_list,
-    task_card, text_view, tool_call, transfer_list, tree_view,
+    list_view, message_composer, message_list, name_dialog, participant, plan, share_dialog,
+    sortable_list, task_card, text_view, tool_call, transfer_list, tree_view,
 };
 
 /// The CSS of all widgets in this crate; the shell adds it to the theme once.
