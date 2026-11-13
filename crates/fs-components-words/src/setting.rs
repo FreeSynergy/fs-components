@@ -202,7 +202,11 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
         let fifo = dir.join("language");
-        if !std::process::Command::new("mkfifo").arg(&fifo).status().is_ok_and(|s| s.success()) {
+        if !std::process::Command::new("mkfifo")
+            .arg(&fifo)
+            .status()
+            .is_ok_and(|s| s.success())
+        {
             eprintln!("skipped: no mkfifo");
             return;
         }
@@ -210,7 +214,13 @@ mod tests {
         let file = open_for_reading(&fifo).unwrap();
         assert!(!file.metadata().unwrap().is_file());
         std::fs::write(dir.join("real"), "de").unwrap();
-        assert!(open_for_reading(&dir.join("real")).unwrap().metadata().unwrap().is_file());
+        assert!(
+            open_for_reading(&dir.join("real"))
+                .unwrap()
+                .metadata()
+                .unwrap()
+                .is_file()
+        );
         let _ = std::fs::remove_dir_all(dir);
     }
 }

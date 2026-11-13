@@ -16,17 +16,33 @@ fn the_longest_line_of_the_next_level_does_not_wrap_in_german_and_english() {
             let mut f = fixture_in("width", lang, 800.0);
             if shared {
                 // The longest system line: "Wie alle Programme (English)" / "Like all programs (Deutsch)".
-                f.control.choose(Scope::AllPrograms, &LanguageChoice::Language(Locale::parse(other).unwrap())).unwrap();
+                f.control
+                    .choose(
+                        Scope::AllPrograms,
+                        &LanguageChoice::Language(Locale::parse(other).unwrap()),
+                    )
+                    .unwrap();
                 f.h.app.set_active_frontend("board").unwrap();
             }
             f.h.click("fs-app-menu-0");
             f.h.click(&entry("fs.language"));
             let system = f.h.bounds(&entry("fs.language.system"));
             let short = f.h.bounds(&entry("fs.language.en"));
-            assert!((system.3 - short.3).abs() < 8.0, "{lang} shared={shared}: the longest line is one line high like the others (a wrapped line would be 17 px or more taller): {system:?} against {short:?}");
+            assert!(
+                (system.3 - short.3).abs() < 8.0,
+                "{lang} shared={shared}: the longest line is one line high like the others (a wrapped line would be 17 px or more taller): {system:?} against {short:?}"
+            );
             let sub = f.h.bounds(SUB);
-            assert!(sub.2 >= 140.0 && sub.2 <= 360.0, "{lang}: within the minimum and maximum: {sub:?}");
-            assert!(menus(&f.h.app)[0].entries[1].children.iter().all(|c| !labels(std::slice::from_ref(c))[0].is_empty()));
+            assert!(
+                sub.2 >= 140.0 && sub.2 <= 360.0,
+                "{lang}: within the minimum and maximum: {sub:?}"
+            );
+            assert!(
+                menus(&f.h.app)[0].entries[1]
+                    .children
+                    .iter()
+                    .all(|c| !labels(std::slice::from_ref(c))[0].is_empty())
+            );
             let _ = std::fs::remove_dir_all(f.dir);
         }
     }
@@ -48,33 +64,56 @@ fn a_short_next_level_is_narrower_than_a_long_one_and_never_wider_than_the_windo
         let _ = std::fs::remove_dir_all(&f.dir);
         (short, long)
     }; // the first window is gone before the next one opens: one at a time
-    assert!(short < long, "narrower for short lines: {short} against {long}");
+    assert!(
+        short < long,
+        "narrower for short lines: {short} against {long}"
+    );
     assert!(short >= 140.0, "but not below the minimum: {short}");
     // A window narrower than the maximum: the next level fits into it.
     let mut f = fixture_in("narrow", "de_DE.UTF-8", 200.0);
     f.h.click("fs-app-menu-0");
     f.h.click(&entry("fs.language"));
     let (x, _, w, _) = f.h.bounds(SUB);
-    assert!(x >= 0.0 && x + w <= 200.0, "inside a window of 200 px: {x} {w}");
+    assert!(
+        x >= 0.0 && x + w <= 200.0,
+        "inside a window of 200 px: {x} {w}"
+    );
     let _ = std::fs::remove_dir_all(f.dir);
 }
 
 #[test]
 fn a_frontend_with_a_translated_display_name_shows_it_and_a_proper_name_stays() {
-    let item = FrontendItem::new("storefront", "Storefront").named_in("de", "Schaufenster").named_in("fr-CA", "Vitrine");
+    let item = FrontendItem::new("storefront", "Storefront")
+        .named_in("de", "Schaufenster")
+        .named_in("fr-CA", "Vitrine");
     let l = |t: &str| Locale::parse(t).unwrap();
     assert_eq!(item.label_for(&l("de")), "Schaufenster");
-    assert_eq!(item.label_for(&l("de-AT")), "Schaufenster", "a region uses its language");
-    assert_eq!(item.label_for(&l("en")), "Storefront", "no English name: the plain label");
+    assert_eq!(
+        item.label_for(&l("de-AT")),
+        "Schaufenster",
+        "a region uses its language"
+    );
+    assert_eq!(
+        item.label_for(&l("en")),
+        "Storefront",
+        "no English name: the plain label"
+    );
     assert_eq!(item.label_for(&l("fr")), "Storefront", "fr-CA is not fr");
     assert_eq!(item.label_for(&l("fr-CA")), "Vitrine");
     let plain = FrontendItem::new("compact", "Compact");
-    assert_eq!(plain.label_for(&l("de")), "Compact", "a proper name stays in every language");
+    assert_eq!(
+        plain.label_for(&l("de")),
+        "Compact",
+        "a proper name stays in every language"
+    );
     // In the menu.
     let f = fixture_in("names", "de_DE.UTF-8", 800.0);
     f.h.app
         .set_frontends(vec![item.clone(), plain], "storefront", |_| {})
         .unwrap();
-    assert_eq!(labels(&menus(&f.h.app)[1].entries[2].children), ["Schaufenster", "Compact"]);
+    assert_eq!(
+        labels(&menus(&f.h.app)[1].entries[2].children),
+        ["Schaufenster", "Compact"]
+    );
     let _ = std::fs::remove_dir_all(f.dir);
 }

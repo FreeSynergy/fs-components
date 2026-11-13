@@ -34,8 +34,14 @@ const SIZE_F: (f32, f32) = (640.0, 300.0);
 
 /// The words of the demo window: the same ids in German and English, checked by `check_pairs` below.
 const DEMO: &[Source] = &[
-    Source { language: "en", text: include_str!("demo_texts/en.mf2") },
-    Source { language: "de", text: include_str!("demo_texts/de.mf2") },
+    Source {
+        language: "en",
+        text: include_str!("demo_texts/en.mf2"),
+    },
+    Source {
+        language: "de",
+        text: include_str!("demo_texts/de.mf2"),
+    },
 ];
 
 fn app(lang: &str, dir: &std::path::Path) -> AppWidget {
@@ -194,14 +200,21 @@ fn the_demo_words_are_paired_so_no_word_of_the_picture_is_in_one_language_only()
 fn the_view_menu_names_the_views_in_the_language_of_the_window() {
     let mut shots = Vec::new();
     for (lang, short) in [("de_DE.UTF-8", "de"), ("en_US.UTF-8", "en")] {
-        let dir = std::env::temp_dir().join(format!("fs-app-lang-view-{short}-{}", std::process::id()));
+        let dir =
+            std::env::temp_dir().join(format!("fs-app-lang-view-{short}-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         let mut h = Harness::new(app(lang, &dir), SIZE_F.0, SIZE_F.1);
         h.click("fs-app-menu-1");
         let Some(picture) = draw(&h.app, &format!("shell-{short}-view.png")) else {
             return;
         };
-        let lines: Vec<_> = h.app.with_shell(|s| s.menus()[1].entries.iter().map(|e| e.label.clone()).collect());
+        let lines: Vec<_> = h.app.with_shell(|s| {
+            s.menus()[1]
+                .entries
+                .iter()
+                .map(|e| e.label.clone())
+                .collect()
+        });
         shots.push((picture, lines));
         let _ = std::fs::remove_dir_all(dir);
     }

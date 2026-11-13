@@ -130,7 +130,11 @@ fn show(
     let calls = calls.clone();
     let window = window_width();
     // Where Blinc will put the panel: it moves one that would cross the right edge.
-    let left = if window > 0.0 { x.min(window - MENU_WIDTH - SIDE_MARGIN).max(SIDE_MARGIN) } else { x };
+    let left = if window > 0.0 {
+        x.min(window - MENU_WIDTH - SIDE_MARGIN).max(SIDE_MARGIN)
+    } else {
+        x
+    };
     let widest = menu
         .entries
         .iter()
@@ -168,7 +172,11 @@ fn show(
             // Drawn again when the next level opens or closes (the stack rebuilds all its entries), so the line that opens it
             // says `aria-expanded` as long as it is open. The shell's lock is taken inside the stack's, as `on_close` does.
             let open_sub = locked(&reader).open_sub();
-            let look = Look { open_sub, arrow_left, width: MENU_WIDTH };
+            let look = Look {
+                open_sub,
+                arrow_left,
+                width: MENU_WIDTH,
+            };
             panel(index, &menu, look, &calls)
         })
         .show()

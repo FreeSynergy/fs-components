@@ -14,8 +14,8 @@ use blinc_theme::{RadiusToken, ThemeState};
 
 use crate::menu::{Menu, MenuEntry};
 use crate::styles::{
-    ARROW_WIDTH, MARK_WIDTH, MENU_CHROME, MENU_GAP, MENU_LINE_HEIGHT, MENU_TEXT, SIDE_MARGIN, SUB_MAX_WIDTH,
-    SUB_MIN_WIDTH,
+    ARROW_WIDTH, MARK_WIDTH, MENU_CHROME, MENU_GAP, MENU_LINE_HEIGHT, MENU_TEXT, SIDE_MARGIN,
+    SUB_MAX_WIDTH, SUB_MIN_WIDTH,
 };
 
 /// What a press on a menu in the bar does: which menu, and where its panel would start.
@@ -56,10 +56,22 @@ pub(crate) fn content_width(entries: &[MenuEntry], window: f32) -> f32 {
         .iter()
         .map(|e| measure_text(&e.label, MENU_TEXT).width)
         .fold(0.0, f32::max);
-    let marks = if entries.iter().any(|e| e.checked) { MARK_WIDTH } else { 0.0 };
-    let arrow = if entries.iter().any(|e| !e.children.is_empty()) { ARROW_WIDTH } else { 0.0 };
+    let marks = if entries.iter().any(|e| e.checked) {
+        MARK_WIDTH
+    } else {
+        0.0
+    };
+    let arrow = if entries.iter().any(|e| !e.children.is_empty()) {
+        ARROW_WIDTH
+    } else {
+        0.0
+    };
     let wide = (text + marks + arrow + MENU_CHROME).clamp(SUB_MIN_WIDTH, SUB_MAX_WIDTH);
-    if window > 0.0 { wide.min((window - 2.0 * SIDE_MARGIN).max(1.0)) } else { wide }
+    if window > 0.0 {
+        wide.min((window - 2.0 * SIDE_MARGIN).max(1.0))
+    } else {
+        wide
+    }
 }
 
 /// Does the next level of a line fold to the left of its panel? Yes where it would end beyond the window on the right.
@@ -128,7 +140,10 @@ pub(crate) fn panel(index: usize, menu: &Menu, look: Look, calls: &Callbacks) ->
 
 /// The panel of the next level, in an overlay of its own (so it can be moved or folded to the left without moving the first).
 pub(crate) fn sub_panel(index: usize, entries: &[MenuEntry], width: f32, calls: &Callbacks) -> Div {
-    let look = Look { width, ..Look::default() };
+    let look = Look {
+        width,
+        ..Look::default()
+    };
     one_panel(SUB_PANEL_ID, index, entries, look, calls)
 }
 
@@ -194,7 +209,11 @@ pub(crate) fn line(
         .attr_when("disabled", "", entry.disabled)
         .attr_when("aria-checked", "true", entry.checked)
         .attr_when("aria-haspopup", "menu", opens)
-        .attr_when("aria-expanded", "true", opens && look.open_sub == Some(position))
+        .attr_when(
+            "aria-expanded",
+            "true",
+            opens && look.open_sub == Some(position),
+        )
         .w_full()
         .h_fit()
         // The same as `.cn-menubar-item`: class rules can drop on a rebuilt overlay (a note in `blinc_cn`).

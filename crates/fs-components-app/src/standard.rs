@@ -227,8 +227,9 @@ pub(crate) fn build(standard: &StandardMenus) -> Vec<Menu> {
             .frontends
             .iter()
             .map(|f| {
-                let entry = MenuEntry::new(format!("{FRONTEND}{}", f.id), f.label_for(&standard.locale))
-                    .checked(standard.active_frontend.as_deref() == Some(f.id.as_str()));
+                let entry =
+                    MenuEntry::new(format!("{FRONTEND}{}", f.id), f.label_for(&standard.locale))
+                        .checked(standard.active_frontend.as_deref() == Some(f.id.as_str()));
                 if f.disabled { entry.disabled() } else { entry }
             })
             .collect();
