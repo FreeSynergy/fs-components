@@ -1,14 +1,16 @@
 #!/usr/bin/env -S python3 -I
 """Gate for B-L: every visible text exists in German AND English, and no UI text is hard coded.
 
-Usage: contract/texts-check [root] [--stats] [--selftest]. Exit 1 on any finding. Pattern: Facade over three small rules.
+Usage: contract/texts-check [root] [--all] [--selftest]. Exit 1 on any finding. Pattern: Facade over three small rules.
   R1  hard coded UI string: a string literal given to a call that shows it (text, label, title, tooltip, placeholder, Menu::new,
       MenuEntry::new, Status::Info/Problem, ...) in code that is not a test.
-  R2  single-language table: a file named words*/labels*/lang* with UI literals outside a `texts!` block (the English-only tables).
-  R3  `texts!` entries: each needs `en:` and `de:`, equal `{placeholders}`, not empty, and `de` differs from `en` unless the
-      text is listed under [same] in contract/texts-exceptions.toml (one word, a name, a unit).
+  R2  single-language table: a file named words*/labels*/lang* with UI literals (the English-only tables that move to .mf2).
+  R3  `.mf2` text files (ADR 0057, Unicode MessageFormat 2, one `en.mf2` and one `de.mf2` per folder, entries `id = message`):
+      every id in en AND de, the same `$variables`, no empty message, de differs from en unless the id is listed under [same]
+      in contract/texts-exceptions.toml (a name, a unit). Heuristic (the variables are found by text, not by the MF2 parser);
+      the exact check is `fs_components_mf2::check_pairs`, which every crate with texts runs as a test.
 Heuristic on purpose: it finds candidates, a person judges; an accepted case goes into the exception file WITH a reason.
-Until the migration is done the gate runs with --stats (counts, exit 0 only when 0); the target is 0 findings."""
+CI runs it as a warning until the migration of the programs is done (step 6), then it is hard."""
 import os
 import re
 import sys
@@ -20,9 +22,6 @@ CALL = re.compile(r'\b(?:text|label|title|heading|tooltip|placeholder|button|ari
 ASSIGN = re.compile(r'=\s*(?:s\(|String::from\()?\s*"((?:[^"\\]|\\.)*)"\s*\)?\s*(?:\.into\(\)|\.to_string\(\)|\.to_owned\(\))')
 LITERAL = re.compile(r'"((?:[^"\\]|\\.)*)"')
 TABLE_FILE = re.compile(r'(^|/)(words|labels|lang)[^/]*\.rs$')
-GROUP = re.compile(r'\{((?:[^{}]|\{\w+\})*?\b(?:en|de)\s*:(?:[^{}]|\{\w+\})*)\}', re.S)
-FIELD = re.compile(r'\b(en|de)\s*:\s*"((?:[^"\\]|\\.)*)"')
-PLACE = re.compile(r'\{(\w+)\}')
 
 
 def is_ui(lit):
@@ -46,21 +45,61 @@ def line_of(text, pos):
     return text.count("\n", 0, pos) + 1
 
 
-def blocks(text):
-    """`texts!` blocks: the spans are blanked out for R2 so that a table with both languages is not a finding."""
-    return [m for m in re.finditer(r'texts!\s*\{', text)]
+ENTRY = re.compile(r"^([A-Za-z0-9_.\-]+)\s*=\s*(.*)$")
+VARIABLE = re.compile(r"\$([A-Za-z_][\w\-.]*)")
+LOCAL = re.compile(r"\.local\s+\$([A-Za-z_][\w\-.]*)")
 
 
-def strip_tables(text):
-    out, pos = [], 0
-    for m in blocks(text):
-        depth, i = 1, m.end()
-        while i < len(text) and depth:
-            depth += {"{": 1, "}": -1}.get(text[i], 0)
-            i += 1
-        out.append(text[pos:m.start()] + re.sub(r"[^\n]", " ", text[m.start():i]))
-        pos = i
-    return "".join(out) + text[pos:]
+def mf2_entries(path):
+    """`id -> (line, message)` of an .mf2 file: indented lines continue the message, `#` lines and blank lines are skipped."""
+    out, last = {}, None
+    for n, raw in enumerate(open(path, encoding="utf-8").read().lstrip("\ufeff").split("\n"), 1):
+        if raw[:1] in (" ", "\t") and raw.strip() and last:
+            out[last] = (out[last][0], out[last][1] + "\n" + raw.strip())
+        elif raw.strip() and not raw.startswith("#"):
+            m = ENTRY.match(raw.rstrip())
+            last = m.group(1) if m else None
+            if m:
+                out[last] = (n, m.group(2).strip())
+    return out
+
+
+def variables(message):
+    return set(VARIABLE.findall(message)) - set(LOCAL.findall(message))
+
+
+def check_mf2(root, same):
+    problems = []
+    for base, dirs, names in os.walk(root):
+        dirs[:] = [d for d in dirs if d not in ("target", ".git", "temp")]
+        langs = sorted(n[:-4] for n in names if n.endswith(".mf2"))
+        if not langs:
+            continue
+        rel = os.path.relpath(base, root)
+        for need in ("en", "de"):
+            if need not in langs:
+                problems.append(f"{rel}: no {need}.mf2 beside {', '.join(langs)}")
+        if "en" not in langs:
+            continue
+        table = {lang: mf2_entries(os.path.join(base, lang + ".mf2")) for lang in langs}
+        for lang, entries in table.items():
+            for id_, (n, message) in entries.items():
+                if not message:
+                    problems.append(f"{rel}/{lang}.mf2:{n}: {id_} has no message")
+            if lang == "en":
+                continue
+            for id_, (n, message) in table["en"].items():
+                if id_ not in entries:
+                    problems.append(f"{rel}/en.mf2:{n}: {id_} is missing in {lang}.mf2")
+                    continue
+                if variables(message) != variables(entries[id_][1]):
+                    problems.append(f"{rel}/{lang}.mf2:{entries[id_][0]}: {id_} has other variables than en")
+                if message == entries[id_][1] and id_ not in same and len(message.split()) > 1:
+                    problems.append(f"{rel}/{lang}.mf2:{entries[id_][0]}: {id_} equals en; translate it or list it under [same]")
+            for id_, (n, _) in entries.items():
+                if id_ not in table["en"]:
+                    problems.append(f"{rel}/{lang}.mf2:{n}: {id_} is missing in en.mf2")
+    return problems
 
 
 def files(root):
@@ -72,32 +111,21 @@ def files(root):
 
 
 def run(root, exc):
-    r1, r2, r3 = [], [], []
-    same, lits = set(exc.get("same", {})), set(exc.get("literal", {}))
+    r1, r2 = [], []
+    lits = set(exc.get("literal", {}))
     for path in files(root):
         rel = os.path.relpath(path, root)
         text = code_of(path)
-        tables_gone = strip_tables(text)
         for rx in (CALL, ASSIGN):
-            for m in rx.finditer(tables_gone):
+            for m in rx.finditer(text):
                 if is_ui(m.group(1)) and f"{rel}:{m.group(1)}" not in lits:
                     r1.append(f"{rel}:{line_of(text, m.start())}: hard coded UI text {m.group(1)!r}")
         if TABLE_FILE.search(rel):
-            for m in LITERAL.finditer(tables_gone):
+            for m in LITERAL.finditer(text):
                 if is_ui(m.group(1)) and f"{rel}:{m.group(1)}" not in lits:
-                    r2.append(f"{rel}:{line_of(text, m.start())}: literal outside a texts! table {m.group(1)!r}")
-        for g in GROUP.finditer(text):
-            found = {k: v for k, v in FIELD.findall(g.group(1))}
-            where = f"{rel}:{line_of(text, g.start())}"
-            for lang in ("en", "de"):
-                if not found.get(lang, "").strip():
-                    r3.append(f"{where}: language {lang} missing or empty")
-            if len(found) == 2:
-                if set(PLACE.findall(found["en"])) != set(PLACE.findall(found["de"])):
-                    r3.append(f"{where}: placeholders differ between en and de")
-                if found["en"] == found["de"] and found["en"] not in same and len(found["en"].split()) > 1:
-                    r3.append(f"{where}: de equals en ({found['en']!r}); translate it or list it under [same]")
-    return [("R1 no hard coded UI text", r1), ("R2 no single-language table", r2), ("R3 every text in en and de", r3)]
+                    r2.append(f"{rel}:{line_of(text, m.start())}: literal in a text table file {m.group(1)!r}")
+    r3 = check_mf2(root, set(exc.get("same", {})))
+    return [("R1 no hard coded UI text", r1), ("R2 no single-language table", r2), ("R3 every text in en and de (.mf2)", r3)]
 
 
 def load_exceptions(root):
@@ -110,23 +138,30 @@ def load_exceptions(root):
 
 def selftest():
     """Mutation check: a good tree passes, and each bad file is found by exactly the rule that is meant."""
+    ok = {"en.mf2": "a = Reload {$n}\nb =\n  .input {$n :number}\n  .match $n one {{{$n} x}} * {{{$n} xs}}\n",
+          "de.mf2": "a = Neu laden {$n}\nb =\n  .input {$n :number}\n  .match $n one {{{$n} y}} * {{{$n} ys}}\n"}
+    rs = lambda src: {"crates/x/src/f.rs": src}
     cases = {
-        "ok.rs": ('texts! { A { en: "Reload {n}", de: "Neu laden {n}" } }\nfn f() { text(id) }\n', (0, 0, 0)),
-        "bad_call.rs": ('fn f() { text("Reload the catalog"); }\n', (1, 0, 0)),
-        "words_a.rs": ('pub const X: &str = "Install now";\n', (0, 1, 0)),
-        "no_de.rs": ('texts! { A { en: "Reload" } }\n', (0, 0, 1)),
-        "no_en.rs": ('texts! { A { de: "Neu laden" } }\n', (0, 0, 1)),
-        "place.rs": ('texts! { A { en: "Hello {n}", de: "Hallo {m}" } }\n', (0, 0, 1)),
-        "same.rs": ('texts! { A { en: "Not translated", de: "Not translated" } }\n', (0, 0, 1)),
-        "in_test.rs": ('fn f() {}\n#[cfg(test)]\nmod t { fn g() { text("Only a test text"); } }\n', (0, 0, 0)),
-        "menu.rs": ('fn f() { MenuEntry::new("open", "Open the file"); }\n', (1, 0, 0)),
+        "good": ({"crates/x/texts/" + k: v for k, v in ok.items()}, (0, 0, 0)),
+        "bad_call": (rs('fn f() { text("Reload the catalog"); }\n'), (1, 0, 0)),
+        "menu": (rs('fn f() { MenuEntry::new("open", "Open the file"); }\n'), (1, 0, 0)),
+        "words_table": ({"crates/x/src/words.rs": 'pub const X: &str = "Install now";\n'}, (0, 1, 0)),
+        "test_module": (rs('fn f() {}\n#[cfg(test)]\nmod t { fn g() { text("Only a test text"); } }\n'), (0, 0, 0)),
+        "no_de": ({"t/en.mf2": "a = Reload\n"}, (0, 0, 1)),
+        "no_en": ({"t/de.mf2": "a = Neu laden\n"}, (0, 0, 1)),
+        "id_only_en": ({"t/en.mf2": "a = A\nb = B\n", "t/de.mf2": "a = A\n"}, (0, 0, 1)),
+        "id_only_de": ({"t/en.mf2": "a = A\n", "t/de.mf2": "a = A\nb = B\n"}, (0, 0, 1)),
+        "variable": ({"t/en.mf2": "a = Hello {$n}\n", "t/de.mf2": "a = Hallo {$m}\n"}, (0, 0, 1)),
+        "same_text": ({"t/en.mf2": "a = Not translated\n", "t/de.mf2": "a = Not translated\n"}, (0, 0, 1)),
+        "empty": ({"t/en.mf2": "a = A\n", "t/de.mf2": "a =\n"}, (0, 0, 1)),
     }
     bad = 0
-    for name, (src, want) in cases.items():
+    for name, (tree, want) in cases.items():
         with tempfile.TemporaryDirectory() as d:
-            os.makedirs(os.path.join(d, "crates", "x", "src"))
-            with open(os.path.join(d, "crates", "x", "src", name), "w", encoding="utf-8") as f:
-                f.write(src)
+            for rel, text in tree.items():
+                os.makedirs(os.path.dirname(os.path.join(d, rel)), exist_ok=True)
+                with open(os.path.join(d, rel), "w", encoding="utf-8") as f:
+                    f.write(text)
             got = tuple(len(p) for _, p in run(d, {}))
         print(("ok   " if got == want else "FAIL ") + f"selftest {name}: found {got}, wanted {want}")
         bad += got != want

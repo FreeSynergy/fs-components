@@ -1,0 +1,11 @@
+[package]
+name = "fs-components-mf2"
+description = "FreeSynergy texts as Unicode MessageFormat 2 (ADR 0057): Words over the mf2 library, fallback chain, pairing check"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+fs-components-words = { path = "../fs-components-words" }
+mf2 = { version = "=3.0.0", features = ["compile", "host-std", "number"] }

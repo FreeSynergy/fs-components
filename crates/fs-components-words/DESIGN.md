@@ -62,3 +62,7 @@ Version 0.3.0 workspace (untagged). Done: `TextId`, `Args`/`Value`, `Said`, `Wor
 - `Words: Send + Sync`. A Fluent adapter probably needs its concurrent bundle for that; not checked.
 - `Catalog`, `English` and `Fallback` are `pub` because the callers build them (a program wires its English table and the language package); everything else (`template`, `format`) is private.
 - A number is shown plainly between 1e-6 and 1e15, scientific outside, `NaN` and the infinity signs by name; the year of a date before year 0 has a minus sign.
+
+## Step 1 of the language work (2026-11-13): locale, chain, setting
+
+Added, std only and additive (no change to `Words`): `Locale` (BCP 47, `chain()`, `from_posix`), `resolve` with `Env` (override, shared setting, `FS_LANG`, `LC_ALL`, `LC_MESSAGES`, `LANGUAGE`, `LANG`, English; `C`/`POSIX`/empty skipped), `LanguageSetting` (a file `language`, atomic write; shared: `$XDG_CONFIG_HOME/freesynergy/language`, override: `$XDG_DATA_HOME/freesynergy/<program>/language`), `Localized::for_locale` for the `*Labels` structs, `Args::iter`. Patterns: Newtype (`Locale`), Chain of Responsibility (`resolve`), Strategy (`Env`), Memento holder (`LanguageSetting`), Factory method (`Localized`). The MessageFormat 2 binding (`mf2` library, ADR 0057) is the separate crate `fs-components-mf2`, so this crate stays free of dependencies. Design and open decisions: `docs/language-and-frontend-menu.md`.

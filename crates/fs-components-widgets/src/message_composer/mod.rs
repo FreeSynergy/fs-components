@@ -14,7 +14,7 @@ mod styles;
 mod view;
 
 pub use handle::{MessageComposer, OnOutcome};
-pub use labels::Labels;
+pub use labels::{Labels, TEXTS};
 pub use model::{Attachment, Outcome, Refusal};
 pub use state::Composing;
 pub use styles::STYLES;

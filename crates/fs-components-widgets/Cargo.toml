@@ -20,6 +20,8 @@ fontdb = "0.22"
 ttf-parser = "0.24"
 fs-components-primitives = { path = "../fs-components-primitives" }
 fs-components-styles = { path = "../fs-components-styles" }
+fs-components-words = { path = "../fs-components-words" }
+fs-components-mf2 = { path = "../fs-components-mf2" }
 image = { version = "0.25", default-features = false, features = ["png", "jpeg", "gif", "webp"] }
 
 [dev-dependencies]

@@ -1,0 +1,9 @@
+# The words of the message composer, English (ADR 0057: MessageFormat 2). Every id needs a German twin in de.mf2.
+composer-placeholder = Write a message
+composer-send = Send
+composer-sending = Sending
+composer-attach = Attach
+composer-remove = Remove
+composer-failed = Not sent: {$reason}. Your text is still here.
+composer-restored = Draft restored.
+composer-draft-failed = Draft could not be saved: {$reason}

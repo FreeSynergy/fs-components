@@ -69,6 +69,11 @@ impl Args {
         self.set(name, Value::Time(unix))
     }
 
+    /// All values with their names, in the order they were first set.
+    pub fn iter(&self) -> impl Iterator<Item = (&str, &Value)> {
+        self.0.iter().map(|(n, v)| (n.as_str(), v))
+    }
+
     /// The value under a name, if any.
     pub fn get(&self, name: &str) -> Option<&Value> {
         self.0.iter().find(|(n, _)| n == name).map(|(_, v)| v)

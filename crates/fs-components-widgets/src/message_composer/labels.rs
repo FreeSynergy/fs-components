@@ -1,6 +1,9 @@
 //! The words of the composer. They come from the caller; English by default.
 //!
-//! Pattern: none.
+//! Pattern: Factory method (`Localized::for_locale`) over embedded `MessageFormat` 2 files; `Default` is English.
+
+use fs_components_mf2::{Mf2Texts, Source};
+use fs_components_words::{Args, Locale, Localized, TextId, Words};
 
 /// Every word the composer draws.
 #[non_exhaustive]
@@ -24,18 +27,32 @@ pub struct Labels {
     pub draft_failed: String,
 }
 
+/// The two language files of the composer; `fs_components_mf2::check_pairs(TEXTS)` must be empty (a test asserts it).
+pub const TEXTS: &[Source] = &[
+    Source { language: "en", text: include_str!("texts/en.mf2") },
+    Source { language: "de", text: include_str!("texts/de.mf2") },
+];
+
+impl Localized for Labels {
+    /// The composer's words in `locale`. `failed` and `draft_failed` keep their `{}` where the reason goes, as before.
+    fn for_locale(locale: &Locale) -> Self {
+        let t = Mf2Texts::new(TEXTS, locale);
+        let with_reason = |id: &str| t.say(&TextId::new(id), &Args::new().text("reason", "{}")).text().to_owned();
+        Self {
+            placeholder: t.plain("composer-placeholder"),
+            send: t.plain("composer-send"),
+            sending: t.plain("composer-sending"),
+            attach: t.plain("composer-attach"),
+            remove: t.plain("composer-remove"),
+            failed: with_reason("composer-failed"),
+            restored: t.plain("composer-restored"),
+            draft_failed: with_reason("composer-draft-failed"),
+        }
+    }
+}
+
 impl Default for Labels {
     fn default() -> Self {
-        let s = |t: &str| t.to_string();
-        Self {
-            placeholder: s("Write a message"),
-            send: s("Send"),
-            sending: s("Sending"),
-            attach: s("Attach"),
-            remove: s("Remove"),
-            failed: s("Not sent: {}. Your text is still here."),
-            restored: s("Draft restored."),
-            draft_failed: s("Draft could not be saved: {}"),
-        }
+        Self::for_locale(&Locale::english())
     }
 }

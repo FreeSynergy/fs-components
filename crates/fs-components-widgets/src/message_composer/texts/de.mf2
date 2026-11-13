@@ -1,0 +1,9 @@
+# Die Woerter des Nachrichtenfelds, Deutsch (ADR 0057: MessageFormat 2). Jede Kennung braucht ihr englisches Gegenstueck in en.mf2.
+composer-placeholder = Nachricht schreiben
+composer-send = Senden
+composer-sending = Wird gesendet
+composer-attach = Anhängen
+composer-remove = Entfernen
+composer-failed = Nicht gesendet: {$reason}. Ihr Text ist noch da.
+composer-restored = Entwurf wiederhergestellt.
+composer-draft-failed = Der Entwurf konnte nicht gespeichert werden: {$reason}
