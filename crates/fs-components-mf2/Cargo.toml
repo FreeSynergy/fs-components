@@ -9,3 +9,6 @@ rust-version.workspace = true
 [dependencies]
 fs-components-words = { path = "../fs-components-words" }
 mf2 = { version = "=3.0.0", features = ["compile", "host-std", "number"] }
+
+[dev-dependencies]
+serde_json = "1"
