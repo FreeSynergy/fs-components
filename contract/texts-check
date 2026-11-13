@@ -192,13 +192,18 @@ def selftest():
     return 1 if bad else 0
 
 
+def esc(text):
+    """Workflow-command escaping of an annotation message: `%`, CR and LF."""
+    return text.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+
+
 def warn_lines(results):
     """GitHub annotations: one `::warning::` per rule with findings (the first three as examples), and a total line."""
     out = []
     for i, (title, problems) in enumerate(results, 1):
         if problems:
-            out.append(f"::warning title=texts-check R{i}::{title}: {len(problems)} findings, e.g. " + " | ".join(problems[:3]))
-    out.append(f"::notice title=texts-check::findings R1/R2/R3 = " + "/".join(str(len(p)) for _, p in results))
+            out.append(f"::warning title=texts-check R{i}::{title}: {len(problems)} findings, e.g. " + esc(" | ".join(problems[:3])))
+    out.append("::notice title=texts-check::findings R1/R2/R3 = " + "/".join(str(len(p)) for _, p in results))
     return out
 
 
@@ -212,8 +217,9 @@ def selftest_warn():
     lines = warn_lines(results)
     good = sum(l.startswith("::warning title=texts-check R1") for l in lines) == 1 and lines[-1].endswith("= 1/0/0")
     clean = warn_lines([("R1", []), ("R2", []), ("R3", [])]) == ["::notice title=texts-check::findings R1/R2/R3 = 0/0/0"]
-    print(("ok   " if good and clean else "FAIL ") + "selftest warn: annotations")
-    return 0 if good and clean else 1
+    escaped = esc("50%\nx\r") == "50%25%0Ax%0D" and "%250A" in "".join(warn_lines([("R1", ["a %0A b\nc"])]))
+    print(("ok   " if good and clean and escaped else "FAIL ") + "selftest warn: annotations and escape")
+    return 0 if good and clean and escaped else 1
 
 
 def main(argv):

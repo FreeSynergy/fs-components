@@ -32,27 +32,36 @@ pub(super) fn tree_scroll(
     let mut column = div().flex_col().w_full().class("fs-wk-tree");
     for row in tree.rows(MOST_ROWS) {
         let node = row.node;
-        let here = !node.folder && selected == Some(node.key.as_str());
+        let here = node.page && selected == Some(node.key.as_str());
         let key = node.key.clone();
-        let act = if node.folder {
-            let toggle = actions.toggle.clone();
-            std::sync::Arc::new(move || toggle(&key)) as std::sync::Arc<dyn Fn() + Send + Sync>
-        } else {
-            let open = actions.open.clone();
-            std::sync::Arc::new(move || open(&key))
-        };
+        // A plain folder toggles on any click; a page opens by its title (and a page with sub-pages expands by its arrow).
+        let toggle = std::sync::Arc::new({
+            let (toggle, key) = (actions.toggle.clone(), key.clone());
+            move || toggle(&key)
+        });
+        let open = std::sync::Arc::new({
+            let (open, key) = (actions.open.clone(), key);
+            move || open(&key)
+        });
         let mut line = div()
             .class("fs-wk-row")
             .flex_row()
             .items_center()
             .w_full()
-            .pl(f32::from(node.depth) * 4.0 + 2.0)
-            .on_click(move |_| act());
+            .pl(f32::from(node.depth) * 4.0 + 2.0);
         if look == Look::Quiet {
             line = line.class("fs-wk-row-quiet");
         }
         if here {
             line = line.class("fs-wk-row-here");
+        }
+        let plain_folder = node.folder && !node.page;
+        if plain_folder {
+            let toggle = toggle.clone();
+            line = line.on_click(move |_| toggle());
+        } else if !node.folder {
+            let open = open.clone();
+            line = line.on_click(move |_| open());
         }
         if node.folder {
             let chevron = if row.open {
@@ -60,30 +69,45 @@ pub(super) fn tree_scroll(
             } else {
                 Glyph::ChevronRight
             };
-            line = line.child(icon(chevron, 14.0, Tone::Muted));
+            let arrow = div().child(icon(chevron, 14.0, Tone::Muted));
+            line = line.child(if plain_folder {
+                arrow
+            } else {
+                arrow.on_click(move |_| toggle())
+            });
         } else {
             line = line.child(div().w(14.0));
         }
-        let glyph = if node.folder {
+        let glyph = if plain_folder {
             Glyph::Folder
         } else {
             Glyph::FileText
         };
-        line = match look {
-            Look::Icons => line.child(icon(
-                glyph,
-                17.0,
-                if node.folder { Tone::Kind } else { Tone::Muted },
-            )),
+        let kind = match look {
+            Look::Icons if plain_folder => icon(glyph, 17.0, Tone::Kind),
+            Look::Icons => icon(glyph, 17.0, Tone::Muted),
             // The quiet tree: a small icon before every page and folder (the place where the emoji of a page goes).
-            Look::Quiet => line.child(icon(glyph, 16.0, Tone::Kind)),
+            Look::Quiet => icon(glyph, 16.0, Tone::Kind),
         };
         let label = text(&node.label).no_cursor();
-        line = line.child(if node.folder {
+        let label = if plain_folder {
             label.class("fs-wk-folder")
         } else {
             label
-        });
+        };
+        line = if node.folder && node.page {
+            // The title part opens the page; the arrow before it expands.
+            line.child(
+                div()
+                    .flex_row()
+                    .items_center()
+                    .on_click(move |_| open())
+                    .child(kind)
+                    .child(label),
+            )
+        } else {
+            line.child(kind).child(label)
+        };
         column = column.child(line);
     }
     div()
