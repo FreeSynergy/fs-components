@@ -70,6 +70,7 @@ impl FrontendItem {
                     .iter()
                     .find(|(l, _)| Locale::parse(l).is_ok_and(|l| l == *tag))
                     .map(|(_, name)| name.as_str())
+                    .filter(|name| !name.is_empty())
             })
             .unwrap_or(&self.label)
     }

@@ -112,7 +112,7 @@ def marked_files(root):
     """Test and example files that opt in to the scan with a comment `texts-check: scan`."""
     for base, dirs, names in os.walk(root):
         dirs[:] = [d for d in dirs if d not in ("target", ".git", "temp", "contract")]
-        if os.path.basename(base) not in ("tests", "examples") and "tests" not in base.split(os.sep) and "examples" not in base.split(os.sep):
+        if not {"tests", "examples"} & set(base.split(os.sep)):
             continue
         for n in names:
             path = os.path.join(base, n)
@@ -131,14 +131,15 @@ def files(root):
 def run(root, exc):
     r1, r2 = [], []
     lits = set(exc.get("literal", {}))
-    for path in [*files(root), *marked_files(root)]:
+    marked = set(marked_files(root))
+    for path in [*files(root), *marked]:
         rel = os.path.relpath(path, root)
         text = code_of(path)
         for rx in (CALL, ASSIGN):
             for m in rx.finditer(text):
                 if is_ui(m.group(1)) and f"{rel}:{m.group(1)}" not in lits:
                     r1.append(f"{rel}:{line_of(text, m.start())}: hard coded UI text {m.group(1)!r}")
-        if TABLE_FILE.search(rel):
+        if TABLE_FILE.search(rel) and path not in marked:  # a marked test names its expectations; R1 judges it
             for m in LITERAL.finditer(text):
                 if is_ui(m.group(1)) and f"{rel}:{m.group(1)}" not in lits:
                     r2.append(f"{rel}:{line_of(text, m.start())}: literal in a text table file {m.group(1)!r}")
@@ -166,6 +167,7 @@ def selftest():
         "demo_marked": ({"crates/x/tests/demo.rs": '// texts-check: scan\nfn f() { MenuEntry::new("tiles", "Tiles"); }\n'}, (1, 0, 0)),
         "demo_unmarked": ({"crates/x/tests/demo.rs": 'fn f() { MenuEntry::new("tiles", "Tiles"); }\n'}, (0, 0, 0)),
         "demo_marked_clean": ({"crates/x/tests/demo.rs": '// texts-check: scan\nfn f() { MenuEntry::new("tiles", texts.plain("demo-tiles")); }\n'}, (0, 0, 0)),
+        "demo_marked_lang_file": ({"crates/x/tests/language_demo.rs": '// texts-check: scan\nfn t() { assert_eq!(labels(), "Tiles"); }\n'}, (0, 0, 0)),
         "words_table": ({"crates/x/src/words.rs": 'pub const X: &str = "Install now";\n'}, (0, 1, 0)),
         "test_module": (rs('fn f() {}\n#[cfg(test)]\nmod t { fn g() { text("Only a test text"); } }\n'), (0, 0, 0)),
         "no_de": ({"t/en.mf2": "a = Reload\n"}, (0, 0, 1)),

@@ -5,7 +5,7 @@
 use std::sync::Arc;
 
 use crate::menu::MenuEntry;
-use crate::menu_view::{Callbacks, Look, arrow, folds_left, line};
+use crate::menu_view::{Callbacks, Look, arrow, arrows_left, content_width, folds_left, line};
 
 fn calls() -> Callbacks {
     Callbacks {
@@ -81,4 +81,36 @@ fn the_arrow_points_to_the_side_the_next_level_opens_to() {
     );
     // Exactly at the margin: 100 + 220 + 200 + 8 = 528.
     assert!(!folds_left(100.0, 220.0, 200.0, 528.0) && folds_left(100.0, 220.0, 200.0, 527.0));
+}
+
+#[test]
+fn each_line_points_by_the_place_of_its_own_next_level() {
+    let narrow = MenuEntry::submenu("a", "A", vec![MenuEntry::new("a1", "X")]);
+    let long = "A very long line of a next level that is wider than the widest next level may be, so it is cut at its maximum";
+    let wide = MenuEntry::submenu("b", "B", vec![MenuEntry::new("b1", long)]);
+    let plain = MenuEntry::new("c", "C");
+    let entries = [narrow.clone(), wide.clone(), plain];
+    let (w_narrow, w_wide) = (
+        content_width(&narrow.children, 600.0),
+        content_width(&wide.children, 600.0),
+    );
+    assert!(w_narrow < w_wide, "{w_narrow} against {w_wide}");
+    // Panel at 100, 220 wide, window 600: the narrow level has room on the right, the wide one has not; a line without a level
+    // never points anywhere. The widest level must not decide for the others.
+    assert_eq!(
+        arrows_left(&entries, (100.0, 220.0), 600.0),
+        [false, true, false]
+    );
+    // Counter-probe: in a window with room for both, none folds; and the arrow agrees with the place of each level.
+    assert_eq!(
+        arrows_left(&entries, (100.0, 220.0), 1200.0),
+        [false, false, false]
+    );
+    for (i, e) in entries.iter().enumerate().take(2) {
+        let sub = content_width(&e.children, 600.0);
+        assert_eq!(
+            arrows_left(&entries, (100.0, 220.0), 600.0)[i],
+            folds_left(100.0, 220.0, sub, 600.0)
+        );
+    }
 }

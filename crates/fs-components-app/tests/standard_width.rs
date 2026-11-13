@@ -117,3 +117,50 @@ fn a_frontend_with_a_translated_display_name_shows_it_and_a_proper_name_stays() 
     );
     let _ = std::fs::remove_dir_all(f.dir);
 }
+
+#[test]
+fn a_line_wider_than_the_maximum_ends_the_next_level_at_the_maximum_and_wraps() {
+    let long = "A frontend whose display name is much longer than any next level of a menu may be wide, so that it has to wrap";
+    let mut f = fixture_in("longline", "en_US.UTF-8", 800.0);
+    f.h.app
+        .set_frontends(
+            vec![FrontendItem::new("long", long), FrontendItem::new("b", "B")],
+            "long",
+            |_| {},
+        )
+        .unwrap();
+    f.h.click("fs-app-menu-1");
+    f.h.click(&entry("fs.frontends"));
+    let sub = f.h.bounds(SUB);
+    assert!((sub.2 - 360.0).abs() < 1.0, "ends at the maximum: {sub:?}");
+    assert!(sub.0 + sub.2 <= 800.0, "inside the window: {sub:?}");
+    let line = f.h.bounds(&entry("fs.frontend.long"));
+    let short = f.h.bounds(&entry("fs.frontend.b"));
+    assert!(
+        line.3 > short.3 + 8.0,
+        "the long line wraps: {line:?} against {short:?}"
+    );
+    let _ = std::fs::remove_dir_all(f.dir);
+}
+
+#[test]
+fn the_most_specific_name_wins_in_either_order_of_naming() {
+    let l = |t: &str| Locale::parse(t).unwrap();
+    let a = FrontendItem::new("x", "Plain")
+        .named_in("de", "Deutsch")
+        .named_in("de-AT", "Oesterreichisch");
+    let b = FrontendItem::new("x", "Plain")
+        .named_in("de-AT", "Oesterreichisch")
+        .named_in("de", "Deutsch");
+    for item in [&a, &b] {
+        assert_eq!(item.label_for(&l("de-AT")), "Oesterreichisch");
+        assert_eq!(
+            item.label_for(&l("de")),
+            "Deutsch",
+            "counter-probe: de is not de-AT"
+        );
+    }
+    // An empty name is skipped: the language's name or the plain label shows.
+    let empty = FrontendItem::new("x", "Plain").named_in("de", "");
+    assert_eq!(empty.label_for(&l("de")), "Plain");
+}

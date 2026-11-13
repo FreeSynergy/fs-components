@@ -14,8 +14,8 @@ use blinc_layout::widgets::overlay_stack::{OverlayBuilder, OverlayHandle};
 
 use crate::menu::MenuEntry;
 use crate::menu_view::{
-    Anchor, BAR_ID, Callbacks, Look, PANEL_ID, SUB_PANEL_ID, content_width, folds_left, panel,
-    panel_size, sub_panel,
+    Anchor, BAR_ID, Callbacks, Look, PANEL_ID, SUB_PANEL_ID, arrows_left, content_width,
+    folds_left, panel, panel_size, sub_panel,
 };
 use crate::shell::Shell;
 use crate::styles::{MENU_WIDTH, SIDE_MARGIN};
@@ -135,13 +135,7 @@ fn show(
     } else {
         x
     };
-    let widest = menu
-        .entries
-        .iter()
-        .filter(|e| !e.children.is_empty())
-        .map(|e| content_width(&e.children, window))
-        .fold(0.0, f32::max);
-    let arrow_left = widest > 0.0 && folds_left(left, MENU_WIDTH, widest, window);
+    let arrows = arrows_left(&menu.entries, (left, MENU_WIDTH), window);
     let (width, height) = panel_size(&menu.entries, MENU_WIDTH);
     let raw = overlay_stack()
         .lock()
@@ -174,10 +168,10 @@ fn show(
             let open_sub = locked(&reader).open_sub();
             let look = Look {
                 open_sub,
-                arrow_left,
+                arrow_left: false,
                 width: MENU_WIDTH,
             };
-            panel(index, &menu, look, &calls)
+            panel(index, &menu, (look, &arrows), &calls)
         })
         .show()
         .raw()

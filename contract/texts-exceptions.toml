@@ -3,3 +3,4 @@
 "crates/fs-components-app/src/language.rs:there is no folder to keep the language in" = "technical cause of a failed save, shown after the translated sentence shell-language-failed ({$reason}); translating the causes (file errors come from the operating system in English) is open"
 
 [same]
+demo-title = "proper name of the demo window (FreeSynergy Demo), the same in every language"

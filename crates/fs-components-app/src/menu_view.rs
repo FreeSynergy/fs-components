@@ -81,6 +81,22 @@ pub(crate) fn folds_left(left: f32, width: f32, sub: f32, window: f32) -> bool {
     window > 0.0 && left + width + sub + SIDE_MARGIN > window
 }
 
+/// For each line: does its next level fold to the left of the panel (at `left`, `width` wide)? Each line by the width of its own
+/// next level, the same rule as the place of that level, so the arrow and the place cannot disagree.
+pub(crate) fn arrows_left(
+    entries: &[MenuEntry],
+    (left, width): (f32, f32),
+    window: f32,
+) -> Vec<bool> {
+    entries
+        .iter()
+        .map(|e| {
+            !e.children.is_empty()
+                && folds_left(left, width, content_width(&e.children, window), window)
+        })
+        .collect()
+}
+
 /// The arrow on a line that opens a next level: to the right, or to the left where the next level folds to the left.
 pub(crate) fn arrow(left: bool) -> &'static str {
     if left { "\u{25c2}" } else { "\u{25b8}" }
@@ -91,7 +107,7 @@ pub(crate) fn arrow(left: bool) -> &'static str {
 pub(crate) struct Look {
     /// The position of the line whose next level is open.
     pub(crate) open_sub: Option<usize>,
-    /// The next level folds to the left of this panel.
+    /// The next level of this line folds to the left of the panel (set per line by the panel).
     pub(crate) arrow_left: bool,
     /// The width of the panel in pixels.
     pub(crate) width: f32,
@@ -134,8 +150,13 @@ fn trigger(index: usize, menu: &Menu, on_trigger: &OnTrigger) -> Div {
 }
 
 /// The panel of an open menu. Builds plain elements only: it runs under the lock of Blinc's overlay stack.
-pub(crate) fn panel(index: usize, menu: &Menu, look: Look, calls: &Callbacks) -> Div {
-    one_panel(PANEL_ID, index, &menu.entries, look, calls)
+pub(crate) fn panel(
+    index: usize,
+    menu: &Menu,
+    (look, arrows): (Look, &[bool]),
+    calls: &Callbacks,
+) -> Div {
+    one_panel(PANEL_ID, index, &menu.entries, (look, arrows), calls)
 }
 
 /// The panel of the next level, in an overlay of its own (so it can be moved or folded to the left without moving the first).
@@ -144,10 +165,16 @@ pub(crate) fn sub_panel(index: usize, entries: &[MenuEntry], width: f32, calls: 
         width,
         ..Look::default()
     };
-    one_panel(SUB_PANEL_ID, index, entries, look, calls)
+    one_panel(SUB_PANEL_ID, index, entries, (look, &[]), calls)
 }
 
-fn one_panel(id: &str, index: usize, entries: &[MenuEntry], look: Look, calls: &Callbacks) -> Div {
+fn one_panel(
+    id: &str,
+    index: usize,
+    entries: &[MenuEntry],
+    (look, arrows): (Look, &[bool]),
+    calls: &Callbacks,
+) -> Div {
     let radius = ThemeState::get().radius(RadiusToken::Md);
     let marks = entries.iter().any(|e| e.checked);
     let mut panel = div()
@@ -162,6 +189,10 @@ fn one_panel(id: &str, index: usize, entries: &[MenuEntry], look: Look, calls: &
         .h_fit()
         .w(look.width);
     for (position, entry) in entries.iter().enumerate() {
+        let look = Look {
+            arrow_left: arrows.get(position).copied().unwrap_or(false),
+            ..look
+        };
         panel = panel.child(line(index, position, entry, (marks, look), calls));
     }
     panel
