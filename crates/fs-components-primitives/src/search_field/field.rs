@@ -17,7 +17,7 @@ use crate::field_data::FieldData;
 /// window: a field with no class of its own measured in one font and drew in another, and the caret stood away from
 /// the last character (measured 2026-11-12: 4 to 15 px, against 0 to 2 px in the fields of the type components). The
 /// class and this rule give the field the same font and size for both.
-pub const STYLES: &str = ".fs-field-font { font-family: var(--font-sans); }\n.fs-body-field { font-family: var(--font-sans); font-size: 14px; }\n";
+pub const STYLES: &str = ".fs-field-font { font-family: var(--font-sans); }\n.fs-body-field { font-family: var(--font-sans); font-size: 14px; }\n.fs-title-field, .fs-title-field:hover, .fs-title-field:focus { font-family: var(--font-sans); font-size: 40px; }\n";
 
 /// The class that gives a raw `text_input` (one that is not Blinc's `input` of `blinc_cn`, whose `.cn-input` rule
 /// already names the font) the font the caret is measured in. The ONE place of the rule: every raw `text_input` of
@@ -34,9 +34,15 @@ pub fn with_field_font(field: TextInput) -> TextInput {
 /// The size of [`FieldSize::Body`].
 const BODY_TEXT: f32 = 14.0;
 const BODY_HEIGHT: f32 = 36.0;
+/// The size of [`FieldSize::Title`] (the rule `.fs-title-field` in [`STYLES`] gives the caret the same size).
+const TITLE_TEXT: f32 = 40.0;
+const TITLE_HEIGHT: f32 = 56.0;
 
 /// Called with the whole text after every change.
 pub type OnChange = Arc<dyn Fn(&str) + Send + Sync>;
+
+/// Called when Enter is pressed in the field.
+pub type OnSubmit = Arc<dyn Fn() + Send + Sync>;
 
 /// How much room the field takes. The real height comes from the theme.
 #[non_exhaustive]
@@ -52,6 +58,8 @@ pub enum FieldSize {
     /// Text of exactly body size (14 px), as the fields of the components of the types have it, in a
     /// control 36 px high: what a typed word must look like to be read and tested at one size.
     Body,
+    /// A page title: big text, no frame and no fill, as the title of a page in Notion. The field is the title.
+    Title,
 }
 
 /// A search field.
@@ -61,6 +69,7 @@ pub struct SearchField {
     /// Gives the signals of `data` back when the field is gone.
     _keep: FieldData,
     on_change: Option<OnChange>,
+    on_submit: Option<OnSubmit>,
     size: FieldSize,
 }
 
@@ -72,6 +81,7 @@ impl SearchField {
             data: keep.text_input_with_placeholder(placeholder),
             _keep: keep,
             on_change: None,
+            on_submit: None,
             size: FieldSize::default(),
         }
     }
@@ -96,6 +106,16 @@ impl SearchField {
     /// with a name to change. Does not call the change handler: the caller set it. The undo history is emptied, so
     /// Ctrl+Z cannot bring back an older text; the scroll position goes back to the start.
     pub fn set_text(&self, text: &str) {
+        self.put(text, true);
+    }
+
+    /// As [`SearchField::set_text`], but nothing is selected and the cursor stands at the end (a title that is edited,
+    /// not replaced).
+    pub fn set_text_at_end(&self, text: &str) {
+        self.put(text, false);
+    }
+
+    fn put(&self, text: &str, select: bool) {
         let mut d = self
             .data
             .lock()
@@ -109,6 +129,32 @@ impl SearchField {
         text.clone_into(&mut d.value);
         d.scroll_offset_x = 0.0;
         d.select_all();
+        if !select {
+            d.move_to_end(false);
+        }
+    }
+
+    /// Does the field have the keyboard now?
+    pub fn is_focused(&self) -> bool {
+        use blinc_layout::stateful::TextFieldState::{Focused, FocusedHovered};
+        matches!(
+            self.data
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .visual,
+            Focused | FocusedHovered
+        )
+    }
+
+    /// Show `text` instead of the placeholder given to [`SearchField::new`] while the field is empty.
+    pub fn set_placeholder(&self, text: &str) {
+        text.clone_into(
+            &mut self
+                .data
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .placeholder,
+        );
     }
 
     /// Give the keyboard to the field on the next frame (after it is in the tree).
@@ -123,6 +169,13 @@ impl SearchField {
         self
     }
 
+    /// Call `handler` when Enter is pressed in the field (a single-line field does nothing on Enter otherwise).
+    #[must_use]
+    pub fn on_submit(mut self, handler: OnSubmit) -> Self {
+        self.on_submit = Some(handler);
+        self
+    }
+
     /// The element to place in a layout.
     pub fn build(&self) -> impl blinc_layout::prelude::ElementBuilder + use<> {
         let size = match self.size {
@@ -131,6 +184,27 @@ impl SearchField {
             _ => InputSize::Medium,
         };
         let handler = self.on_change.clone();
+        if self.size == FieldSize::Title {
+            let theme = ThemeState::get();
+            let none = blinc_core::Color::TRANSPARENT;
+            let mut field = with_field_font(text_input(&self.data))
+                .h(TITLE_HEIGHT)
+                .text_size(TITLE_TEXT)
+                .padding_x(0.0)
+                .border(0.0, none)
+                .idle_bg_color(none)
+                .text_color(theme.color(ColorToken::TextPrimary))
+                .placeholder_color(theme.color(ColorToken::TextTertiary))
+                .class("fs-title-field")
+                .w_full();
+            if let Some(handler) = handler {
+                field = field.on_change(move |text| handler(text));
+            }
+            if let Some(submit) = self.on_submit.clone() {
+                field = field.on_submit(move |_| submit());
+            }
+            return div().w_full().child(field);
+        }
         if self.size == FieldSize::Body {
             let theme = ThemeState::get();
             let mut field = with_field_font(text_input(&self.data))

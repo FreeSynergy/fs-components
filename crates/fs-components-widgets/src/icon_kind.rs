@@ -12,6 +12,10 @@ use fs_components_styles::{Rgba, StyleId, style};
 
 use crate::icon::{Glyph, kind_colour};
 
+/// How much darker than its kind colour the edge of a sheet is (0.0 = the kind colour, 1.0 = black): the edge is what
+/// shows a sheet on a light row, so it must reach the contrast of [`crate::icon::MIN_ICON_CONTRAST`] there.
+const EDGE_DARKEN: f32 = 0.3;
+
 fn colour(c: Rgba) -> Color {
     Color::rgba(
         f32::from(c.r) / 255.0,
@@ -77,9 +81,20 @@ fn folder(px: f32, kind: Color) -> Div {
         )
 }
 
+/// The edge of a sheet of `kind`: the kind colour, darkened (see `EDGE_DARKEN`).
+pub fn sheet_edge(kind: Rgba) -> Rgba {
+    let c = mix(colour(kind), 0.0, EDGE_DARKEN);
+    Rgba {
+        r: byte(c.r),
+        g: byte(c.g),
+        b: byte(c.b),
+        a: kind.a,
+    }
+}
+
 /// The sheet: paper with a folded corner, and the sign of the kind on it.
 fn sheet(px: f32, glyph: Glyph, kind: Color) -> Div {
-    let edge = Color::rgba(0.70, 0.76, 0.80, 1.0);
+    let edge = mix(kind, 0.0, EDGE_DARKEN);
     let shade = Color::rgba(0.0, 0.0, 0.0, 0.24);
     let set = style(StyleId::Admin).icons;
     let sign = svg(set.svg_sign(
@@ -109,7 +124,7 @@ fn sheet(px: f32, glyph: Glyph, kind: Color) -> Div {
         .child(
             boxed(px * 0.62, px * 0.08, px * 0.18, px * 0.18)
                 .rounded(px * 0.03)
-                .bg(Color::rgba(0.86, 0.89, 0.92, 1.0))
+                .bg(mix(kind, 1.0, 0.7))
                 .border(1.0, edge),
         )
         .child(boxed(0.0, 0.0, px, px).child(sign))

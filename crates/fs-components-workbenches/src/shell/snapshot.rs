@@ -137,7 +137,9 @@ fn wiki_frame(
             h,
         );
     }
-    let blocks = reader.editing().map(|e| BlockEditor::new(e.id, &e.draft));
+    let blocks = reader
+        .editing()
+        .map(|e| BlockEditor::new(e.id, &e.draft, &reader.page_title()));
     notion::notion(
         search,
         notion::side(reader, tree, labels, &actions),

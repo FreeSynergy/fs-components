@@ -19,5 +19,9 @@ fs-components-render = { path = "../fs-components-render" }
 [dev-dependencies]
 # Only for the size of the smallest window: the app crate knows no workbench.
 fs-components-app = { path = "../fs-components-app" }
+# WCAG contrast of the colours in the pictures.
+fs-components-styles = { path = "../fs-components-styles" }
+# The words of the title field in a chosen language, for the pictures.
+fs-components-words = { path = "../fs-components-words" }
 wgpu = "26"
 image = { version = "0.25", default-features = false, features = ["png"] }

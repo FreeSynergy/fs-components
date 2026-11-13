@@ -120,6 +120,8 @@ pub struct WikiLabels {
     pub share: String,
     /// Hint in an empty block.
     pub block_hint: String,
+    /// Shown in the empty title field of the Notion frontend (made from `TitleLabels::for_locale`).
+    pub title_hint: String,
     /// `{}` = how many pages the tree holds.
     pub page_count: String,
 }
@@ -142,6 +144,7 @@ impl Default for WikiLabels {
             edit: s("Edit"),
             share: s("Share"),
             block_hint: s("Type, or press / for commands"),
+            title_hint: fs_components_widgets::TitleLabels::default().placeholder,
             page_count: s("{} pages"),
         }
     }

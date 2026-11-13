@@ -12,8 +12,10 @@ use blinc_cn::components::textarea::textarea;
 use blinc_layout::div::{Div, div};
 use blinc_layout::text;
 use blinc_layout::widgets::text_area::SharedTextAreaState;
+use blinc_layout::widgets::text_area::focus_text_area_deferred;
 use fs_components_primitives::FieldData;
 use fs_components_widgets::icon::{Glyph, Tone, icon};
+use fs_components_widgets::{PageTitle, TitleLabels};
 
 use crate::page_info::WikiLabels;
 
@@ -60,17 +62,54 @@ fn rows_for(text: &str) -> usize {
         .clamp(1, 30)
 }
 
-/// The editor of one edit: the blocks and their areas.
+/// Does `block` say `title` as a level-1 heading (`# `, same comparison as `leads_with_title`)?
+fn says_title(block: &str, title: &str) -> bool {
+    block
+        .strip_prefix("# ")
+        .is_some_and(|rest| rest.trim() == title.trim())
+}
+
+/// The text of every block area.
+fn values(areas: &[SharedTextAreaState]) -> Vec<String> {
+    areas
+        .iter()
+        .map(|a| a.lock().unwrap_or_else(PoisonError::into_inner).value())
+        .collect()
+}
+
+/// The text of a page put together: the `title` as the first line (`# `) when `with_heading` and the title is not
+/// blank, then the blocks.
+pub(crate) fn assemble(title: &str, with_heading: bool, blocks: &[String]) -> String {
+    let title = title.trim();
+    let mut parts: Vec<String> = Vec::with_capacity(blocks.len() + 1);
+    if with_heading && !title.is_empty() {
+        parts.push(format!("# {title}"));
+    }
+    parts.extend(blocks.iter().cloned());
+    join_blocks(&parts)
+}
+
+/// The editor of one edit: the title field and the blocks with their areas.
 pub(crate) struct BlockEditor {
     /// Which edit of the reader this belongs to.
     pub edit: u64,
+    title: PageTitle,
+    /// The title the page had when the edit began.
+    first_title: String,
+    /// The text began with its title as a heading: that heading is the title field, not a block.
+    in_text: bool,
     areas: Vec<(SharedTextAreaState, FieldData)>,
 }
 
 impl BlockEditor {
-    /// The editor for `draft`.
-    pub fn new(edit: u64, draft: &str) -> Self {
-        let parts = split_blocks(draft);
+    /// The editor for `draft`, a page called `title`. A first block that is a level-1 heading saying the title is
+    /// the title field and no block; another first heading stays a block.
+    pub fn new(edit: u64, draft: &str, title: &str) -> Self {
+        let mut parts = split_blocks(draft);
+        let in_text = parts.first().is_some_and(|b| says_title(b, title));
+        if in_text {
+            parts.remove(0);
+        }
         let areas = parts
             .iter()
             .map(|part| {
@@ -79,18 +118,59 @@ impl BlockEditor {
                 (state, keep)
             })
             .collect();
-        Self { edit, areas }
+        Self {
+            edit,
+            title: PageTitle::new(&TitleLabels::default(), title),
+            first_title: title.to_owned(),
+            in_text,
+            areas,
+        }
     }
 
-    /// Is the first block a level-1 heading (`# `) that says the `title` (same comparison as `leads_with_title`)?
-    /// Only then it is the title of the page; another first heading stays a normal block.
-    pub fn lead_heading(&self, title: &str) -> bool {
-        self.areas.first().is_some_and(|(a, _)| {
-            let value = a.lock().unwrap_or_else(PoisonError::into_inner).value();
-            value
-                .strip_prefix("# ")
-                .is_some_and(|rest| rest.trim() == title.trim())
-        })
+    /// Does the text lead with its title as a heading (then the title field draws it; no second big title)?
+    #[cfg(test)]
+    pub fn lead_heading(&self) -> bool {
+        self.in_text
+    }
+
+    /// The whole text now (what the reports hand to the reader; here only for the round-trip tests): the title field and the blocks put together (see [`assemble`]).
+    #[cfg(test)]
+    pub fn text(&self) -> String {
+        let title = self.title.text();
+        let all: Vec<SharedTextAreaState> = self.areas.iter().map(|(a, _)| a.clone()).collect();
+        assemble(&title, self.keeps_heading(&title), &values(&all))
+    }
+
+    /// The title goes into the text when it led it, or when the person changed it.
+    #[cfg(test)]
+    fn keeps_heading(&self, title: &str) -> bool {
+        self.in_text || title.trim() != self.first_title.trim()
+    }
+
+    /// The big title field above the blocks (Enter in it moves on to the first block).
+    pub fn title_view(&self, labels: &WikiLabels, report: &Arc<dyn Fn(&str) + Send + Sync>) -> Div {
+        let (in_text, first) = (self.in_text, self.first_title.clone());
+        self.title.set_placeholder(&labels.title_hint);
+        let all: Arc<Vec<SharedTextAreaState>> =
+            Arc::new(self.areas.iter().map(|(a, _)| a.clone()).collect());
+        let next = all.first().cloned();
+        let report = Arc::clone(report);
+        let field = self
+            .title
+            .clone()
+            .on_change(move |text| {
+                let with = in_text || text.trim() != first.trim();
+                report(&assemble(text, with, &values(&all)));
+            })
+            .on_enter(move || {
+                if let Some(first) = &next {
+                    focus_text_area_deferred(first);
+                }
+            });
+        div()
+            .class("fs-wk-b-title-field")
+            .w_full()
+            .child(field.build())
     }
 
     /// The column of blocks. `report` gets the whole text after each change.
@@ -100,17 +180,16 @@ impl BlockEditor {
             Arc::new(self.areas.iter().map(|(a, _)| a.clone()).collect());
         for (state, _) in &self.areas {
             let (report, all) = (Arc::clone(report), Arc::clone(&all));
+            let (title, with, first) = (self.title.clone(), self.in_text, self.first_title.clone());
             let rows = rows_for(&state.lock().unwrap_or_else(PoisonError::into_inner).value());
             let area = textarea(state)
                 .w_full()
                 .rows(rows)
                 .placeholder(&labels.block_hint)
                 .on_change(move |_| {
-                    let blocks: Vec<String> = all
-                        .iter()
-                        .map(|a| a.lock().unwrap_or_else(PoisonError::into_inner).value())
-                        .collect();
-                    report(&join_blocks(&blocks));
+                    let name = title.text();
+                    let with = with || name.trim() != first.trim();
+                    report(&assemble(&name, with, &values(&all)));
                 });
             column = column.child(
                 div()
@@ -147,6 +226,44 @@ mod tests {
     fn a_fence_is_one_block() {
         let got = split_blocks("a\n\n```rust\nfn x() {}\n\nfn y() {}\n```\n\nb");
         assert_eq!(got, ["a", "```rust\nfn x() {}\n\nfn y() {}\n```", "b"]);
+    }
+
+    #[test]
+    fn title_and_blocks_go_through_markdown_and_back_unchanged() {
+        for text in [
+            "# Handbook\n\nIntro\n\n- a\n- b\n",
+            "# Handbook\n",
+            "# Einleitung\n\nText\n",
+            "Text only\n",
+            "# Handbook\n\n```\na\n\nb\n```\n\nEnd\n",
+        ] {
+            let editor = BlockEditor::new(1, text, "Handbook");
+            assert_eq!(editor.text(), text, "round trip of {text:?}");
+        }
+    }
+
+    #[test]
+    fn the_title_is_not_a_block() {
+        let editor = BlockEditor::new(1, "# Handbook\n\nIntro\n", "Handbook");
+        assert!(editor.lead_heading());
+        assert_eq!(editor.areas.len(), 1);
+        assert_eq!(editor.title.text(), "Handbook");
+        // Counter-test: a first heading that differs from the title stays a block.
+        let other = BlockEditor::new(1, "# Einleitung\n\nIntro\n", "Handbook");
+        assert!(!other.lead_heading());
+        assert_eq!(other.areas.len(), 2);
+    }
+
+    #[test]
+    fn a_changed_title_is_written_as_the_heading() {
+        let editor = BlockEditor::new(1, "# Handbook\n\nIntro\n", "Handbook");
+        editor.title.set_text("Guide");
+        assert_eq!(editor.text(), "# Guide\n\nIntro\n");
+        // A title that was not in the text (a page with another first heading) is added only once it is changed.
+        let other = BlockEditor::new(1, "Intro\n", "Handbook");
+        assert_eq!(other.text(), "Intro\n");
+        other.title.set_text("Guide");
+        assert_eq!(other.text(), "# Guide\n\nIntro\n");
     }
 
     #[test]

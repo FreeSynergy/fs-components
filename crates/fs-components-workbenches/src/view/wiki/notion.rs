@@ -127,12 +127,11 @@ pub(crate) fn main(
         .child(icon(Glyph::Star, 18.0, Tone::Muted));
     let mut page = div().class("fs-wk-b-page").flex_col().w_full();
     if let Some(document) = document {
-        // While editing, a first block that is a level-1 heading IS the title: drawn once, as that block.
-        let title_is_block =
-            matches!((reader.editing(), blocks), (Some(_), Some(b)) if b.lead_heading(&title));
         page = page.child(page_icon(info.emoji.as_deref()));
-        if !title_is_block {
-            page = page.child(text(&title).class("fs-wk-b-title").no_cursor());
+        // While editing, the title is a big field above the blocks (it holds the leading heading); else plain text.
+        match (reader.editing(), blocks) {
+            (Some(_), Some(b)) => page = page.child(b.title_view(labels, report)),
+            _ => page = page.child(text(&title).class("fs-wk-b-title").no_cursor()),
         }
         let meta = div()
             .class("fs-wk-b-meta")

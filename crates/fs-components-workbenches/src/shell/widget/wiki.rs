@@ -101,7 +101,11 @@ impl ReaderWidget {
             return;
         };
         if slot.as_ref().is_none_or(|b| b.edit != editing.id) {
-            *slot = Some(BlockEditor::new(editing.id, &editing.draft));
+            *slot = Some(BlockEditor::new(
+                editing.id,
+                &editing.draft,
+                &reader.page_title(),
+            ));
         }
     }
 }

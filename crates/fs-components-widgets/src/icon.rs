@@ -13,6 +13,11 @@ pub use fs_components_styles::Glyph;
 
 use crate::Element;
 
+/// The least WCAG 2.x contrast of the outline of an icon against the row it stands on: 3.0, the value WCAG 2.1 (1.4.11,
+/// non-text contrast) asks of the parts of a control that must be seen. Not in `TOKENS.md` (that file holds spaces,
+/// sizes, radii and colour roles, no threshold), so it is named here, once.
+pub const MIN_ICON_CONTRAST: f32 = 3.0;
+
 /// How an icon is coloured.
 #[non_exhaustive]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

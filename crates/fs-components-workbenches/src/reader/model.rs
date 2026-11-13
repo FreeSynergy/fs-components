@@ -106,6 +106,14 @@ impl Reader {
         }
     }
 
+    /// The title of the document shown, as the source gives it (empty when there is none).
+    pub fn page_title(&self) -> String {
+        match &self.shown {
+            Shown::Document { document, .. } => document.title.clone(),
+            _ => String::new(),
+        }
+    }
+
     /// What the source says about the page shown (languages, state, revisions); empty when nothing is shown.
     pub fn page_info(&self) -> crate::PageInfo {
         self.current_path()

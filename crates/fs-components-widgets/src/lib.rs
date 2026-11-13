@@ -35,6 +35,7 @@ pub mod live;
 pub mod message_composer;
 pub mod message_list;
 pub mod name_dialog;
+pub mod page_title;
 pub mod participant;
 mod picture;
 pub mod plan;
@@ -63,7 +64,7 @@ pub use file_preview::{Fact, FilePreview, PreviewContent, SafeText, picture_fits
 pub use file_tile::{FileTile, TileGrid};
 pub use icon::{Glyph, Tone, icon};
 pub use icon_export::{export_theme, index_theme};
-pub use icon_kind::{PinnedKind, pinned_icon};
+pub use icon_kind::{PinnedKind, pinned_icon, sheet_edge};
 pub use icon_named::{icon_named, set_icon_theme};
 pub use icon_theme::{IconTheme, default_base_dirs};
 pub use keys::{Handled, Key, KeyEvent};
@@ -73,6 +74,7 @@ pub use list_view::{
     Row, RowSource, VecRows,
 };
 pub use name_dialog::{NameDialog, Purpose as NamePurpose};
+pub use page_title::{PageTitle, TitleLabels};
 pub use participant::{KindLabels, Sender, SenderKind};
 pub use share_dialog::{Choice, Permission, ShareDialog};
 pub use sortable_list::{Content as SortableContent, Item, Lane, SortableList};

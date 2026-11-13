@@ -120,7 +120,20 @@ impl DocumentSource for Editable {
     }
     fn read(&self, path: &str) -> Result<Document, SourceError> {
         let t = self.source_text(path)?;
+        // A wiki source says the title of a page: its first `# ` heading, else none (not the file name).
+        let title = t
+            .text
+            .lines()
+            .next()
+            .and_then(|l| l.strip_prefix("# "))
+            .map(str::to_owned);
+        let titled = self
+            .heading_titles
+            .load(std::sync::atomic::Ordering::Relaxed);
         let mut doc = Document::new(path, vec![Block::Paragraph(Inline::plain(t.text))]);
+        if titled {
+            doc.title = title.unwrap_or_default();
+        }
         doc.revision = t.revision;
         Ok(doc)
     }

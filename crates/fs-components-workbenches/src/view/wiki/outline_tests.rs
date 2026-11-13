@@ -65,9 +65,9 @@ fn a_page_without_headings_has_an_empty_outline() {
 
 #[test]
 fn the_block_editor_knows_when_its_first_block_is_the_title() {
-    assert!(BlockEditor::new(1, "# Handbook\n\nText").lead_heading("Handbook"));
-    assert!(!BlockEditor::new(1, "## Start\n\nText").lead_heading("Handbook"));
-    assert!(!BlockEditor::new(1, "Text\n\n# Later").lead_heading("Handbook"));
+    assert!(BlockEditor::new(1, "# Handbook\n\nText", "Handbook").lead_heading());
+    assert!(!BlockEditor::new(1, "## Start\n\nText", "Handbook").lead_heading());
+    assert!(!BlockEditor::new(1, "Text\n\n# Later", "Handbook").lead_heading());
     // A first heading that says something else is not the title and must not vanish while editing.
-    assert!(!BlockEditor::new(1, "# Einleitung\n\nText").lead_heading("Handbook"));
+    assert!(!BlockEditor::new(1, "# Einleitung\n\nText", "Handbook").lead_heading());
 }
