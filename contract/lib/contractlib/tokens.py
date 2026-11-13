@@ -6,18 +6,17 @@ from collections import Counter, defaultdict
 
 from . import assign, hard, styledefs, tokenscale as ts, umbau
 
-STYLEDEF = "crates/fs-components-styles/src/styles/"
-ICON_FILES = ("crates/fs-components-widgets/src/icon_kind.rs", "crates/fs-components-widgets/src/icon_export.rs")
+ROLE_COLORS = {"#e3e3e3": "color.border.line", "#f7f7f8": "color.surface.panel"}  # by role, not by nearest value (review)
 LAST_WAVE = {("fs-components-widgets", "plan"), ("fs-components-workbenches", "view")}
 ZERO_KINDS = ("spacing", "size", "radius", "border")
 
 
-def klass(hit):
-    """Which rule decides the place: style definition (strategy 4), drawn icon = content (3), last wave (5), else in scope."""
-    if hit.rel.startswith(STYLEDEF):
-        return "style-definition"
-    if hit.rel in ICON_FILES:
-        return "icon-content"
+def klass(hit, ex=None):
+    """Which rule decides the place: style definition (strategy 4) or drawn content (3), both from exceptions.toml; last wave (5); else in scope."""
+    ex = ex or {"fixed": {}, "colours": {}}
+    reason = ex["fixed"].get(hit.rel) or (ex["colours"].get(hit.rel) if hit.kind == "color" else None)
+    if reason:
+        return "style-definition" if reason.startswith("style:") else "icon-content"
     return "last-wave" if umbau.group_of(hit.rel) in LAST_WAVE else "scope"
 
 
@@ -29,14 +28,15 @@ def canon(hit):
 
 def collect(root):
     rows = defaultdict(lambda: {"classes": Counter(), "sites": defaultdict(list)})
-    for hit in umbau.fixed_values(root):
+    ex = hard.exemptions(root)
+    for hit in umbau.fixed_values(root, everything=True):
         row = rows[(hit.kind, canon(hit))]
-        row["classes"][klass(hit)] += 1
-        row["sites"][klass(hit)].append(f"{hit.rel}:{hit.line}")
+        row["classes"][klass(hit, ex)] += 1
+        row["sites"][klass(hit, ex)].append(f"{hit.rel}:{hit.line}")
     return rows
 
 
-def px_scales(root, rows, scope_only=True, tolerance=None, share=False):
+def px_scales(root, rows, scope_only=True, tolerance=None):
     """Per kind: base steps (Craft value), new steps, and the literal -> (token, step) placement."""
     out, saved = {}, dict(ts.TOLERANCE)
     if tolerance:
@@ -45,8 +45,8 @@ def px_scales(root, rows, scope_only=True, tolerance=None, share=False):
         for kind in ts.PX_KINDS:
             values, where = ts.base_scale(root, kind)
             base = {t: s[ts.REFERENCE] for t, s in values.items() if ts.REFERENCE in s}
-            if share and kind == "size":  # variant: a box may sit on the space ladder and on a line width
-                base.update({t: v for k in ("spacing", "border") for t, v in out[k]["scale"].items()})
+            if kind == "size":  # a line drawn as a box (1, 2 px) is the line width of a border (review K2)
+                base.update({t: v for t, v in out["border"]["scale"].items() if t in ("border.width.default", "border.width.strong")})
             lits, allv = {}, {}
             for (k, v), row in rows.items():
                 number = assign.number(v)
@@ -55,7 +55,7 @@ def px_scales(root, rows, scope_only=True, tolerance=None, share=False):
                 allv[number] = row["classes"]["scope"] + row["classes"]["last-wave"]
                 if row["classes"]["scope"] or not scope_only:
                     lits[number] = row["classes"]["scope"] + (0 if scope_only else row["classes"]["last-wave"])
-            added = ts.new_steps(kind, {v: n for v, n in lits.items() if n}, base)
+            added = [] if kind == "radius" else ts.new_steps(kind, {v: n for v, n in lits.items() if n}, base)  # radius: roles, see literal_rows
             scale = dict(base, **{a["token"]: a["value"] for a in added})
             out[kind] = {"base": base, "values": values, "where": where, "new": added, "scale": scale,
                          "place": {v: ts.place(kind, v, scale) for v in allv}}
@@ -78,6 +78,10 @@ def color_map(root, value):
     exact = sorted(tokens.by_value.get(("color", value), ()))
     if exact:
         return exact, None, 0
+    role = ROLE_COLORS.get(value)
+    if role:
+        want = next(v.value for v in styledefs.read_all(root) if v.style == ts.REFERENCE and v.token == role and v.mode in ("light", "all"))
+        return [role], role, max(abs(a - b) for a, b in zip(hexrgb(value), hexrgb(want)))
     if " a=" in value or not value.startswith("#"):
         return [], None, None
     best = min(((max(abs(a - b) for a, b in zip(hexrgb(value), hexrgb(v.value))), v.token) for v in styledefs.read_all(root)
@@ -93,11 +97,14 @@ def literal_rows(root, rows, scales):
         number = assign.number(value)
         if kind == "color":
             tok, near, dist = color_map(root, value)
-            entry.update(token=tok, nearest=near, distance=dist, status="existing" if tok else "new-color")
+            role = value in ROLE_COLORS
+            entry.update(token=tok, nearest=near, distance=dist, status="role" if role else "existing" if tok else "new-color", **({"dev": dist, "deliberate": True} if role else {}))
         elif kind == "shadow":
             entry.update(token=[], status="exception")
         elif (kind in ZERO_KINDS and number == 0) or (kind == "opacity" and number == 1):
             entry.update(token=[], dev=0, status="none")
+        elif kind == "radius" and classes.get("scope"):
+            entry.update(token=["radius.control"], step=0.0, dev=number, status="role", deliberate=True)  # review (b): Craft is square
         else:
             placed = scales[kind]["place"].get(number)
             if placed:
@@ -112,28 +119,35 @@ def literal_rows(root, rows, scales):
     return out
 
 
+def tolerance_list(literals):
+    """Per group (crate/module): every converted place that will look different, for the tolerance of the picture comparison."""
+    groups = defaultdict(list)
+    for e in literals:
+        for site in e.get("sites", {}).get("scope", []):
+            rel, _, line = site.rpartition(":")
+            group = "/".join(umbau.group_of(rel))
+            groups[group].append([e["kind"], e["value"], e["token"][0], e["dev"], f"{rel}:{line}", bool(e.get("deliberate"))])
+    return {g: sorted(v, key=lambda x: x[4]) for g, v in sorted(groups.items())}
+
+
 def build(root):
     rows = collect(root)
     scales = px_scales(root, rows)
     wide = px_scales(root, rows, scope_only=False)
     loose = px_scales(root, rows, tolerance=4.0)
-    shared = px_scales(root, rows, share=True)
     literals = literal_rows(root, rows, scales)
-    kinds = Counter()
-    for (kind, _), row in rows.items():
-        kinds[kind] += sum(row["classes"].values())
-    new_colors = [e for e in literals if e["status"] == "new-color" and (e["classes"].get("scope"))]
+    counted, left_out = Counter(), Counter()
+    for e in literals:
+        for c, n in e["classes"].items():
+            (left_out if c in ("style-definition", "icon-content") or e["status"] == "none" else counted)[e["kind"]] += n
+    new_colors = [e for e in literals if e["status"] == "new-color" and e["classes"].get("scope")]
     return {"rule": {"reference": ts.REFERENCE, "tolerance": ts.TOLERANCE,
-                     "fit": "equal, or |diff| <= tolerance and |diff| <= half of the smaller value; tie: the smaller step",
+                     "fit": "equal, or |diff| <= tolerance and |diff| <= half of the smaller value; tie: the smaller step; role tokens before ladder steps",
                      "excluded": ["style-definition", "icon-content", "last-wave"]},
-            "counted": dict(sorted(kinds.items())), "scales": {k: {"base": v["base"], "new": v["new"], "values": v["values"], "where": v["where"]} for k, v in scales.items()},
+            "counted": dict(sorted(counted.items())), "left_out": dict(sorted(left_out.items())),
+            "scales": {k: {"base": v["base"], "new": v["new"], "values": v["values"], "where": v["where"]} for k, v in scales.items()},
             "literals": literals, "new_colors": [{"value": e["value"], "places": e["classes"]["scope"], "nearest": e["nearest"], "distance": e["distance"]} for e in new_colors],
+            "tolerance_list": tolerance_list(literals),
             "new_count": {"scope": {k: len(v["new"]) for k, v in scales.items()} | {"color": len(new_colors)},
                           "with_last_wave": {k: len(v["new"]) for k, v in wide.items()} | {"color": len({e["value"] for e in literals if e["status"] == "new-color" and (e["classes"].get("scope") or e["classes"].get("last-wave"))})},
-                          "tolerance_4": {k: len(v["new"]) for k, v in loose.items()},
-                          "size_shares_space_and_border": {k: len(v["new"]) for k, v in shared.items()}},
-            "start_totals": hard_total(root)}
-
-
-def hard_total(root):
-    return dict(sorted(Counter(h.kind for h in umbau.fixed_values(root)).items()))
+                          "tolerance_4": {k: len(v["new"]) for k, v in loose.items()}}}

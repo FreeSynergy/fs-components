@@ -5,6 +5,7 @@ from __future__ import annotations
 import glob
 import os
 import re
+import tomllib
 from abc import ABC, abstractmethod
 from collections import Counter, namedtuple
 
@@ -92,7 +93,16 @@ class RustCallFinder(Finder):
 FINDERS = (HexFinder(), ColorCallFinder(), CssFinder(), RustCallFinder())
 
 
-def source_files(root):
+def exemptions(root):
+    """`[fixed-values]` (a whole file is no violation) and `[data-colours]` (its colours are content) of contract/exceptions.toml:
+    {path: reason}. The reason starts with `style:` (a style definition) or `content:` (a drawing of its own)."""
+    path = os.path.join(root, "contract", "exceptions.toml")
+    data = tomllib.load(open(path, "rb")) if os.path.exists(path) else {}
+    return {"fixed": dict(data.get("fixed-values", {})), "colours": dict(data.get("data-colours", {}))}
+
+
+def source_files(root, exempt=True):
+    skip = exemptions(root)["fixed"] if exempt else {}
     for path in sorted(glob.glob(os.path.join(root, "crates/*/src/**/*.rs"), recursive=True)):
         rel = os.path.relpath(path, root)
         base = os.path.basename(rel)
@@ -100,15 +110,21 @@ def source_files(root):
             continue
         if "/styles/" in rel and base in STYLE_FILES:
             continue  # style definitions: read by styledefs, they are the values of the styles
+        if rel in skip:
+            continue
         yield rel, path
 
 
-def collect(root):
-    hits = []
-    for rel, path in source_files(root):
+def keep(hit, ex):
+    return not (hit.kind == "color" and hit.rel in ex["colours"])
+
+
+def collect(root, exempt=True):
+    hits, ex = [], exemptions(root) if exempt else {"colours": {}}
+    for rel, path in source_files(root, exempt):
         text = strip_tests(open(path, encoding="utf-8").read())
         for finder in FINDERS:
-            hits.extend(finder.find(text, rel))
+            hits.extend(h for h in finder.find(text, rel) if keep(h, ex))
     return sorted(set(hits), key=lambda h: (h.rel, h.line, h.kind, h.value, h.prop, h.via))
 
 

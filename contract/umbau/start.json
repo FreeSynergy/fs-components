@@ -17,7 +17,7 @@
     "opacity": 0,
     "radius": 0,
     "shadow": 0,
-    "size": 6,
+    "size": 0,
     "spacing": 0
    },
    "module": "view",
@@ -114,7 +114,7 @@
     "opacity": 0,
     "radius": 0,
     "shadow": 0,
-    "size": 2,
+    "size": 0,
     "spacing": 0
    },
    "module": "view",
@@ -163,23 +163,6 @@
    "names_total": 6
   },
   {
-   "crate": "fs-components-charts",
-   "fixed": {
-    "border": 0,
-    "color": 0,
-    "font": 0,
-    "opacity": 1,
-    "radius": 0,
-    "shadow": 0,
-    "size": 0,
-    "spacing": 0
-   },
-   "module": "layout",
-   "names": {},
-   "names_not_in_contract": 0,
-   "names_total": 0
-  },
-  {
    "crate": "fs-components-fields",
    "fixed": {
     "border": 1,
@@ -188,7 +171,7 @@
     "opacity": 0,
     "radius": 0,
     "shadow": 0,
-    "size": 1,
+    "size": 0,
     "spacing": 0
    },
    "module": "view",
@@ -354,14 +337,14 @@
   {
    "crate": "fs-components-styles",
    "fixed": {
-    "border": 16,
-    "color": 2,
-    "font": 8,
-    "opacity": 1,
+    "border": 0,
+    "color": 0,
+    "font": 0,
+    "opacity": 0,
     "radius": 0,
     "shadow": 0,
-    "size": 8,
-    "spacing": 19
+    "size": 0,
+    "spacing": 0
    },
    "module": "styles",
    "names": {
@@ -411,13 +394,13 @@
   {
    "crate": "fs-components-widgets",
    "fixed": {
-    "border": 4,
+    "border": 3,
     "color": 0,
     "font": 0,
     "opacity": 0,
     "radius": 0,
     "shadow": 0,
-    "size": 3,
+    "size": 2,
     "spacing": 0
    },
    "module": "agent_tree",
@@ -512,7 +495,7 @@
     "opacity": 0,
     "radius": 0,
     "shadow": 0,
-    "size": 3,
+    "size": 2,
     "spacing": 6
    },
    "module": "craft",
@@ -531,7 +514,7 @@
     "opacity": 0,
     "radius": 0,
     "shadow": 0,
-    "size": 2,
+    "size": 1,
     "spacing": 0
    },
    "module": "file_preview",
@@ -544,13 +527,13 @@
   {
    "crate": "fs-components-widgets",
    "fixed": {
-    "border": 2,
+    "border": 1,
     "color": 0,
     "font": 0,
     "opacity": 0,
     "radius": 0,
     "shadow": 0,
-    "size": 1,
+    "size": 0,
     "spacing": 0
    },
    "module": "file_tile",
@@ -559,40 +542,6 @@
    },
    "names_not_in_contract": 11,
    "names_total": 11
-  },
-  {
-   "crate": "fs-components-widgets",
-   "fixed": {
-    "border": 0,
-    "color": 1,
-    "font": 0,
-    "opacity": 0,
-    "radius": 0,
-    "shadow": 0,
-    "size": 0,
-    "spacing": 0
-   },
-   "module": "icon_export",
-   "names": {},
-   "names_not_in_contract": 0,
-   "names_total": 0
-  },
-  {
-   "crate": "fs-components-widgets",
-   "fixed": {
-    "border": 2,
-    "color": 7,
-    "font": 0,
-    "opacity": 0,
-    "radius": 0,
-    "shadow": 2,
-    "size": 0,
-    "spacing": 0
-   },
-   "module": "icon_kind",
-   "names": {},
-   "names_not_in_contract": 0,
-   "names_total": 0
   },
   {
    "crate": "fs-components-widgets",
@@ -623,7 +572,7 @@
     "opacity": 0,
     "radius": 0,
     "shadow": 0,
-    "size": 1,
+    "size": 0,
     "spacing": 1
    },
    "module": "list_view",
@@ -699,7 +648,7 @@
     "opacity": 2,
     "radius": 11,
     "shadow": 0,
-    "size": 9,
+    "size": 5,
     "spacing": 66
    },
    "module": "plan",
@@ -777,7 +726,7 @@
     "opacity": 0,
     "radius": 0,
     "shadow": 0,
-    "size": 4,
+    "size": 2,
     "spacing": 2
    },
    "module": "text_view",
@@ -855,7 +804,7 @@
     "opacity": 0,
     "radius": 0,
     "shadow": 0,
-    "size": 6,
+    "size": 2,
     "spacing": 0
    },
    "module": "calendar",
@@ -874,7 +823,7 @@
     "opacity": 2,
     "radius": 0,
     "shadow": 0,
-    "size": 9,
+    "size": 4,
     "spacing": 10
    },
    "module": "file_manager",
@@ -914,7 +863,7 @@
     "opacity": 0,
     "radius": 0,
     "shadow": 0,
-    "size": 7,
+    "size": 2,
     "spacing": 0
    },
    "module": "people",
@@ -934,7 +883,7 @@
     "opacity": 0,
     "radius": 0,
     "shadow": 0,
-    "size": 8,
+    "size": 2,
     "spacing": 0
    },
    "module": "tasks",
@@ -954,7 +903,7 @@
     "opacity": 0,
     "radius": 10,
     "shadow": 0,
-    "size": 49,
+    "size": 25,
     "spacing": 56
    },
    "module": "view",

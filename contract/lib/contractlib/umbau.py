@@ -66,14 +66,24 @@ def group_of(rel):
     return crate, "(root)" if first in ("lib", "main") and len(parts) == 4 else first
 
 
-def fixed_values(root, include_tests=False):
-    """Hits of production code (styles/*.rs definitions excluded: they are the tokens), plus the extra colour finders."""
-    hits = list(hard.collect(root))
-    for rel, path in hard.source_files(root):
+def is_nothing(hit):
+    """A zero spacing, size, radius or border, and `opacity: 1`, set nothing: no token, no violation (the declaration is removed)."""
+    m = re.match(r"-?\d+(?:\.\d+)?", hit.value)
+    number = float(m.group(0)) if m else None
+    return number is not None and ((hit.kind in ("spacing", "size", "radius", "border") and number == 0) or (hit.kind == "opacity" and number == 1))
+
+
+def fixed_values(root, include_tests=False, everything=False):
+    """Hits of production code (styles/*.rs definitions excluded: they are the tokens), plus the extra colour finders. Files of
+    `[fixed-values]`, colours of `[data-colours]` and values that set nothing are left out, unless `everything` (the token report)."""
+    exempt = not everything
+    ex = hard.exemptions(root) if exempt else {"colours": {}}
+    hits = list(hard.collect(root, exempt))
+    for rel, path in hard.source_files(root, exempt):
         text = hard.strip_tests(open(path, encoding="utf-8").read())
         for finder in EXTRA:
-            hits.extend(finder.find(text, rel))
-    return sorted((h for h in set(hits) if not is_false_positive(root, h)), key=lambda h: (h.rel, h.line, h.kind, h.value))
+            hits.extend(h for h in finder.find(text, rel) if hard.keep(h, ex))
+    return sorted((h for h in set(hits) if not is_false_positive(root, h) and (everything or not is_nothing(h))), key=lambda h: (h.rel, h.line, h.kind, h.value))
 
 
 # `contract/hardcoded` counts them, but they are no layout value: `Live::new().gap(250)` is a pause in milliseconds.

@@ -8,7 +8,7 @@ Generated from `contract/mapping/*.toml` by `contract/render`. Do not edit. Stat
 | coming | 0 | 0 | 0 |
 | external | 0 | 45 | 45 |
 
-Test-only names (outside the contract): 58. Exceptions: 14.
+Test-only names (outside the contract): 58. Exceptions: 17.
 
 ## here
 
@@ -748,6 +748,19 @@ Test-only names (outside the contract): 58. Exceptions: 14.
 | `tabindex=0` | BUG, not a class: `.class("tabindex=0")` in file_manager/view/actions.rs tries to set an attribute; to be replaced by a real focus API in step 4 |
 
 ### unmapped
+
+| Name | Reason |
+|---|---|
+
+### fixed-values
+
+| Name | Reason |
+|---|---|
+| `crates/fs-components-styles/src/styles/craft_sheet.rs` | style: the CSS sheet of Craft; the sheet IS the style |
+| `crates/fs-components-widgets/src/icon_export.rs` | content: drawn icon; its colour is the picture |
+| `crates/fs-components-widgets/src/icon_kind.rs` | content: drawn icon of a kind of thing; its colours, line and shadow are the picture |
+
+### data-colours
 
 | Name | Reason |
 |---|---|
