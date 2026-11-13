@@ -70,6 +70,8 @@ pub struct Editable {
     pub exported: Mutex<Vec<(String, String, bool)>>,
     /// A source without revisions: `save` cannot tell that someone else changed a text.
     pub no_revisions: std::sync::atomic::AtomicBool,
+    /// The page list shows the first `# ` heading of a text as its title (a wiki), not the path.
+    pub heading_titles: std::sync::atomic::AtomicBool,
 }
 
 impl Editable {
@@ -103,8 +105,17 @@ impl DocumentSource for Editable {
             .texts
             .lock()
             .unwrap()
-            .keys()
-            .map(|p| Entry::new(p.clone(), p.clone()))
+            .iter()
+            .map(|(p, (text, _))| {
+                let heading = text.lines().next().and_then(|l| l.strip_prefix("# "));
+                let titled = self
+                    .heading_titles
+                    .load(std::sync::atomic::Ordering::Relaxed);
+                Entry::new(
+                    p.clone(),
+                    heading.filter(|_| titled).unwrap_or(p).to_owned(),
+                )
+            })
             .collect())
     }
     fn read(&self, path: &str) -> Result<Document, SourceError> {

@@ -7,7 +7,7 @@ mod common;
 use std::sync::{Arc, Mutex};
 
 use blinc_layout::prelude::RenderTree;
-use common::{Input, background, draw, ink, layout, serial};
+use common::{Input, background, draw, ink, layout, serial, size_of};
 use fs_components_mf2::check_pairs;
 use fs_components_widgets::name_dialog::{Labels, NameDialog, Purpose, TEXTS};
 use fs_components_words::{Locale, Localized};
@@ -172,4 +172,25 @@ fn the_picture_in_both_languages() {
             "{lang}"
         );
     }
+}
+
+#[test]
+fn the_dialog_is_as_high_as_its_content_not_the_window() {
+    // In a window much higher than the dialog the dialog must not be stretched: its bottom edge is the lower edge of
+    // the button row plus the padding (the token space-4), give or take a few pixels.
+    let _g = serial();
+    let d = NameDialog::new(&Labels::default(), Purpose::SubPage, "Handbook")
+        .id("nd")
+        .initial("Chapter one");
+    let tree = layout(d.build(), 480.0, 600.0);
+    let (_, height) = size_of(&tree, "nd");
+    let (_, ok_middle) = Input::centre(&tree, "nd-ok");
+    let (_, ok_height) = size_of(&tree, "nd-ok");
+    let content_bottom = ok_middle
+        + ok_height / 2.0
+        + blinc_theme::ThemeState::get().spacing_value(blinc_theme::SpacingToken::Space4);
+    assert!(
+        height <= content_bottom + 4.0,
+        "the dialog is {height} px high, its content ends at {content_bottom}"
+    );
 }
