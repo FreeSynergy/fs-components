@@ -1,6 +1,9 @@
 //! The hard part: the cases FreeSynergy uses (plain text, `{$var}`, `.match` with `:plural` / `:number` / `:string`,
 //! escapes, error fallback) must pass 100 %. Own cases, not from the suite; the suite is `conformance.rs`.
 
+// One table of cases in one test: long on purpose.
+#![allow(clippy::too_many_lines)]
+
 use mf2::{Arg, BidiStrategy, FormatContext, FormatError, Formatter, Registry};
 
 static FUNCTIONS: [(&str, &dyn mf2::Function); 3] = [

@@ -21,6 +21,7 @@ mod new_file;
 mod quit;
 mod shell;
 mod standard;
+mod standard_widget;
 mod status_panel;
 mod styles;
 mod surface;
