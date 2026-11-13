@@ -1,0 +1,83 @@
+#!/usr/bin/env -S python3 -I
+"""Counter-test of `contract/umbau/tokens`: change one thing in a copy and expect tokens.json to change in exactly that place.
+Usage: contract/umbau/tokens_selftest [root]. Pattern: Command (each probe edits the copy, regenerates, and states what must move)."""
+import json
+import os
+import subprocess
+import sys
+import tempfile
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, os.path.join(HERE, "..", "lib"))
+from contractlib import mutations  # noqa: E402
+
+BADGE = os.path.join("crates", "fs-components-widgets", "src", "badge.rs")
+PLAN = os.path.join("crates", "fs-components-widgets", "src", "plan", "styles.rs")
+ICON = os.path.join("crates", "fs-components-widgets", "src", "icon_kind.rs")
+CRAFT = os.path.join("crates", "fs-components-styles", "src", "styles", "craft.rs")
+
+
+def run(root, *args):
+    tool = os.path.join(root, "contract", "umbau", args[0])
+    return subprocess.run([sys.executable, "-I", tool, "--root", root, *args[1:]], capture_output=True, text=True)
+
+
+def regenerate(root):
+    umbau = os.path.join(root, "contract", "umbau")
+    run(root, "count", "--write", umbau)
+    done = run(root, "tokens", "--write", umbau)
+    return json.load(open(os.path.join(umbau, "tokens.json"), encoding="utf-8")), done
+
+
+def edit(root, rel, old, new):
+    path = os.path.join(root, rel)
+    text = open(path, encoding="utf-8").read()
+    if old is None:
+        text = new + text  # at the top: a `#[cfg(test)]` tail is skipped by the counter
+    else:
+        assert old in text, old
+        text = text.replace(old, new, 1)
+    open(path, "w", encoding="utf-8").write(text)
+
+
+def row(data, kind, value):
+    return next((e for e in data["literals"] if e["kind"] == kind and e["value"] == value), None)
+
+
+def main():
+    root = os.path.abspath(sys.argv[1] if len(sys.argv) > 1 else os.path.join(HERE, "..", ".."))
+    fails = []
+
+    def expect(name, ok):
+        print(("ok   " if ok else "FAIL ") + name)
+        fails.extend([] if ok else [name])
+
+    with tempfile.TemporaryDirectory(prefix="tokens-selftest-") as tmp:
+        mutations.copy_repo(root, tmp)
+        base, _ = regenerate(tmp)
+        again, _ = regenerate(tmp)
+        expect("twice gives the same file", base == again)
+        expect("--check is current after writing", run(tmp, "tokens", "--check", os.path.join(tmp, "contract", "umbau")).returncode == 0)
+        edit(tmp, BADGE, None, '\nconst _P: &str = ".fs-badge { padding: 7px; }";\n')
+        expect("a stale tokens.json is reported", run(tmp, "tokens", "--check", os.path.join(tmp, "contract", "umbau")).returncode == 1)
+        data, _ = regenerate(tmp)
+        r = row(data, "spacing", "7")
+        expect("new 7px spacing in a block sits on space.s with deviation 1, no new token", bool(r) and r["token"] == ["space.s"] and r["dev"] == 1 and data["new_count"]["scope"] == base["new_count"]["scope"])
+        edit(tmp, BADGE, None, '\nconst _P: &str = ".fs-badge { padding: 100px; }";\n')
+        data, _ = regenerate(tmp)
+        expect("a 100px spacing needs one NEW spacing token", data["new_count"]["scope"]["spacing"] == base["new_count"]["scope"]["spacing"] + 1)
+        edit(tmp, PLAN, None, '\nconst _P: &str = ".fs-plan-x { padding: 77px; }";\n')
+        data, _ = regenerate(tmp)
+        expect("a value in the last wave (plan) adds no new token now", data["new_count"]["scope"]["spacing"] == base["new_count"]["scope"]["spacing"] + 1)
+        edit(tmp, ICON, None, '\nconst _P: &str = ".x { padding: 55px; color: #123456; }";\n')
+        data, _ = regenerate(tmp)
+        r = row(data, "spacing", "55")
+        expect("a drawn icon is content: counted, never mapped to a new token", bool(r) and r["classes"] == {"icon-content": 1} and data["new_count"]["scope"]["spacing"] == base["new_count"]["scope"]["spacing"] + 1 and not [c for c in data["new_colors"] if c["value"] == "#123456"])
+        edit(tmp, CRAFT, "            s: 8.0,", "            s: 6.0,")
+        data, _ = regenerate(tmp)
+        expect("changing a Craft token value changes the scale", data["scales"]["spacing"]["base"]["space.s"] == 6.0)
+    print("tokens selftest: " + ("FAILED" if fails else "every probe moved tokens.json as expected"))
+    return 1 if fails else 0
+
+
+sys.exit(main())

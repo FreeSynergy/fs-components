@@ -1,0 +1,47 @@
+#!/usr/bin/env -S python3 -I
+"""Derive contract/umbau/tokens.json from the counted literals (start.json) and the style definitions.
+Usage: contract/umbau/tokens [--write DIR] [--check DIR] [--root ROOT]   (no flag: print a summary)
+Checks that the literal totals equal the totals in start.json. Pattern: Facade over contractlib.tokens."""
+import json
+import os
+import sys
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, os.path.join(HERE, "..", "lib"))
+from contractlib import tokens, tokensdoc, tokensdoc2, tokensreport  # noqa: E402
+
+
+def option(name):
+    return sys.argv[sys.argv.index(name) + 1] if name in sys.argv else None
+
+
+def main():
+    root = os.path.abspath(option("--root") or os.path.join(HERE, "..", ".."))
+    data = tokens.build(root)
+    start = json.load(open(os.path.join(root, "contract", "umbau", "start.json"), encoding="utf-8"))
+    want = {}
+    for group in start["groups"]:
+        for kind, n in group["fixed"].items():
+            want[kind] = want.get(kind, 0) + n
+    want = {k: v for k, v in sorted(want.items()) if v}
+    if want != data["counted"]:
+        print(f"MISMATCH with start.json: {want} != {data['counted']}")
+        return 1
+    text = tokensreport.dump(data)
+    doc = "\n".join(tokensdoc.build(data) + tokensdoc2.build(data)) + "\n"
+    target = option("--write") or option("--check")
+    if option("--write"):
+        os.makedirs(target, exist_ok=True)
+        open(os.path.join(target, "tokens.json"), "w", encoding="utf-8").write(text)
+        open(os.path.join(target, "TOKENS.md"), "w", encoding="utf-8").write(doc)
+        print(f"wrote tokens.json, TOKENS.md to {target}")
+    elif option("--check"):
+        same = open(os.path.join(target, "tokens.json"), encoding="utf-8").read() == text and open(os.path.join(target, "TOKENS.md"), encoding="utf-8").read() == doc
+        print("tokens.json and TOKENS.md are current" if same else "tokens.json or TOKENS.md is STALE")
+        return 0 if same else 1
+    else:
+        print(tokensreport.summary(data))
+    return 0
+
+
+sys.exit(main())
