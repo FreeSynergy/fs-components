@@ -28,5 +28,6 @@ pub use field_data::{
     scroll_ref, scroll_watch,
 };
 pub use search_field::{
-    FIELD_FONT_CLASS, FieldSize, STYLES as SEARCH_FIELD_STYLES, SearchField, with_field_font,
+    FIELD_FONT_CLASS, FieldSize, STYLES as SEARCH_FIELD_STYLES, SearchField, TITLE_PX,
+    with_field_font,
 };

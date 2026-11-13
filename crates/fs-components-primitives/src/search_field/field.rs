@@ -12,12 +12,29 @@ use blinc_theme::{ColorToken, ThemeState};
 
 use crate::field_data::FieldData;
 
+/// The size of a page title in pixels, written ONCE: the macro gives the literal to the style sheet (`concat!`) and to
+/// [`TITLE_PX`]. Both the title field and the reading title of the wiki frontends use it.
+macro_rules! title_px {
+    () => {
+        40
+    };
+}
+
+/// The text size of a page title (the field of [`FieldSize::Title`] and the reading title above a page).
+#[allow(clippy::unnecessary_cast)] // the literal of the macro is an integer (it is also a piece of CSS)
+pub const TITLE_PX: f32 = title_px!() as f32;
+
 /// The style sheet of the field. The caret of Blinc's `text_input` is placed from the font the stylesheet gives the
 /// FIELD (only an element with a class or an id is looked up), while the text is drawn in the font it inherits from the
 /// window: a field with no class of its own measured in one font and drew in another, and the caret stood away from
 /// the last character (measured 2026-11-12: 4 to 15 px, against 0 to 2 px in the fields of the type components). The
 /// class and this rule give the field the same font and size for both.
-pub const STYLES: &str = ".fs-field-font { font-family: var(--font-sans); }\n.fs-body-field { font-family: var(--font-sans); font-size: 14px; }\n.fs-title-field, .fs-title-field:hover, .fs-title-field:focus { font-family: var(--font-sans); font-size: 40px; }\n";
+pub const STYLES: &str = concat!(
+    ".fs-field-font { font-family: var(--font-sans); }\n.fs-body-field { font-family: var(--font-sans); font-size: 14px; }\n",
+    ".fs-title-field, .fs-title-field:hover, .fs-title-field:focus { font-family: var(--font-sans); font-size: ",
+    title_px!(),
+    "px; }\n"
+);
 
 /// The class that gives a raw `text_input` (one that is not Blinc's `input` of `blinc_cn`, whose `.cn-input` rule
 /// already names the font) the font the caret is measured in. The ONE place of the rule: every raw `text_input` of
@@ -34,9 +51,8 @@ pub fn with_field_font(field: TextInput) -> TextInput {
 /// The size of [`FieldSize::Body`].
 const BODY_TEXT: f32 = 14.0;
 const BODY_HEIGHT: f32 = 36.0;
-/// The size of [`FieldSize::Title`] (the rule `.fs-title-field` in [`STYLES`] gives the caret the same size).
-const TITLE_TEXT: f32 = 40.0;
-const TITLE_HEIGHT: f32 = 56.0;
+/// The field is this many times as high as its text.
+const TITLE_LINE: f32 = 1.4;
 
 /// Called with the whole text after every change.
 pub type OnChange = Arc<dyn Fn(&str) + Send + Sync>;
@@ -188,8 +204,8 @@ impl SearchField {
             let theme = ThemeState::get();
             let none = blinc_core::Color::TRANSPARENT;
             let mut field = with_field_font(text_input(&self.data))
-                .h(TITLE_HEIGHT)
-                .text_size(TITLE_TEXT)
+                .h(TITLE_PX * TITLE_LINE)
+                .text_size(TITLE_PX)
                 .padding_x(0.0)
                 .border(0.0, none)
                 .idle_bg_color(none)

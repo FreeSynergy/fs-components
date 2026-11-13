@@ -130,9 +130,23 @@ impl DocumentSource for Editable {
         let titled = self
             .heading_titles
             .load(std::sync::atomic::Ordering::Relaxed);
-        let mut doc = Document::new(path, vec![Block::Paragraph(Inline::plain(t.text))]);
+        let mut doc = Document::new(path, vec![Block::Paragraph(Inline::plain(t.text.clone()))]);
         if titled {
             doc.title = title.unwrap_or_default();
+            // A wiki page is blocks: a line `# x` is a heading, the rest paragraphs cut at blank lines.
+            doc.blocks = t
+                .text
+                .split("\n\n")
+                .map(str::trim)
+                .filter(|b| !b.is_empty())
+                .map(|b| match b.strip_prefix("# ") {
+                    Some(h) => Block::Heading {
+                        level: 1,
+                        text: Inline::plain(h.to_owned()),
+                    },
+                    None => Block::Paragraph(Inline::plain(b.to_owned())),
+                })
+                .collect();
         }
         doc.revision = t.revision;
         Ok(doc)

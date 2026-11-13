@@ -83,7 +83,13 @@ fn folder(px: f32, kind: Color) -> Div {
 
 /// The edge of a sheet of `kind`: the kind colour, darkened (see `EDGE_DARKEN`).
 pub fn sheet_edge(kind: Rgba) -> Rgba {
-    let c = mix(colour(kind), 0.0, EDGE_DARKEN);
+    sheet_edge_by(kind, EDGE_DARKEN)
+}
+
+/// The edge of a sheet of `kind` darkened by `darken` (0.0 = the kind colour itself, the look before 0.0.17 was even
+/// paler); the tests use it to show that the darkening is what gives the contrast.
+pub fn sheet_edge_by(kind: Rgba, darken: f32) -> Rgba {
+    let c = mix(colour(kind), 0.0, darken);
     Rgba {
         r: byte(c.r),
         g: byte(c.g),

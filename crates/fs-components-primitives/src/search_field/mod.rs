@@ -4,4 +4,6 @@
 
 mod field;
 
-pub use field::{FIELD_FONT_CLASS, FieldSize, OnChange, STYLES, SearchField, with_field_font};
+pub use field::{
+    FIELD_FONT_CLASS, FieldSize, OnChange, STYLES, SearchField, TITLE_PX, with_field_font,
+};

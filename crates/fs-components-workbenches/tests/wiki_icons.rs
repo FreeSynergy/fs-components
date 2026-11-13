@@ -14,6 +14,9 @@ use fs_components_styles::Rgba;
 use fs_components_widgets::icon::MIN_ICON_CONTRAST;
 use fs_components_workbenches::{Layout, Picture, Step, snapshot};
 
+/// Size of the icon in the tree (`rows.rs`, quiet look).
+const ICON_PX: f32 = 16.0;
+
 fn rgba(p: image::Rgba<u8>) -> Rgba {
     Rgba {
         r: p[0],
@@ -71,11 +74,33 @@ fn the_child_icon_in_the_page_tree_is_not_pale() {
     // Rows of the tree: Handbook (selected) at y 114, Chapter one at 142, Notes at 170.
     let counts = [(30, 114), (48, 142), (30, 170)].map(|(x, y)| strong_pixels(&img, x, y));
     eprintln!("strong pixels per row: {counts:?}");
-    // The outline of a 16 px sheet alone is about 40 pixels; a pale icon has a handful.
     for (row, n) in ["Handbook", "Chapter one", "Notes"].iter().zip(counts) {
         assert!(
-            n >= 25,
+            n >= least_outline(),
             "the icon of {row} is pale: {n} pixels reach the contrast"
         );
     }
+}
+
+/// The sheet is 0.6 x 0.84 of the icon (`icon_kind.rs`), the icon 16 px: its outline is about 46 pixels. Half of
+/// them reaching the contrast is the least that shows a sheet (a pale icon, 0.0.16, had none).
+fn least_outline() -> usize {
+    let (wide, high) = (0.6_f32 * ICON_PX, 0.84_f32 * ICON_PX);
+    // The outline is a whole number of pixels, a small positive one.
+    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+    let outline = (2.0 * (wide + high)) as usize;
+    outline / 2
+}
+
+#[test]
+fn the_measure_can_fail() {
+    // Counter-test: an icon outline in the pale colour of 0.0.16 (0.70, 0.76, 0.80) on the Notion sidebar reaches
+    // the contrast in no pixel, so the count above is 0 for it and the assert would fire.
+    let ground = image::Rgba([0xF7, 0xF6, 0xF3, 255]);
+    let pale = image::Rgba([0xB2, 0xC2, 0xCC, 255]);
+    let mut img = image::RgbaImage::from_pixel(300, 40, ground);
+    for x in 32..42 {
+        img.put_pixel(x, 20, pale);
+    }
+    assert_eq!(strong_pixels(&img, 30, 20), 0);
 }

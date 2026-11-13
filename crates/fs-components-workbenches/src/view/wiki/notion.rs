@@ -129,10 +129,15 @@ pub(crate) fn main(
     if let Some(document) = document {
         page = page.child(page_icon(info.emoji.as_deref()));
         // While editing, the title is a big field above the blocks (it holds the leading heading); else plain text.
-        match (reader.editing(), blocks) {
-            (Some(_), Some(b)) => page = page.child(b.title_view(labels, report)),
-            _ => page = page.child(text(&title).class("fs-wk-b-title").no_cursor()),
-        }
+        page = match (reader.editing(), blocks) {
+            (Some(_), Some(b)) => page.child(b.title_view(labels, report)),
+            _ => page.child(
+                text(&title)
+                    .class("fs-wk-b-title")
+                    .size(fs_components_primitives::TITLE_PX)
+                    .no_cursor(),
+            ),
+        };
         let meta = div()
             .class("fs-wk-b-meta")
             .flex_row()

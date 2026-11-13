@@ -76,15 +76,10 @@ fn the_title_is_a_big_field_above_the_first_block() {
         let all = runs(&img, 345, dark);
         let titles = big(&all);
         assert_eq!(titles.len(), 1, "one big title ({language}): {all:?}");
-        // The blocks come after it: the title is not the raw `# ` block (that block is small text below nothing big).
-        assert!(
-            all.iter().any(|r| r.0 > titles[0].1),
-            "a block below the title ({language}): {all:?}"
-        );
-        assert!(
-            all.iter().all(|r| r.0 >= titles[0].0 || r.1 - r.0 < 20),
-            "nothing big above the title"
-        );
+        // The blocks come after it, and only the one block "Body text" (a raw `# Handbook` block would be a second
+        // run of text below the title; the line "Current" lies within 40 rows of it).
+        let below = all.iter().filter(|r| r.0 > titles[0].1 + 40).count();
+        assert_eq!(below, 1, "one block below the title ({language}): {all:?}");
     }
 }
 
