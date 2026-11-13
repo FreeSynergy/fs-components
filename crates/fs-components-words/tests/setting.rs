@@ -148,3 +148,22 @@ fn a_planted_link_at_the_temporary_name_is_not_followed() {
     assert_eq!(s.load().unwrap().unwrap().to_string(), "de");
     let _ = std::fs::remove_dir_all(d);
 }
+
+#[test]
+fn a_named_pipe_is_refused_without_being_opened() {
+    let d = dir("fifo");
+    let s = LanguageSetting::new(d.join("language"));
+    let made = std::process::Command::new("mkfifo").arg(s.file()).status();
+    if !made.is_ok_and(|st| st.success()) {
+        eprintln!("skipped: no mkfifo");
+        return;
+    }
+    // Opening a pipe for reading would wait for a writer; the refusal must come before that (the test would hang otherwise).
+    assert!(s.load().unwrap_err().contains("not a regular file"));
+    // A link to a regular file is fine.
+    std::fs::remove_file(s.file()).unwrap();
+    std::fs::write(d.join("real"), "de\n").unwrap();
+    std::os::unix::fs::symlink(d.join("real"), s.file()).unwrap();
+    assert_eq!(s.load().unwrap().unwrap().to_string(), "de");
+    let _ = std::fs::remove_dir_all(d);
+}

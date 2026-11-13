@@ -62,12 +62,17 @@ pub fn frontends() -> Vec<FrontendItem> {
 
 /// A window with the standard menus in the language the fake `LANG` gives.
 pub fn fixture(name: &str, lang: &str) -> Fixture {
+    fixture_in(name, lang, 800.0)
+}
+
+/// The same in a window `width` pixels wide.
+pub fn fixture_in(name: &str, lang: &str, width: f32) -> Fixture {
     let dir = temp(name);
     let control = control(&dir, lang);
     let locale = control.resolve().chosen.locale;
     let presses = Arc::default();
     let app = AppWidget::new(
-        "Title",
+        "FreeSynergy Demo",
         vec![Screen::new(
             "one",
             "One",
@@ -90,7 +95,7 @@ pub fn fixture(name: &str, lang: &str) -> Fixture {
         .on_language(move |lo| l.lock().unwrap().push(format!("language:{lo}")));
     app.set_standard_menus(standard, callbacks).unwrap();
     Fixture {
-        h: Harness::new(app, 800.0, 500.0),
+        h: Harness::new(app, width, 500.0),
         calls,
         dir,
         control,

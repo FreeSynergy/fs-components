@@ -15,6 +15,7 @@ use std::sync::{Arc, Mutex};
 use fs_components_mf2::Mf2Texts;
 use fs_components_words::{Args, Locale, TextId, Words};
 
+use crate::error::AppError;
 use crate::language::{LanguageChoice, LanguageControl, Scope};
 use crate::menu::{Menu, MenuEntry};
 use crate::texts::{language_name, shell_texts};
@@ -73,6 +74,24 @@ pub struct StandardMenus {
 }
 
 impl StandardMenus {
+    /// What a program must not do: give a view an id of the shell (`fs.` ...: a view `fs.language.xx` would be taken for a
+    /// language), or name an active frontend that is not in the list.
+    pub(crate) fn check(&self) -> Result<(), AppError> {
+        let mut all = Vec::new();
+        for view in &self.views {
+            view.walk(&mut all);
+        }
+        if let Some(bad) = all.iter().find(|e| e.id.starts_with("fs.")) {
+            return Err(AppError::ReservedMenuId(bad.id.clone()));
+        }
+        match &self.active_frontend {
+            Some(id) if !self.frontends.iter().any(|f| &f.id == id) => {
+                Err(AppError::UnknownFrontend(id.clone()))
+            }
+            _ => Ok(()),
+        }
+    }
+
     /// Standard menus in this language, with Settings and nothing else yet.
     pub fn new(locale: Locale) -> Self {
         Self {
@@ -136,12 +155,21 @@ pub(crate) fn say(texts: &Mf2Texts, id: &str) -> String {
 
 fn language_menu(texts: &Mf2Texts, control: &dyn LanguageControl) -> MenuEntry {
     let now = control.current(Scope::Program);
+    // "System language" is what answers when this program has no choice of its own. If the setting shared by all programs
+    // holds a language, that one answers first, so the line says so ("Like all programs (Deutsch)") instead of promising the
+    // system language; choosing it still removes the program's own choice.
+    let system = match control.current(Scope::AllPrograms) {
+        LanguageChoice::Language(shared) => texts
+            .say(
+                &TextId::new("shell-language-shared"),
+                &Args::new().text("language", language_name(texts, &shared)),
+            )
+            .text()
+            .to_owned(),
+        LanguageChoice::System => say(texts, "shell-language-system"),
+    };
     let mut children = vec![
-        MenuEntry::new(
-            format!("{LANGUAGE}system"),
-            say(texts, "shell-language-system"),
-        )
-        .checked(now == LanguageChoice::System),
+        MenuEntry::new(format!("{LANGUAGE}system"), system).checked(now == LanguageChoice::System),
     ];
     for language in control.available() {
         let checked = now == LanguageChoice::Language(language.clone());

@@ -30,8 +30,8 @@ pub struct Shell {
     handler: Option<MenuHandler>,
     open_menu: Option<usize>,
     open_sub: Option<usize>,
-    open_at: (f32, f32),
     overlay: Option<u64>,
+    sub_overlay: Option<u64>,
     status_overlay: Option<u64>,
 }
 
@@ -55,8 +55,8 @@ impl Shell {
             handler: None,
             open_menu: None,
             open_sub: None,
-            open_at: (0.0, 0.0),
             overlay: None,
+            sub_overlay: None,
             status_overlay: None,
         })
     }
@@ -169,13 +169,10 @@ impl Shell {
         has
     }
 
-    pub(crate) fn open_at(&self) -> (f32, f32) {
-        self.open_at
+    pub(crate) fn clear_open_sub(&mut self) {
+        self.open_sub = None;
     }
 
-    pub(crate) fn set_open_at(&mut self, at: (f32, f32)) {
-        self.open_at = at;
-    }
 
     /// The handler to run for this entry; `None` if the entry is unknown or disabled. Run it after
     /// letting go of the shell, so it may change the shell.
@@ -204,6 +201,19 @@ impl Shell {
 
     pub(crate) fn set_overlay(&mut self, raw: u64) {
         self.overlay = Some(raw);
+    }
+
+    /// The overlay that draws the next level of the open menu, as Blinc's raw handle.
+    pub(crate) fn sub_overlay(&self) -> Option<u64> {
+        self.sub_overlay
+    }
+
+    pub(crate) fn set_sub_overlay(&mut self, raw: u64) {
+        self.sub_overlay = Some(raw);
+    }
+
+    pub(crate) fn take_sub_overlay(&mut self) -> Option<u64> {
+        self.sub_overlay.take()
     }
 
     pub(crate) fn take_overlay(&mut self) -> Option<u64> {

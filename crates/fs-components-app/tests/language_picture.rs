@@ -72,8 +72,12 @@ fn out_dir() -> PathBuf {
 }
 
 fn draw(app: &AppWidget, name: &str) -> Option<RgbaImage> {
+    draw_in(app, name, SIZE)
+}
+
+fn draw_in(app: &AppWidget, name: &str, size: (u32, u32)) -> Option<RgbaImage> {
     let path = out_dir().join(name);
-    let canvas = Canvas::new(SIZE.0, SIZE.1, app.styles());
+    let canvas = Canvas::new(size.0, size.1, app.styles());
     match draw_to_png(&canvas, |w, h| composed(app, w, h), || {}, &path) {
         Err(RenderError::NoGraphics(why)) => {
             eprintln!("skipped: {why}");
@@ -133,5 +137,26 @@ fn the_standard_menus_in_german_and_english_differ_in_the_words_and_open_a_next_
             en[0].get_pixel(x, y),
             "the work area at {x},{y} is the same in both languages"
         );
+    }
+}
+
+/// A window 520 px wide: the next level of View > Frontends has no room on the right and folds to the left of its panel.
+#[test]
+fn a_narrow_window_folds_the_next_level_to_the_left_and_keeps_the_panel_under_its_entry() {
+    for (lang, short) in [("en_US.UTF-8", "en"), ("de_DE.UTF-8", "de")] {
+        let dir = std::env::temp_dir().join(format!("fs-app-lang-narrow-{short}-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        let mut h = Harness::new(app(lang, &dir), 520.0, SIZE_F.1);
+        h.click("fs-app-menu-1");
+        h.click(&entry("fs.frontends"));
+        let (tx, _, _, _) = h.bounds("fs-app-menu-1");
+        let (px, _, _, _) = h.bounds("fs-app-menu-panel");
+        let (sx, _, sw, _) = h.bounds("fs-app-menu-sub-panel");
+        assert!((px - tx).abs() < 1.0, "{lang}: the panel stays under its entry");
+        assert!(sx >= 0.0 && sx + sw <= 520.0, "{lang}: inside the window");
+        if draw_in(&h.app, &format!("shell-{short}-frontends-520.png"), (520, SIZE.1)).is_none() {
+            return;
+        }
+        let _ = std::fs::remove_dir_all(dir);
     }
 }

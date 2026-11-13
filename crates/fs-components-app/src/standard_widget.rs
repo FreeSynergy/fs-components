@@ -20,12 +20,14 @@ impl AppWidget {
     /// on the interface thread; the callbacks run with no lock held.
     ///
     /// # Errors
-    /// [`AppError::DuplicateMenuEntry`] if the program's views use an id twice (or an id of the shell).
+    /// [`AppError::DuplicateMenuEntry`] if the program's views use an id twice; [`AppError::ReservedMenuId`] if one starts with
+    /// `fs.`; [`AppError::UnknownFrontend`] if `active_frontend` is not among the `frontends`. Nothing changes then.
     pub fn set_standard_menus(
         &self,
         standard: StandardMenus,
         callbacks: StandardCallbacks,
     ) -> Result<(), AppError> {
+        standard.check()?;
         *self
             .standard
             .lock()
@@ -40,36 +42,51 @@ impl AppWidget {
     /// replaces the callback for a chosen frontend.
     ///
     /// # Errors
-    /// [`AppError::NoStandardMenus`] if `set_standard_menus` was not called.
+    /// [`AppError::NoStandardMenus`] if `set_standard_menus` was not called; [`AppError::UnknownFrontend`] if `active` is not in
+    /// `items` (nothing changes).
     pub fn set_frontends(
         &self,
         items: Vec<FrontendItem>,
         active: &str,
         on_choose: impl Fn(&str) + Send + Sync + 'static,
     ) -> Result<(), AppError> {
+        if !items.iter().any(|f| f.id == active) {
+            return Err(AppError::UnknownFrontend(active.to_owned()));
+        }
         self.change(|i| {
             i.standard.frontends = items;
             i.standard.active_frontend = Some(active.to_owned());
             i.callbacks.frontend = Arc::new(move |id: &str| on_choose(id));
+            Ok(())
         })
     }
 
     /// Mark another frontend as the one in use (the program switched without a click in the menu).
     ///
     /// # Errors
-    /// [`AppError::NoStandardMenus`] if `set_standard_menus` was not called.
+    /// [`AppError::NoStandardMenus`] if `set_standard_menus` was not called; [`AppError::UnknownFrontend`] if `id` is not one of
+    /// the frontends.
     pub fn set_active_frontend(&self, id: &str) -> Result<(), AppError> {
-        self.change(|i| i.standard.active_frontend = Some(id.to_owned()))
+        self.change(|i| {
+            if !i.standard.frontends.iter().any(|f| f.id == id) {
+                return Err(AppError::UnknownFrontend(id.to_owned()));
+            }
+            i.standard.active_frontend = Some(id.to_owned());
+            Ok(())
+        })
     }
 
-    fn change(&self, edit: impl FnOnce(&mut Installed)) -> Result<(), AppError> {
+    fn change(
+        &self,
+        edit: impl FnOnce(&mut Installed) -> Result<(), AppError>,
+    ) -> Result<(), AppError> {
         match self
             .standard
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner)
             .as_mut()
         {
-            Some(installed) => edit(installed),
+            Some(installed) => edit(installed)?,
             None => return Err(AppError::NoStandardMenus),
         }
         self.install_standard()
@@ -129,7 +146,10 @@ impl AppWidget {
         };
         match control.choose(Scope::Program, &choice) {
             Ok(now) => {
-                let _ = self.change(|i| i.standard.locale = now.clone());
+                let _ = self.change(|i| {
+                    i.standard.locale = now.clone();
+                    Ok(())
+                });
                 let message = say(&shell_texts(&now), "shell-language-saved");
                 self.set_status(Some(Status::Info(message)));
                 (callbacks.language)(&now);

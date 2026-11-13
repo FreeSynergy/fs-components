@@ -8,6 +8,7 @@ shell-help = Help
 shell-about = About
 shell-language = Language
 shell-language-system = System language (default)
+shell-language-shared = Like all programs ({$language})
 shell-frontends = Frontends
 shell-language-saved = Language changed. The menus use it now; the rest of the window changes at the next start.
 shell-language-failed = The language could not be saved: {$reason}

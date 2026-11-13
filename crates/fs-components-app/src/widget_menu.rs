@@ -66,9 +66,9 @@ impl AppWidget {
     /// A line with a next level opens it, only while its menu is open (as `on_choose`).
     fn on_sub(&self) -> OnSub {
         let this = self.clone();
-        Arc::new(move |index, position| {
+        Arc::new(move |index, position, anchor| {
             if this.with_shell(Shell::open_menu) == Some(index) {
-                menu_overlay::toggle_sub(&this.shell, position, &this.callbacks());
+                menu_overlay::toggle_sub(&this.shell, position, anchor, &this.callbacks());
             }
         })
     }

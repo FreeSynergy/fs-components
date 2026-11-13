@@ -83,12 +83,20 @@ impl LanguageSetting {
     /// language tag.
     pub fn load(&self) -> Result<Option<Locale>, String> {
         let shown = self.file.display();
+        // Checked BEFORE opening: opening a pipe would wait for a writer for ever. `metadata` follows a link, so a link to a
+        // regular file is fine and a link to a pipe or a device is refused unopened.
+        match std::fs::metadata(&self.file) {
+            Ok(m) if m.is_file() => {}
+            Ok(_) => return Err(format!("cannot read {shown}: not a regular file")),
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+            Err(e) => return Err(format!("cannot read {shown}: {e}")),
+        }
         let mut file = match std::fs::File::open(&self.file) {
             Ok(file) => file,
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(None),
             Err(e) => return Err(format!("cannot read {shown}: {e}")),
         };
-        // Checked on the open file, so a link to a pipe or a device is refused before anything is read.
+        // And again on the open file (the name may have changed in between).
         if !file.metadata().is_ok_and(|m| m.is_file()) {
             return Err(format!("cannot read {shown}: not a regular file"));
         }
@@ -139,11 +147,14 @@ impl LanguageSetting {
         });
         written
             .and_then(|()| std::fs::rename(&temp, &self.file))
-            .and_then(|()| std::fs::File::open(dir)?.sync_all())
             .map_err(|e| {
                 let _ = std::fs::remove_file(&temp);
                 fail(e)
-            })
+            })?;
+        // The file is replaced now. Making the new name durable is best effort: a failure here must not be reported as
+        // "nothing changed", because something did.
+        let _ = std::fs::File::open(dir).and_then(|d| d.sync_all());
+        Ok(())
     }
 }
 
