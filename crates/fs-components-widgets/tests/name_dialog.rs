@@ -8,8 +8,13 @@ use std::sync::{Arc, Mutex};
 
 use blinc_layout::prelude::RenderTree;
 use common::{Input, background, draw, ink, layout, serial};
-use fs_components_widgets::name_dialog::{Labels, NameDialog, Purpose, texts};
-use fs_components_words::{Args, Catalog, TextId, Words};
+use fs_components_mf2::check_pairs;
+use fs_components_widgets::name_dialog::{Labels, NameDialog, Purpose, TEXTS};
+use fs_components_words::{Locale, Localized};
+
+fn de() -> Labels {
+    Labels::for_locale(&Locale::parse("de").unwrap())
+}
 
 type Log = Arc<Mutex<Vec<String>>>;
 
@@ -20,22 +25,6 @@ fn dialog(initial: &str, log: &Log) -> NameDialog {
         .initial(initial)
         .on_name(move |n| named.lock().unwrap().push(format!("name {n}")))
         .on_cancel(move || left.lock().unwrap().push("cancel".into()))
-}
-
-fn placeholders(text: &str) -> Vec<String> {
-    let mut names: Vec<String> = text
-        .split('{')
-        .skip(1)
-        .filter_map(|p| p.split('}').next().map(str::to_owned))
-        .collect();
-    names.sort();
-    names
-}
-
-fn said(c: &Catalog, id: &str) -> String {
-    c.say(&TextId::new(id), &Args::new().text("about", "<about>"))
-        .text()
-        .replace("<about>", "{about}")
 }
 
 /// A built dialog with the keyboard in the field, the way a frontend opens it (`focus`, no click: a click would move
@@ -54,19 +43,11 @@ fn type_in(tree: &mut RenderTree, text: &str) {
 }
 
 #[test]
-fn both_languages_have_every_text_with_the_same_placeholders() {
-    let (en, de) = (texts::english(), texts::german());
-    assert!(en.validate().is_empty() && de.validate().is_empty());
-    for id in texts::IDS {
-        let (a, b) = (said(&en, id), said(&de, id));
-        let args = Args::new().text("about", "x");
-        assert!(en.say(&TextId::new(id), &args).is_found(), "{id} en");
-        assert!(de.say(&TextId::new(id), &args).is_found(), "{id} de");
-        assert_eq!(placeholders(&a), placeholders(&b), "{id}: {a} / {b}");
-    }
-    assert_eq!(Labels::from_words(&de).new_page, "Neue Seite");
-    assert_eq!(Labels::from_words(&en).new_page, "New page");
-    let sub = NameDialog::new(&Labels::from_words(&de), Purpose::SubPage, "Handbuch");
+fn every_id_is_in_german_and_english_with_the_same_variables() {
+    assert_eq!(check_pairs(TEXTS), Vec::<String>::new());
+    assert_eq!(de().new_page, "Neue Seite");
+    assert_eq!(Labels::default().new_page, "New page");
+    let sub = NameDialog::new(&de(), Purpose::SubPage, "Handbuch");
     assert_eq!(sub.title(), "Neue Unterseite von Handbuch");
 }
 
@@ -172,8 +153,8 @@ fn the_buttons_do_what_the_keys_do() {
 #[test]
 fn the_picture_in_both_languages() {
     let _g = serial();
-    for (lang, catalog) in [("en", texts::english()), ("de", texts::german())] {
-        let labels = Labels::from_words(&catalog);
+    for lang in ["en", "de"] {
+        let labels = Labels::for_locale(&Locale::parse(lang).unwrap());
         let d = NameDialog::new(&labels, Purpose::SubPage, "Handbook").initial("Chapter one");
         let img = draw(d.build(), 480, 220, &format!("name-dialog-{lang}.png"));
         assert!(

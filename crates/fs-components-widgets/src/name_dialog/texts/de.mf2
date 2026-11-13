@@ -1,0 +1,7 @@
+# Die Texte des Namensdialogs, Deutsch (ADR 0057: MessageFormat 2). Jede Id braucht ihr englisches Gegenstück in en.mf2.
+name-dialog-new-page = Neue Seite
+name-dialog-sub-page = Neue Unterseite von {$about}
+name-dialog-rename = {$about} umbenennen
+name-dialog-placeholder = Name der Seite
+name-dialog-ok = OK
+name-dialog-cancel = Abbrechen

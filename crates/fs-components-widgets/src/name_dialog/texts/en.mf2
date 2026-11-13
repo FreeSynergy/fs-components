@@ -1,0 +1,7 @@
+# The words of the name dialog, English (ADR 0057: MessageFormat 2). Every id needs a German twin in de.mf2.
+name-dialog-new-page = New page
+name-dialog-sub-page = New sub-page of {$about}
+name-dialog-rename = Rename {$about}
+name-dialog-placeholder = Name of the page
+name-dialog-ok = OK
+name-dialog-cancel = Cancel

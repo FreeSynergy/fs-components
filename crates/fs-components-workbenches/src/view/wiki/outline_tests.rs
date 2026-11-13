@@ -20,41 +20,41 @@ fn paragraph(text: &str) -> Block {
 
 #[test]
 fn a_title_heading_is_drawn_once_and_is_the_first_outline_entry() {
-    let doc = Document::new("Handbook", vec![heading(1, "Handbook"), paragraph("Text")]);
+    let doc = Document::new("t-doc", vec![heading(1, "t-doc"), paragraph("Text")]);
     assert!(leads_with_title(&doc));
     assert_eq!(body(&doc), [paragraph("Text")]);
     assert_eq!(headings(&doc), []);
     // "No headings" must not show for a page that has a title heading.
-    assert_eq!(outline_entries(&doc), [(1, "Handbook".to_string())]);
+    assert_eq!(outline_entries(&doc), [(1, "t-doc".to_string())]);
 }
 
 #[test]
 fn headings_below_the_title_follow_it_in_the_outline() {
     let doc = Document::new(
-        "Handbook",
+        "t-doc",
         vec![
-            heading(1, "Handbook"),
-            heading(2, "Start"),
-            heading(3, "Deep"),
+            heading(1, "t-doc"),
+            heading(2, "s-one"),
+            heading(3, "s-two"),
         ],
     );
     assert_eq!(
         outline_entries(&doc),
         [
-            (1, "Handbook".into()),
-            (2, "Start".into()),
-            (3, "Deep".into())
+            (1, "t-doc".into()),
+            (2, "s-one".into()),
+            (3, "s-two".into())
         ]
     );
-    assert_eq!(headings(&doc), [(2, "Start".into()), (3, "Deep".into())]);
+    assert_eq!(headings(&doc), [(2, "s-one".into()), (3, "s-two".into())]);
 }
 
 #[test]
 fn a_first_heading_that_says_something_else_stays_in_the_text() {
-    let doc = Document::new("Handbook", vec![heading(1, "Welcome"), paragraph("Text")]);
+    let doc = Document::new("t-doc", vec![heading(1, "other"), paragraph("Text")]);
     assert!(!leads_with_title(&doc));
     assert_eq!(body(&doc).len(), 2);
-    assert_eq!(outline_entries(&doc), [(1, "Welcome".to_string())]);
+    assert_eq!(outline_entries(&doc), [(1, "other".to_string())]);
 }
 
 #[test]
