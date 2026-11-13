@@ -1,0 +1,62 @@
+#!/usr/bin/env -S python3 -I
+"""Counter-test of `contract/umbau/count`: add one fixed value of each kind to a copy and expect the counter to rise by exactly that.
+Usage: contract/umbau/selftest [root]. Pattern: Command (each probe appends code to the copy and names the counter it must move)."""
+import json
+import os
+import subprocess
+import sys
+import tempfile
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, os.path.join(HERE, "..", "lib"))
+from contractlib import mutations  # noqa: E402
+
+GROUP = "fs-components-widgets/badge"
+FILE = os.path.join("crates", "fs-components-widgets", "src", "badge.rs")
+PROBES = (  # (name, code appended to badge.rs, kind, expected rise)
+    ("hex colour in CSS", '\nconst _P: &str = ".fs-badge { color: #123456; }";\n', "color", 1),
+    ("rgb() colour in CSS", '\nconst _P: &str = ".fs-badge { color: rgb(1, 2, 3); }";\n', "color", 1),
+    ("named colour in CSS", '\nconst _P: &str = ".fs-badge { background: tomato; }";\n', "color", 1),
+    ("Color::rgba in Rust", '\nfn _p() { let _ = Color::rgba(0.1, 0.2, 0.3, 1.0); }\n', "color", 1),
+    ("px spacing in CSS", '\nconst _P: &str = ".fs-badge { padding: 7px; }";\n', "spacing", 1),
+    ("px size in CSS", '\nconst _P: &str = ".fs-badge { width: 77px; }";\n', "size", 1),
+    ("a token is no fixed value", '\nconst _P: &str = ".fs-badge { color: var(--text); padding: var(--space-s); }";\n', "color", 0),
+)
+
+
+def prepend(path, code):
+    """At the top: the end of the file may be a `#[cfg(test)]` part, which the counter skips on purpose (the copy is never compiled)."""
+    with open(path, encoding="utf-8") as handle:
+        text = handle.read()
+    with open(path, "w", encoding="utf-8") as handle:
+        handle.write(code + text)
+
+
+def count(root):
+    done = subprocess.run([sys.executable, "-I", os.path.join(root, "contract", "umbau", "count"), "--root", root, "--group", GROUP], capture_output=True, text=True)
+    return json.loads(done.stdout)["groups"][0]
+
+
+def main():
+    root = os.path.abspath(sys.argv[1] if len(sys.argv) > 1 else os.path.join(HERE, "..", ".."))
+    failures = []
+    with tempfile.TemporaryDirectory(prefix="umbau-selftest-") as tmp:
+        mutations.copy_repo(root, tmp)
+        base = count(tmp)
+        for name, code, kind, rise in PROBES:
+            prepend(os.path.join(tmp, FILE), code)
+            now = count(tmp)
+            got = now["fixed"][kind] - base["fixed"][kind]
+            base = now
+            print(("ok   " if got == rise else "FAIL ") + f"{name}: {kind} +{got} (expected +{rise})")
+            failures += [] if got == rise else [name]
+        prepend(os.path.join(tmp, FILE), '\nfn _p() { let _ = div().class("fs-mutant-z"); }\n')
+        now = count(tmp)
+        got = now["names_not_in_contract"] - base["names_not_in_contract"]
+        print(("ok   " if got == 1 else "FAIL ") + f"new class name outside the contract: +{got} (expected +1)")
+        failures += [] if got == 1 else ["name"]
+    print("umbau selftest: " + ("FAILED" if failures else "every counter moved as expected"))
+    return 1 if failures else 0
+
+
+sys.exit(main())

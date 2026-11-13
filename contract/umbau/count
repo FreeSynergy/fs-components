@@ -1,0 +1,46 @@
+#!/usr/bin/env -S python3 -I
+"""Count the fixed values and the names outside the contract, per group. Pattern: Facade.
+Usage: contract/umbau/count [--group CRATE[/MODULE]] [--write DIR]
+  no flag   print the table of all groups (JSON with --json)
+  --group   print only that crate (or crate/module) as JSON; the workflow steps `count` and `recount` use it
+  --write   write START.md, start.json and ZUORDNUNG.md into DIR"""
+import json
+import os
+import sys
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, os.path.join(HERE, "..", "lib"))
+from contractlib import assign, model, umbau, umbaureport  # noqa: E402
+from contractlib.scan import scan  # noqa: E402
+
+
+def option(name):
+    return sys.argv[sys.argv.index(name) + 1] if name in sys.argv else None
+
+
+def main():
+    root = os.path.abspath(option("--root") or os.path.join(HERE, "..", ".."))
+    contract = model.load(root)
+    data = umbau.build(root, contract)
+    group = option("--group")
+    if group:
+        crate, _, module = group.partition("/")
+        rows = [g for g in data["groups"] if g["crate"] == crate and (not module or g["module"] == module)]
+        print(json.dumps({"group": group, "groups": rows, "fixed": dict(umbaureport.totals(rows))}, indent=2, sort_keys=True))
+        return 0 if rows else 1
+    target = option("--write")
+    if target:
+        os.makedirs(target, exist_ok=True)
+        rows = assign.assign(root, contract, scan(root, contract.meta["contract"]["prefixes"]))
+        files = {"start.json": json.dumps(data, indent=1, sort_keys=True) + "\n", "START.md": umbaureport.start_md(data, umbaureport.style_kind_counts(root)),
+                 "ZUORDNUNG.md": umbaureport.zuordnung_md(rows, contract)}
+        for name, text in files.items():
+            with open(os.path.join(target, name), "w", encoding="utf-8") as handle:
+                handle.write(text)
+        print(f"wrote {', '.join(files)} to {target}")
+        return 0
+    print(umbaureport.start_md(data, umbaureport.style_kind_counts(root)))
+    return 0
+
+
+sys.exit(main())
