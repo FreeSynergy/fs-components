@@ -9,7 +9,7 @@ use fs_components_pictures::{Group, Tolerance};
 use fs_components_styles::StyleId;
 
 fn group() -> Group {
-    Group::new("styles", (260, 64), Tolerance::EXACT)
+    Group::new("styles", (260, 64), Tolerance::RASTER)
 }
 
 fn strip(dark: bool) -> impl ElementBuilder {

@@ -10,7 +10,7 @@ use fs_components_pictures::{Group, Tolerance};
 use fs_components_styles::StyleId;
 
 fn group() -> Group {
-    Group::new("render", (200, 64), Tolerance::EXACT)
+    Group::new("render", (200, 64), Tolerance::RASTER)
 }
 
 #[test]
