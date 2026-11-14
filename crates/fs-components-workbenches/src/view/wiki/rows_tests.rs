@@ -34,6 +34,11 @@ fn actions(log: &Log) -> Actions {
 
 /// The tree laid out in 320 x 400 with the style sheet of the reader.
 fn laid_out(tree: &PageTree, look: Look, log: &Log) -> RenderTree {
+    // Blinc sets its state up once per process and panics when two threads race to do it; tests run in parallel.
+    static ONE_AT_A_TIME: Mutex<()> = Mutex::new(());
+    let _guard = ONE_AT_A_TIME
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
     let css = crate::view::styles();
     let bundle = fs_components_render::bundle(&css);
     let sources = bundle.css_sources.clone();
