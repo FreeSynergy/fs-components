@@ -78,7 +78,8 @@ fn matches_near(a: &RgbaImage, b: &RgbaImage, (x, y): (u32, u32), t: Tolerance) 
             if nx < 0 || ny < 0 || nx >= i64::from(w) || ny >= i64::from(h) {
                 continue;
             }
-            #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)] // bounds checked just above
+            #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+            // bounds checked just above
             if close(p, *b.get_pixel(nx as u32, ny as u32), t.channel) {
                 return true;
             }
@@ -108,10 +109,14 @@ pub fn compare(reference: &RgbaImage, new: &RgbaImage, tolerance: Tolerance) -> 
     for y in 0..h {
         for x in 0..w {
             let (a, b) = (reference.get_pixel(x, y), new.get_pixel(x, y));
-            let d = a.0.iter().zip(b.0).map(|(p, q)| p.abs_diff(q)).max().unwrap_or(0);
+            let d =
+                a.0.iter()
+                    .zip(b.0)
+                    .map(|(p, q)| p.abs_diff(q))
+                    .max()
+                    .unwrap_or(0);
             max_channel = max_channel.max(d);
-            if d > tolerance.channel && !agrees(reference, new, (x, y), tolerance)
-            {
+            if d > tolerance.channel && !agrees(reference, new, (x, y), tolerance) {
                 differing += 1;
                 first.get_or_insert((x, y));
             }

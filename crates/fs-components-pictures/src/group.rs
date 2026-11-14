@@ -65,7 +65,10 @@ impl Group {
             || Path::new(env!("CARGO_MANIFEST_DIR")).join("../../target"),
             PathBuf::from,
         );
-        target.join("umbau-diff").join(self.name).join(format!("{name}.png"))
+        target
+            .join("umbau-diff")
+            .join(self.name)
+            .join(format!("{name}.png"))
     }
 
     /// Draw the element of `build` on the software GPU in Craft, on the theme background, at the size of the group.
@@ -95,7 +98,9 @@ impl Group {
             &tmp,
         );
         let picture = match drawn {
-            Ok(()) => image::open(&tmp).map(|i| i.to_rgba8()).map_err(|e| e.to_string()),
+            Ok(()) => image::open(&tmp)
+                .map(|i| i.to_rgba8())
+                .map_err(|e| e.to_string()),
             Err(RenderError::NoGraphics(why)) => Err(why),
             Err(e) => panic!("drawing {} failed: {e}", self.name),
         };
@@ -163,7 +168,8 @@ impl Group {
 
 /// A PNG at best compression (references are kept small).
 fn write_png(path: &Path, picture: &RgbaImage) {
-    std::fs::create_dir_all(path.parent().expect("a file has a directory")).expect("picture directory");
+    std::fs::create_dir_all(path.parent().expect("a file has a directory"))
+        .expect("picture directory");
     let file = std::fs::File::create(path).expect("picture file");
     png::PngEncoder::new_with_quality(
         std::io::BufWriter::new(file),

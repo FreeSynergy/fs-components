@@ -16,8 +16,19 @@ fn strip(dark: bool) -> impl ElementBuilder {
     let look = Look::new(StyleId::Craft, dark);
     let p = look.palette();
     let colours = [
-        p.ground, p.panel, p.field, p.text, p.text_weak, p.border, p.accent, p.on_accent, p.focus, p.hover,
-        p.selected, p.error, p.success,
+        p.ground,
+        p.panel,
+        p.field,
+        p.text,
+        p.text_weak,
+        p.border,
+        p.accent,
+        p.on_accent,
+        p.focus,
+        p.hover,
+        p.selected,
+        p.error,
+        p.success,
     ];
     colours.iter().fold(div().flex_row().gap(0.0), |row, c| {
         row.child(div().w(20.0).h(64.0).bg(Look::color(*c)))

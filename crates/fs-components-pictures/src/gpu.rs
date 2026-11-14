@@ -22,9 +22,12 @@ pub fn icd_file() -> Option<PathBuf> {
         .filter_map(Result::ok)
         .map(|e| e.path())
         .filter(|p| {
-            p.file_name()
-                .and_then(|n| n.to_str())
-                .is_some_and(|n| n.starts_with("lvp_icd") && n.rsplit('.').next().is_some_and(|e| e.eq_ignore_ascii_case("json")))
+            p.file_name().and_then(|n| n.to_str()).is_some_and(|n| {
+                n.starts_with("lvp_icd")
+                    && n.rsplit('.')
+                        .next()
+                        .is_some_and(|e| e.eq_ignore_ascii_case("json"))
+            })
         })
         .min()
 }
@@ -37,7 +40,8 @@ pub fn icd_file() -> Option<PathBuf> {
 pub fn force_software() -> Result<&'static str, String> {
     static DONE: OnceLock<Result<String, String>> = OnceLock::new();
     DONE.get_or_init(|| {
-        let icd = icd_file().ok_or("lavapipe is not installed (no lvp_icd*.json; package mesa-vulkan-drivers)")?;
+        let icd = icd_file()
+            .ok_or("lavapipe is not installed (no lvp_icd*.json; package mesa-vulkan-drivers)")?;
         // SAFETY: runs once, from the first picture of the process, before any adapter exists; the tests of this
         // crate draw only through `Group`, which calls this first, and no other thread reads these variables.
         unsafe {
@@ -58,10 +62,18 @@ fn adapter_name() -> Result<String, String> {
         ..Default::default()
     });
     let adapters = instance.enumerate_adapters(wgpu::Backends::VULKAN);
-    let info = adapters.first().map(wgpu::Adapter::get_info).ok_or("no Vulkan adapter")?;
+    let info = adapters
+        .first()
+        .map(wgpu::Adapter::get_info)
+        .ok_or("no Vulkan adapter")?;
     if adapters.len() == 1 && info.device_type == wgpu::DeviceType::Cpu {
         Ok(info.name)
     } else {
-        Err(format!("the adapter is not the software one: {} ({:?}), {} adapters", info.name, info.device_type, adapters.len()))
+        Err(format!(
+            "the adapter is not the software one: {} ({:?}), {} adapters",
+            info.name,
+            info.device_type,
+            adapters.len()
+        ))
     }
 }

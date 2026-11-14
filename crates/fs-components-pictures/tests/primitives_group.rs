@@ -13,12 +13,17 @@ fn group() -> Group {
 #[test]
 fn the_search_field_medium() {
     let f = SearchField::new("Search");
-    group().check("search_medium", SEARCH_FIELD_STYLES, |w, _| div().p(8.0).w(w).child(f.build()));
+    group().check("search_medium", SEARCH_FIELD_STYLES, |w, _| {
+        div().p(8.0).w(w).child(f.build())
+    });
 }
 
 #[test]
 fn the_search_field_small_and_body() {
-    let (s, b) = (SearchField::new("Small").size(FieldSize::Small), SearchField::new("Body").size(FieldSize::Body));
+    let (s, b) = (
+        SearchField::new("Small").size(FieldSize::Small),
+        SearchField::new("Body").size(FieldSize::Body),
+    );
     group().check("search_small_body", SEARCH_FIELD_STYLES, |w, _| {
         div().p(8.0).gap(8.0).w(w).child(s.build()).child(b.build())
     });
