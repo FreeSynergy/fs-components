@@ -17,3 +17,14 @@
 
 # Class names that have no place in the contract yet. Empty on purpose: a new name must be mapped or explained here.
 [unmapped]
+
+# Files whose fixed values are no violation (ADR 0074, section 2 and strategy 3 and 4). The reason starts with `style:` (a style
+# definition: it IS the style) or `content:` (a drawing of its own: the content belongs to the content). Read by contract/lib/contractlib/hard.py.
+[fixed-values]
+"crates/fs-components-widgets/src/icon_kind.rs" = "content: drawn icon of a kind of thing; its colours, line and shadow are the picture"
+"crates/fs-components-widgets/src/icon_export.rs" = "content: drawn icon; its colour is the picture"
+"crates/fs-components-styles/src/styles/craft_sheet.rs" = "style: the CSS sheet of Craft; the sheet IS the style"
+
+# Files whose COLOURS are content (colours the person chose in the data of a drawing); other fixed values of the file still count.
+# Charts need no row: charts/src/view/look.rs reads 7 theme colour tokens, there is no literal colour.
+[data-colours]

@@ -1,0 +1,6021 @@
+{
+ "colors_in_tests": {
+  "fs-components-fields": 9,
+  "fs-components-render": 1,
+  "fs-components-styles": 13,
+  "fs-components-widgets": 1
+ },
+ "commit_note": "counted from the working tree; see START.md for the command",
+ "contract_version": "0.1",
+ "groups": [
+  {
+   "crate": "fs-admin-frontend",
+   "fixed": {
+    "border": 3,
+    "color": 0,
+    "font": 0,
+    "opacity": 0,
+    "radius": 0,
+    "shadow": 0,
+    "size": 0,
+    "spacing": 0
+   },
+   "module": "view",
+   "names": {
+    "exception (not a class)": 2,
+    "mapped": 11
+   },
+   "names_not_in_contract": 11,
+   "names_total": 13
+  },
+  {
+   "crate": "fs-components-app",
+   "fixed": {
+    "border": 0,
+    "color": 0,
+    "font": 0,
+    "opacity": 0,
+    "radius": 0,
+    "shadow": 0,
+    "size": 0,
+    "spacing": 0
+   },
+   "module": "menu_overlay",
+   "names": {
+    "exception (not a class)": 1
+   },
+   "names_not_in_contract": 0,
+   "names_total": 1
+  },
+  {
+   "crate": "fs-components-app",
+   "fixed": {
+    "border": 0,
+    "color": 0,
+    "font": 0,
+    "opacity": 0,
+    "radius": 0,
+    "shadow": 0,
+    "size": 0,
+    "spacing": 2
+   },
+   "module": "menu_view",
+   "names": {
+    "mapped": 7
+   },
+   "names_not_in_contract": 7,
+   "names_total": 7
+  },
+  {
+   "crate": "fs-components-app",
+   "fixed": {
+    "border": 0,
+    "color": 0,
+    "font": 0,
+    "opacity": 0,
+    "radius": 0,
+    "shadow": 0,
+    "size": 0,
+    "spacing": 1
+   },
+   "module": "status_panel",
+   "names": {
+    "exception (not a class)": 1,
+    "mapped": 5
+   },
+   "names_not_in_contract": 5,
+   "names_total": 6
+  },
+  {
+   "crate": "fs-components-app",
+   "fixed": {
+    "border": 3,
+    "color": 0,
+    "font": 0,
+    "opacity": 0,
+    "radius": 0,
+    "shadow": 0,
+    "size": 0,
+    "spacing": 0
+   },
+   "module": "styles",
+   "names": {
+    "mapped": 15
+   },
+   "names_not_in_contract": 15,
+   "names_total": 15
+  },
+  {
+   "crate": "fs-components-app",
+   "fixed": {
+    "border": 0,
+    "color": 0,
+    "font": 0,
+    "opacity": 0,
+    "radius": 0,
+    "shadow": 0,
+    "size": 0,
+    "spacing": 0
+   },
+   "module": "view",
+   "names": {
+    "mapped": 12
+   },
+   "names_not_in_contract": 12,
+   "names_total": 12
+  },
+  {
+   "crate": "fs-components-calendar-grid",
+   "fixed": {
+    "border": 0,
+    "color": 0,
+    "font": 0,
+    "opacity": 0,
+    "radius": 0,
+    "shadow": 0,
+    "size": 0,
+    "spacing": 0
+   },
+   "module": "handle",
+   "names": {
+    "mapped": 1
+   },
+   "names_not_in_contract": 1,
+   "names_total": 1
+  },
+  {
+   "crate": "fs-components-calendar-grid",
+   "fixed": {
+    "border": 3,
+    "color": 0,
+    "font": 0,
+    "opacity": 0,
+    "radius": 0,
+    "shadow": 0,
+    "size": 0,
+    "spacing": 0
+   },
+   "module": "view",
+   "names": {
+    "mapped": 6
+   },
+   "names_not_in_contract": 6,
+   "names_total": 6
+  },
+  {
+   "crate": "fs-components-fields",
+   "fixed": {
+    "border": 1,
+    "color": 0,
+    "font": 0,
+    "opacity": 0,
+    "radius": 0,
+    "shadow": 0,
+    "size": 0,
+    "spacing": 0
+   },
+   "module": "view",
+   "names": {
+    "mapped": 5
+   },
+   "names_not_in_contract": 5,
+   "names_total": 5
+  },
+  {
+   "crate": "fs-components-kanban",
+   "fixed": {
+    "border": 0,
+    "color": 0,
+    "font": 0,
+    "opacity": 0,
+    "radius": 0,
+    "shadow": 0,
+    "size": 0,
+    "spacing": 0
+   },
+   "module": "handle",
+   "names": {
+    "mapped": 1
+   },
+   "names_not_in_contract": 1,
+   "names_total": 1
+  },
+  {
+   "crate": "fs-components-kanban",
+   "fixed": {
+    "border": 1,
+    "color": 0,
+    "font": 0,
+    "opacity": 0,
+    "radius": 0,
+    "shadow": 0,
+    "size": 0,
+    "spacing": 0
+   },
+   "module": "view",
+   "names": {
+    "mapped": 2
+   },
+   "names_not_in_contract": 2,
+   "names_total": 2
+  },
+  {
+   "crate": "fs-components-map",
+   "fixed": {
+    "border": 1,
+    "color": 0,
+    "font": 0,
+    "opacity": 0,
+    "radius": 0,
+    "shadow": 0,
+    "size": 0,
+    "spacing": 2
+   },
+   "module": "(root)",
+   "names": {
+    "mapped": 3
+   },
+   "names_not_in_contract": 3,
+   "names_total": 3
+  },
+  {
+   "crate": "fs-components-map",
+   "fixed": {
+    "border": 0,
+    "color": 0,
+    "font": 0,
+    "opacity": 0,
+    "radius": 0,
+    "shadow": 0,
+    "size": 0,
+    "spacing": 0
+   },
+   "module": "loader",
+   "names": {
+    "exception (not a class)": 2
+   },
+   "names_not_in_contract": 0,
+   "names_total": 2
+  },
+  {
+   "crate": "fs-components-map",
+   "fixed": {
+    "border": 0,
+    "color": 0,
+    "font": 0,
+    "opacity": 0,
+    "radius": 0,
+    "shadow": 0,
+    "size": 0,
+    "spacing": 0
+   },
+   "module": "widget",
+   "names": {
+    "mapped": 3
+   },
+   "names_not_in_contract": 3,
+   "names_total": 3
+  },
+  {
+   "crate": "fs-components-primitives",
+   "fixed": {
+    "border": 1,
+    "color": 0,
+    "font": 1,
+    "opacity": 0,
+    "radius": 1,
+    "shadow": 0,
+    "size": 0,
+    "spacing": 0
+   },
+   "module": "search_field",
+   "names": {
+    "mapped": 1,
+    "remove": 1
+   },
+   "names_not_in_contract": 2,
+   "names_total": 2
+  },
+  {
+   "crate": "fs-components-render",
+   "fixed": {
+    "border": 0,
+    "color": 0,
+    "font": 0,
+    "opacity": 0,
+    "radius": 0,
+    "shadow": 0,
+    "size": 0,
+    "spacing": 0
+   },
+   "module": "offscreen",
+   "names": {
+    "exception (not a class)": 1
+   },
+   "names_not_in_contract": 0,
+   "names_total": 1
+  },
+  {
+   "crate": "fs-components-render",
+   "fixed": {
+    "border": 0,
+    "color": 0,
+    "font": 0,
+    "opacity": 0,
+    "radius": 0,
+    "shadow": 0,
+    "size": 0,
+    "spacing": 0
+   },
+   "module": "setup",
+   "names": {
+    "exception (not a class)": 1
+   },
+   "names_not_in_contract": 0,
+   "names_total": 1
+  },
+  {
+   "crate": "fs-components-styles",
+   "fixed": {
+    "border": 0,
+    "color": 0,
+    "font": 0,
+    "opacity": 0,
+    "radius": 0,
+    "shadow": 0,
+    "size": 0,
+    "spacing": 0
+   },
+   "module": "styles",
+   "names": {
+    "remove": 42
+   },
+   "names_not_in_contract": 42,
+   "names_total": 42
+  },
+  {
+   "crate": "fs-components-timeline",
+   "fixed": {
+    "border": 0,
+    "color": 0,
+    "font": 0,
+    "opacity": 0,
+    "radius": 0,
+    "shadow": 0,
+    "size": 0,
+    "spacing": 0
+   },
+   "module": "handle",
+   "names": {
+    "mapped": 1
+   },
+   "names_not_in_contract": 1,
+   "names_total": 1
+  },
+  {
+   "crate": "fs-components-timeline",
+   "fixed": {
+    "border": 0,
+    "color": 0,
+    "font": 0,
+    "opacity": 0,
+    "radius": 0,
+    "shadow": 0,
+    "size": 1,
+    "spacing": 0
+   },
+   "module": "view",
+   "names": {
+    "mapped": 9
+   },
+   "names_not_in_contract": 9,
+   "names_total": 9
+  },
+  {
+   "crate": "fs-components-widgets",
+   "fixed": {
+    "border": 3,
+    "color": 0,
+    "font": 0,
+    "opacity": 0,
+    "radius": 0,
+    "shadow": 0,
+    "size": 2,
+    "spacing": 0
+   },
+   "module": "agent_tree",
+   "names": {
+    "mapped": 15
+   },
+   "names_not_in_contract": 15,
+   "names_total": 15
+  },
+  {
+   "crate": "fs-components-widgets",
+   "fixed": {
+    "border": 0,
+    "color": 0,
+    "font": 0,
+    "opacity": 0,
+    "radius": 0,
+    "shadow": 0,
+    "size": 0,
+    "spacing": 0
+   },
+   "module": "avatar_group",
+   "names": {
+    "mapped": 1
+   },
+   "names_not_in_contract": 1,
+   "names_total": 1
+  },
+  {
+   "crate": "fs-components-widgets",
+   "fixed": {
+    "border": 1,
+    "color": 0,
+    "font": 0,
+    "opacity": 0,
+    "radius": 1,
+    "shadow": 0,
+    "size": 2,
+    "spacing": 0
+   },
+   "module": "badge",
+   "names": {
+    "mapped": 2
+   },
+   "names_not_in_contract": 2,
+   "names_total": 2
+  },
+  {
+   "crate": "fs-components-widgets",
+   "fixed": {
+    "border": 0,
+    "color": 0,
+    "font": 0,
+    "opacity": 0,
+    "radius": 0,
+    "shadow": 0,
+    "size": 1,
+    "spacing": 0
+   },
+   "module": "breadcrumb",
+   "names": {
+    "mapped": 4
+   },
+   "names_not_in_contract": 4,
+   "names_total": 4
+  },
+  {
+   "crate": "fs-components-widgets",
+   "fixed": {
+    "border": 10,
+    "color": 0,
+    "font": 0,
+    "opacity": 1,
+    "radius": 0,
+    "shadow": 0,
+    "size": 3,
+    "spacing": 8
+   },
+   "module": "calendar_view",
+   "names": {
+    "mapped": 29
+   },
+   "names_not_in_contract": 29,
+   "names_total": 29
+  },
+  {
+   "crate": "fs-components-widgets",
+   "fixed": {
+    "border": 0,
+    "color": 0,
+    "font": 0,
+    "opacity": 0,
+    "radius": 0,
+    "shadow": 0,
+    "size": 2,
+    "spacing": 6
+   },
+   "module": "craft",
+   "names": {
+    "remove": 30
+   },
+   "names_not_in_contract": 30,
+   "names_total": 30
+  },
+  {
+   "crate": "fs-components-widgets",
+   "fixed": {
+    "border": 0,
+    "color": 0,
+    "font": 0,
+    "opacity": 0,
+    "radius": 0,
+    "shadow": 0,
+    "size": 1,
+    "spacing": 0
+   },
+   "module": "file_preview",
+   "names": {
+    "mapped": 11
+   },
+   "names_not_in_contract": 11,
+   "names_total": 11
+  },
+  {
+   "crate": "fs-components-widgets",
+   "fixed": {
+    "border": 1,
+    "color": 0,
+    "font": 0,
+    "opacity": 0,
+    "radius": 0,
+    "shadow": 0,
+    "size": 0,
+    "spacing": 0
+   },
+   "module": "file_tile",
+   "names": {
+    "mapped": 11
+   },
+   "names_not_in_contract": 11,
+   "names_total": 11
+  },
+  {
+   "crate": "fs-components-widgets",
+   "fixed": {
+    "border": 0,
+    "color": 0,
+    "font": 0,
+    "opacity": 0,
+    "radius": 0,
+    "shadow": 0,
+    "size": 0,
+    "spacing": 0
+   },
+   "module": "lightbox",
+   "names": {
+    "exception (not a class)": 1,
+    "mapped": 8
+   },
+   "names_not_in_contract": 8,
+   "names_total": 9
+  },
+  {
+   "crate": "fs-components-widgets",
+   "fixed": {
+    "border": 1,
+    "color": 0,
+    "font": 0,
+    "opacity": 0,
+    "radius": 0,
+    "shadow": 0,
+    "size": 0,
+    "spacing": 1
+   },
+   "module": "list_view",
+   "names": {
+    "mapped": 10
+   },
+   "names_not_in_contract": 10,
+   "names_total": 10
+  },
+  {
+   "crate": "fs-components-widgets",
+   "fixed": {
+    "border": 3,
+    "color": 0,
+    "font": 0,
+    "opacity": 0,
+    "radius": 0,
+    "shadow": 0,
+    "size": 1,
+    "spacing": 0
+   },
+   "module": "message_composer",
+   "names": {
+    "mapped": 9
+   },
+   "names_not_in_contract": 9,
+   "names_total": 9
+  },
+  {
+   "crate": "fs-components-widgets",
+   "fixed": {
+    "border": 2,
+    "color": 0,
+    "font": 0,
+    "opacity": 0,
+    "radius": 0,
+    "shadow": 0,
+    "size": 1,
+    "spacing": 0
+   },
+   "module": "message_list",
+   "names": {
+    "mapped": 23
+   },
+   "names_not_in_contract": 23,
+   "names_total": 23
+  },
+  {
+   "crate": "fs-components-widgets",
+   "fixed": {
+    "border": 1,
+    "color": 0,
+    "font": 0,
+    "opacity": 0,
+    "radius": 0,
+    "shadow": 0,
+    "size": 0,
+    "spacing": 0
+   },
+   "module": "participant",
+   "names": {
+    "mapped": 6
+   },
+   "names_not_in_contract": 6,
+   "names_total": 6
+  },
+  {
+   "crate": "fs-components-widgets",
+   "fixed": {
+    "border": 9,
+    "color": 8,
+    "font": 26,
+    "opacity": 2,
+    "radius": 11,
+    "shadow": 0,
+    "size": 5,
+    "spacing": 66
+   },
+   "module": "plan",
+   "names": {
+    "provisional": 78
+   },
+   "names_not_in_contract": 78,
+   "names_total": 78
+  },
+  {
+   "crate": "fs-components-widgets",
+   "fixed": {
+    "border": 3,
+    "color": 0,
+    "font": 0,
+    "opacity": 0,
+    "radius": 0,
+    "shadow": 0,
+    "size": 3,
+    "spacing": 0
+   },
+   "module": "share_dialog",
+   "names": {
+    "exception (not a class)": 1,
+    "mapped": 17
+   },
+   "names_not_in_contract": 17,
+   "names_total": 18
+  },
+  {
+   "crate": "fs-components-widgets",
+   "fixed": {
+    "border": 2,
+    "color": 0,
+    "font": 0,
+    "opacity": 0,
+    "radius": 0,
+    "shadow": 0,
+    "size": 0,
+    "spacing": 0
+   },
+   "module": "sortable_list",
+   "names": {
+    "exception (not a class)": 1,
+    "mapped": 9
+   },
+   "names_not_in_contract": 9,
+   "names_total": 10
+  },
+  {
+   "crate": "fs-components-widgets",
+   "fixed": {
+    "border": 0,
+    "color": 0,
+    "font": 0,
+    "opacity": 0,
+    "radius": 0,
+    "shadow": 0,
+    "size": 0,
+    "spacing": 0
+   },
+   "module": "task_card",
+   "names": {
+    "mapped": 7
+   },
+   "names_not_in_contract": 7,
+   "names_total": 7
+  },
+  {
+   "crate": "fs-components-widgets",
+   "fixed": {
+    "border": 3,
+    "color": 0,
+    "font": 0,
+    "opacity": 0,
+    "radius": 0,
+    "shadow": 0,
+    "size": 2,
+    "spacing": 2
+   },
+   "module": "text_view",
+   "names": {
+    "mapped": 14,
+    "provisional": 1
+   },
+   "names_not_in_contract": 15,
+   "names_total": 15
+  },
+  {
+   "crate": "fs-components-widgets",
+   "fixed": {
+    "border": 6,
+    "color": 0,
+    "font": 0,
+    "opacity": 1,
+    "radius": 0,
+    "shadow": 0,
+    "size": 1,
+    "spacing": 0
+   },
+   "module": "tool_call",
+   "names": {
+    "exception (not a class)": 1,
+    "mapped": 31
+   },
+   "names_not_in_contract": 31,
+   "names_total": 32
+  },
+  {
+   "crate": "fs-components-widgets",
+   "fixed": {
+    "border": 1,
+    "color": 0,
+    "font": 0,
+    "opacity": 0,
+    "radius": 0,
+    "shadow": 0,
+    "size": 0,
+    "spacing": 0
+   },
+   "module": "transfer_list",
+   "names": {
+    "mapped": 10
+   },
+   "names_not_in_contract": 10,
+   "names_total": 10
+  },
+  {
+   "crate": "fs-components-widgets",
+   "fixed": {
+    "border": 0,
+    "color": 0,
+    "font": 0,
+    "opacity": 0,
+    "radius": 0,
+    "shadow": 0,
+    "size": 0,
+    "spacing": 0
+   },
+   "module": "tree_view",
+   "names": {
+    "mapped": 1
+   },
+   "names_not_in_contract": 1,
+   "names_total": 1
+  },
+  {
+   "crate": "fs-components-workbenches",
+   "fixed": {
+    "border": 4,
+    "color": 0,
+    "font": 0,
+    "opacity": 0,
+    "radius": 0,
+    "shadow": 0,
+    "size": 2,
+    "spacing": 0
+   },
+   "module": "calendar",
+   "names": {
+    "provisional": 24
+   },
+   "names_not_in_contract": 24,
+   "names_total": 24
+  },
+  {
+   "crate": "fs-components-workbenches",
+   "fixed": {
+    "border": 10,
+    "color": 2,
+    "font": 0,
+    "opacity": 2,
+    "radius": 0,
+    "shadow": 0,
+    "size": 4,
+    "spacing": 10
+   },
+   "module": "file_manager",
+   "names": {
+    "exception (not a class)": 2,
+    "mapped": 8,
+    "provisional": 44
+   },
+   "names_not_in_contract": 52,
+   "names_total": 54
+  },
+  {
+   "crate": "fs-components-workbenches",
+   "fixed": {
+    "border": 3,
+    "color": 0,
+    "font": 0,
+    "opacity": 0,
+    "radius": 0,
+    "shadow": 0,
+    "size": 0,
+    "spacing": 0
+   },
+   "module": "llm_chat",
+   "names": {
+    "provisional": 13
+   },
+   "names_not_in_contract": 13,
+   "names_total": 13
+  },
+  {
+   "crate": "fs-components-workbenches",
+   "fixed": {
+    "border": 3,
+    "color": 0,
+    "font": 0,
+    "opacity": 0,
+    "radius": 0,
+    "shadow": 0,
+    "size": 2,
+    "spacing": 0
+   },
+   "module": "people",
+   "names": {
+    "provisional": 25,
+    "remove": 1
+   },
+   "names_not_in_contract": 26,
+   "names_total": 26
+  },
+  {
+   "crate": "fs-components-workbenches",
+   "fixed": {
+    "border": 4,
+    "color": 0,
+    "font": 0,
+    "opacity": 0,
+    "radius": 0,
+    "shadow": 0,
+    "size": 2,
+    "spacing": 0
+   },
+   "module": "tasks",
+   "names": {
+    "provisional": 30,
+    "remove": 1
+   },
+   "names_not_in_contract": 31,
+   "names_total": 31
+  },
+  {
+   "crate": "fs-components-workbenches",
+   "fixed": {
+    "border": 6,
+    "color": 8,
+    "font": 16,
+    "opacity": 0,
+    "radius": 10,
+    "shadow": 0,
+    "size": 25,
+    "spacing": 56
+   },
+   "module": "view",
+   "names": {
+    "mapped": 15,
+    "provisional": 52,
+    "remove": 1
+   },
+   "names_not_in_contract": 68,
+   "names_total": 68
+  }
+ ],
+ "kinds": [
+  "color",
+  "spacing",
+  "size",
+  "radius",
+  "font",
+  "border",
+  "shadow",
+  "opacity"
+ ],
+ "names": [
+  {
+   "groups": [
+    "fs-components-calendar-grid/view"
+   ],
+   "name": "cal-allday",
+   "status": "mapped",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-components-calendar-grid/view"
+   ],
+   "name": "cal-month",
+   "status": "mapped",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-components-calendar-grid/view"
+   ],
+   "name": "cal-now",
+   "status": "mapped",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-components-calendar-grid/handle"
+   ],
+   "name": "cal-root",
+   "status": "mapped",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-components-calendar-grid/view"
+   ],
+   "name": "cal-slot",
+   "status": "mapped",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-components-calendar-grid/view"
+   ],
+   "name": "cal-timed",
+   "status": "mapped",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-components-calendar-grid/view"
+   ],
+   "name": "cal-toolbar",
+   "status": "mapped",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/file_manager"
+   ],
+   "name": "cn-button",
+   "status": "mapped",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/file_manager"
+   ],
+   "name": "cn-button--destructive",
+   "status": "mapped",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/file_manager"
+   ],
+   "name": "cn-button--ghost",
+   "status": "mapped",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/file_manager"
+   ],
+   "name": "cn-button--link",
+   "status": "mapped",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/file_manager"
+   ],
+   "name": "cn-button--outline",
+   "status": "mapped",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/file_manager"
+   ],
+   "name": "cn-button--primary",
+   "status": "mapped",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/file_manager"
+   ],
+   "name": "cn-button--secondary",
+   "status": "mapped",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/file_manager"
+   ],
+   "name": "cn-button--sm",
+   "status": "mapped",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-app/styles"
+   ],
+   "name": "cn-input",
+   "status": "mapped",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-components-app/menu_view",
+    "fs-components-app/status_panel"
+   ],
+   "name": "cn-menu",
+   "status": "mapped",
+   "uses": 4
+  },
+  {
+   "groups": [
+    "fs-components-app/menu_view"
+   ],
+   "name": "cn-menu-item",
+   "status": "mapped",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-app/menu_view",
+    "fs-components-app/status_panel"
+   ],
+   "name": "cn-menubar-content",
+   "status": "mapped",
+   "uses": 4
+  },
+  {
+   "groups": [
+    "fs-components-app/menu_view"
+   ],
+   "name": "cn-menubar-item",
+   "status": "mapped",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-app/menu_view"
+   ],
+   "name": "cn-menubar-trigger",
+   "status": "mapped",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-app/styles"
+   ],
+   "name": "cn-textarea",
+   "status": "mapped",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-components-styles/styles",
+    "fs-components-widgets/craft"
+   ],
+   "name": "craft-badge",
+   "status": "remove",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-styles/styles",
+    "fs-components-widgets/craft"
+   ],
+   "name": "craft-bar",
+   "status": "remove",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-styles/styles",
+    "fs-components-widgets/craft"
+   ],
+   "name": "craft-box",
+   "status": "remove",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-styles/styles",
+    "fs-components-widgets/craft"
+   ],
+   "name": "craft-btn",
+   "status": "remove",
+   "uses": 5
+  },
+  {
+   "groups": [
+    "fs-components-styles/styles",
+    "fs-components-widgets/craft"
+   ],
+   "name": "craft-btn-fill",
+   "status": "remove",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-styles/styles",
+    "fs-components-widgets/craft"
+   ],
+   "name": "craft-btn-fill-text",
+   "status": "remove",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-styles/styles",
+    "fs-components-widgets/craft"
+   ],
+   "name": "craft-btn-line",
+   "status": "remove",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-styles/styles",
+    "fs-components-widgets/craft"
+   ],
+   "name": "craft-btn-off",
+   "status": "remove",
+   "uses": 5
+  },
+  {
+   "groups": [
+    "fs-components-styles/styles",
+    "fs-components-widgets/craft"
+   ],
+   "name": "craft-caps",
+   "status": "remove",
+   "uses": 7
+  },
+  {
+   "groups": [
+    "fs-components-styles/styles",
+    "fs-components-widgets/craft"
+   ],
+   "name": "craft-caps-dim",
+   "status": "remove",
+   "uses": 7
+  },
+  {
+   "groups": [
+    "fs-components-styles/styles",
+    "fs-components-widgets/craft"
+   ],
+   "name": "craft-cell",
+   "status": "remove",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-styles/styles"
+   ],
+   "name": "craft-field",
+   "status": "remove",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-components-render/setup"
+   ],
+   "name": "craft-font",
+   "status": "exception (not a class)",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-styles/styles",
+    "fs-components-widgets/craft"
+   ],
+   "name": "craft-footer",
+   "status": "remove",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-styles/styles",
+    "fs-components-widgets/craft"
+   ],
+   "name": "craft-grid",
+   "status": "remove",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-styles/styles",
+    "fs-components-widgets/craft"
+   ],
+   "name": "craft-link",
+   "status": "remove",
+   "uses": 4
+  },
+  {
+   "groups": [
+    "fs-components-styles/styles"
+   ],
+   "name": "craft-mono",
+   "status": "remove",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-components-styles/styles"
+   ],
+   "name": "craft-mono-text",
+   "status": "remove",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-components-styles/styles"
+   ],
+   "name": "craft-nav",
+   "status": "remove",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-components-styles/styles"
+   ],
+   "name": "craft-nav-item",
+   "status": "remove",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-styles/styles"
+   ],
+   "name": "craft-nav-off",
+   "status": "remove",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-styles/styles"
+   ],
+   "name": "craft-note",
+   "status": "remove",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-components-styles/styles",
+    "fs-components-widgets/craft"
+   ],
+   "name": "craft-number",
+   "status": "remove",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-styles/styles",
+    "fs-components-widgets/craft"
+   ],
+   "name": "craft-number-text",
+   "status": "remove",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-styles/styles"
+   ],
+   "name": "craft-panel",
+   "status": "remove",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-components-styles/styles"
+   ],
+   "name": "craft-pill",
+   "status": "remove",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-components-styles/styles"
+   ],
+   "name": "craft-pill-off",
+   "status": "remove",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-styles/styles",
+    "fs-components-widgets/craft"
+   ],
+   "name": "craft-pill-text",
+   "status": "remove",
+   "uses": 5
+  },
+  {
+   "groups": [
+    "fs-components-styles/styles",
+    "fs-components-widgets/craft"
+   ],
+   "name": "craft-progress-track",
+   "status": "remove",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-styles/styles",
+    "fs-components-widgets/craft"
+   ],
+   "name": "craft-section",
+   "status": "remove",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-styles/styles",
+    "fs-components-widgets/craft"
+   ],
+   "name": "craft-sub",
+   "status": "remove",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-styles/styles",
+    "fs-components-widgets/craft"
+   ],
+   "name": "craft-t-bad",
+   "status": "remove",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-styles/styles",
+    "fs-components-widgets/craft"
+   ],
+   "name": "craft-t-info",
+   "status": "remove",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-styles/styles",
+    "fs-components-widgets/craft"
+   ],
+   "name": "craft-t-ok",
+   "status": "remove",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-styles/styles",
+    "fs-components-widgets/craft"
+   ],
+   "name": "craft-t-quiet",
+   "status": "remove",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-styles/styles",
+    "fs-components-widgets/craft"
+   ],
+   "name": "craft-t-warn",
+   "status": "remove",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-styles/styles",
+    "fs-components-widgets/craft"
+   ],
+   "name": "craft-tab",
+   "status": "remove",
+   "uses": 4
+  },
+  {
+   "groups": [
+    "fs-components-styles/styles",
+    "fs-components-widgets/craft"
+   ],
+   "name": "craft-tab-on",
+   "status": "remove",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-styles/styles"
+   ],
+   "name": "craft-thead",
+   "status": "remove",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-components-styles/styles",
+    "fs-components-widgets/craft"
+   ],
+   "name": "craft-tile",
+   "status": "remove",
+   "uses": 5
+  },
+  {
+   "groups": [
+    "fs-components-styles/styles",
+    "fs-components-widgets/craft"
+   ],
+   "name": "craft-tile-body",
+   "status": "remove",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-styles/styles",
+    "fs-components-widgets/craft"
+   ],
+   "name": "craft-tile-head",
+   "status": "remove",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-styles/styles"
+   ],
+   "name": "craft-trow",
+   "status": "remove",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-admin-frontend/view"
+   ],
+   "name": "fs-admin-command",
+   "status": "exception (not a class)",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-admin-frontend/view"
+   ],
+   "name": "fs-admin-field",
+   "status": "mapped",
+   "uses": 4
+  },
+  {
+   "groups": [
+    "fs-admin-frontend/view"
+   ],
+   "name": "fs-admin-head",
+   "status": "mapped",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-admin-frontend/view"
+   ],
+   "name": "fs-admin-header",
+   "status": "mapped",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-admin-frontend/view"
+   ],
+   "name": "fs-admin-message",
+   "status": "mapped",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-admin-frontend/view"
+   ],
+   "name": "fs-admin-page",
+   "status": "mapped",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-admin-frontend/view"
+   ],
+   "name": "fs-admin-panel",
+   "status": "mapped",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-admin-frontend/view"
+   ],
+   "name": "fs-admin-reconnect",
+   "status": "exception (not a class)",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-components-app/styles",
+    "fs-components-app/view"
+   ],
+   "name": "fs-app-bar",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-app/styles",
+    "fs-components-app/view"
+   ],
+   "name": "fs-app-empty",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-app/styles",
+    "fs-components-app/view"
+   ],
+   "name": "fs-app-main",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-app/menu_overlay"
+   ],
+   "name": "fs-app-menu-outside",
+   "status": "exception (not a class)",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-components-app/menu_view"
+   ],
+   "name": "fs-app-menu-panel",
+   "status": "mapped",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-components-app/menu_view",
+    "fs-components-app/styles"
+   ],
+   "name": "fs-app-menus",
+   "status": "mapped",
+   "uses": 4
+  },
+  {
+   "groups": [
+    "fs-components-app/styles",
+    "fs-components-app/view"
+   ],
+   "name": "fs-app-nav",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-app/styles",
+    "fs-components-app/view"
+   ],
+   "name": "fs-app-root",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-app/styles",
+    "fs-components-app/view"
+   ],
+   "name": "fs-app-row",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-app/status_panel",
+    "fs-components-app/styles",
+    "fs-components-app/view"
+   ],
+   "name": "fs-app-status",
+   "status": "mapped",
+   "uses": 4
+  },
+  {
+   "groups": [
+    "fs-components-app/styles",
+    "fs-components-app/view"
+   ],
+   "name": "fs-app-status-line",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-app/styles",
+    "fs-components-app/view"
+   ],
+   "name": "fs-app-status-more",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-app/status_panel"
+   ],
+   "name": "fs-app-status-outside",
+   "status": "exception (not a class)",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-components-app/status_panel"
+   ],
+   "name": "fs-app-status-panel",
+   "status": "mapped",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-components-app/styles",
+    "fs-components-app/view"
+   ],
+   "name": "fs-app-status-problem",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-app/status_panel"
+   ],
+   "name": "fs-app-status-text",
+   "status": "mapped",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-components-app/styles",
+    "fs-components-app/view"
+   ],
+   "name": "fs-app-title",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-app/styles",
+    "fs-components-app/view"
+   ],
+   "name": "fs-app-title-box",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/agent_tree"
+   ],
+   "name": "fs-at",
+   "status": "mapped",
+   "uses": 4
+  },
+  {
+   "groups": [
+    "fs-components-widgets/agent_tree"
+   ],
+   "name": "fs-at-below",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/agent_tree"
+   ],
+   "name": "fs-at-delivery",
+   "status": "mapped",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-widgets/agent_tree"
+   ],
+   "name": "fs-at-empty",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/agent_tree"
+   ],
+   "name": "fs-at-failure",
+   "status": "mapped",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-widgets/agent_tree"
+   ],
+   "name": "fs-at-head",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/agent_tree"
+   ],
+   "name": "fs-at-head-text",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/agent_tree"
+   ],
+   "name": "fs-at-main",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/agent_tree"
+   ],
+   "name": "fs-at-meta",
+   "status": "mapped",
+   "uses": 5
+  },
+  {
+   "groups": [
+    "fs-components-widgets/agent_tree"
+   ],
+   "name": "fs-at-name",
+   "status": "mapped",
+   "uses": 5
+  },
+  {
+   "groups": [
+    "fs-components-widgets/agent_tree"
+   ],
+   "name": "fs-at-question",
+   "status": "mapped",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-widgets/agent_tree"
+   ],
+   "name": "fs-at-row",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/agent_tree"
+   ],
+   "name": "fs-at-state",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/agent_tree"
+   ],
+   "name": "fs-at-summary",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/agent_tree"
+   ],
+   "name": "fs-at-toggle",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/avatar_group"
+   ],
+   "name": "fs-avatars",
+   "status": "mapped",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-widgets/badge"
+   ],
+   "name": "fs-badge",
+   "status": "mapped",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-widgets/badge"
+   ],
+   "name": "fs-badge-dot",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-primitives/search_field",
+    "fs-components-workbenches/view"
+   ],
+   "name": "fs-body-field",
+   "status": "mapped",
+   "uses": 5
+  },
+  {
+   "groups": [
+    "fs-components-widgets/calendar_view"
+   ],
+   "name": "fs-calendar",
+   "status": "mapped",
+   "uses": 7
+  },
+  {
+   "groups": [
+    "fs-components-widgets/calendar_view"
+   ],
+   "name": "fs-calendar-agenda",
+   "status": "mapped",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-widgets/calendar_view"
+   ],
+   "name": "fs-calendar-agenda-day",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/calendar_view"
+   ],
+   "name": "fs-calendar-agenda-row",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/calendar_view"
+   ],
+   "name": "fs-calendar-agenda-time",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/calendar_view"
+   ],
+   "name": "fs-calendar-agenda-today",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/calendar_view"
+   ],
+   "name": "fs-calendar-all-day",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/calendar"
+   ],
+   "name": "fs-calendar-bar",
+   "status": "provisional",
+   "uses": 7
+  },
+  {
+   "groups": [
+    "fs-components-widgets/calendar_view"
+   ],
+   "name": "fs-calendar-column",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/calendar_view"
+   ],
+   "name": "fs-calendar-day",
+   "status": "mapped",
+   "uses": 4
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/calendar"
+   ],
+   "name": "fs-calendar-detail",
+   "status": "provisional",
+   "uses": 5
+  },
+  {
+   "groups": [
+    "fs-components-widgets/calendar_view"
+   ],
+   "name": "fs-calendar-empty",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/calendar"
+   ],
+   "name": "fs-calendar-failed",
+   "status": "provisional",
+   "uses": 7
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/calendar"
+   ],
+   "name": "fs-calendar-field",
+   "status": "provisional",
+   "uses": 7
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/calendar"
+   ],
+   "name": "fs-calendar-flag",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/calendar"
+   ],
+   "name": "fs-calendar-flag-off",
+   "status": "provisional",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/calendar"
+   ],
+   "name": "fs-calendar-flag-on",
+   "status": "provisional",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-widgets/calendar_view"
+   ],
+   "name": "fs-calendar-gutter",
+   "status": "mapped",
+   "uses": 5
+  },
+  {
+   "groups": [
+    "fs-components-widgets/calendar_view"
+   ],
+   "name": "fs-calendar-head",
+   "status": "mapped",
+   "uses": 5
+  },
+  {
+   "groups": [
+    "fs-components-widgets/calendar_view"
+   ],
+   "name": "fs-calendar-head-cell",
+   "status": "mapped",
+   "uses": 5
+  },
+  {
+   "groups": [
+    "fs-components-widgets/calendar_view"
+   ],
+   "name": "fs-calendar-hour",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/calendar"
+   ],
+   "name": "fs-calendar-input",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/calendar_view"
+   ],
+   "name": "fs-calendar-item",
+   "status": "mapped",
+   "uses": 4
+  },
+  {
+   "groups": [
+    "fs-components-widgets/calendar_view"
+   ],
+   "name": "fs-calendar-item-c0",
+   "status": "mapped",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-components-widgets/calendar_view"
+   ],
+   "name": "fs-calendar-item-c1",
+   "status": "mapped",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-components-widgets/calendar_view"
+   ],
+   "name": "fs-calendar-item-c2",
+   "status": "mapped",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-components-widgets/calendar_view"
+   ],
+   "name": "fs-calendar-item-c3",
+   "status": "mapped",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-components-widgets/calendar_view"
+   ],
+   "name": "fs-calendar-item-c4",
+   "status": "mapped",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-components-widgets/calendar_view"
+   ],
+   "name": "fs-calendar-item-c5",
+   "status": "mapped",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-components-widgets/calendar_view"
+   ],
+   "name": "fs-calendar-item-selected",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/calendar"
+   ],
+   "name": "fs-calendar-label",
+   "status": "provisional",
+   "uses": 7
+  },
+  {
+   "groups": [
+    "fs-components-widgets/calendar_view"
+   ],
+   "name": "fs-calendar-mark",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/calendar_view"
+   ],
+   "name": "fs-calendar-more",
+   "status": "mapped",
+   "uses": 4
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/calendar"
+   ],
+   "name": "fs-calendar-note",
+   "status": "provisional",
+   "uses": 5
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/calendar"
+   ],
+   "name": "fs-calendar-notice",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/calendar_view"
+   ],
+   "name": "fs-calendar-now",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/calendar_view"
+   ],
+   "name": "fs-calendar-number",
+   "status": "mapped",
+   "uses": 6
+  },
+  {
+   "groups": [
+    "fs-components-widgets/calendar_view"
+   ],
+   "name": "fs-calendar-outside",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/calendar"
+   ],
+   "name": "fs-calendar-page",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/calendar"
+   ],
+   "name": "fs-calendar-pinned",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/calendar"
+   ],
+   "name": "fs-calendar-problem",
+   "status": "provisional",
+   "uses": 5
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/calendar"
+   ],
+   "name": "fs-calendar-problem-open",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/calendar"
+   ],
+   "name": "fs-calendar-range",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/calendar"
+   ],
+   "name": "fs-calendar-root",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/calendar"
+   ],
+   "name": "fs-calendar-section",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/calendar"
+   ],
+   "name": "fs-calendar-section-title",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/calendar_view"
+   ],
+   "name": "fs-calendar-selected",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/calendar"
+   ],
+   "name": "fs-calendar-sheet-mark",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/calendar"
+   ],
+   "name": "fs-calendar-title",
+   "status": "provisional",
+   "uses": 5
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/calendar"
+   ],
+   "name": "fs-calendar-title-text",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/calendar_view"
+   ],
+   "name": "fs-calendar-today",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/calendar"
+   ],
+   "name": "fs-calendar-top",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/calendar"
+   ],
+   "name": "fs-calendar-value",
+   "status": "provisional",
+   "uses": 7
+  },
+  {
+   "groups": [
+    "fs-components-render/offscreen"
+   ],
+   "name": "fs-components",
+   "status": "exception (not a class)",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-components-widgets/breadcrumb"
+   ],
+   "name": "fs-crumb",
+   "status": "mapped",
+   "uses": 4
+  },
+  {
+   "groups": [
+    "fs-components-widgets/breadcrumb"
+   ],
+   "name": "fs-crumb-gap",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/breadcrumb"
+   ],
+   "name": "fs-crumb-here",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/breadcrumb"
+   ],
+   "name": "fs-crumbs",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-fields/view"
+   ],
+   "name": "fs-field-cell",
+   "status": "mapped",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-fields/view"
+   ],
+   "name": "fs-field-compact",
+   "status": "mapped",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-fields/view"
+   ],
+   "name": "fs-field-display",
+   "status": "mapped",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-primitives/search_field"
+   ],
+   "name": "fs-field-font",
+   "status": "remove",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-fields/view"
+   ],
+   "name": "fs-field-input",
+   "status": "mapped",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-fields/view"
+   ],
+   "name": "fs-field-suggestion",
+   "status": "mapped",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/file_manager"
+   ],
+   "name": "fs-files-band",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/file_manager"
+   ],
+   "name": "fs-files-band-inner",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/file_manager"
+   ],
+   "name": "fs-files-band-row",
+   "status": "provisional",
+   "uses": 5
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/file_manager"
+   ],
+   "name": "fs-files-bar-row",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/file_manager"
+   ],
+   "name": "fs-files-body",
+   "status": "provisional",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/file_manager"
+   ],
+   "name": "fs-files-command-row",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/file_manager"
+   ],
+   "name": "fs-files-crumbs",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/file_manager"
+   ],
+   "name": "fs-files-empty",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/file_manager"
+   ],
+   "name": "fs-files-failed-line",
+   "status": "provisional",
+   "uses": 9
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/file_manager"
+   ],
+   "name": "fs-files-icon-btn",
+   "status": "provisional",
+   "uses": 4
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/file_manager"
+   ],
+   "name": "fs-files-icon-btn-off",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/file_manager"
+   ],
+   "name": "fs-files-icon-btn-on",
+   "status": "provisional",
+   "uses": 5
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/file_manager"
+   ],
+   "name": "fs-files-input",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/file_manager"
+   ],
+   "name": "fs-files-item-bar",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/file_manager"
+   ],
+   "name": "fs-files-job",
+   "status": "exception (not a class)",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/file_manager"
+   ],
+   "name": "fs-files-more",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/file_manager"
+   ],
+   "name": "fs-files-new-btn",
+   "status": "provisional",
+   "uses": 4
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/file_manager"
+   ],
+   "name": "fs-files-note",
+   "status": "provisional",
+   "uses": 7
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/file_manager"
+   ],
+   "name": "fs-files-notice",
+   "status": "provisional",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/file_manager"
+   ],
+   "name": "fs-files-outside",
+   "status": "provisional",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/file_manager"
+   ],
+   "name": "fs-files-panel",
+   "status": "provisional",
+   "uses": 7
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/file_manager"
+   ],
+   "name": "fs-files-pathbox",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/file_manager"
+   ],
+   "name": "fs-files-picker-bar",
+   "status": "provisional",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/file_manager"
+   ],
+   "name": "fs-files-place",
+   "status": "provisional",
+   "uses": 8
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/file_manager"
+   ],
+   "name": "fs-files-place-current",
+   "status": "provisional",
+   "uses": 5
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/file_manager"
+   ],
+   "name": "fs-files-place-off",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/file_manager"
+   ],
+   "name": "fs-files-place-settings",
+   "status": "provisional",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/file_manager"
+   ],
+   "name": "fs-files-place-top",
+   "status": "provisional",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/file_manager"
+   ],
+   "name": "fs-files-place-trash",
+   "status": "provisional",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/file_manager"
+   ],
+   "name": "fs-files-press",
+   "status": "provisional",
+   "uses": 4
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/file_manager"
+   ],
+   "name": "fs-files-preview-room",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/file_manager"
+   ],
+   "name": "fs-files-problem",
+   "status": "provisional",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/file_manager"
+   ],
+   "name": "fs-files-root",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/file_manager"
+   ],
+   "name": "fs-files-search-field",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/file_manager"
+   ],
+   "name": "fs-files-section-title",
+   "status": "provisional",
+   "uses": 5
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/file_manager"
+   ],
+   "name": "fs-files-side",
+   "status": "provisional",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/file_manager"
+   ],
+   "name": "fs-files-side-inner",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/file_manager"
+   ],
+   "name": "fs-files-status",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/file_manager"
+   ],
+   "name": "fs-files-tab",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/file_manager"
+   ],
+   "name": "fs-files-tab-close",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/file_manager"
+   ],
+   "name": "fs-files-tabs",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/file_manager"
+   ],
+   "name": "fs-files-tabs-row",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/file_manager"
+   ],
+   "name": "fs-files-toolbar",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/file_manager"
+   ],
+   "name": "fs-files-tree",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/file_manager"
+   ],
+   "name": "fs-files-work",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/lightbox"
+   ],
+   "name": "fs-lb",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/lightbox"
+   ],
+   "name": "fs-lb-bar",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/lightbox"
+   ],
+   "name": "fs-lb-body",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/lightbox"
+   ],
+   "name": "fs-lb-caption",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/lightbox"
+   ],
+   "name": "fs-lb-count",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/lightbox"
+   ],
+   "name": "fs-lb-note",
+   "status": "mapped",
+   "uses": 7
+  },
+  {
+   "groups": [
+    "fs-components-widgets/lightbox"
+   ],
+   "name": "fs-lb-root",
+   "status": "mapped",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-widgets/lightbox"
+   ],
+   "name": "fs-lb-stage",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/lightbox"
+   ],
+   "name": "fs-lightbox",
+   "status": "exception (not a class)",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-components-widgets/list_view"
+   ],
+   "name": "fs-list",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/list_view"
+   ],
+   "name": "fs-list-cell",
+   "status": "mapped",
+   "uses": 5
+  },
+  {
+   "groups": [
+    "fs-components-widgets/list_view"
+   ],
+   "name": "fs-list-cell-sortable",
+   "status": "mapped",
+   "uses": 4
+  },
+  {
+   "groups": [
+    "fs-components-widgets/list_view"
+   ],
+   "name": "fs-list-edge",
+   "status": "mapped",
+   "uses": 4
+  },
+  {
+   "groups": [
+    "fs-components-widgets/list_view"
+   ],
+   "name": "fs-list-empty",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/list_view"
+   ],
+   "name": "fs-list-failed",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/list_view"
+   ],
+   "name": "fs-list-head",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/list_view"
+   ],
+   "name": "fs-list-mark",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/list_view"
+   ],
+   "name": "fs-list-row",
+   "status": "mapped",
+   "uses": 4
+  },
+  {
+   "groups": [
+    "fs-components-widgets/list_view"
+   ],
+   "name": "fs-list-row-selected",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/llm_chat"
+   ],
+   "name": "fs-llm",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/llm_chat"
+   ],
+   "name": "fs-llm-attention",
+   "status": "provisional",
+   "uses": 5
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/llm_chat"
+   ],
+   "name": "fs-llm-dock",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/llm_chat"
+   ],
+   "name": "fs-llm-extras",
+   "status": "provisional",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/llm_chat"
+   ],
+   "name": "fs-llm-head",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/llm_chat"
+   ],
+   "name": "fs-llm-headtext",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/llm_chat"
+   ],
+   "name": "fs-llm-main",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/llm_chat"
+   ],
+   "name": "fs-llm-meta",
+   "status": "provisional",
+   "uses": 9
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/llm_chat"
+   ],
+   "name": "fs-llm-side",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/llm_chat"
+   ],
+   "name": "fs-llm-sidehead",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/llm_chat"
+   ],
+   "name": "fs-llm-stop",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/llm_chat"
+   ],
+   "name": "fs-llm-stopbox",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/llm_chat"
+   ],
+   "name": "fs-llm-title",
+   "status": "provisional",
+   "uses": 7
+  },
+  {
+   "groups": [
+    "fs-components-map/(root)",
+    "fs-components-map/widget"
+   ],
+   "name": "fs-map-attribution",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-map/(root)",
+    "fs-components-map/widget"
+   ],
+   "name": "fs-map-control",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-map/(root)",
+    "fs-components-map/widget"
+   ],
+   "name": "fs-map-controls",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-map/loader"
+   ],
+   "name": "fs-map-tile",
+   "status": "exception (not a class)",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-components-map/loader"
+   ],
+   "name": "fs-map-watchdog",
+   "status": "exception (not a class)",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-components-widgets/message_composer"
+   ],
+   "name": "fs-mc",
+   "status": "mapped",
+   "uses": 4
+  },
+  {
+   "groups": [
+    "fs-components-widgets/message_composer"
+   ],
+   "name": "fs-mc-area",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/message_composer"
+   ],
+   "name": "fs-mc-buttons",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/message_composer"
+   ],
+   "name": "fs-mc-failed",
+   "status": "mapped",
+   "uses": 5
+  },
+  {
+   "groups": [
+    "fs-components-widgets/message_composer"
+   ],
+   "name": "fs-mc-file",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/message_composer"
+   ],
+   "name": "fs-mc-file-name",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/message_composer"
+   ],
+   "name": "fs-mc-files",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/message_composer"
+   ],
+   "name": "fs-mc-note",
+   "status": "mapped",
+   "uses": 7
+  },
+  {
+   "groups": [
+    "fs-components-widgets/message_composer"
+   ],
+   "name": "fs-mc-notes",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/message_list"
+   ],
+   "name": "fs-ml",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/message_list"
+   ],
+   "name": "fs-ml-body",
+   "status": "mapped",
+   "uses": 5
+  },
+  {
+   "groups": [
+    "fs-components-widgets/message_list"
+   ],
+   "name": "fs-ml-col",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/message_list"
+   ],
+   "name": "fs-ml-delivery",
+   "status": "mapped",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-widgets/message_list"
+   ],
+   "name": "fs-ml-delivery-failed",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/message_list"
+   ],
+   "name": "fs-ml-edge",
+   "status": "mapped",
+   "uses": 7
+  },
+  {
+   "groups": [
+    "fs-components-widgets/message_list"
+   ],
+   "name": "fs-ml-empty",
+   "status": "mapped",
+   "uses": 5
+  },
+  {
+   "groups": [
+    "fs-components-widgets/message_list"
+   ],
+   "name": "fs-ml-failure",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/message_list"
+   ],
+   "name": "fs-ml-failure-text",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/message_list"
+   ],
+   "name": "fs-ml-head",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/message_list"
+   ],
+   "name": "fs-ml-k-ai",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/message_list"
+   ],
+   "name": "fs-ml-k-person",
+   "status": "mapped",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-widgets/message_list"
+   ],
+   "name": "fs-ml-k-software",
+   "status": "mapped",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-widgets/message_list"
+   ],
+   "name": "fs-ml-k-unknown",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/message_list"
+   ],
+   "name": "fs-ml-meta",
+   "status": "mapped",
+   "uses": 7
+  },
+  {
+   "groups": [
+    "fs-components-widgets/message_list"
+   ],
+   "name": "fs-ml-mine",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/message_list"
+   ],
+   "name": "fs-ml-msg",
+   "status": "mapped",
+   "uses": 5
+  },
+  {
+   "groups": [
+    "fs-components-widgets/message_list"
+   ],
+   "name": "fs-ml-name",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/message_list"
+   ],
+   "name": "fs-ml-note",
+   "status": "mapped",
+   "uses": 5
+  },
+  {
+   "groups": [
+    "fs-components-widgets/message_list"
+   ],
+   "name": "fs-ml-notice",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/message_list"
+   ],
+   "name": "fs-ml-reasoning",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/message_list"
+   ],
+   "name": "fs-ml-refs",
+   "status": "mapped",
+   "uses": 4
+  },
+  {
+   "groups": [
+    "fs-components-widgets/message_list"
+   ],
+   "name": "fs-ml-tools",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/people"
+   ],
+   "name": "fs-people-bar",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/people"
+   ],
+   "name": "fs-people-detail",
+   "status": "provisional",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/people"
+   ],
+   "name": "fs-people-face",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/people"
+   ],
+   "name": "fs-people-failed",
+   "status": "provisional",
+   "uses": 9
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/people"
+   ],
+   "name": "fs-people-field",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/people"
+   ],
+   "name": "fs-people-head",
+   "status": "provisional",
+   "uses": 5
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/people"
+   ],
+   "name": "fs-people-input",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/people"
+   ],
+   "name": "fs-people-label",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/people"
+   ],
+   "name": "fs-people-main",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/people"
+   ],
+   "name": "fs-people-mark",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/people"
+   ],
+   "name": "fs-people-more",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/people"
+   ],
+   "name": "fs-people-more-button",
+   "status": "provisional",
+   "uses": 4
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/people"
+   ],
+   "name": "fs-people-notice",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/people"
+   ],
+   "name": "fs-people-page",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/people"
+   ],
+   "name": "fs-people-really",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/people"
+   ],
+   "name": "fs-people-root",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/people"
+   ],
+   "name": "fs-people-search",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/people"
+   ],
+   "name": "fs-people-search-field",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/people"
+   ],
+   "name": "fs-people-search-row",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/people"
+   ],
+   "name": "fs-people-section",
+   "status": "provisional",
+   "uses": 5
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/people"
+   ],
+   "name": "fs-people-section-title",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/people"
+   ],
+   "name": "fs-people-side",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/people"
+   ],
+   "name": "fs-people-spacer",
+   "status": "remove",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/people"
+   ],
+   "name": "fs-people-title",
+   "status": "provisional",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/people"
+   ],
+   "name": "fs-people-title-text",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/people"
+   ],
+   "name": "fs-people-value",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/participant"
+   ],
+   "name": "fs-pk",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/participant"
+   ],
+   "name": "fs-pk-ai",
+   "status": "mapped",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-widgets/participant"
+   ],
+   "name": "fs-pk-person",
+   "status": "mapped",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-widgets/participant"
+   ],
+   "name": "fs-pk-software",
+   "status": "mapped",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-widgets/participant"
+   ],
+   "name": "fs-pk-text",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/participant"
+   ],
+   "name": "fs-pk-unknown",
+   "status": "mapped",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-add",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-add-plus",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-big-note",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-big-title",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-card",
+   "status": "provisional",
+   "uses": 4
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-card-selected",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-card-title",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-cards",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-check",
+   "status": "provisional",
+   "uses": 4
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-check-mark",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-check-on",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-chip",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-chip-accent",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-chip-danger",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-chip-neutral",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-chip-success",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-chip-text",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-chip-warning",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-chips",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-code",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-column",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-column-count",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-column-head",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-column-name",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-columns",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-create",
+   "status": "provisional",
+   "uses": 4
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-create-text",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-detail",
+   "status": "provisional",
+   "uses": 5
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-detail-label",
+   "status": "provisional",
+   "uses": 7
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-detail-value",
+   "status": "provisional",
+   "uses": 5
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-entry",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-entry-field",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-facts",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-initials",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-initials-text",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-line",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-line-body",
+   "status": "provisional",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-line-head",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-line-main",
+   "status": "provisional",
+   "uses": 4
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-line-more",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-line-reason",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-line-sub",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-line-title",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-list-main",
+   "status": "provisional",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-main",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-message",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-move",
+   "status": "provisional",
+   "uses": 4
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-move-here",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-moves",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-muted",
+   "status": "provisional",
+   "uses": 5
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-note",
+   "status": "provisional",
+   "uses": 5
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-page",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-panel",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-panel-close",
+   "status": "provisional",
+   "uses": 4
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-panel-note",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-panel-title",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-root",
+   "status": "provisional",
+   "uses": 7
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-section",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-section-head",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-section-title",
+   "status": "provisional",
+   "uses": 8
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-side",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-side-count",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-side-heading",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-side-item",
+   "status": "provisional",
+   "uses": 4
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-side-selected",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-side-title",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-tab",
+   "status": "provisional",
+   "uses": 4
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-tab-active",
+   "status": "provisional",
+   "uses": 4
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-tab-locked",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-tab-text",
+   "status": "provisional",
+   "uses": 8
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-tabs",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-tile-0",
+   "status": "provisional",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-tile-1",
+   "status": "provisional",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-tile-2",
+   "status": "provisional",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-tile-3",
+   "status": "provisional",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-tile-4",
+   "status": "provisional",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-tile-5",
+   "status": "provisional",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-components-widgets/plan"
+   ],
+   "name": "fs-plan-tile-6",
+   "status": "provisional",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-components-widgets/file_preview"
+   ],
+   "name": "fs-preview",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/file_preview"
+   ],
+   "name": "fs-preview-fact",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/file_preview"
+   ],
+   "name": "fs-preview-head",
+   "status": "mapped",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-widgets/file_preview"
+   ],
+   "name": "fs-preview-label",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/file_preview"
+   ],
+   "name": "fs-preview-mark",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/file_preview"
+   ],
+   "name": "fs-preview-marks",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/file_preview"
+   ],
+   "name": "fs-preview-note",
+   "status": "mapped",
+   "uses": 5
+  },
+  {
+   "groups": [
+    "fs-components-widgets/file_preview"
+   ],
+   "name": "fs-preview-refused",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/file_preview"
+   ],
+   "name": "fs-preview-text",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/file_preview"
+   ],
+   "name": "fs-preview-title",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/file_preview"
+   ],
+   "name": "fs-preview-value",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/view"
+   ],
+   "name": "fs-rd-bar",
+   "status": "mapped",
+   "uses": 5
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/view"
+   ],
+   "name": "fs-rd-editor",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/view"
+   ],
+   "name": "fs-rd-empty",
+   "status": "mapped",
+   "uses": 5
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/view"
+   ],
+   "name": "fs-rd-failed",
+   "status": "mapped",
+   "uses": 11
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/view"
+   ],
+   "name": "fs-rd-hit",
+   "status": "mapped",
+   "uses": 4
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/view"
+   ],
+   "name": "fs-rd-hit-path",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/view"
+   ],
+   "name": "fs-rd-main",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/view"
+   ],
+   "name": "fs-rd-notice",
+   "status": "mapped",
+   "uses": 9
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/view"
+   ],
+   "name": "fs-rd-page",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/view"
+   ],
+   "name": "fs-rd-path",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/view"
+   ],
+   "name": "fs-rd-root",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/view"
+   ],
+   "name": "fs-rd-search",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/view"
+   ],
+   "name": "fs-rd-side",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/view"
+   ],
+   "name": "fs-rd-side-body",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/share_dialog"
+   ],
+   "name": "fs-sd",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/share_dialog"
+   ],
+   "name": "fs-sd-buttons",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/share_dialog"
+   ],
+   "name": "fs-sd-foot",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/share_dialog"
+   ],
+   "name": "fs-sd-list",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/share_dialog"
+   ],
+   "name": "fs-sd-mark",
+   "status": "mapped",
+   "uses": 5
+  },
+  {
+   "groups": [
+    "fs-components-widgets/share_dialog"
+   ],
+   "name": "fs-sd-mark-on",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/share_dialog"
+   ],
+   "name": "fs-sd-meta",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/share_dialog"
+   ],
+   "name": "fs-sd-name",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/share_dialog"
+   ],
+   "name": "fs-sd-note",
+   "status": "mapped",
+   "uses": 11
+  },
+  {
+   "groups": [
+    "fs-components-widgets/share_dialog"
+   ],
+   "name": "fs-sd-perms",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/share_dialog"
+   ],
+   "name": "fs-sd-pick",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/share_dialog"
+   ],
+   "name": "fs-sd-row",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/share_dialog"
+   ],
+   "name": "fs-sd-row-cursor",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/share_dialog"
+   ],
+   "name": "fs-sd-row-on",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/share_dialog"
+   ],
+   "name": "fs-sd-title",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/share_dialog"
+   ],
+   "name": "fs-sd-unknown",
+   "status": "mapped",
+   "uses": 5
+  },
+  {
+   "groups": [
+    "fs-components-widgets/share_dialog"
+   ],
+   "name": "fs-sd-who",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/share_dialog"
+   ],
+   "name": "fs-share",
+   "status": "exception (not a class)",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-components-widgets/sortable_list"
+   ],
+   "name": "fs-sl",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/sortable_list"
+   ],
+   "name": "fs-sl-lane",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/sortable_list"
+   ],
+   "name": "fs-sl-note",
+   "status": "mapped",
+   "uses": 7
+  },
+  {
+   "groups": [
+    "fs-components-widgets/sortable_list"
+   ],
+   "name": "fs-sl-root",
+   "status": "mapped",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-widgets/sortable_list"
+   ],
+   "name": "fs-sl-row",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/sortable_list"
+   ],
+   "name": "fs-sl-row-cursor",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/sortable_list"
+   ],
+   "name": "fs-sl-row-grabbed",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/sortable_list"
+   ],
+   "name": "fs-sl-row-locked",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/sortable_list"
+   ],
+   "name": "fs-sl-title",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/sortable_list"
+   ],
+   "name": "fs-sortable",
+   "status": "exception (not a class)",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-components-widgets/task_card"
+   ],
+   "name": "fs-task-card",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/task_card"
+   ],
+   "name": "fs-task-card-line",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/task_card"
+   ],
+   "name": "fs-task-card-mark",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/task_card"
+   ],
+   "name": "fs-task-card-open",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/task_card"
+   ],
+   "name": "fs-task-card-tag",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/task_card"
+   ],
+   "name": "fs-task-card-tags",
+   "status": "mapped",
+   "uses": 5
+  },
+  {
+   "groups": [
+    "fs-components-widgets/task_card"
+   ],
+   "name": "fs-task-card-title",
+   "status": "mapped",
+   "uses": 4
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/tasks"
+   ],
+   "name": "fs-tasks-bar",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/tasks"
+   ],
+   "name": "fs-tasks-bar-row",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/tasks"
+   ],
+   "name": "fs-tasks-board-bar",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/tasks"
+   ],
+   "name": "fs-tasks-body",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/tasks"
+   ],
+   "name": "fs-tasks-choices",
+   "status": "provisional",
+   "uses": 5
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/tasks"
+   ],
+   "name": "fs-tasks-detail",
+   "status": "provisional",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/tasks"
+   ],
+   "name": "fs-tasks-empty",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/tasks"
+   ],
+   "name": "fs-tasks-failed",
+   "status": "provisional",
+   "uses": 7
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/tasks"
+   ],
+   "name": "fs-tasks-field",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/tasks"
+   ],
+   "name": "fs-tasks-head",
+   "status": "provisional",
+   "uses": 5
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/tasks"
+   ],
+   "name": "fs-tasks-input",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/tasks"
+   ],
+   "name": "fs-tasks-label",
+   "status": "provisional",
+   "uses": 5
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/tasks"
+   ],
+   "name": "fs-tasks-main",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/tasks"
+   ],
+   "name": "fs-tasks-mark",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/tasks"
+   ],
+   "name": "fs-tasks-more",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/tasks"
+   ],
+   "name": "fs-tasks-more-button",
+   "status": "provisional",
+   "uses": 4
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/tasks"
+   ],
+   "name": "fs-tasks-note",
+   "status": "provisional",
+   "uses": 9
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/tasks"
+   ],
+   "name": "fs-tasks-notice",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/tasks"
+   ],
+   "name": "fs-tasks-page",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/tasks"
+   ],
+   "name": "fs-tasks-really",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/tasks"
+   ],
+   "name": "fs-tasks-root",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/tasks"
+   ],
+   "name": "fs-tasks-search-field",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/tasks"
+   ],
+   "name": "fs-tasks-section",
+   "status": "provisional",
+   "uses": 5
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/tasks"
+   ],
+   "name": "fs-tasks-section-title",
+   "status": "provisional",
+   "uses": 5
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/tasks"
+   ],
+   "name": "fs-tasks-spacer",
+   "status": "remove",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/tasks"
+   ],
+   "name": "fs-tasks-title",
+   "status": "provisional",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/tasks"
+   ],
+   "name": "fs-tasks-title-text",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/tasks"
+   ],
+   "name": "fs-tasks-toolbar",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/tasks"
+   ],
+   "name": "fs-tasks-value",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/tasks"
+   ],
+   "name": "fs-tasks-warning",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/tasks"
+   ],
+   "name": "fs-tasks-work",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/tool_call"
+   ],
+   "name": "fs-tc",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/tool_call"
+   ],
+   "name": "fs-tc-btn",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/tool_call"
+   ],
+   "name": "fs-tc-btn-cursor",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/tool_call"
+   ],
+   "name": "fs-tc-btn-no",
+   "status": "mapped",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-widgets/tool_call"
+   ],
+   "name": "fs-tc-btn-off",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/tool_call"
+   ],
+   "name": "fs-tc-btn-text",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/tool_call"
+   ],
+   "name": "fs-tc-btn-yes",
+   "status": "mapped",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-widgets/tool_call"
+   ],
+   "name": "fs-tc-caption",
+   "status": "mapped",
+   "uses": 13
+  },
+  {
+   "groups": [
+    "fs-components-widgets/tool_call"
+   ],
+   "name": "fs-tc-chip-text",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/tool_call"
+   ],
+   "name": "fs-tc-code",
+   "status": "mapped",
+   "uses": 7
+  },
+  {
+   "groups": [
+    "fs-components-widgets/tool_call"
+   ],
+   "name": "fs-tc-details",
+   "status": "mapped",
+   "uses": 5
+  },
+  {
+   "groups": [
+    "fs-components-widgets/tool_call"
+   ],
+   "name": "fs-tc-failed",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/tool_call"
+   ],
+   "name": "fs-tc-head",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/tool_call"
+   ],
+   "name": "fs-tc-kind",
+   "status": "mapped",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-widgets/tool_call"
+   ],
+   "name": "fs-tc-kind-connected",
+   "status": "mapped",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-widgets/tool_call"
+   ],
+   "name": "fs-tc-kind-reads",
+   "status": "mapped",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-widgets/tool_call"
+   ],
+   "name": "fs-tc-kind-runs",
+   "status": "mapped",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-widgets/tool_call"
+   ],
+   "name": "fs-tc-kind-unknown",
+   "status": "mapped",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-widgets/tool_call"
+   ],
+   "name": "fs-tc-kind-writes",
+   "status": "mapped",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-widgets/tool_call"
+   ],
+   "name": "fs-tc-name",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/tool_call"
+   ],
+   "name": "fs-tc-options",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/tool_call"
+   ],
+   "name": "fs-tc-question",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/tool_call"
+   ],
+   "name": "fs-tc-refused",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/tool_call"
+   ],
+   "name": "fs-tc-risk",
+   "status": "mapped",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-widgets/tool_call"
+   ],
+   "name": "fs-tc-risk-changes",
+   "status": "mapped",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-widgets/tool_call"
+   ],
+   "name": "fs-tc-risk-high",
+   "status": "mapped",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-widgets/tool_call"
+   ],
+   "name": "fs-tc-risk-ok",
+   "status": "mapped",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-widgets/tool_call"
+   ],
+   "name": "fs-tc-risk-unknown",
+   "status": "mapped",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-widgets/tool_call"
+   ],
+   "name": "fs-tc-state",
+   "status": "mapped",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-widgets/tool_call"
+   ],
+   "name": "fs-tc-summary",
+   "status": "mapped",
+   "uses": 7
+  },
+  {
+   "groups": [
+    "fs-components-widgets/tool_call"
+   ],
+   "name": "fs-tcl",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/file_tile"
+   ],
+   "name": "fs-tile",
+   "status": "mapped",
+   "uses": 4
+  },
+  {
+   "groups": [
+    "fs-components-widgets/file_tile"
+   ],
+   "name": "fs-tile-badge",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/file_tile"
+   ],
+   "name": "fs-tile-icon",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/file_tile"
+   ],
+   "name": "fs-tile-line",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/file_tile"
+   ],
+   "name": "fs-tile-mark",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/file_tile"
+   ],
+   "name": "fs-tile-marks",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/file_tile"
+   ],
+   "name": "fs-tile-name",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/file_tile"
+   ],
+   "name": "fs-tile-plain",
+   "status": "mapped",
+   "uses": 4
+  },
+  {
+   "groups": [
+    "fs-components-widgets/file_tile"
+   ],
+   "name": "fs-tile-selected",
+   "status": "mapped",
+   "uses": 4
+  },
+  {
+   "groups": [
+    "fs-components-widgets/file_tile"
+   ],
+   "name": "fs-tiles",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/file_tile"
+   ],
+   "name": "fs-tiles-empty",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/transfer_list"
+   ],
+   "name": "fs-tl",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/transfer_list"
+   ],
+   "name": "fs-tl-actions",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/transfer_list"
+   ],
+   "name": "fs-tl-empty",
+   "status": "mapped",
+   "uses": 5
+  },
+  {
+   "groups": [
+    "fs-components-widgets/transfer_list"
+   ],
+   "name": "fs-tl-main",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/transfer_list"
+   ],
+   "name": "fs-tl-meta",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/transfer_list"
+   ],
+   "name": "fs-tl-more",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/transfer_list"
+   ],
+   "name": "fs-tl-name",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/transfer_list"
+   ],
+   "name": "fs-tl-reason",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/transfer_list"
+   ],
+   "name": "fs-tl-row",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/transfer_list"
+   ],
+   "name": "fs-tl-row-failed",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/tool_call"
+   ],
+   "name": "fs-toolcall",
+   "status": "exception (not a class)",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-components-widgets/tree_view"
+   ],
+   "name": "fs-tree",
+   "status": "mapped",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-widgets/text_view"
+   ],
+   "name": "fs-tv",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/text_view"
+   ],
+   "name": "fs-tv-block",
+   "status": "mapped",
+   "uses": 16
+  },
+  {
+   "groups": [
+    "fs-components-widgets/text_view"
+   ],
+   "name": "fs-tv-cell",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/text_view"
+   ],
+   "name": "fs-tv-code",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/text_view"
+   ],
+   "name": "fs-tv-codelines",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/text_view"
+   ],
+   "name": "fs-tv-codespan",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/text_view"
+   ],
+   "name": "fs-tv-head",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/text_view"
+   ],
+   "name": "fs-tv-heading",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/text_view"
+   ],
+   "name": "fs-tv-item",
+   "status": "mapped",
+   "uses": 4
+  },
+  {
+   "groups": [
+    "fs-components-widgets/text_view"
+   ],
+   "name": "fs-tv-marker",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/text_view"
+   ],
+   "name": "fs-tv-quote",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/text_view"
+   ],
+   "name": "fs-tv-row",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/text_view"
+   ],
+   "name": "fs-tv-rule",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/text_view"
+   ],
+   "name": "fs-tv-run",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-widgets/text_view"
+   ],
+   "name": "fs-tv-table",
+   "status": "mapped",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/view"
+   ],
+   "name": "fs-wk-a-brand",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/view"
+   ],
+   "name": "fs-wk-a-crumbs",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/view"
+   ],
+   "name": "fs-wk-a-meta",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/view"
+   ],
+   "name": "fs-wk-a-page",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/view"
+   ],
+   "name": "fs-wk-a-right",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/view"
+   ],
+   "name": "fs-wk-a-sep",
+   "status": "remove",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/view"
+   ],
+   "name": "fs-wk-a-side",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/view"
+   ],
+   "name": "fs-wk-a-space",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/view"
+   ],
+   "name": "fs-wk-a-space-name",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/view"
+   ],
+   "name": "fs-wk-a-title",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/view"
+   ],
+   "name": "fs-wk-a-top",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/view"
+   ],
+   "name": "fs-wk-b-head",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/view"
+   ],
+   "name": "fs-wk-b-icon",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/view"
+   ],
+   "name": "fs-wk-b-meta",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/view"
+   ],
+   "name": "fs-wk-b-page",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/view"
+   ],
+   "name": "fs-wk-b-section",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/view"
+   ],
+   "name": "fs-wk-b-section-text",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/view"
+   ],
+   "name": "fs-wk-b-side",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/view"
+   ],
+   "name": "fs-wk-b-title",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/view"
+   ],
+   "name": "fs-wk-b-top",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/view"
+   ],
+   "name": "fs-wk-band",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/view"
+   ],
+   "name": "fs-wk-block",
+   "status": "provisional",
+   "uses": 6
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/view"
+   ],
+   "name": "fs-wk-block-editing",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/view"
+   ],
+   "name": "fs-wk-blocks",
+   "status": "provisional",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/view"
+   ],
+   "name": "fs-wk-btn",
+   "status": "provisional",
+   "uses": 6
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/view"
+   ],
+   "name": "fs-wk-crumb",
+   "status": "provisional",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/view"
+   ],
+   "name": "fs-wk-crumb-last",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/view"
+   ],
+   "name": "fs-wk-crumb-sep",
+   "status": "provisional",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/view"
+   ],
+   "name": "fs-wk-crumbs",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/view"
+   ],
+   "name": "fs-wk-dot",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/view"
+   ],
+   "name": "fs-wk-dot-ok",
+   "status": "provisional",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/view"
+   ],
+   "name": "fs-wk-dot-old",
+   "status": "provisional",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/view"
+   ],
+   "name": "fs-wk-dot-other",
+   "status": "provisional",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/view"
+   ],
+   "name": "fs-wk-folder",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/view"
+   ],
+   "name": "fs-wk-grip",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/view"
+   ],
+   "name": "fs-wk-lang",
+   "status": "provisional",
+   "uses": 4
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/view"
+   ],
+   "name": "fs-wk-lang-on",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/view"
+   ],
+   "name": "fs-wk-langs",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/view"
+   ],
+   "name": "fs-wk-outline-row",
+   "status": "provisional",
+   "uses": 4
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/view"
+   ],
+   "name": "fs-wk-panel",
+   "status": "provisional",
+   "uses": 5
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/view"
+   ],
+   "name": "fs-wk-panel-title",
+   "status": "provisional",
+   "uses": 5
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/view"
+   ],
+   "name": "fs-wk-quiet",
+   "status": "provisional",
+   "uses": 11
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/view"
+   ],
+   "name": "fs-wk-rev-current",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/view"
+   ],
+   "name": "fs-wk-rev-row",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/view"
+   ],
+   "name": "fs-wk-root",
+   "status": "provisional",
+   "uses": 5
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/view"
+   ],
+   "name": "fs-wk-row",
+   "status": "provisional",
+   "uses": 4
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/view"
+   ],
+   "name": "fs-wk-row-a-here",
+   "status": "provisional",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/view"
+   ],
+   "name": "fs-wk-row-here",
+   "status": "provisional",
+   "uses": 4
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/view"
+   ],
+   "name": "fs-wk-row-quiet",
+   "status": "provisional",
+   "uses": 4
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/view"
+   ],
+   "name": "fs-wk-state",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/view"
+   ],
+   "name": "fs-wk-tick",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/view"
+   ],
+   "name": "fs-wk-ticks",
+   "status": "provisional",
+   "uses": 3
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/view"
+   ],
+   "name": "fs-wk-tree",
+   "status": "provisional",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-kanban/view"
+   ],
+   "name": "kb-bar",
+   "status": "mapped",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-components-kanban/view"
+   ],
+   "name": "kb-notice",
+   "status": "mapped",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-components-kanban/handle"
+   ],
+   "name": "kb-root",
+   "status": "mapped",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-admin-frontend/view"
+   ],
+   "name": "list-stale",
+   "status": "mapped",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-admin-frontend/view"
+   ],
+   "name": "not-loaded",
+   "status": "mapped",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-admin-frontend/view"
+   ],
+   "name": "page-actions",
+   "status": "mapped",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-admin-frontend/view"
+   ],
+   "name": "page-title",
+   "status": "mapped",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-admin-frontend/view"
+   ],
+   "name": "running",
+   "status": "mapped",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-components-workbenches/file_manager"
+   ],
+   "name": "tabindex=0",
+   "status": "exception (not a class)",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-components-timeline/view"
+   ],
+   "name": "tl-arrows",
+   "status": "mapped",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-components-timeline/view"
+   ],
+   "name": "tl-axis",
+   "status": "mapped",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-components-timeline/view"
+   ],
+   "name": "tl-body",
+   "status": "mapped",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-components-timeline/handle"
+   ],
+   "name": "tl-root",
+   "status": "mapped",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-components-timeline/view"
+   ],
+   "name": "tl-scroll",
+   "status": "mapped",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-components-timeline/view"
+   ],
+   "name": "tl-today",
+   "status": "mapped",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-components-timeline/view"
+   ],
+   "name": "tl-today-arrow",
+   "status": "mapped",
+   "uses": 2
+  },
+  {
+   "groups": [
+    "fs-components-timeline/view"
+   ],
+   "name": "tl-today-edge",
+   "status": "mapped",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-components-timeline/view"
+   ],
+   "name": "tl-today-row",
+   "status": "mapped",
+   "uses": 1
+  },
+  {
+   "groups": [
+    "fs-components-timeline/view"
+   ],
+   "name": "tl-toolbar",
+   "status": "mapped",
+   "uses": 1
+  }
+ ]
+}

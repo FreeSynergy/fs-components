@@ -1,0 +1,25 @@
+[package]
+name = "fs-components-pictures"
+description = "FreeSynergy picture comparison for the frontend rebuild (contract/umbau): draw blocks offscreen on a software GPU, keep reference PNGs, compare pixel by pixel; test support, not published"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish = false
+
+[dependencies]
+fs-components-render = { path = "../fs-components-render" }
+fs-components-styles = { path = "../fs-components-styles" }
+blinc_layout.workspace = true
+blinc_theme.workspace = true
+# Both are already part of Blinc's tree (see fs-components-render); wgpu only to name the adapter in use.
+wgpu = "26"
+image = { version = "0.25", default-features = false, features = ["png"] }
+
+[dev-dependencies]
+blinc_core.workspace = true
+fs-components-charts = { path = "../fs-components-charts" }
+fs-components-fields = { path = "../fs-components-fields" }
+fs-components-kanban = { path = "../fs-components-kanban" }
+fs-components-primitives = { path = "../fs-components-primitives" }
+fs-components-widgets = { path = "../fs-components-widgets" }
