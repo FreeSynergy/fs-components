@@ -34,6 +34,10 @@ pub enum Step {
     Scroll(u32),
     /// Open the folder with this key in the page tree (wiki layouts; a folder key ends in `/`).
     Expand(String),
+    /// Open the block menu of the Notion-like editor in a new empty block at the end (as typing `/` there does).
+    BlockMenu,
+    /// Press Enter at the end of the last block of the Notion-like editor.
+    BlockEnter,
 }
 
 /// What the scroll area of the content looked like.

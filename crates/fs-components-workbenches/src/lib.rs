@@ -29,6 +29,7 @@ pub mod tasks;
 mod view;
 
 pub use error::{ErrorKind, SourceError};
+pub use fs_components_editor as contract;
 pub use labels::Labels;
 pub use page_info::{LangChoice, PageInfo, PageState, RevisionRow, WikiLabels};
 pub use reader::{Draft, DraftStore, Editing, Outcome, Reader, Shown};
@@ -37,7 +38,7 @@ pub use shell::{
     snapshot, styles,
 };
 pub use source::{DocumentSource, EditableText, Entry, Hit, LinkTarget};
-pub use view::Layout;
+pub use view::{BlockEditor, Layout, SourceEditor};
 
 /// The documents the reader shows, in the neutral model of the widgets.
 pub use fs_components_widgets::{Align, Block, Document, Inline, ListItem, Mark, MarkKind};

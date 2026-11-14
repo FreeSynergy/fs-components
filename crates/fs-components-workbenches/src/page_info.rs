@@ -124,6 +124,8 @@ pub struct WikiLabels {
     pub title_hint: String,
     /// `{}` = how many pages the tree holds.
     pub page_count: String,
+    /// The words of the block menu ("/" in a block; made from `SlashLabels::for_locale`).
+    pub slash: fs_components_widgets::SlashLabels,
 }
 
 impl Default for WikiLabels {
@@ -146,6 +148,7 @@ impl Default for WikiLabels {
             block_hint: s("Type, or press / for commands"),
             title_hint: fs_components_widgets::TitleLabels::default().placeholder,
             page_count: s("{} pages"),
+            slash: fs_components_widgets::SlashLabels::default(),
         }
     }
 }

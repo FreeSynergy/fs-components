@@ -1,0 +1,9 @@
+[package]
+name = "fs-components-editor"
+description = "The contract of the editor building blocks of FreeSynergy (Strategy): model in, change operations out; std only"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]

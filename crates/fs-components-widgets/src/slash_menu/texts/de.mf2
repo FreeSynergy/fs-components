@@ -1,0 +1,12 @@
+# Die Texte des Blockmenüs (die "/"-Befehle), Deutsch (ADR 0057: MessageFormat 2). Jede Id braucht ihr englisches Gegenstück in en.mf2.
+slash-heading-1 = Überschrift 1
+slash-heading-2 = Überschrift 2
+slash-heading-3 = Überschrift 3
+slash-bullet = Aufzählung
+slash-numbered = Nummerierung
+slash-task = Aufgabenliste
+slash-table = Tabelle
+slash-quote = Zitat
+slash-code = Code
+slash-divider = Trenner
+slash-none = Kein passender Blocktyp

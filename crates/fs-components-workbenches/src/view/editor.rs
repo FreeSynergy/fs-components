@@ -30,6 +30,7 @@ pub(crate) fn editor(
         state
     });
     let draft = actions.draft.clone();
+    measure_again(&state);
     let area = textarea(&state)
         .w_full()
         .rows(rows)
@@ -71,6 +72,21 @@ pub(crate) fn editor(
                 .w_full()
                 .child(area),
         )
+}
+
+/// Make the area measure its width again at the next layout. Blinc tells a text area its width only when the
+/// bounds differ from the ones stored in its state; a rebuilt area starts with the default width while the state
+/// still holds the old bounds, so it would keep wrapping at that default. Forgetting the bounds makes the next
+/// layout report the real ones.
+pub(crate) fn measure_again(state: &SharedTextAreaState) {
+    let storage = state
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .layout_bounds_storage
+        .clone();
+    *storage
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner) = None;
 }
 
 /// A text area holding `text`, its signals kept by `keep`.

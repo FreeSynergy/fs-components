@@ -7,12 +7,12 @@
 
 use blinc_layout::div::{Div, div};
 use blinc_layout::styled_text::{StyledLine, StyledText, TextSpan};
-use blinc_layout::{RichText, rich_text_styled};
+use blinc_layout::{RichText, TextAlign, rich_text_styled};
 
 use super::LinkHandler;
 use super::flow::flow;
 use super::look::Look;
-use crate::text::Inline;
+use crate::text::{Align, Inline};
 
 /// A paragraph longer than this many bytes goes through `flow.rs` even without marks: Blinc's
 /// measuring of one very long rich text is slow (30 KB took about 8 s), many small runs are not.
@@ -36,8 +36,24 @@ pub(super) fn inline(
     look: &Look,
     on_link: Option<&LinkHandler>,
 ) -> Div {
+    aligned(inline, face, look, on_link, Align::None)
+}
+
+/// The element for `inline` set in `face`, its lines placed by `align` (the column of a table).
+pub(super) fn aligned(
+    inline: &Inline,
+    face: Face,
+    look: &Look,
+    on_link: Option<&LinkHandler>,
+    align: Align,
+) -> Div {
     if uses_flow(inline) {
-        return flow(inline, face, look, on_link);
+        let row = flow(inline, face, look, on_link);
+        return match align {
+            Align::Center => row.justify_center(),
+            Align::Right => row.justify_end(),
+            _ => row,
+        };
     }
     let text = if inline.text.is_empty() {
         " "
@@ -57,7 +73,21 @@ pub(super) fn inline(
     } else {
         rich
     };
-    div().w_full().child(rich)
+    // The text sits in a row whose free room goes before it (centre) or before and after it (right): a text that is
+    // shorter than the column is placed, a longer one wraps over the whole width as before.
+    match align {
+        Align::Center => div()
+            .w_full()
+            .flex_row()
+            .justify_center()
+            .child(rich.align(TextAlign::Center)),
+        Align::Right => div()
+            .w_full()
+            .flex_row()
+            .justify_end()
+            .child(rich.align(TextAlign::Right)),
+        _ => div().w_full().child(rich),
+    }
 }
 
 /// Does this text go through `flow.rs` (many small runs) instead of one rich text? Marks, line

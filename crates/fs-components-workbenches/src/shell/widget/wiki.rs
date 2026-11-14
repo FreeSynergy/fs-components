@@ -108,4 +108,42 @@ impl ReaderWidget {
             ));
         }
     }
+
+    /// The text of every block of the Notion-like editor now (empty when no block editor is open): for hosts that drive
+    /// the window from outside, and for their tests.
+    pub fn block_texts(&self) -> Vec<String> {
+        let slot = self.blocks.lock().unwrap_or_else(PoisonError::into_inner);
+        slot.as_ref()
+            .map(BlockEditor::block_texts)
+            .unwrap_or_default()
+    }
+
+    /// Which block of the Notion-like editor has the keyboard.
+    pub fn focused_block(&self) -> Option<usize> {
+        let slot = self.blocks.lock().unwrap_or_else(PoisonError::into_inner);
+        slot.as_ref().and_then(BlockEditor::focused)
+    }
+
+    /// Give the keyboard to block `i`, the cursor `column` characters into its first line (a test of a host types
+    /// there; nothing happens when there is no such block).
+    pub fn focus_block(&self, i: usize, column: usize) {
+        let slot = self.blocks.lock().unwrap_or_else(PoisonError::into_inner);
+        if let Some(editor) = slot.as_ref().filter(|e| i < e.block_texts().len()) {
+            editor.put_cursor(i, column);
+        }
+    }
+
+    /// Type `text` (no line break) into block `i` of the Notion-like editor, `at` bytes into it, as the keyboard would.
+    pub fn type_in_block(&self, i: usize, at: usize, text: &str) {
+        let slot = self.blocks.lock().unwrap_or_else(PoisonError::into_inner);
+        if let Some(editor) = slot.as_ref().filter(|e| i < e.block_texts().len()) {
+            editor.type_in(i, at, text);
+        }
+    }
+
+    /// Is the block menu of the Notion-like editor open?
+    pub fn block_menu_open(&self) -> bool {
+        let slot = self.blocks.lock().unwrap_or_else(PoisonError::into_inner);
+        slot.as_ref().is_some_and(BlockEditor::menu_open)
+    }
 }

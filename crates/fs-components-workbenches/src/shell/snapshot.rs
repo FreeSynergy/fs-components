@@ -31,6 +31,8 @@ pub fn snapshot(
     let mut reader = Reader::new(picture.source, picture.labels);
     reader.set_export_target(picture.export_target);
     let mut scroll_px = 0_u32;
+    let mut menu = false;
+    let mut enter = false;
     let mut tree = PageTree::new(reader.entries());
     for step in &picture.steps {
         match step {
@@ -47,6 +49,8 @@ pub fn snapshot(
             Step::Export => reader.export(),
             Step::Scroll(px) => scroll_px += px,
             Step::Expand(key) => tree.toggle(key),
+            Step::BlockMenu => menu = true,
+            Step::BlockEnter => enter = true,
         }
     }
     if let Some(path) = reader.current_path() {
@@ -74,6 +78,7 @@ pub fn snapshot(
                         &tree,
                         &labels,
                         physics,
+                        (menu, enter),
                         field.build(),
                         w,
                         h,
@@ -119,6 +124,7 @@ fn wiki_frame(
     tree: &PageTree,
     labels: &crate::WikiLabels,
     physics: &blinc_layout::widgets::scroll::SharedScrollPhysics,
+    keys: (bool, bool),
     search: impl blinc_layout::prelude::ElementBuilder + 'static,
     w: f32,
     h: f32,
@@ -140,6 +146,12 @@ fn wiki_frame(
     let blocks = reader
         .editing()
         .map(|e| BlockEditor::new(e.id, &e.draft, &reader.page_title()));
+    if let (true, Some(blocks)) = (keys.1, &blocks) {
+        blocks.press_enter_at_end();
+    }
+    if let (true, Some(blocks)) = (keys.0, &blocks) {
+        blocks.open_menu_in_new_block();
+    }
     notion::notion(
         search,
         notion::side(reader, tree, labels, &actions),

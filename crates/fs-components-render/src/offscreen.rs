@@ -90,6 +90,18 @@ where
     tree.apply_stylesheet_layout_overrides();
     tree.apply_stylesheet_base_styles();
     tree.compute_layout(w, h);
+    // What a window does in its next frames: areas that depend on a signal the layout just changed (a text area that
+    // learned its real width) are built again and laid out again. Bounded, like the window's own drain.
+    for _ in 0..3 {
+        let rebuilt = tree.process_pending_subtree_rebuilds();
+        let updates = tree.take_pending_property_updates();
+        let moved = !updates.is_empty();
+        tree.apply_partial_property_updates(updates);
+        if !rebuilt && !moved {
+            break;
+        }
+        tree.compute_layout(w, h);
+    }
     after_layout();
     let texture = offscreen_texture(&app, width, height);
     let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
@@ -111,6 +123,10 @@ fn init_runtime(css: &str) {
         blinc_theme::ColorScheme::Light
     };
     blinc_theme::ThemeState::init(bundle(css), scheme);
+    // What the window runner installs: the notifier that tells stateful areas which signals changed.
+    blinc_core::reactive::set_stateful_deps_notifier(|ids| {
+        blinc_layout::check_stateful_deps(ids);
+    });
     if !BlincContextState::is_initialized() {
         BlincContextState::init(
             global_graph(),

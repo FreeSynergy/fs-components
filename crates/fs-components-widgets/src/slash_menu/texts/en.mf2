@@ -1,0 +1,12 @@
+# The words of the block menu (the "/" commands), English (ADR 0057: MessageFormat 2). Every id needs a German twin in de.mf2.
+slash-heading-1 = Heading 1
+slash-heading-2 = Heading 2
+slash-heading-3 = Heading 3
+slash-bullet = Bulleted list
+slash-numbered = Numbered list
+slash-task = To-do list
+slash-table = Table
+slash-quote = Quote
+slash-code = Code
+slash-divider = Divider
+slash-none = No matching block type

@@ -6,9 +6,11 @@
 use blinc_layout::div::{Div, div};
 
 use super::LinkHandler;
-use super::inline::{Face, inline};
+use super::inline::{Face, aligned};
 use super::look::Look;
+use super::task::task_cell;
 use crate::text::{Align, Inline};
+use blinc_layout::text;
 
 /// Longest word (in characters) a column keeps whole.
 const MAX_WORD: usize = 28;
@@ -68,11 +70,14 @@ pub(super) fn table(
             // of the room, and shrinks when there is not enough: a table wider than the window
             // wraps words inside their columns (also in the middle of a long word) and never
             // runs past the edge, so no column is cut off.
-            let holder = div()
-                .class("fs-tv-cell")
-                .w(narrowest[c])
-                .child(inline(cell, face, look, on_link));
-            line = line.child(sized(holder, portion, align.get(c).copied()));
+            let place = align.get(c).copied().unwrap_or_default();
+            // A cell that starts with `[ ]` or `[x]` is a checkbox: our extension, GFM has task items in lists only.
+            let content = match task_cell(cell) {
+                Some((done, rest)) => task_row(done, &rest, face, look, on_link, place),
+                None => aligned(cell, face, look, on_link, place),
+            };
+            let holder = div().class("fs-tv-cell").w(narrowest[c]).child(content);
+            line = line.child(sized(holder, portion));
         }
         out = out.child(line);
     }
@@ -80,7 +85,35 @@ pub(super) fn table(
 }
 
 /// Give the cell its share of the row.
-fn sized(cell: Div, share: usize, _align: Option<Align>) -> Div {
+fn sized(cell: Div, share: usize) -> Div {
     #[allow(clippy::cast_precision_loss)]
     cell.flex_grow_value(share as f32 * 1.0)
+}
+
+/// A checkbox and the text after it, placed by `place`.
+fn task_row(
+    done: bool,
+    rest: &Inline,
+    face: Face,
+    look: &Look,
+    on_link: Option<&LinkHandler>,
+    place: Align,
+) -> Div {
+    let mut row = div().flex_row().items_center().gap(4.0).w_full();
+    row = match place {
+        Align::Center => row.justify_center(),
+        Align::Right => row.justify_end(),
+        _ => row,
+    };
+    let mark = if done { "\u{2611}" } else { "\u{2610}" };
+    row = row.child(
+        div()
+            .class("fs-tv-marker")
+            .child(text(mark).size(face.size)),
+    );
+    if rest.is_empty() {
+        row
+    } else {
+        row.child(aligned(rest, face, look, on_link, Align::None))
+    }
 }

@@ -4,6 +4,14 @@
 //! Pattern: Strategy (the layout is chosen by [`Layout`]) over the one `Reader` state; each layout is a set of
 //! pure functions from state to elements.
 
+mod block_contract;
+mod block_enter;
+#[cfg(test)]
+mod block_enter_tests;
+mod block_menu;
+mod block_row;
+mod block_text;
+mod block_view;
 pub(crate) mod blocks;
 pub(crate) mod confluence;
 mod fold;
@@ -15,12 +23,15 @@ mod outline_tests;
 mod rows;
 #[cfg(test)]
 mod rows_tests;
+mod slash;
+#[cfg(test)]
+mod slash_tests;
 mod styles;
 mod tree;
 #[cfg(test)]
 mod tree_tests;
 
-pub(crate) use blocks::BlockEditor;
+pub use blocks::BlockEditor;
 pub(crate) use styles::styles;
 pub(crate) use tree::PageTree;
 

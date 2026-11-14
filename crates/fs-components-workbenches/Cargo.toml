@@ -15,6 +15,7 @@ blinc_core.workspace = true
 blinc_layout.workspace = true
 blinc_theme.workspace = true
 fs-components-render = { path = "../fs-components-render" }
+fs-components-editor = { path = "../fs-components-editor" }
 
 [dev-dependencies]
 # Only for the size of the smallest window: the app crate knows no workbench.

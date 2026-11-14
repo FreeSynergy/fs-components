@@ -17,6 +17,7 @@ mod list;
 mod look;
 mod styles;
 mod table;
+mod task;
 
 mod view;
 

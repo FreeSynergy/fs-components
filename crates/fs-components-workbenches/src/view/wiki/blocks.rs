@@ -6,44 +6,19 @@
 //! block (UUIDv7) lives in the text model of the wiki and is kept by the diff the wiki applies on Save; this view does
 //! not hold it.
 
-use std::sync::{Arc, PoisonError};
+use std::sync::Arc;
 
-use blinc_cn::components::textarea::textarea;
 use blinc_layout::div::{Div, div};
 use blinc_layout::widgets::text_area::SharedTextAreaState;
 use blinc_layout::widgets::text_area::focus_text_area;
-use fs_components_primitives::FieldData;
-use fs_components_widgets::icon::{Glyph, Tone, icon};
 use fs_components_widgets::{PageTitle, TitleLabels};
 
+use super::block_view::{Blocks, Report};
 use crate::page_info::WikiLabels;
 
 /// Cut `text` into blocks at blank lines; a fenced code block is one block whatever it contains.
 pub(crate) fn split_blocks(text: &str) -> Vec<String> {
-    let mut out: Vec<String> = Vec::new();
-    let mut current: Vec<&str> = Vec::new();
-    let mut fence: Option<&str> = None;
-    for line in text.lines() {
-        let marker = line.trim_start();
-        let tick = ["```", "~~~"].into_iter().find(|f| marker.starts_with(f));
-        match (fence, tick) {
-            (None, Some(f)) => fence = Some(f),
-            (Some(f), Some(t)) if f == t => fence = None,
-            _ => {}
-        }
-        if fence.is_none() && line.trim().is_empty() && tick.is_none() {
-            if !current.is_empty() {
-                out.push(current.join("\n"));
-                current.clear();
-            }
-        } else {
-            current.push(line);
-        }
-    }
-    if !current.is_empty() {
-        out.push(current.join("\n"));
-    }
-    out
+    fs_components_editor::Doc::parse(text).blocks
 }
 
 /// The blocks put together again: one blank line between, a newline at the end.
@@ -53,14 +28,6 @@ pub(crate) fn join_blocks(blocks: &[String]) -> String {
     text
 }
 
-/// How many text rows a block needs: its lines, a line that wraps (about 75 characters in the column) counting again.
-fn rows_for(text: &str) -> usize {
-    text.lines()
-        .map(|l| l.chars().count().div_ceil(75).max(1))
-        .sum::<usize>()
-        .clamp(1, 30)
-}
-
 /// Does `block` say `title` as a level-1 heading (`# `, same comparison as `leads_with_title`)?
 fn says_title(block: &str, title: &str) -> bool {
     block
@@ -68,21 +35,9 @@ fn says_title(block: &str, title: &str) -> bool {
         .is_some_and(|rest| rest.trim() == title.trim())
 }
 
-/// The text of every block area.
-fn values(areas: &[SharedTextAreaState]) -> Vec<String> {
-    areas
-        .iter()
-        .map(|a| a.lock().unwrap_or_else(PoisonError::into_inner).value())
-        .collect()
-}
-
-/// What Enter in the title does: the keyboard goes to the first block (it is built when Enter is pressed).
-fn jump_to(first: Option<SharedTextAreaState>) -> impl Fn() + Send + Sync + 'static {
-    move || {
-        if let Some(first) = &first {
-            focus_text_area(first);
-        }
-    }
+/// What Enter in the title does: the keyboard goes to the first block (read when Enter is pressed).
+fn jump_to(blocks: Arc<Blocks>) -> impl Fn() + Send + Sync + 'static {
+    move || focus_text_area(&blocks.area(0))
 }
 
 /// The first line of a page: its title as a level-1 heading.
@@ -121,12 +76,14 @@ fn assemble(head: &Head, title: &str, blocks: &[String]) -> String {
 }
 
 /// The editor of one edit: the title field and the blocks with their areas.
-pub(crate) struct BlockEditor {
+pub struct BlockEditor {
     /// Which edit of the reader this belongs to.
     pub edit: u64,
     title: PageTitle,
     head: Head,
-    areas: Vec<(SharedTextAreaState, FieldData)>,
+    blocks: Arc<Blocks>,
+    /// The document as it was at the last `load` / `take_ops` of the editor contract.
+    pub(super) loaded: fs_components_editor::Doc,
 }
 
 impl BlockEditor {
@@ -143,14 +100,6 @@ impl BlockEditor {
         if parts.is_empty() {
             parts.push(String::new());
         }
-        let areas = parts
-            .iter()
-            .map(|part| {
-                let keep = FieldData::new();
-                let state = crate::view::new_area(part, &keep);
-                (state, keep)
-            })
-            .collect();
         Self {
             edit,
             title: PageTitle::new(&TitleLabels::default(), title),
@@ -159,8 +108,19 @@ impl BlockEditor {
                 first_title: title.to_owned(),
                 lead,
             },
-            areas,
+            blocks: Blocks::new(&parts),
+            loaded: fs_components_editor::Doc::parse(draft),
         }
+    }
+
+    /// The whole text now, from the title field and the blocks.
+    fn whole(&self) -> impl Fn() -> String + Send + Sync + 'static {
+        let (head, title, blocks) = (
+            self.head.clone(),
+            self.title.clone(),
+            Arc::clone(&self.blocks),
+        );
+        move || assemble(&head, &title.text(), &blocks.values())
     }
 
     /// Does the text lead with its title as a heading (then the title field draws it; no second big title)?
@@ -170,30 +130,116 @@ impl BlockEditor {
     }
 
     /// The whole text now (what the reports hand to the reader; here only for the tests).
-    #[cfg(test)]
     pub fn text(&self) -> String {
-        let all: Vec<SharedTextAreaState> = self.areas.iter().map(|(a, _)| a.clone()).collect();
-        assemble(&self.head, &self.title.text(), &values(&all))
+        (self.whole())()
     }
 
-    /// The area of block `i` (tests look at its keyboard).
+    /// The text of every block now (for hosts that drive the window from outside, and for the tests).
+    pub fn block_texts(&self) -> Vec<String> {
+        self.blocks.values()
+    }
+
+    /// Is the title a heading line of the text (then it is block 0 of the document and no block of the editor)?
+    pub(super) fn in_text(&self) -> bool {
+        self.head.in_text
+    }
+
+    /// The text of the title field.
+    pub(super) fn title_text(&self) -> String {
+        self.title.text()
+    }
+
+    /// Put `text` into the title field.
+    pub(super) fn set_title(&self, text: &str) {
+        self.title.set_text(text);
+    }
+
+    /// Type into block `i` of the editor.
+    pub(super) fn blocks_type(&self, i: usize, at: usize, text: &str) {
+        self.blocks.type_at(i, at, text);
+    }
+
+    /// Is the block menu open?
+    pub fn menu_open(&self) -> bool {
+        self.blocks.menu_open()
+    }
+
+    /// Press Enter at the end of the last block (for pictures).
+    pub fn press_enter_at_end(&self) {
+        let last = self.blocks.len() - 1;
+        let end = self
+            .blocks
+            .area(last)
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .value()
+            .len();
+        self.blocks.enter_at(last, end);
+    }
+
+    /// A new empty block after the last one, with `/` typed into it: the block menu is open there (for pictures).
+    pub fn open_menu_in_new_block(&self) {
+        let last = self.blocks.len() - 1;
+        let end = self
+            .blocks
+            .area(last)
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .value()
+            .len();
+        self.blocks.enter_at(last, end);
+        self.blocks.type_at(last + 1, 0, "/");
+    }
+
+    /// Type into block `i` of the editor, as the keyboard would.
+    pub fn type_in(&self, i: usize, at: usize, text: &str) {
+        self.blocks.type_at(i, at, text);
+    }
+
+    /// Press Enter in block `i` of the editor.
+    pub(super) fn blocks_enter(&self, i: usize, at: usize) {
+        self.blocks.enter_at(i, at);
+    }
+
+    /// How many blocks there are.
     #[cfg(test)]
-    pub fn area(&self, i: usize) -> &SharedTextAreaState {
-        &self.areas[i].0
+    pub fn count(&self) -> usize {
+        self.blocks.len()
+    }
+
+    /// The area of block `i`.
+    pub fn area(&self, i: usize) -> SharedTextAreaState {
+        self.blocks.area(i)
+    }
+
+    /// The block that has the keyboard, if any.
+    pub fn focused(&self) -> Option<usize> {
+        self.blocks.focused()
+    }
+
+    /// Give the keyboard to block `i`, the cursor `column` characters into its first line.
+    pub fn put_cursor(&self, i: usize, column: usize) {
+        let area = self.blocks.area(i);
+        {
+            let mut d = area
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            let width = d.lines.first().map_or(0, |l| l.chars().count());
+            d.cursor = blinc_layout::widgets::text_area::TextPosition::new(0, column.min(width));
+        }
+        focus_text_area(&area);
     }
 
     /// The big title field above the blocks (Enter in it moves on to the first block).
-    pub fn title_view(&self, labels: &WikiLabels, report: &Arc<dyn Fn(&str) + Send + Sync>) -> Div {
+    pub fn title_view(&self, labels: &WikiLabels, report: &Report) -> Div {
         self.title.set_placeholder(&labels.title_hint);
-        let all: Arc<Vec<SharedTextAreaState>> =
-            Arc::new(self.areas.iter().map(|(a, _)| a.clone()).collect());
-        let next = all.first().cloned();
-        let (report, head) = (Arc::clone(report), self.head.clone());
+        let report = Arc::clone(report);
+        let (head, blocks) = (self.head.clone(), Arc::clone(&self.blocks));
         let field = self
             .title
             .clone()
-            .on_change(move |text| report(&assemble(&head, text, &values(&all))))
-            .on_enter(jump_to(next));
+            .on_change(move |text| report(&assemble(&head, text, &blocks.values())))
+            .on_enter(jump_to(Arc::clone(&self.blocks)));
         div()
             .class("fs-wk-b-title-field")
             .w_full()
@@ -201,36 +247,13 @@ impl BlockEditor {
     }
 
     /// The column of blocks. `report` gets the whole text after each change.
-    pub fn view(&self, labels: &WikiLabels, report: &Arc<dyn Fn(&str) + Send + Sync>) -> Div {
-        let mut column = div().class("fs-wk-blocks").flex_col().w_full().gap(1.0);
-        let all: Arc<Vec<SharedTextAreaState>> =
-            Arc::new(self.areas.iter().map(|(a, _)| a.clone()).collect());
-        for (state, _) in &self.areas {
-            let (report, all) = (Arc::clone(report), Arc::clone(&all));
-            let (title, head) = (self.title.clone(), self.head.clone());
-            let rows = rows_for(&state.lock().unwrap_or_else(PoisonError::into_inner).value());
-            let area = textarea(state)
-                .w_full()
-                .rows(rows)
-                .placeholder(&labels.block_hint)
-                .on_change(move |_| {
-                    report(&assemble(&head, &title.text(), &values(&all)));
-                });
-            column = column.child(
-                div()
-                    .class("fs-wk-block")
-                    .class("fs-wk-block-editing")
-                    .flex_row()
-                    .items_start()
-                    .child(
-                        div()
-                            .class("fs-wk-grip")
-                            .child(icon(Glyph::More, 16.0, Tone::Muted)),
-                    )
-                    .child(div().class("fs-body-field").flex_1().min_w(0.0).child(area)),
-            );
-        }
-        column
+    pub fn view(&self, labels: &WikiLabels, report: &Report) -> Div {
+        self.blocks.view(
+            &labels.block_hint,
+            &labels.slash,
+            report,
+            Arc::new(self.whole()),
+        )
     }
 }
 

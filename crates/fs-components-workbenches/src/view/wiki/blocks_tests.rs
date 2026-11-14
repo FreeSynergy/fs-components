@@ -46,7 +46,7 @@ fn what_the_round_trip_does_not_keep() {
 fn a_page_with_only_its_title_still_has_a_block_to_type_in() {
     let editor = BlockEditor::new(1, "# Handbook\n", "Handbook");
     assert!(editor.lead_heading());
-    assert_eq!(editor.areas.len(), 1, "one empty block");
+    assert_eq!(editor.count(), 1, "one empty block");
     assert_eq!(
         editor.text(),
         "# Handbook\n",
@@ -61,14 +61,11 @@ fn enter_in_the_title_gives_the_keyboard_to_the_first_block() {
     for draft in ["# Handbook\n", "# Handbook\n\nIntro\n"] {
         let editor = BlockEditor::new(1, draft, "Handbook");
         assert!(!editor.area(0).lock().unwrap().is_focused(), "before Enter");
-        let first = Some(editor.area(0).clone());
-        jump_to(first)();
+        jump_to(Arc::clone(&editor.blocks))();
         assert!(
             editor.area(0).lock().unwrap().is_focused(),
             "after Enter: {draft:?}"
         );
-        // Counter-test: with no block to go to (the old behaviour of a title-only page) nothing is focused.
-        jump_to(None)();
     }
 }
 
@@ -92,12 +89,12 @@ fn a_title_with_a_line_break_stays_one_heading_line() {
 fn the_title_is_not_a_block() {
     let editor = BlockEditor::new(1, "# Handbook\n\nIntro\n", "Handbook");
     assert!(editor.lead_heading());
-    assert_eq!(editor.areas.len(), 1);
+    assert_eq!(editor.count(), 1);
     assert_eq!(editor.title.text(), "Handbook");
     // Counter-test: a first heading that differs from the title stays a block.
     let other = BlockEditor::new(1, "# Einleitung\n\nIntro\n", "Handbook");
     assert!(!other.lead_heading());
-    assert_eq!(other.areas.len(), 2);
+    assert_eq!(other.count(), 2);
 }
 
 #[test]
