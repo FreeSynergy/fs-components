@@ -9,19 +9,19 @@ Contract version 0.1. `contract/hardcoded` finds hex, `Color::rgba(..)`/`Rgba::h
 | Kind | Places in blocks | Style definition values (tokens, not violations) |
 |---|---|---|
 | color | 18 | 164 |
-| spacing | 154 | 25 |
+| spacing | 152 | 25 |
 | size | 60 | 25 |
 | radius | 23 | 15 |
-| font | 43 | 30 |
-| border | 89 | 16 |
+| font | 42 | 30 |
+| border | 90 | 16 |
 | shadow | 0 | 60 |
 | opacity | 6 | 0 |
 
-Names (class and id names of production code, distinct): **630** = exception (not a class) 14, mapped 303, provisional 267, remove 46. No old name is itself a contract name: every `mapped`, `provisional` and `remove` name has to change or go; `exception` names are no class (thread names, handle ids; `contract/exceptions.toml`). Names not in the contract: 616.
+Names (class and id names of production code, distinct): **639** = MISSING 9, exception (not a class) 14, mapped 303, provisional 267, remove 46. No old name is itself a contract name: every `mapped`, `provisional` and `remove` name has to change or go; `exception` names are no class (thread names, handle ids; `contract/exceptions.toml`). Names not in the contract: 625.
 
 Colours in test code (not counted above), per crate: fs-components-fields 9, fs-components-render 1, fs-components-styles 13, fs-components-widgets 1 = 24.
 
-Compared with the figures named in ADR 0074 (205 fixed colours, 474 class and id names): **not reproduced** [open]. Colours: 18 in blocks + 164 in the style definitions (tokens) + 24 in tests; no combination of these is 205 without a counting rule that is not written down. Names: the distinct names of production code are 630; 474 matches no status group.
+Compared with the figures named in ADR 0074 (205 fixed colours, 474 class and id names): **not reproduced** [open]. Colours: 18 in blocks + 164 in the style definitions (tokens) + 24 in tests; no combination of these is 205 without a counting rule that is not written down. Names: the distinct names of production code are 639; 474 matches no status group.
 
 ## Per crate (the groups)
 
@@ -35,10 +35,10 @@ Compared with the figures named in ADR 0074 (205 fixed colours, 474 class and id
 | `fs-admin-frontend` | 0 | 0 | 0 | 3 | 11 |
 | `fs-components-calendar-grid` | 0 | 0 | 0 | 3 | 7 |
 | `fs-components-map` | 0 | 2 | 0 | 1 | 3 |
-| `fs-components-primitives` | 0 | 0 | 0 | 3 | 2 |
-| `fs-components-app` | 0 | 3 | 0 | 3 | 23 |
-| `fs-components-workbenches` | 10 | 66 | 35 | 58 | 214 |
-| `fs-components-widgets` | 8 | 83 | 24 | 88 | 327 |
+| `fs-components-primitives` | 0 | 0 | 0 | 3 | 3 |
+| `fs-components-app` | 0 | 3 | 0 | 3 | 24 |
+| `fs-components-workbenches` | 10 | 64 | 34 | 57 | 217 |
+| `fs-components-widgets` | 8 | 83 | 25 | 89 | 331 |
 
 A name used in two crates is counted in both rows, so the rows add up to more than the distinct total.
 
@@ -48,7 +48,7 @@ A name used in two crates is counted in both rows, so the rows add up to more th
 |---|---|---|---|---|---|---|
 | `fs-admin-frontend` | `view` | 0 | 0 | 0 | 3 | 11 |
 | `fs-components-app` | `menu_overlay` | 0 | 0 | 0 | 0 | 0 |
-| `fs-components-app` | `menu_view` | 0 | 2 | 0 | 0 | 7 |
+| `fs-components-app` | `menu_view` | 0 | 2 | 0 | 0 | 8 |
 | `fs-components-app` | `status_panel` | 0 | 1 | 0 | 0 | 5 |
 | `fs-components-app` | `styles` | 0 | 0 | 0 | 3 | 15 |
 | `fs-components-app` | `view` | 0 | 0 | 0 | 0 | 12 |
@@ -60,7 +60,7 @@ A name used in two crates is counted in both rows, so the rows add up to more th
 | `fs-components-map` | `(root)` | 0 | 2 | 0 | 1 | 3 |
 | `fs-components-map` | `loader` | 0 | 0 | 0 | 0 | 0 |
 | `fs-components-map` | `widget` | 0 | 0 | 0 | 0 | 3 |
-| `fs-components-primitives` | `search_field` | 0 | 0 | 0 | 3 | 2 |
+| `fs-components-primitives` | `search_field` | 0 | 0 | 0 | 3 | 3 |
 | `fs-components-render` | `offscreen` | 0 | 0 | 0 | 0 | 0 |
 | `fs-components-render` | `setup` | 0 | 0 | 0 | 0 | 0 |
 | `fs-components-styles` | `styles` | 0 | 0 | 0 | 0 | 42 |
@@ -78,6 +78,8 @@ A name used in two crates is counted in both rows, so the rows add up to more th
 | `fs-components-widgets` | `list_view` | 0 | 1 | 0 | 1 | 10 |
 | `fs-components-widgets` | `message_composer` | 0 | 0 | 1 | 3 | 9 |
 | `fs-components-widgets` | `message_list` | 0 | 0 | 1 | 2 | 23 |
+| `fs-components-widgets` | `name_dialog` | 0 | 0 | 1 | 1 | 3 |
+| `fs-components-widgets` | `page_title` | 0 | 0 | 0 | 0 | 1 |
 | `fs-components-widgets` | `participant` | 0 | 0 | 0 | 1 | 6 |
 | `fs-components-widgets` | `plan` | 8 | 66 | 5 | 48 | 78 |
 | `fs-components-widgets` | `share_dialog` | 0 | 0 | 3 | 3 | 17 |
@@ -92,4 +94,4 @@ A name used in two crates is counted in both rows, so the rows add up to more th
 | `fs-components-workbenches` | `llm_chat` | 0 | 0 | 0 | 3 | 13 |
 | `fs-components-workbenches` | `people` | 0 | 0 | 2 | 3 | 26 |
 | `fs-components-workbenches` | `tasks` | 0 | 0 | 2 | 4 | 31 |
-| `fs-components-workbenches` | `view` | 8 | 56 | 25 | 32 | 68 |
+| `fs-components-workbenches` | `view` | 8 | 54 | 24 | 31 | 71 |

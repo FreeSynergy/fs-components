@@ -67,7 +67,9 @@ def group_of(rel):
 
 
 def is_nothing(hit):
-    """A zero spacing, size, radius or border, and `opacity: 1`, set nothing: no token, no violation (the declaration is removed)."""
+    """A zero spacing, size, radius or border, `opacity: 1` and `Color::TRANSPARENT` set nothing: no token, no violation."""
+    if hit.kind == "color" and hit.value.endswith("::TRANSPARENT"):
+        return True
     m = re.match(r"-?\d+(?:\.\d+)?", hit.value)
     number = float(m.group(0)) if m else None
     return number is not None and ((hit.kind in ("spacing", "size", "radius", "border") and number == 0) or (hit.kind == "opacity" and number == 1))

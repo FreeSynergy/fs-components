@@ -17,7 +17,7 @@ NAMES = {("spacing", 1.0): "space.px", ("border", 1.0): "border.width.default", 
          ("border", 4.0): "border.width.indicator", ("opacity", 0.45): "opacity.disabled", ("opacity", 0.85): "opacity.soft",
          ("size", 4.0): "size.track", ("size", 10.0): "size.dot", ("size", 13.0): "size.glyph", ("size", 24.0): "size.gutter",
          ("size", 56.0): "size.row-tall", ("size", 60.0): "size.row-taller", ("size", 64.0): "size.field-tall", ("size", 72.0): "size.col-narrow",
-         ("size", 96.0): "size.col-s", ("size", 120.0): "size.col-m", ("size", 560.0): "size.dialog-max"}  # roles read from the places of use; all [offen]
+         ("size", 96.0): "size.col-s", ("size", 120.0): "size.col-m", ("size", 420.0): "size.dialog-narrow", ("size", 560.0): "size.dialog-max"}  # roles read from the places of use; all [offen]
 # Steps fixed by role (a line width is not a ladder): the three roles of a border. They count as new tokens.
 PINNED = {"border": ((1.0, "border.width.default"), (2.0, "border.width.strong"), (4.0, "border.width.indicator"))}
 # The ladder of the bridge (contract/umbau/TOKENS.md section 2): Blinc `--space-<k>` = xs * k (style_theme.rs, blinc_theme spacing.rs).

@@ -95,7 +95,9 @@ def literal_rows(root, rows, scales):
         classes = dict(row["classes"])
         entry = {"kind": kind, "value": value, "places": sum(classes.values()), "classes": classes}
         number = assign.number(value)
-        if kind == "color":
+        if kind == "color" and value.endswith("::TRANSPARENT"):
+            entry.update(token=[], dev=0, status="none")  # sets no colour (umbau.is_nothing)
+        elif kind == "color":
             tok, near, dist = color_map(root, value)
             role = value in ROLE_COLORS
             entry.update(token=tok, nearest=near, distance=dist, status="role" if role else "existing" if tok else "new-color", **({"dev": dist, "deliberate": True} if role else {}))

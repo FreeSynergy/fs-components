@@ -1,6 +1,6 @@
 # Plan: order of the groups for the conversion (ADR 0074)
 
-Written by hand from `START.md` and `ZUORDNUNG.md` (numbers from `start.json`, command in `START.md`). Nothing here is converted yet. What is not proven is marked **[open]**.
+Written by hand from `START.md` (state 2026-11-14, on main v0.0.17, see `STAND.md`) and `ZUORDNUNG.md` (numbers from `start.json`, command in `START.md`). Nothing here is converted yet. What is not proven is marked **[open]**.
 
 ## 1. What decides the order
 
@@ -15,25 +15,27 @@ Numbers: C colours, Sp spacing, Sz size, O other fixed (radius, font, border, sh
 
 | # | Group (crate / module) | C | Sp | Sz | O | N | Risk | Notes |
 |---|---|---|---|---|---|---|---|---|
-| 0 | token files and `fs-components-styles` | 2 | 19 | 8 | 25 | 42 | high (every block reads it) | The values here ARE the styles (`styles/craft.rs` ... 353 values, excluded from the count). The counted places are in `styles/craft_sheet.rs` (a CSS sheet of the Craft style). Work: decide the gap list, write the DTCG files from the definitions, move `craft_sheet.rs` values to tokens. Whether `craft_sheet.rs` counts as "block" or as "style" is **[open]**. |
-| 1 | `fs-components-render` | 0 | 0 | 0 | 0 | 0 | none | Nothing to convert (its two names are exceptions). Used as the picture tool, see section 4. |
-| 2 | `fs-components-charts` | 0 | 0 | 0 | 1 | 0 | low | One `opacity 1.0` in `src/layout/line.rs:202`. Whether the colours of a drawing are content (ADR 0074, section 2: "Der Inhalt gehört dem Inhalt") is **[open]**. |
-| 3 | `fs-components-kanban` | 0 | 0 | 0 | 1 | 3 | low | `board`, `board-column` blocks. |
-| 4 | `fs-components-primitives` | 0 | 0 | 0 | 3 | 2 | low | `search_field` (`searchbox`). |
-| 5 | `fs-components-map` | 0 | 2 | 0 | 1 | 3 | low | Tiles are drawn, not styled (contract block `map`: attribution and controls). |
-| 6 | `fs-components-fields` | 0 | 0 | 1 | 1 | 5 | low | `form-field`, `textbox`. Typing and caret depend on a class with the font (`DESIGN.md`, search-field note): renaming a class can break the caret; the tests `font_class.rs` and the typing test cover it. |
+| 0 | token files and `fs-components-styles` | 0 | 0 | 0 | 0 | 42 | high (every block reads it) | The values here ARE the styles (`styles/craft.rs` ... excluded from the count; `craft_sheet.rs` is listed in `[fixed-values]`, so it counts 0). Work: write the DTCG files from the definitions, add the 18 new tokens (`TOKENS.md`). |
+| 1 | `fs-components-render` | 0 | 0 | 0 | 0 | 0 | none | Nothing to convert. Used as the picture tool, see section 4. **Group 1 = 0 (measured 2026-11-14).** |
+| 2 | `fs-components-charts` | 0 | 0 | 0 | 0 | 0 | none | No fixed value left in the count (the earlier `opacity 1.0` sets nothing). Colours of a drawing: content, **[open]**. |
+| 3 | `fs-components-kanban` | 0 | 0 | 0 | 1 | 3 | low | `board`, `board-column`. |
+| 4 | `fs-components-primitives` | 0 | 0 | 0 | 3 | 3 | low | `search_field`; `radius.control` instead of 6 (deliberate picture change). |
+| 5 | `fs-components-map` | 0 | 2 | 0 | 1 | 3 | low | Tiles are drawn, not styled. |
+| 6 | `fs-components-fields` | 0 | 0 | 0 | 1 | 5 | low | `form-field`, `textbox`. Caret depends on a class with the font (`DESIGN.md`): `font_class.rs` and the typing test cover it. |
 | 7 | `fs-components-calendar-grid` | 0 | 0 | 0 | 3 | 7 | low | `calendar-grid`. |
 | 8 | `fs-components-timeline` | 0 | 0 | 1 | 0 | 10 | low | `timeline`. |
-| 9 | `fs-admin-frontend` | 0 | 0 | 6 | 3 | 11 | medium | A Frontend (admin, ADR 0066); only sizes in `src/view`. |
-| 10 | `fs-components-app` | 0 | 3 | 2 | 3 | 23 | medium to high | `app-window`, `menubar`, `menu`, `status`; all programs. Tests draw it (`menu_picture.rs`, `picture.rs`, `own_bar.rs`). |
-| 11 | `fs-components-widgets`, wave A: modules without colours and with at most 9 fixed values | see below | | | | | low to medium | Per module numbers in `START.md` ("Per module"): avatar_group, tree_view, breadcrumb, badge, participant, task_card, lightbox, sortable_list, transfer_list, file_preview, list_view, message_composer, file_tile, agent_tree, share_dialog, text_view, message_list, tool_call. Together 0 colours, 3 spacing, 20 sizes, 31 other; 190 names (the bulk). Do one module per run. |
-| 12 | `fs-components-widgets`, wave B | 8 | 14 | 6 | 15 | 59 | medium | `icon_export` (1 colour) and `icon_kind` (7 colours, 4 other): drawn file icons with their own colours, a "picture with colours of its own" (`DESIGN.md`, icons) - content or style is **[open]**. `craft` (6 spacing, 3 size, 30 names) and `calendar_view` (8 spacing, 3 size, 11 other, 29 names). |
-| 13 | `fs-components-widgets/plan` | 8 | 66 | 9 | 48 | 78 | high | The plan widgets (`.fs-plan-*`, a reference frontend, DESIGN.md "v0.0.13 - plan widgets"): 151 fixed values and 78 names in one module, most of the unmapped gap values (`space.6`, `space.10`, ...). Convert last of the widgets and split by file (`styles.rs` first, it holds the CSS). |
-| 14 | `fs-components-workbenches`, wave A: `llm_chat`, `calendar`, `people`, `tasks` | 0 | 0 | 21 | 14 | 94 | medium | Sizes in CSS and Rust; names are the bulk. |
-| 15 | `fs-components-workbenches/file_manager` | 2 | 10 | 9 | 12 | 52 | medium | Colours `#e3e3e3`, `#f7f7f8`. |
-| 16 | `fs-components-workbenches/view` (wiki frontends: Notion, Confluence styles) | 8 | 56 | 49 | 32 | 68 | high | 1:1 rebuilds of references (ADR 0074, section 4: stay local, never published). 153 fixed values. Whether their look is to survive as an own style (Calm/Office) or is replaced is **[open]** and decides whether the pixel comparison applies here at all. |
+| 9 | `fs-admin-frontend` | 0 | 0 | 0 | 3 | 11 | low to medium | A Frontend (admin, ADR 0066); only borders in `src/view`. |
+| 10 | `fs-components-app` | 0 | 3 | 0 | 3 | 24 | medium to high | `app-window`, `menubar`, `menu`, `status`; all programs. Tests: `menu_picture.rs`, `picture.rs`, `own_bar.rs`. |
+| 11 | `fs-components-widgets`, wave A: 20 modules (all except `craft`, `calendar_view`, `plan`) | 0 | 3 | 15 | 30 | 194 | low to medium | One module per run (numbers per module in `START.md`). Includes the new `name_dialog` (420 px, `size.dialog-narrow`) and `page_title`. 48 fixed values; the names are the bulk. |
+| 12 | `fs-components-widgets`: `craft`, `calendar_view` | 0 | 14 | 5 | 11 | 59 | medium | `craft` (6 spacing, 2 size, 30 names), `calendar_view` (8 spacing, 3 size, 11 other, 29 names). The drawn file icons (`icon_kind`, `icon_export`) are in `[fixed-values]` and no longer counted. |
+| 13 | `fs-components-widgets/plan` | 8 | 66 | 5 | 48 | 78 | high | The plan widgets (reference frontend): 127 fixed values, most of the values without a token. Split by file, `styles.rs` first. |
+| 14 | `fs-components-workbenches`, wave A: `llm_chat`, `calendar`, `people`, `tasks` | 0 | 0 | 6 | 14 | 94 | medium | 20 fixed values; names are the bulk. |
+| 15 | `fs-components-workbenches/file_manager` | 2 | 10 | 4 | 12 | 52 | medium | Colours `#e3e3e3` and `#f7f7f8` become role tokens (deliberate picture change). 28 fixed values. |
+| 16 | `fs-components-workbenches/view` (wiki frontends) | 8 | 54 | 24 | 31 | 71 | high | 1:1 rebuilds of references. 117 fixed values. Whether the look survives as an own style is **[open]**. |
 
-Totals to reach: 28 colours, 173 spacings, 132 sizes, 193 other fixed values in blocks; 616 names to change or remove (`remove`: 46) (`START.md`).
+Effort (fixed values + names, state 2026-11-14, see `STAND.md`): groups 1-10 are small (each at most 6 fixed values and 24 names, together 21 fixed values and 66 names); group 11 is the first large one (48 + 194); group 13 and 16 are the two big ones (127 and 117 fixed values).
+
+Totals to reach (2026-11-14, after v0.0.17): 18 colours, 152 spacings, 60 sizes, 162 other fixed values in blocks (392 together); 625 names not in the contract, 46 of them `remove` (`START.md`).
 
 ## 3. Per group: what to do, what is checked
 
