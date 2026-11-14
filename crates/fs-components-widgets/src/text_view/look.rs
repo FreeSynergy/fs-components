@@ -7,7 +7,7 @@ use blinc_core::Color;
 use blinc_theme::{ColorToken, ThemeState};
 
 /// Colours and sizes of the current theme, as the text view needs them.
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub(super) struct Look {
     pub text: Color,
     pub link: Color,
@@ -16,6 +16,8 @@ pub(super) struct Look {
     pub heading: [f32; 6],
     /// Line height as a MULTIPLIER of the font size (Blinc reads `line_height` so, never as pixels); 0 = the engine's own.
     pub line: f32,
+    /// Checkboxes: counted in document order, clickable when a handler is given.
+    pub tasks: Option<std::sync::Arc<super::task::Tasks>>,
 }
 
 impl Look {
@@ -37,6 +39,7 @@ impl Look {
                 t.text_base,
             ],
             line: 0.0,
+            tasks: None,
         }
     }
 

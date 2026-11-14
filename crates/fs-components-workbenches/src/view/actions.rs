@@ -32,6 +32,8 @@ pub(crate) struct Actions {
     pub toggle: Arc<dyn Fn(&str) + Send + Sync>,
     /// Open the block with this index for editing (Notion layout).
     pub block: Arc<dyn Fn(usize) + Send + Sync>,
+    /// Tick (or untick) checkbox number `.0` in the reading view: the state it should have is `.1`.
+    pub task: Arc<dyn Fn(usize, bool) + Send + Sync>,
 }
 
 impl Actions {
@@ -50,6 +52,7 @@ impl Actions {
             discard: Arc::new(|| {}),
             toggle: Arc::new(|_| {}),
             block: Arc::new(|_| {}),
+            task: Arc::new(|_, _| {}),
         }
     }
 }

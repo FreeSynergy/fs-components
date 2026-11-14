@@ -38,6 +38,8 @@ pub struct Labels {
     pub no_changes: String,
     /// `{}` = the reason.
     pub not_saved: String,
+    /// Shown with the checkboxes of a page that may not be changed (they are locked); the program's words, empty shows nothing.
+    pub tasks_locked: String,
     /// `{}` = the reason.
     pub cannot_edit: String,
     /// `{}` = the reason.
@@ -93,6 +95,7 @@ impl Default for Labels {
             saved: s("Saved."),
             no_changes: s("Nothing was changed."),
             not_saved: s("Not saved: {}"),
+            tasks_locked: String::new(),
             cannot_edit: s("Cannot edit this: {}"),
             not_exported: s("Not exported: {}"),
             overwrite_confirm: s("{} Press Export again to replace it."),

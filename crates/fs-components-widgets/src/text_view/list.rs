@@ -21,25 +21,24 @@ pub(super) fn list(
 ) -> Div {
     let mut column = div().class("fs-tv-block").flex_col();
     for (i, item) in items.iter().enumerate() {
-        let marker = match (item.task, ordered) {
-            (Some(true), _) => "\u{2611}".to_string(),
-            (Some(false), _) => "\u{2610}".to_string(),
-            (None, true) => format!("{}.", start + i as u64),
-            (None, false) => "\u{2022}".to_string(),
+        let marker = if let Some(done) = item.task {
+            super::task::marker(look, done, look.base)
+        } else {
+            let mark = if ordered {
+                format!("{}.", start + i as u64)
+            } else {
+                "\u{2022}".to_string()
+            };
+            div()
+                .class("fs-tv-marker")
+                .child(text(mark).size(look.base))
         };
         column = column.child(
-            div()
-                .class("fs-tv-item")
-                .child(
-                    div()
-                        .class("fs-tv-marker")
-                        .child(text(marker).size(look.base)),
-                )
-                .child(
-                    blocks(&item.blocks, look, on_link, depth)
-                        .flex_grow()
-                        .w(0.0),
-                ),
+            div().class("fs-tv-item").child(marker).child(
+                blocks(&item.blocks, look, on_link, depth)
+                    .flex_grow()
+                    .w(0.0),
+            ),
         );
     }
     column

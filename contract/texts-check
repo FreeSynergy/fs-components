@@ -72,6 +72,15 @@ def variables(message):
     return set(VARIABLE.findall(message)) - set(LOCAL.findall(message))
 
 
+COUNT_VARIABLES = {"n", "count", "number", "total", "amount", "num"}
+
+
+def counts_without_plural(message):
+    """A message that talks about a number (`$count`, `$n` ...) but has no `.match`: "1 pages" is wrong in every language
+    that has a singular. The exact proof is a render of n = 0, 1, 2 (`fs_components_mf2::check_counts`)."""
+    return bool(variables(message) & COUNT_VARIABLES) and ".match" not in message
+
+
 def check_mf2(root, same):
     problems = []
     for base, dirs, names in os.walk(root):
@@ -90,6 +99,8 @@ def check_mf2(root, same):
             for id_, (n, message) in entries.items():
                 if not message:
                     problems.append(f"{rel}/{lang}.mf2:{n}: {id_} has no message")
+                elif counts_without_plural(message):
+                    problems.append(f"{rel}/{lang}.mf2:{n}: {id_} shows a number without a plural selector (.match)")
             if lang == "en":
                 continue
             for id_, (n, message) in table["en"].items():
@@ -158,8 +169,8 @@ def load_exceptions(root):
 
 def selftest():
     """Mutation check: a good tree passes, and each bad file is found by exactly the rule that is meant."""
-    ok = {"en.mf2": "a = Reload {$n}\nb =\n  .input {$n :number}\n  .match $n one {{{$n} x}} * {{{$n} xs}}\n",
-          "de.mf2": "a = Neu laden {$n}\nb =\n  .input {$n :number}\n  .match $n one {{{$n} y}} * {{{$n} ys}}\n"}
+    ok = {"en.mf2": "a = Reload {$name}\nb =\n  .input {$n :number}\n  .match $n one {{{$n} x}} * {{{$n} xs}}\n",
+          "de.mf2": "a = Neu laden {$name}\nb =\n  .input {$n :number}\n  .match $n one {{{$n} y}} * {{{$n} ys}}\n"}
     rs = lambda src: {"crates/x/src/f.rs": src}
     cases = {
         "good": ({"crates/x/texts/" + k: v for k, v in ok.items()}, (0, 0, 0)),
@@ -175,7 +186,11 @@ def selftest():
         "no_en": ({"t/de.mf2": "a = Neu laden\n"}, (0, 0, 1)),
         "id_only_en": ({"t/en.mf2": "a = A\nb = B\n", "t/de.mf2": "a = A\n"}, (0, 0, 1)),
         "id_only_de": ({"t/en.mf2": "a = A\n", "t/de.mf2": "a = A\nb = B\n"}, (0, 0, 1)),
-        "variable": ({"t/en.mf2": "a = Hello {$n}\n", "t/de.mf2": "a = Hallo {$m}\n"}, (0, 0, 1)),
+        "variable": ({"t/en.mf2": "a = Hello {$name}\n", "t/de.mf2": "a = Hallo {$other}\n"}, (0, 0, 1)),
+        # "1 pages": a count in a message without `.match` is found in each language file (finding W3, 2026-11-14)
+        "count_no_plural": ({"t/en.mf2": "a = {$count} pages\n", "t/de.mf2": "a = {$count} Seiten\n"}, (0, 0, 2)),
+        "count_with_plural": ({"t/en.mf2": "a =\n  .input {$count :number}\n  .match $count one {{{$count} page}} * {{{$count} pages}}\n",
+                               "t/de.mf2": "a =\n  .input {$count :number}\n  .match $count one {{{$count} Seite}} * {{{$count} Seiten}}\n"}, (0, 0, 0)),
         "same_text": ({"t/en.mf2": "a = Not translated\n", "t/de.mf2": "a = Not translated\n"}, (0, 0, 1)),
         "empty": ({"t/en.mf2": "a = A\n", "t/de.mf2": "a =\n"}, (0, 0, 1)),
     }

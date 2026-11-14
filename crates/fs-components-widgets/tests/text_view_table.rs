@@ -158,3 +158,99 @@ fn checkboxes_show_in_lists_and_in_table_cells() {
         "a checkbox cell is drawn as a box, not as the letters [ ]"
     );
 }
+
+/// The table of the user test of 2026-11-14 (fs-wiki 0.0.11 picture): the third column is centred.
+fn user_table() -> Vec<Block> {
+    vec![Block::Table {
+        align: vec![Align::None, Align::None, Align::Center],
+        rows: vec![
+            row(&["Name", "Test", "Beschreibung"]),
+            row(&["Kal", "- [ ] Test?", "Mal sehen"]),
+            row(&[
+                "ölasdkjf öldsakj fölksjd",
+                "ölasdkjfö alsdkfö asdlfk",
+                "öasdkjhföasldjfk aösdlfkjhaöslfj khaösdl fkh",
+            ]),
+        ],
+    }]
+}
+
+/// Runs of consecutive rows holding dark ink: the lines of text.
+fn lines(img: &image::RgbaImage) -> Vec<(u32, u32)> {
+    let mut out: Vec<(u32, u32)> = Vec::new();
+    for y in 0..img.height() {
+        if !(0..img.width()).any(|x| dark(*img.get_pixel(x, y))) {
+            continue;
+        }
+        match out.last_mut() {
+            Some(r) if r.1 + 1 == y => r.1 = y,
+            _ => out.push((y, y)),
+        }
+    }
+    out
+}
+
+#[test]
+fn a_wide_enough_column_does_not_break_a_word_or_a_short_cell() {
+    let _g = serial();
+    if !has_fonts() {
+        eprintln!("skipped: no fonts");
+        return;
+    }
+    // Wide: header and two rows are three lines, none of them broken ("Beschreibung", "Mal sehen").
+    let wide = draw(
+        TextView::new(user_table()).reading().build(),
+        890,
+        160,
+        "tabelle-nutzer-breit.png",
+    );
+    assert_eq!(
+        lines(&wide).len(),
+        3,
+        "one line per row: {:?}",
+        lines(&wide)
+    );
+    // Counter-test: in a narrow window the long cells wrap, at word boundaries (more lines, none of them cut a word: the
+    // header "Beschreibung" is one word and stays one line when it fits its column).
+    let narrow = draw(
+        TextView::new(user_table()).reading().build(),
+        330,
+        260,
+        "tabelle-nutzer-schmal.png",
+    );
+    assert!(
+        lines(&narrow).len() > 3,
+        "a narrow window wraps: {:?}",
+        lines(&narrow)
+    );
+}
+
+#[test]
+fn the_header_row_is_inside_the_frame_of_the_table() {
+    let _g = serial();
+    if !has_fonts() {
+        eprintln!("skipped: no fonts");
+        return;
+    }
+    let img = draw(
+        TextView::new(user_table()).reading().build(),
+        890,
+        160,
+        "tabelle-kopf-im-rahmen.png",
+    );
+    let first_text = lines(&img)[0].0;
+    // The frame's top edge is a long light-grey line above the header text.
+    let edge = |y: u32| {
+        (0..img.width())
+            .filter(|&x| {
+                let p = img.get_pixel(x, y);
+                p[0] < 245 && p[0] > 150 && p[0].abs_diff(p[1]) < 8
+            })
+            .count()
+            > 600
+    };
+    assert!(
+        (0..first_text).any(edge),
+        "no frame edge above the header text (text starts at row {first_text})"
+    );
+}

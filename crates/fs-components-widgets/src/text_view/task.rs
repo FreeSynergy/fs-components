@@ -6,7 +6,75 @@
 //! with `[ ]`, `[x]` or `[X]` (alone or followed by a space and more text) as a checkbox. The text stays as written:
 //! only the drawing differs, and saving writes the cell back unchanged.
 
-use crate::text::{Inline, Mark};
+use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
+
+use blinc_layout::div::{Div, div};
+use blinc_layout::text;
+
+use super::look::Look;
+use crate::text::{Block, Inline, Mark};
+
+/// Called with the number of a checkbox (in document order: list tasks and table cells, row by row, depth first) and the
+/// state it should have after the click.
+pub type TaskHandler = Arc<dyn Fn(usize, bool) + Send + Sync>;
+
+/// The checkboxes of one view: where the count starts, who hears a click, whether clicks are allowed.
+pub(super) struct Tasks {
+    next: AtomicUsize,
+    handler: Option<TaskHandler>,
+}
+
+impl Tasks {
+    /// Counting from `first`; `handler` none means the boxes are shown and locked.
+    pub fn new(first: usize, handler: Option<TaskHandler>) -> Self {
+        Self {
+            next: AtomicUsize::new(first),
+            handler,
+        }
+    }
+}
+
+/// The box of a task item or cell: its glyph, and when the view has tasks, its number as id and its click.
+pub(super) fn marker(look: &Look, done: bool, size: f32) -> Div {
+    let glyph = if done { "\u{2611}" } else { "\u{2610}" };
+    let mut mark = div()
+        .class("fs-tv-marker")
+        .child(text(glyph).size(size).no_cursor());
+    let Some(tasks) = &look.tasks else {
+        return mark;
+    };
+    let index = tasks.next.fetch_add(1, Ordering::Relaxed);
+    mark = mark.id(format!("fs-tv-task-{index}"));
+    match &tasks.handler {
+        Some(handler) => {
+            let handler = Arc::clone(handler);
+            mark.class("fs-tv-task-on")
+                .on_click(move |_| handler(index, !done))
+        }
+        None => mark.class("fs-tv-task-locked"),
+    }
+}
+
+/// How many checkboxes the blocks hold: list tasks and table cells that start with `[ ]` or `[x]`.
+pub fn count_tasks(blocks: &[Block]) -> usize {
+    blocks
+        .iter()
+        .map(|b| match b {
+            Block::List { items, .. } => items
+                .iter()
+                .map(|i| usize::from(i.task.is_some()) + count_tasks(&i.blocks))
+                .sum(),
+            Block::Quote(inner) => count_tasks(inner),
+            Block::Table { rows, .. } => rows
+                .iter()
+                .flatten()
+                .filter(|c| task_cell(c).is_some())
+                .count(),
+            _ => 0,
+        })
+        .sum()
+}
 
 /// `Some((done, the cell after the checkbox))` for a checkbox cell, else `None`. The marks of the rest move along.
 pub(super) fn task_cell(cell: &Inline) -> Option<(bool, Inline)> {

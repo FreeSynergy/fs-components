@@ -17,6 +17,6 @@ mod date;
 mod source;
 mod texts;
 
-pub use check::check_pairs;
+pub use check::{check_counts, check_pairs};
 pub use source::Source;
 pub use texts::Mf2Texts;

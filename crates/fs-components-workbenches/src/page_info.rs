@@ -122,8 +122,10 @@ pub struct WikiLabels {
     pub block_hint: String,
     /// Shown in the empty title field of the Notion frontend (made from `TitleLabels::for_locale`).
     pub title_hint: String,
-    /// `{}` = how many pages the tree holds.
+    /// `{}` = how many pages the tree holds, for every number but one ("{} pages").
     pub page_count: String,
+    /// The same for exactly one page ("{} page"); a program with a language that has more forms fills `page_count_for`.
+    pub page_count_one: String,
     /// The words of the block menu ("/" in a block; made from `SlashLabels::for_locale`).
     pub slash: fs_components_widgets::SlashLabels,
 }
@@ -148,7 +150,21 @@ impl Default for WikiLabels {
             block_hint: s("Type, or press / for commands"),
             title_hint: fs_components_widgets::TitleLabels::default().placeholder,
             page_count: s("{} pages"),
+            page_count_one: s("{} page"),
             slash: fs_components_widgets::SlashLabels::default(),
         }
+    }
+}
+
+impl WikiLabels {
+    /// The sentence that says how many pages there are: the singular for one, the other form for every other number.
+    #[must_use]
+    pub fn pages_said(&self, n: usize) -> String {
+        let template = if n == 1 {
+            &self.page_count_one
+        } else {
+            &self.page_count
+        };
+        template.replacen("{}", &n.to_string(), 1)
     }
 }

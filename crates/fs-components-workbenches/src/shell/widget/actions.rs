@@ -28,6 +28,7 @@ impl ReaderWidget {
             Arc::clone(&self.reader),
             Arc::clone(&self.reader),
         );
+        let task_r = Arc::clone(&self.reader);
         let tree_t = Arc::clone(&self.tree);
         Actions {
             open: Arc::new(move |path| {
@@ -45,6 +46,11 @@ impl ReaderWidget {
             block: Arc::new(move |_| {
                 locked(&block_r).begin_edit();
                 bump(id, "page");
+            }),
+            task: Arc::new(move |index, done| {
+                locked(&task_r).toggle_task(index, done);
+                bump(id, "page");
+                bump(id, "side");
             }),
             follow: Arc::new(move |href| {
                 let outcome = locked(&follow_r).follow(href);

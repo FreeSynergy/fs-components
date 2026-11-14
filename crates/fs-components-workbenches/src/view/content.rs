@@ -13,6 +13,7 @@ use fs_components_widgets::{LinkHandler, TextView};
 
 use super::actions::Actions;
 use super::editor::editor;
+use super::tasks::{locked_note, with_tasks};
 use crate::reader::{Reader, Shown};
 
 /// The area right of the sidebar.
@@ -47,10 +48,15 @@ pub(crate) fn content(
             let follow = actions.follow.clone();
             let handler: LinkHandler = std::sync::Arc::new(move |href| follow(href));
             page.child(
-                TextView::new(document.blocks.clone())
-                    .on_link(handler)
-                    .build(),
+                with_tasks(
+                    TextView::new(document.blocks.clone()).on_link(handler),
+                    reader,
+                    actions,
+                    0,
+                )
+                .build(),
             )
+            .child(locked_note(reader, &document.blocks))
         }
         Shown::Failed { reason, .. } => {
             page.child(div().class("fs-rd-failed").child(text(reason.clone())))

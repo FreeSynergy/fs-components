@@ -47,7 +47,9 @@ pub(super) fn aligned(
     on_link: Option<&LinkHandler>,
     align: Align,
 ) -> Div {
-    if uses_flow(inline) {
+    // A cell goes through the flow too: its runs wrap inside the box the column gives them (a rich text in a cell was sized
+    // by its own measure and broke a short word at its last letter).
+    if face.cell || uses_flow(inline) {
         let row = flow(inline, face, look, on_link);
         return match align {
             Align::Center => row.justify_center(),

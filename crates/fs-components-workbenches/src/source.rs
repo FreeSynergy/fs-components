@@ -130,6 +130,28 @@ pub trait DocumentSource: Send + Sync {
     fn save(&self, _path: &str, _text: &str, _revision: Option<&str>) -> Result<(), SourceError> {
         Err(SourceError::unsupported("this source cannot be edited"))
     }
+    /// Can the checkboxes of the document at `path` be ticked in the reading view? By default as `can_edit`: ticking is
+    /// an ordinary change of the page.
+    fn can_tick(&self, path: &str) -> bool {
+        self.can_edit(path)
+    }
+    /// Set checkbox number `index` of the document at `path` to `done` and store it as an ordinary change (a program
+    /// with a history makes it a version that can be undone; every other byte of the text stays). The boxes are numbered
+    /// in document order: task items of lists and table cells that start with `[ ]` or `[x]`, row by row, depth first
+    /// (`fs_components_widgets::count_tasks`). `revision` is the one of the document shown; if the document has changed
+    /// since, answer [`ErrorKind::Conflict`](crate::ErrorKind::Conflict) and change nothing.
+    ///
+    /// # Errors
+    /// [`SourceError`] with the reason; a source that cannot do this says `Unsupported`.
+    fn set_task(
+        &self,
+        _path: &str,
+        _index: usize,
+        _done: bool,
+        _revision: Option<&str>,
+    ) -> Result<(), SourceError> {
+        Err(SourceError::unsupported("this source cannot be edited"))
+    }
     /// Can the document at `path` be exported (written out)? Without it there is no Export button.
     fn can_export(&self, _path: &str) -> bool {
         false

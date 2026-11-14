@@ -80,3 +80,41 @@ pub fn check_pairs(sources: &[Source]) -> Vec<String> {
     }
     problems
 }
+
+/// The problems of a message that shows a number (`count_variable`, an integer): rendered for 0, 1 and 2 in `locale`, the
+/// messages for 1 and 2 must both hold the number and must not be the same sentence (`1 pages` and `2 pages` differ in a
+/// language with a singular only through a plural selector), and none may be empty or missing. Empty means sound.
+pub fn check_counts(
+    sources: &[Source],
+    locale: &Locale,
+    id: &str,
+    count_variable: &str,
+) -> Vec<String> {
+    use fs_components_words::{Args, TextId, Words};
+    let texts = crate::Mf2Texts::new(sources, locale);
+    let mut said = Vec::new();
+    let mut problems = Vec::new();
+    for n in 0_u64..=2 {
+        let args = Args::new().count(count_variable, n);
+        let text = texts.say(&TextId::new(id), &args).text().to_owned();
+        if text.trim().is_empty() || text == id {
+            problems.push(format!("{id} for {n} in {locale}: no text ({text:?})"));
+        }
+        said.push(text);
+    }
+    if said.len() == 3 && !said[1].contains('1') {
+        problems.push(format!(
+            "{id} for 1 in {locale}: the number is missing ({:?})",
+            said[1]
+        ));
+    }
+    // The same sentence with the number taken out: for 1 and 2 it must differ (a singular and a plural).
+    let bare = |t: &str, n: &str| t.replace(n, "#");
+    if said.len() == 3 && bare(&said[1], "1") == bare(&said[2], "2") {
+        problems.push(format!(
+            "{id} in {locale}: one and two are said alike ({:?} / {:?})",
+            said[1], said[2]
+        ));
+    }
+    problems
+}

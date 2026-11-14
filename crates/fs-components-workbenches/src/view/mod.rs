@@ -11,6 +11,7 @@ mod results;
 mod sidebar;
 mod source_editor;
 mod styles;
+mod tasks;
 mod tree_build;
 mod wiki;
 
@@ -22,6 +23,7 @@ pub(crate) use results::results as results_list;
 pub(crate) use sidebar::{search_box, side_body};
 pub use source_editor::SourceEditor;
 pub(crate) use styles::styles;
+pub(crate) use tasks::{locked_note, with_tasks};
 pub(crate) use tree_build::tree_nodes;
 pub use wiki::BlockEditor;
 pub use wiki::Layout;

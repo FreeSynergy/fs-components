@@ -8,7 +8,7 @@ use blinc_layout::text;
 use blinc_layout::widgets::scroll::{Scroll, SharedScrollPhysics, scroll};
 use blinc_layout::widgets::text_area::SharedTextAreaState;
 use fs_components_widgets::icon::{Glyph, Tone, icon};
-use fs_components_widgets::{LinkHandler, TextView};
+use fs_components_widgets::{Document, LinkHandler, TextView};
 
 use super::head::{crumbs, lang_switch, notice_band, state_chip};
 use super::outline::{body, history_panel, outline_panel};
@@ -16,7 +16,7 @@ use super::rows::{Look, tree_scroll};
 use super::tree::PageTree;
 use crate::page_info::WikiLabels;
 use crate::reader::{Reader, Shown};
-use crate::view::{Actions, editor, editor_rows, results_list};
+use crate::view::{Actions, editor, editor_rows, locked_note, results_list, with_tasks};
 
 /// The whole window: bar on top, the two areas below.
 pub(crate) fn confluence(
@@ -73,9 +73,7 @@ pub(crate) fn side(
     labels: &WikiLabels,
     actions: &Actions,
 ) -> Div {
-    let count = labels
-        .page_count
-        .replacen("{}", &tree.pages().to_string(), 1);
+    let count = labels.pages_said(tree.pages());
     let head = div()
         .class("fs-wk-a-space")
         .flex_col()
@@ -157,26 +155,7 @@ pub(crate) fn main(
             editor_rows(height),
         ));
     } else if let Some(document) = document {
-        let follow = actions.follow.clone();
-        let handler: LinkHandler = std::sync::Arc::new(move |href| follow(href));
-        let meta = div()
-            .class("fs-wk-a-meta")
-            .flex_row()
-            .items_center()
-            .child(lang_switch(&info, labels, actions))
-            .child(state_chip(&info, labels));
-        page = page
-            .child(text(&title).class("fs-wk-a-title").no_cursor())
-            .child(meta);
-        if let Some(band) = notice_band(&info) {
-            page = page.child(band);
-        }
-        page = page.child(
-            TextView::new(body(document))
-                .reading()
-                .on_link(handler)
-                .build(),
-        );
+        page = reading(page, reader, labels, actions, document, &title);
     } else if let Shown::Failed { reason, .. } = reader.shown() {
         page = page.child(div().class("fs-rd-failed").child(text(reason.clone())));
     } else {
@@ -214,4 +193,41 @@ pub(crate) fn main(
         .h_full()
         .child(middle)
         .child(right)
+}
+
+/// The page in the reading view: title, language and state, notice, the text with its checkboxes.
+fn reading(
+    page: Div,
+    reader: &Reader,
+    labels: &WikiLabels,
+    actions: &Actions,
+    document: &Document,
+    title: &str,
+) -> Div {
+    let info = reader.page_info();
+    let follow = actions.follow.clone();
+    let handler: LinkHandler = std::sync::Arc::new(move |href| follow(href));
+    let meta = div()
+        .class("fs-wk-a-meta")
+        .flex_row()
+        .items_center()
+        .child(lang_switch(&info, labels, actions))
+        .child(state_chip(&info, labels));
+    let mut page = page
+        .child(text(title).class("fs-wk-a-title").no_cursor())
+        .child(meta);
+    if let Some(band) = notice_band(&info) {
+        page = page.child(band);
+    }
+    let blocks = body(document);
+    page.child(
+        with_tasks(
+            TextView::new(blocks.clone()).reading().on_link(handler),
+            reader,
+            actions,
+            0,
+        )
+        .build(),
+    )
+    .child(locked_note(reader, &blocks))
 }

@@ -7,7 +7,7 @@ use blinc_layout::prelude::ElementBuilder;
 use blinc_layout::text;
 use blinc_layout::widgets::scroll::{Scroll, SharedScrollPhysics, scroll};
 use fs_components_widgets::icon::{Glyph, Tone, icon};
-use fs_components_widgets::{Block, LinkHandler, TextView};
+use fs_components_widgets::{Block, LinkHandler, TextView, count_tasks};
 
 use super::blocks::BlockEditor;
 use super::confluence::canonical;
@@ -17,7 +17,7 @@ use super::rows::{Look, tree_scroll};
 use super::tree::PageTree;
 use crate::page_info::WikiLabels;
 use crate::reader::{Reader, Shown};
-use crate::view::{Actions, results_list};
+use crate::view::{Actions, locked_note, results_list, with_tasks};
 
 /// The window: sidebar left, the page right.
 pub(crate) fn notion(
@@ -150,7 +150,10 @@ pub(crate) fn main(
         if let (Some(_), Some(blocks)) = (reader.editing(), blocks) {
             page = page.child(blocks.view(labels, report));
         } else {
-            page = page.child(block_list(&body(document), actions));
+            let shown = body(document);
+            page = page
+                .child(block_list(&shown, reader, actions))
+                .child(locked_note(reader, &shown));
         }
     } else if let Shown::Failed { reason, .. } = reader.shown() {
         page = page.child(div().class("fs-rd-failed").child(text(reason.clone())));
@@ -197,24 +200,42 @@ fn page_icon(emoji: Option<&str>) -> Div {
     }
 }
 
-/// The blocks of a page, one element each; a click on a block starts editing there.
-fn block_list(blocks: &[Block], actions: &Actions) -> Div {
+/// The blocks of a page, one element each; a click on a block starts editing there, a click on a checkbox ticks it
+/// (and starts no edit: the box says so through `ticked`, which the block's own click reads and clears).
+fn block_list(blocks: &[Block], reader: &Reader, actions: &Actions) -> Div {
     let mut column = div().flex_col().w_full().gap(1.0);
+    let ticked = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+    let mut first = 0;
     for (i, block) in blocks.iter().enumerate() {
         let edit = actions.block.clone();
         let follow = actions.follow.clone();
         let handler: LinkHandler = std::sync::Arc::new(move |href| follow(href));
+        let mut tick = actions.clone();
+        let (task, flag) = (actions.task.clone(), std::sync::Arc::clone(&ticked));
+        tick.task = std::sync::Arc::new(move |n, done| {
+            flag.store(true, std::sync::atomic::Ordering::SeqCst);
+            task(n, done);
+        });
+        let flag = std::sync::Arc::clone(&ticked);
+        let view = with_tasks(
+            TextView::new(vec![block.clone()])
+                .reading()
+                .on_link(handler),
+            reader,
+            &tick,
+            first,
+        );
+        first += count_tasks(std::slice::from_ref(block));
         column = column.child(
             div()
                 .class("fs-wk-block")
                 .w_full()
-                .on_click(move |_| edit(i))
-                .child(
-                    TextView::new(vec![block.clone()])
-                        .reading()
-                        .on_link(handler)
-                        .build(),
-                ),
+                .on_click(move |_| {
+                    if !flag.swap(false, std::sync::atomic::Ordering::SeqCst) {
+                        edit(i);
+                    }
+                })
+                .child(view.build()),
         );
     }
     column

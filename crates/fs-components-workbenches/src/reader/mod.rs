@@ -11,6 +11,7 @@ mod glyphs;
 mod model;
 mod offer;
 mod state;
+mod tasks;
 
 pub use draft::{Draft, DraftStore};
 pub use edit::Editing;
