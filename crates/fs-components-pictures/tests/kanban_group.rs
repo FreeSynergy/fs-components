@@ -12,7 +12,7 @@ use fs_components_pictures::{Group, Tolerance};
 use fs_components_styles::StyleId;
 
 fn group() -> Group {
-    Group::new("kanban", (480, 260), Tolerance::EXACT)
+    Group::new("kanban", (480, 260), Tolerance::SYSTEM_FONT_BOARD)
 }
 
 fn board(ops: Vec<Operation>) -> KanbanBoard {

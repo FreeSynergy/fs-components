@@ -3,7 +3,8 @@
 //!
 //! Tests: picture comparison against `contract/umbau/bilder/render`.
 
-use blinc_layout::div::div;
+use blinc_layout::div::{GenericFont, div};
+use blinc_layout::prelude::text;
 use fs_components_fields::Look;
 use fs_components_pictures::{Group, Tolerance};
 use fs_components_styles::StyleId;
@@ -25,10 +26,16 @@ fn the_style_sheet_reaches_the_picture() {
 
 #[test]
 fn a_line_of_text_in_the_craft_font() {
+    // The mono face the Craft style lists first is bundled with `fs-components-render`, so this picture does not
+    // depend on the fonts of the machine (the body font of a style is a system font and does).
     group().check("text_craft", "", |_, _| {
-        let look = Look::new(StyleId::Craft, false);
-        div()
-            .p(8.0)
-            .child(look.text("Craft 0123 fs", 14.0, look.palette().text))
+        let look = Look::new(StyleId::Craft, true); // light text: the picture ground is dark
+        div().p(8.0).child(
+            text("Craft 0123 fs")
+                .size(14.0)
+                .color(Look::color(look.palette().text))
+                .font_with_fallback("JetBrains Mono", GenericFont::SansSerif)
+                .no_wrap(),
+        )
     });
 }

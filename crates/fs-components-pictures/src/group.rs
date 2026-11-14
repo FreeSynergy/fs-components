@@ -66,9 +66,14 @@ impl Group {
             PathBuf::from,
         );
         target
-            .join("umbau-diff")
+            .join("pictures-diff")
             .join(self.name)
             .join(format!("{name}.png"))
+    }
+
+    fn actual_path(&self, name: &str) -> PathBuf {
+        self.diff_path(name)
+            .with_file_name(format!("{name}.actual.png"))
     }
 
     /// Draw the element of `build` on the software GPU in Craft, on the theme background, at the size of the group.
@@ -134,12 +139,15 @@ impl Group {
         if !report.within(self.tolerance) {
             let diff = self.diff_path(name);
             write_png(&diff, &diff_image(&reference, picture, self.tolerance));
+            let actual = self.actual_path(name);
+            write_png(&actual, picture);
             panic!(
-                "picture {}/{name} differs from the reference: {} (tolerance {:?}); diff picture {}",
+                "picture {}/{name} differs from the reference: {} (tolerance {:?}); diff picture {}; drawn picture {}",
                 self.name,
                 report.describe(),
                 self.tolerance,
-                diff.display()
+                diff.display(),
+                actual.display()
             );
         }
         Verdict::Equal(report)

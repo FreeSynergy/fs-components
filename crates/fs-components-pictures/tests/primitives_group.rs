@@ -7,7 +7,7 @@ use fs_components_pictures::{Group, Tolerance};
 use fs_components_primitives::{FieldSize, SEARCH_FIELD_STYLES, SearchField};
 
 fn group() -> Group {
-    Group::new("primitives", (240, 80), Tolerance::EXACT)
+    Group::new("primitives", (240, 80), Tolerance::SYSTEM_FONT_SMALL)
 }
 
 #[test]

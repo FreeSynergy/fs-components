@@ -33,11 +33,27 @@ impl Tolerance {
     ///
     /// Measured (charts group, 320x200): the same drawing with only Noto Sans or only `DejaVu` Sans installed differs from
     /// the reference by at most 621 pixels at this setting (CI runner: 3723 and 2787 pixels at EXACT); a move of 3 px
-    /// gives 1163 and more, a wrong colour or an inverted picture nearly every pixel (`tests/charts_tolerance.rs`).
+    /// gives 1163 and more, a wrong colour or an inverted picture nearly every pixel (`tests/tolerance_counter.rs`).
     pub const SYSTEM_FONT: Self = Self {
         channel: 64,
         shift: 1,
         pixels: 900,
+    };
+
+    /// A large board with much text in the system font (kanban, 480x260 = 124800 pixels): channel 96, 1 px, at most
+    /// 1600 pixels (1.3 %). Measured with one font only: at most 1076; a move of 3 px gives 2287 and more.
+    pub const SYSTEM_FONT_BOARD: Self = Self {
+        channel: 96,
+        shift: 1,
+        pixels: 1600,
+    };
+
+    /// A small picture with one line of text in the system font (search field, 240x80): channel 64, 1 px, at most 35
+    /// pixels. Measured with one font only: at most 23; a move of 3 px gives 42 and more.
+    pub const SYSTEM_FONT_SMALL: Self = Self {
+        channel: 64,
+        shift: 1,
+        pixels: 35,
     };
 }
 
