@@ -15,6 +15,7 @@ use super::head::{crumbs, lang_switch, notice_band, state_chip};
 use super::outline::{body, ticks};
 use super::rows::{Look, tree_scroll};
 use super::tree::PageTree;
+use super::widths;
 use crate::page_info::WikiLabels;
 use crate::reader::{Reader, Shown};
 use crate::view::{Actions, locked_note, results_list, with_tasks};
@@ -35,7 +36,7 @@ pub(crate) fn notion(
         .child(
             div()
                 .class("fs-wk-b-side")
-                .w(264.0)
+                .w(widths::notion(width))
                 .flex_shrink_0()
                 .flex_col()
                 .h_full()

@@ -124,36 +124,10 @@ pub struct WikiLabels {
     pub title_hint: String,
     /// `{}` = how many pages the tree holds, for every number but one ("{} pages").
     pub page_count: String,
-    /// The same for exactly one page ("{} page"); a program with a language that has more forms fills `page_count_for`.
+    /// The same for exactly one page ("{} page"); a language with more forms needs a program of its own.
     pub page_count_one: String,
     /// The words of the block menu ("/" in a block; made from `SlashLabels::for_locale`).
     pub slash: fs_components_widgets::SlashLabels,
-}
-
-impl Default for WikiLabels {
-    fn default() -> Self {
-        let s = |t: &str| t.to_string();
-        Self {
-            program: s("FreeSynergy Wiki"),
-            pages: s("Pages"),
-            filter: s("Search by title"),
-            outline: s("Outline"),
-            no_headings: s("No headings on this page."),
-            history: s("History"),
-            no_history: s("No earlier versions known."),
-            state_current: s("Current"),
-            state_outdated: s("Outdated"),
-            state_fallback: s("Other language"),
-            language: s("Language"),
-            edit: s("Edit"),
-            share: s("Share"),
-            block_hint: s("Type, or press / for commands"),
-            title_hint: fs_components_widgets::TitleLabels::default().placeholder,
-            page_count: s("{} pages"),
-            page_count_one: s("{} page"),
-            slash: fs_components_widgets::SlashLabels::default(),
-        }
-    }
 }
 
 impl WikiLabels {

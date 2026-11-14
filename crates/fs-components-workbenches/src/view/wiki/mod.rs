@@ -30,6 +30,7 @@ mod styles;
 mod tree;
 #[cfg(test)]
 mod tree_tests;
+mod widths;
 
 pub use blocks::BlockEditor;
 pub(crate) use styles::styles;

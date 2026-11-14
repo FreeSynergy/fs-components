@@ -31,6 +31,7 @@ mod view;
 pub use error::{ErrorKind, SourceError};
 pub use fs_components_editor as contract;
 pub use labels::Labels;
+pub mod words;
 pub use page_info::{LangChoice, PageInfo, PageState, RevisionRow, WikiLabels};
 pub use reader::{Draft, DraftStore, Editing, Outcome, Reader, Shown};
 pub use shell::{

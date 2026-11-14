@@ -83,7 +83,8 @@ pub use sortable_list::{Content as SortableContent, Item, Lane, SortableList};
 pub use styles::styles;
 pub use text::{Align, Block, Document, Inline, ListItem, Mark, MarkKind};
 pub use text_view::{
-    LinkHandler, TaskHandler, TextView, count_tasks, fallback_family, missing_glyphs, open_external,
+    LinkHandler, TaskHandler, TextView, cell_box, count_tasks, fallback_family, missing_glyphs,
+    open_external,
 };
 pub use tool_call::{ToolCall, ToolCallView};
 pub use transfer_list::{Transfer, TransferList};

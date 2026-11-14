@@ -71,6 +71,11 @@ pub fn frame(tree: &mut RenderTree, w: f32, h: f32) {
 
 /// The element laid out in `w` x `h`, with the stylesheet applied. No drawing.
 pub fn layout(ui: impl ElementBuilder + 'static, w: f32, h: f32) -> RenderTree {
+    layout_with(ui, w, h, "")
+}
+
+/// Like [`layout`], with `extra` rules put before the theme's (a window installs Blinc's default look of its own widgets).
+pub fn layout_with(ui: impl ElementBuilder + 'static, w: f32, h: f32, extra: &str) -> RenderTree {
     init_runtime();
     blinc_layout::init_text_measurer();
     // A window paints the theme's background; an offscreen texture would stay clear.
@@ -81,7 +86,7 @@ pub fn layout(ui: impl ElementBuilder + 'static, w: f32, h: f32) -> RenderTree {
         .child(ui);
     let mut tree = RenderTree::from_element(&page);
     let vars = blinc_theme::ThemeState::get().to_css_variable_map();
-    let mut css = String::new();
+    let mut css = String::from(extra);
     for sheet in &bundle().css_sources {
         css.push_str(sheet);
         css.push('\n');
@@ -96,6 +101,12 @@ pub fn layout(ui: impl ElementBuilder + 'static, w: f32, h: f32) -> RenderTree {
 /// Draw `ui` at `w` x `h` and return the pixels; `name` is the file name when pictures are kept.
 pub fn draw(ui: impl ElementBuilder + 'static, w: u32, h: u32, name: &str) -> RgbaImage {
     let tree = layout(ui, w as f32, h as f32);
+    draw_tree(&tree, w, h, name)
+}
+
+/// Draw `ui` with the default look of Blinc's own widgets, as a window has it (checkboxes, buttons).
+pub fn draw_window(ui: impl ElementBuilder + 'static, w: u32, h: u32, name: &str) -> RgbaImage {
+    let tree = layout_with(ui, w as f32, h as f32, blinc_layout::ua_styles::UA_STYLES);
     draw_tree(&tree, w, h, name)
 }
 

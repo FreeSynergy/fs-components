@@ -5,7 +5,7 @@
 
 mod common;
 
-use common::{draw, has_fonts, serial};
+use common::{draw_window as draw, has_fonts, serial};
 use fs_components_widgets::TextView;
 use fs_components_widgets::text::{Align, Block, Inline, ListItem};
 
@@ -132,7 +132,14 @@ fn checkboxes_show_in_lists_and_in_table_cells() {
         two.as_raw(),
         "the state of a task changes the picture"
     );
-    let cells = |a: &str, b: &str| table(&[Align::Center, Align::None, Align::None], &[a, "x", b]);
+    // All three forms of the finding: `[ ]` centred, `- [ ]` (a list marker typed in the cell) and `[ ]` at the right.
+    let cells = |a: &str, b: &str| {
+        let middle = format!("- {a}");
+        table(
+            &[Align::Center, Align::None, Align::Right],
+            &[a, &middle, b],
+        )
+    };
     let open = draw(
         TextView::new(cells("[ ]", "[ ]")).build(),
         W,

@@ -14,6 +14,7 @@ use super::head::{crumbs, lang_switch, notice_band, state_chip};
 use super::outline::{body, history_panel, outline_panel};
 use super::rows::{Look, tree_scroll};
 use super::tree::PageTree;
+use super::widths;
 use crate::page_info::WikiLabels;
 use crate::reader::{Reader, Shown};
 use crate::view::{Actions, editor, editor_rows, locked_note, results_list, with_tasks};
@@ -49,7 +50,7 @@ pub(crate) fn confluence(
         .child(
             div()
                 .class("fs-wk-a-side")
-                .w(300.0)
+                .w(widths::confluence(width).0)
                 .flex_shrink_0()
                 .flex_col()
                 .h_full()
@@ -114,7 +115,7 @@ pub(crate) fn main(
     actions: &Actions,
     physics: Option<&SharedScrollPhysics>,
     area: Option<&SharedTextAreaState>,
-    height: f32,
+    (width, height): (f32, f32),
 ) -> Div {
     let info = reader.page_info();
     let (path, document) = match reader.shown() {
@@ -177,9 +178,12 @@ pub(crate) fn main(
                 .w_full()
                 .child(scroller.w_full().h_full().content(page)),
         );
+    let Some(right_width) = widths::confluence(width).1 else {
+        return div().flex_row().flex_1().min_w(0.0).h_full().child(middle);
+    };
     let mut right = div()
         .class("fs-wk-a-right")
-        .w(270.0)
+        .w(right_width)
         .flex_shrink_0()
         .flex_col()
         .h_full()

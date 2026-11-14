@@ -60,7 +60,14 @@ impl ReaderWidget {
                     let reader = locked(&reader);
                     if layout == Layout::Confluence {
                         let area = this.sync_area(&reader);
-                        confluence::main(&reader, &labels, &actions, None, area.as_ref(), height)
+                        confluence::main(
+                            &reader,
+                            &labels,
+                            &actions,
+                            None,
+                            area.as_ref(),
+                            (width, height),
+                        )
                     } else {
                         this.sync_blocks(&reader);
                         let blocks = this.blocks.lock().unwrap_or_else(PoisonError::into_inner);

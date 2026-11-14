@@ -1,0 +1,52 @@
+# Die Wörter des Dokument-Lesers und der Wiki-Layouts, Deutsch (ADR 0057: MessageFormat 2). Ein `{$hole}` wird mit den zwei Zeichen `{}` gefüllt,
+# die die Layouts mit dem füllen, wovon der Satz spricht. Jede Id braucht ihr englisches Gegenstück in en.mf2.
+wk-program = FreeSynergy Wiki
+wk-pages = Seiten
+wk-filter = Nach Titel suchen
+wk-outline = Gliederung
+wk-no-headings = Diese Seite hat keine Überschriften.
+wk-history = Verlauf
+wk-no-history = Keine früheren Fassungen bekannt.
+wk-state-current = Aktuell
+wk-state-outdated = Veraltet
+wk-state-fallback = Andere Sprache
+wk-language = Sprache
+wk-edit = Bearbeiten
+wk-share = Teilen
+wk-block-hint = Schreiben, oder / für Befehle
+wk-page-count =
+  .input {$n :number}
+  .match $n one {{{$hole} Seite}} * {{{$hole} Seiten}}
+rd-search = Seiten suchen
+rd-back = Zurück
+rd-edit = Bearbeiten
+rd-save = Speichern
+rd-cancel = Abbrechen
+rd-export = Exportieren
+rd-nothing-open = Nichts anzuzeigen.
+rd-nothing-found = Nichts gefunden für „{$hole}“.
+rd-unreadable = Das ließ sich nicht lesen: {$hole}
+rd-missing-target = Unter „{$hole}“ gibt es nichts.
+rd-unsaved = Erst die Änderungen speichern oder abbrechen.
+rd-discard-confirm = Es gibt ungespeicherte Änderungen. Noch einmal Abbrechen drücken, um sie zu verwerfen.
+rd-saved = Gespeichert.
+rd-no-changes = Nichts wurde geändert.
+rd-not-saved = Nicht gespeichert: {$hole}
+rd-tasks-locked = Du kannst diese Seite nicht ändern, deshalb sind ihre Kästchen gesperrt.
+rd-cannot-edit = Das lässt sich nicht bearbeiten: {$hole}
+rd-not-exported = Nicht exportiert: {$hole}
+rd-overwrite-confirm = {$hole} Noch einmal Exportieren drücken, um sie zu ersetzen.
+rd-lossy = Beim Speichern ändert sich auch: {$hole}.
+rd-conflict-confirm = {$hole} Dein Text bleibt erhalten. Noch einmal Speichern drücken, um ihre Fassung zu ersetzen.
+rd-backup-found = Ein früher nicht gespeicherter Entwurf wurde gesichert.
+rd-restore = Wiederherstellen
+rd-discard = Verwerfen
+rd-backup-stale = Das Dokument hat sich geändert, nachdem dieser Entwurf entstand. Beim Speichern wird nachgefragt, bevor die neuere Fassung ersetzt wird.
+rd-restore-confirm = Wiederherstellen ersetzt, was du getippt hast. Noch einmal Wiederherstellen drücken.
+rd-backup-mismatch = Ein gesicherter Entwurf gehört zu einem anderen Dokument („{$hole}“) und wurde nicht angeboten.
+rd-backup-failed = Die Sicherung deines Entwurfs ist fehlgeschlagen: {$hole}
+rd-glyphs-missing = Einige Zeichen lassen sich nicht anzeigen, weil keine installierte Schrift sie hat ({$hole}). Installiere eine Schrift, die ihre Schrift abdeckt, zum Beispiel Noto Sans.
+rd-glyphs-titles = Einige Titel in der Liste verwenden Zeichen, die sich nicht zeichnen lassen ({$hole}).
+rd-glyphs-more = und {$hole} weitere
+rd-list-failed = Die Liste ist fehlgeschlagen: {$hole}
+rd-search-failed = Die Suche ist fehlgeschlagen: {$hole}

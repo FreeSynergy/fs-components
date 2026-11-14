@@ -16,8 +16,6 @@ pub const STYLES: &str = r"
 .fs-tv-item { display: flex; flex-direction: row; align-items: flex-start; gap: var(--space-1); width: 100%; }
 .fs-tv-item .fs-tv-block { margin-bottom: var(--space-1); }
 .fs-tv-marker { min-width: 16px; color: var(--text-secondary); }
-.fs-tv-task-on { cursor: pointer; }
-.fs-tv-task-locked { color: var(--text-tertiary); cursor: default; }
 .fs-tv-table { border-width: 1px; border-color: var(--border); border-radius: var(--radius-default); }
 .fs-tv-row { display: flex; flex-direction: row; align-items: stretch; width: 100%; border-bottom-width: 1px; border-bottom-color: var(--border); }
 .fs-tv-head { background: transparent; font-weight: 700; }

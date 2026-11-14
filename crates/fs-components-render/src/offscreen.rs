@@ -25,6 +25,8 @@ pub struct Canvas {
     pub height: u32,
     /// The caller's style sheet (theme variables only).
     pub css: String,
+    /// Also the default look of Blinc's own widgets (checkbox, button ...), which a window installs before its first frame.
+    pub window_styles: bool,
 }
 
 impl Canvas {
@@ -34,7 +36,15 @@ impl Canvas {
             width,
             height,
             css: css.into(),
+            window_styles: false,
         }
+    }
+
+    /// The same canvas with the default look of Blinc's own widgets, as a window has it.
+    #[must_use]
+    pub fn with_window_styles(mut self) -> Self {
+        self.window_styles = true;
+        self
     }
 }
 
@@ -43,7 +53,8 @@ impl Canvas {
 /// `build` gets the width and height and runs after the runtime and the text measurer are up, because
 /// elements read theme and reactive state and measure their text. `after_layout` runs once the layout
 /// is known and before drawing, for a direct change such as scroll physics; a change sent through a
-/// signal is not drawn, because no frame runs. Not while a window of this process is open: it resets
+/// signal is drawn only as far as the first frames after the layout go (areas that depend on the signal are built
+/// again, up to three rounds). Not while a window of this process is open: it resets
 /// that window's theme. The picture is on the light theme. Only one picture is drawn at a time: Blinc keeps its state in process-wide singletons.
 ///
 /// # Errors
@@ -80,6 +91,10 @@ where
     let mut tree = RenderTree::from_element(&ui);
     let vars = blinc_theme::ThemeState::get().to_css_variable_map();
     let mut css = String::new();
+    if canvas.window_styles {
+        css.push_str(blinc_layout::ua_styles::UA_STYLES);
+        css.push('\n');
+    }
     for sheet in &bundle(&canvas.css).css_sources {
         css.push_str(sheet);
         css.push('\n');

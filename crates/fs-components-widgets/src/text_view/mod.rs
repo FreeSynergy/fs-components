@@ -23,5 +23,5 @@ mod view;
 
 pub use fallback::{fallback_family, missing as missing_glyphs};
 pub use styles::STYLES;
-pub use task::{TaskHandler, count_tasks};
+pub use task::{TaskHandler, cell_box, count_tasks};
 pub use view::{LinkHandler, TextView, open_external};

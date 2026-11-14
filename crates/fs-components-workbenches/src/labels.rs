@@ -1,8 +1,8 @@
 //! The words the reader shows.
 //!
 //! Pattern: none — the workbench does not know its data or its audience, so every text it
-//! shows comes from the caller (translation, ADR 0053, is the caller's). `{}` in a text is
-//! replaced by the thing it talks about. The defaults are neutral English.
+//! shows comes from the caller or from `Labels::for_locale` (`MessageFormat` 2 files in German and English, in the module `words`).
+//! `{}` in a text is replaced by the thing it talks about. The default is English.
 
 /// Texts of the reader's interface.
 #[non_exhaustive]
@@ -74,53 +74,6 @@ pub struct Labels {
     pub list_failed: String,
     /// `{}` = the reason.
     pub search_failed: String,
-}
-
-impl Default for Labels {
-    fn default() -> Self {
-        let s = |t: &str| t.to_string();
-        Self {
-            search: s("Search"),
-            back: s("Back"),
-            edit: s("Edit"),
-            save: s("Save"),
-            cancel: s("Cancel"),
-            export: s("Export"),
-            nothing_open: s("Nothing to show."),
-            nothing_found: s("Nothing found for \"{}\"."),
-            unreadable: s("This could not be read: {}"),
-            missing_target: s("There is nothing at \"{}\"."),
-            unsaved: s("Save or cancel your changes first."),
-            discard_confirm: s("You have unsaved changes. Press Cancel again to discard them."),
-            saved: s("Saved."),
-            no_changes: s("Nothing was changed."),
-            not_saved: s("Not saved: {}"),
-            tasks_locked: String::new(),
-            cannot_edit: s("Cannot edit this: {}"),
-            not_exported: s("Not exported: {}"),
-            overwrite_confirm: s("{} Press Export again to replace it."),
-            lossy: s("Saving will also change: {}."),
-            conflict_confirm: s("{} Your text is kept. Press Save again to replace their version."),
-            backup_found: s("A draft you did not save was backed up earlier."),
-            restore: s("Restore"),
-            discard: s("Discard"),
-            backup_stale: s(
-                "The document changed after this draft was made. Saving asks before it replaces the newer version.",
-            ),
-            restore_confirm: s("Restoring replaces what you typed. Press Restore again to do it."),
-            backup_mismatch: s(
-                "A stored draft belongs to another document (\"{}\") and was not offered.",
-            ),
-            backup_failed: s("Backup of your draft failed: {}"),
-            glyphs_missing: s(
-                "Some characters cannot be shown because no installed font has them ({}). Install a font that covers their script, for example Noto Sans.",
-            ),
-            glyphs_titles: s("Some titles in the list use characters it cannot draw ({})."),
-            glyphs_more: s("and {} more"),
-            list_failed: s("The list failed: {}"),
-            search_failed: s("The search failed: {}"),
-        }
-    }
 }
 
 impl Labels {

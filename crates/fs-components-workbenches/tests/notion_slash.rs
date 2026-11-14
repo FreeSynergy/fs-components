@@ -13,7 +13,6 @@ use blinc_layout::event_router::{EventRouter, MouseButton};
 use blinc_layout::prelude::RenderTree;
 use common::draw::{Scratch, fonts_work, pixels};
 use common::{Editable, Fake};
-use fs_components_widgets::SlashLabels;
 use fs_components_words::{Locale, Localized};
 use fs_components_workbenches::{
     Labels, Layout, Picture, ReaderWidget, Step, WikiLabels, snapshot,
@@ -155,7 +154,9 @@ fn the_menu_is_drawn_in_both_languages() {
             .store(true, std::sync::atomic::Ordering::Relaxed);
         let mut picture = Picture::new(Arc::new(source), 1000, 800);
         picture.layout = Layout::Notion;
-        picture.wiki_labels.slash = SlashLabels::for_locale(&Locale::parse(lang).unwrap());
+        let locale = Locale::parse(lang).unwrap();
+        picture.labels = Labels::for_locale(&locale);
+        picture.wiki_labels = WikiLabels::for_locale(&locale);
         picture.steps = vec![Step::Open("h.md".into()), Step::Edit, Step::BlockMenu];
         let file = tmp.file(name);
         if snapshot(picture, &file).is_err() {

@@ -63,7 +63,7 @@ pub fn snapshot(
     let (layout, labels) = (picture.layout, picture.wiki_labels.clone());
     let physics = Scroll::new().physics();
     let info = Mutex::new(ScrollInfo::default());
-    let canvas = Canvas::new(width, height, styles());
+    let canvas = Canvas::new(width, height, styles()).with_window_styles();
     {
         let (reader, physics) = (&reader, &physics);
         draw_to_png(
@@ -137,7 +137,14 @@ fn wiki_frame(
         return confluence::confluence(
             search,
             confluence::side(reader, tree, labels, &actions),
-            confluence::main(reader, labels, &actions, Some(physics), area.as_ref(), h),
+            confluence::main(
+                reader,
+                labels,
+                &actions,
+                Some(physics),
+                area.as_ref(),
+                (w, h),
+            ),
             labels,
             w,
             h,

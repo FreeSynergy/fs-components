@@ -1206,6 +1206,7 @@ dependencies = [
  "blinc_theme",
  "fs-components-app",
  "fs-components-editor",
+ "fs-components-mf2",
  "fs-components-primitives",
  "fs-components-render",
  "fs-components-styles",

@@ -195,11 +195,12 @@ fn the_pictures_before_and_after_a_tick() {
         return;
     }
     let mut shots = Vec::new();
-    for (name, ticked) in [
-        ("aufgabe-klick-vorher.png", false),
-        ("aufgabe-klick-nachher.png", true),
+    for (name, ticked, may) in [
+        ("aufgabe-klick-vorher.png", false, true),
+        ("aufgabe-klick-nachher.png", true, true),
+        ("aufgabe-gesperrt.png", false, false),
     ] {
-        let source = Tasks::new(true);
+        let source = Tasks::new(may);
         if ticked {
             source.set_task("p.md", 0, true, None).unwrap();
             source.set_task("p.md", 3, true, None).unwrap();
