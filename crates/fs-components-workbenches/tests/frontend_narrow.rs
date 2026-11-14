@@ -19,7 +19,11 @@ fn shoot(layout: Layout, width: u32, steps: Vec<Step>, name: &str) -> Option<ima
         eprintln!("skipped: no fonts or no graphics");
         return None;
     }
-    let source = Editable::with(&[("a.md", "# A\n\nText\n")]);
+    let source = Editable::with(&[("a.md", "# Handbook\n\nText\n")]);
+    // A wiki source: the first heading is the title and a heading block (the harness reads Markdown only with this).
+    source
+        .heading_titles
+        .store(true, std::sync::atomic::Ordering::Relaxed);
     let mut picture = Picture::new(Arc::new(source), width, 400);
     picture.layout = layout;
     picture.steps = steps;
@@ -71,13 +75,13 @@ fn the_title_never_breaks_letter_by_letter_in_a_narrow_window() {
             let Some(img) = shoot(layout, width, vec![Step::Open("a.md".into())], &name) else {
                 return;
             };
-            // The title is the biggest text: one line of "a.md" is about 85 px wide and 30 px high; a title that breaks per
-            // letter is a column of single letters, each line about 20 px wide.
+            // The title is the biggest text: one line of "Handbook" is about 150 px wide; a title that breaks per letter is a
+            // column of single letters, each line about 20 px wide.
             let left = if width >= 700 { 300 } else { 150 };
             let (height, ink) =
                 title_ink(&img, left, if layout == Layout::Notion { 190 } else { 60 });
             assert!(
-                ink >= 60,
+                ink >= 100,
                 "{layout:?} at {width}: the title is one line (ink {ink} px wide, {height} px high)"
             );
         }

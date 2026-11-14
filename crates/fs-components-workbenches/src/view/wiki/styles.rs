@@ -51,20 +51,20 @@ const SHARED: &str = r"
 const FRAME_A: &str = r"
 .fs-wk-a-top { height: 52px; padding: 0 16px; gap: 16px; border-bottom-width: 1px; border-bottom-color: var(--border); background: var(--surface); }
 .fs-wk-a-brand { font-weight: 700; font-size: 16px; gap: 8px; width: 268px; }
-.fs-wk-a-side { width: 300px; background: #f7f8f9; border-right-width: 1px; border-right-color: var(--border); }
+.fs-wk-a-side { background: #f7f8f9; border-right-width: 1px; border-right-color: var(--border); }
 .fs-wk-a-space { padding: 14px 16px 6px 16px; gap: 2px; }
 .fs-wk-a-space-name { font-weight: 700; font-size: 15px; }
 .fs-wk-a-crumbs { height: 44px; padding: 0 28px; }
 .fs-wk-a-page { padding: 8px 40px 48px 40px; gap: 14px; max-width: 760px; }
 .fs-wk-a-title { font-size: 34px; font-weight: 700; line-height: 1.25; }
 .fs-wk-a-meta { gap: 18px; padding-bottom: 6px; }
-.fs-wk-a-right { width: 270px; border-left-width: 1px; border-left-color: var(--border); background: var(--surface); }
+.fs-wk-a-right { border-left-width: 1px; border-left-color: var(--border); background: var(--surface); }
 .fs-wk-a-sep { height: 1px; background: var(--border); }
 .fs-wk-row-a-here { border-left-width: 3px; border-left-color: var(--accent); }
 ";
 
 const FRAME_B: &str = r"
-.fs-wk-b-side { width: 264px; background: #f7f6f3; }
+.fs-wk-b-side { background: #f7f6f3; }
 .fs-wk-b-head { padding: 14px 14px 6px 14px; gap: 10px; }
 .fs-wk-b-section { padding: 14px 16px 4px 16px; }
 .fs-wk-b-section-text { font-size: 12px; font-weight: 600; color: var(--text-secondary); }
