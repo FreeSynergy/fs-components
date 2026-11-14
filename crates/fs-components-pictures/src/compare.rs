@@ -27,6 +27,20 @@ impl Tolerance {
     };
 }
 
+impl Tolerance {
+    /// For a block with text in the system font (the chart text uses the default sans of the machine, not the bundled
+    /// font): a channel step up to 64, a move of 1 px, and at most 900 of 64000 pixels (1.4 %) outside that.
+    ///
+    /// Measured (charts group, 320x200): the same drawing with only Noto Sans or only `DejaVu` Sans installed differs from
+    /// the reference by at most 621 pixels at this setting (CI runner: 3723 and 2787 pixels at EXACT); a move of 3 px
+    /// gives 1163 and more, a wrong colour or an inverted picture nearly every pixel (`tests/charts_tolerance.rs`).
+    pub const SYSTEM_FONT: Self = Self {
+        channel: 64,
+        shift: 1,
+        pixels: 900,
+    };
+}
+
 impl Default for Tolerance {
     fn default() -> Self {
         Self::EXACT

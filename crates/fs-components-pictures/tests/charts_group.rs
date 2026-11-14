@@ -1,6 +1,7 @@
 //! Group `charts`: a bar chart and a line chart.
 //!
-//! Tests: picture comparison against `contract/umbau/bilder/charts`.
+//! Tests: picture comparison against `contract/umbau/bilder/charts`. The chart text is set in the default sans of the
+//! machine (not the bundled font), so this group alone has a tolerance (`Tolerance::SYSTEM_FONT`); every other group is EXACT.
 
 use fs_components_charts::{Chart, ChartView, Labels};
 use fs_components_pictures::{Group, Tolerance};
@@ -11,7 +12,7 @@ const LINE: &str = r#"{"data":{"values":[{"t":1,"v":3},{"t":2,"v":7},{"t":3,"v":
 "mark":"line","encoding":{"x":{"field":"t","type":"quantitative"},"y":{"field":"v","type":"quantitative"}}}"#;
 
 fn group() -> Group {
-    Group::new("charts", (320, 200), Tolerance::EXACT)
+    Group::new("charts", (320, 200), Tolerance::SYSTEM_FONT)
 }
 
 fn view(json: &str) -> ChartView {

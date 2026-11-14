@@ -38,7 +38,7 @@ def start_md(data, style_kinds):
            f"Contract version {data['contract_version']}. `contract/hardcoded` finds hex, `Color::rgba(..)`/`Rgba::hex(..)` with literals, and "
            "`px` values in CSS strings and numbers in Rust calls (`.p(8.0)`, `.w(..)`). `umbau` adds CSS `rgb()/hsl()`, named CSS colours in "
            "colour properties and `Color::NAME` constants (none found), and leaves out the one place `contract/hardcoded` counts wrongly "
-           "(`Live::new().gap(250)` in `message_list/handle.rs`: milliseconds, no spacing). So spacing is 173 here and 174 in `HARDCODED-VALUES.md`.", "",
+           "(`Live::new().gap(250)` in `message_list/handle.rs`: milliseconds, no spacing). So spacing here is one lower than the spacing count of `HARDCODED-VALUES.md`.", "",
            "## Totals", "", "| Kind | Places in blocks | Style definition values (tokens, not violations) |", "|---|---|---|"]
     for k in data["kinds"]:
         out.append(f"| {k} | {t[k]} | {style_kinds.get(k, 0)} |")

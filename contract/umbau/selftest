@@ -23,6 +23,7 @@ PROBES = (  # (name, code appended to badge.rs, kind, expected rise)
     ("zero spacing sets nothing", '\nconst _P: &str = ".fs-badge { padding: 0px; }";\n', "spacing", 0),
     ("opacity 1 sets nothing", '\nconst _P: &str = ".fs-badge { opacity: 1.0; }";\n', "opacity", 0),
     ("Color::TRANSPARENT sets nothing", '\nfn _p() { let _ = Color::TRANSPARENT; }\n', "color", 0),
+    ("Color::RED is a fixed colour", '\nfn _p() { let _ = Color::RED; }\n', "color", 1),
     ("a token is no fixed value", '\nconst _P: &str = ".fs-badge { color: var(--text); padding: var(--space-s); }";\n', "color", 0),
 )
 

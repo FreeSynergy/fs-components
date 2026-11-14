@@ -22,7 +22,7 @@ Fixed values in production code per crate (colours + spacings + sizes + radius, 
 | `fs-components-app` | 0 | 3 | 0 | 3 | 6 | 24 |
 | `fs-components-workbenches` | 10 | 64 | 34 | 57 | 165 | 217 |
 | `fs-components-widgets` | 8 | 83 | 25 | 89 | 205 | 331 |
-| **all** | 18 | 152 | 60 | 162 | **392** | 625 (distinct) |
+| **all** | 18 | 152 | 60 | 161 | **391** | 625 (distinct) |
 
 Since the branch was cut (c97eca0d, counted 393 places): the new code of v0.0.14-v0.0.17 (page tree, name dialog, Notion title, shell) added a few places (`name_dialog` 420 px, borders); the two drawn-icon files are no longer counted; `Color::TRANSPARENT` no longer counts (probe added to `selftest`). New tokens needed now: **18** (was 17; the 420 px width of the name dialog became `size.dialog-narrow`).
 

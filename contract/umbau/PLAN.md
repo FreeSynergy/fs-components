@@ -35,7 +35,7 @@ Numbers: C colours, Sp spacing, Sz size, O other fixed (radius, font, border, sh
 
 Effort (fixed values + names, state 2026-11-14, see `STAND.md`): groups 1-10 are small (each at most 6 fixed values and 24 names, together 21 fixed values and 66 names); group 11 is the first large one (48 + 194); group 13 and 16 are the two big ones (127 and 117 fixed values).
 
-Totals to reach (2026-11-14, after v0.0.17): 18 colours, 152 spacings, 60 sizes, 162 other fixed values in blocks (392 together); 625 names not in the contract, 46 of them `remove` (`START.md`).
+Totals to reach (2026-11-14, after v0.0.17): 18 colours, 152 spacings, 60 sizes, 161 other fixed values in blocks (391 together); 625 names not in the contract, 46 of them `remove` (`START.md`).
 
 ## 3. Per group: what to do, what is checked
 
@@ -76,12 +76,11 @@ What the repository has today (read in the code, not run):
 
 What the repository does **not** have:
 
-- **A pixel-by-pixel comparison of two pictures.** `workflows-pflege-2/BERICHT.md` says it too: `pixel-compare` and `count-fixed-values` are catalogue proposals, "im Code gibt es sie noch nicht". The counter now exists (`contract/umbau/count`); the comparer does not. A small script or Rust test that reads two directories of PNGs and reports the number of differing pixels per file is needed (Rust: the `image` crate is already a dependency of the render crate; Python without dependencies would have to decode PNG with `zlib` itself). **[open]** which of the two, and how it is wired into the workflow step `same-pictures`.
-- **A stored reference set.** There is no `golden` directory of pictures (the charts `golden/` are JSON).
+- **Nothing of the above is missing any more** (state v0.0.18): the comparer is the Rust crate `fs-components-pictures` (`compare`, tolerance per group, diff picture), the references are `contract/umbau/bilder` (Craft only, 76 KB), the counter is `contract/umbau/count`. Still open: how it is wired into the workflow step `same-pictures`, and pictures of the other four styles.
 
 How the comparison itself has to be proven (same rule as the counter's counter-test):
 
-1. Draw twice with unchanged code: the comparer must report 0 differing pixels. If it does not (fonts, animation frames: Blinc fades pictures in over the first frames, `DESIGN.md`; the picture helpers wait 3 frames), the comparison is useless until that is fixed. **[open]: not measured.**
+1. Draw twice with unchanged code: the comparer must report 0 differing pixels. If it does not (fonts, animation frames: Blinc fades pictures in over the first frames, `DESIGN.md`; the picture helpers wait 3 frames), the comparison is useless until that is fixed. Measured: the groups are exact on the machine of the references; the `charts` group draws its text in the default sans of the machine and is judged with `Tolerance::SYSTEM_FONT` (see CHANGELOG 0.0.18).
 2. Change one colour on purpose: the comparer must report more than 0.
 3. Fonts and adapter: the tests say they give the same verdict with and without system fonts, but pixel tests of text only run when `has_fonts()` is true (`DESIGN.md`). Before and after must run on the same machine, adapter and fonts. **[open]**.
 
@@ -92,8 +91,8 @@ What a clean comparison can and cannot say: equal pictures prove the token has t
 1. Which style is "the default theme" of the pixel comparison, per block? (Section 1.)
 2. Values without a token: which of the proposals in `ZUORDNUNG.md` section 2 does the owner accept? (Exact values keep the picture; rounding to the existing steps changes it.)
 3. Are the colours of drawn icons (`icon_kind`, `icon_export`) and charts content (stay) or style (token)?
-4. Does `styles/craft_sheet.rs` count as a style definition (no violation) or as a block (convert)?
+4. ~~`styles/craft_sheet.rs`~~ decided: it is listed in `[fixed-values]` (style definition, counts 0).
 5. The wiki frontends in `workbenches/view` and the plan widgets: converted to tokens of the existing styles, or kept as own styles?
-6. The comparer: Rust test or script, and where the before/after pictures live.
+6. ~~The comparer~~ decided: Rust test crate `fs-components-pictures`; references in `contract/umbau/bilder`.
 7. The figures of ADR 0074 (205 colours, 474 names) are not reproduced by the counter (`START.md`); which rule produced them?
 8. The target of the recount for radius, border, font and opacity (the workflow names only colours and spacings).

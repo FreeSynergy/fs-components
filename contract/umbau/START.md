@@ -2,7 +2,7 @@
 
 Generated. Do not edit. Reproduce with `python3 -I contract/umbau/count --write contract/umbau` (Python 3, no dependencies; reads `crates/` and `contract/`). Production code only: tests, `#[cfg(test)]` parts and the style definitions (`styles/craft.rs`, `windows.rs`, `apple.rs`, `admin.rs`, `simple.rs`, which ARE the tokens) are not counted as violations. One group = one crate (`crates/<name>`); the module table below splits it by the first folder or file under `src/`. Workflow input `group`: a crate name.
 
-Contract version 0.1. `contract/hardcoded` finds hex, `Color::rgba(..)`/`Rgba::hex(..)` with literals, and `px` values in CSS strings and numbers in Rust calls (`.p(8.0)`, `.w(..)`). `umbau` adds CSS `rgb()/hsl()`, named CSS colours in colour properties and `Color::NAME` constants (none found), and leaves out the one place `contract/hardcoded` counts wrongly (`Live::new().gap(250)` in `message_list/handle.rs`: milliseconds, no spacing). So spacing is 173 here and 174 in `HARDCODED-VALUES.md`.
+Contract version 0.1. `contract/hardcoded` finds hex, `Color::rgba(..)`/`Rgba::hex(..)` with literals, and `px` values in CSS strings and numbers in Rust calls (`.p(8.0)`, `.w(..)`). `umbau` adds CSS `rgb()/hsl()`, named CSS colours in colour properties and `Color::NAME` constants (none found), and leaves out the one place `contract/hardcoded` counts wrongly (`Live::new().gap(250)` in `message_list/handle.rs`: milliseconds, no spacing). So spacing here is one lower than the spacing count of `HARDCODED-VALUES.md`.
 
 ## Totals
 
