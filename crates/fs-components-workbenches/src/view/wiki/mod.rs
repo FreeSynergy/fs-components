@@ -8,10 +8,6 @@ mod block_contract;
 mod block_enter;
 #[cfg(test)]
 mod block_enter_tests;
-mod block_menu;
-mod block_row;
-mod block_text;
-mod block_view;
 pub(crate) mod blocks;
 pub(crate) mod confluence;
 mod fold;
@@ -27,6 +23,12 @@ mod slash;
 #[cfg(test)]
 mod slash_tests;
 mod styles;
+mod surface;
+mod surface_menu;
+mod surface_text;
+#[cfg(test)]
+mod surface_text_tests;
+mod surface_view;
 mod tree;
 #[cfg(test)]
 mod tree_tests;

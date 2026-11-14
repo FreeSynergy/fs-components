@@ -11,6 +11,8 @@ struct Plain {
     blocks: Vec<String>,
     start: Vec<String>,
     sloppy: bool,
+    /// The finding of the user test: the block left behind loses its text when the next one is made.
+    forgetful: bool,
 }
 
 impl TextEditor for Plain {
@@ -33,7 +35,9 @@ impl TextEditor for Plain {
             Edit::Type { block, at, text } => self.blocks[*block].insert_str(*at, text),
             Edit::Enter { block, at } => {
                 let tail = self.blocks[*block].split_off(*at);
-                if !tail.is_empty() {
+                if self.forgetful {
+                    self.blocks[*block].clear();
+                } else if !tail.is_empty() {
                     self.blocks.insert(block + 1, tail);
                 }
             }
@@ -51,6 +55,7 @@ fn plain(sloppy: bool) -> Box<dyn TextEditor> {
         blocks: Vec::new(),
         start: Vec::new(),
         sloppy,
+        forgetful: false,
     })
 }
 
@@ -115,4 +120,17 @@ fn an_operation_outside_the_document_is_refused() {
         .is_err()
     );
     assert_eq!(doc.blocks, ["a"]);
+}
+
+#[test]
+#[should_panic(expected = "the editor lost content")]
+fn the_collection_catches_an_editor_that_loses_a_block_when_the_next_is_made() {
+    conformance::check(&|| {
+        Box::new(Plain {
+            blocks: Vec::new(),
+            start: Vec::new(),
+            sloppy: false,
+            forgetful: true,
+        })
+    });
 }

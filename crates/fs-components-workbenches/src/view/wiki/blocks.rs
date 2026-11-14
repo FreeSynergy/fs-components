@@ -1,19 +1,17 @@
-//! The block editor of the Notion-like layout: the page text as blocks, each one a field of its own.
+//! The block editor of the Notion-like layout: the page text as blocks on one writing surface, no field around a block.
 //!
 //! Pattern: Memento-ish chunks — the draft the reader keeps is the whole Markdown text; here it is cut at blank lines
-//! (not inside a code fence) into blocks, every block gets a text area, and a change in any area puts the blocks back
-//! together as the draft. So the reader's Save, conflict and backup logic stays the one there is. The identity of a
+//! (not inside a code fence) into blocks, which the surface (`surface.rs`) shows as one continuous text, and a change on it
+//! puts the blocks back together as the draft. So the reader's Save, conflict and backup logic stays the one there is. The identity of a
 //! block (UUIDv7) lives in the text model of the wiki and is kept by the diff the wiki applies on Save; this view does
 //! not hold it.
 
 use std::sync::Arc;
 
 use blinc_layout::div::{Div, div};
-use blinc_layout::widgets::text_area::SharedTextAreaState;
-use blinc_layout::widgets::text_area::focus_text_area;
 use fs_components_widgets::{PageTitle, TitleLabels};
 
-use super::block_view::{Blocks, Report};
+use super::surface::{Report, Surface};
 use crate::page_info::WikiLabels;
 
 /// Cut `text` into blocks at blank lines; a fenced code block is one block whatever it contains.
@@ -36,8 +34,8 @@ fn says_title(block: &str, title: &str) -> bool {
 }
 
 /// What Enter in the title does: the keyboard goes to the first block (read when Enter is pressed).
-fn jump_to(blocks: Arc<Blocks>) -> impl Fn() + Send + Sync + 'static {
-    move || focus_text_area(&blocks.area(0))
+fn jump_to(surface: Arc<Surface>) -> impl Fn() + Send + Sync + 'static {
+    move || surface.put_cursor(0, 0)
 }
 
 /// The first line of a page: its title as a level-1 heading.
@@ -75,20 +73,20 @@ fn assemble(head: &Head, title: &str, blocks: &[String]) -> String {
     join_blocks(&parts)
 }
 
-/// The editor of one edit: the title field and the blocks with their areas.
+/// The editor of one edit: the title field and the writing surface.
 pub struct BlockEditor {
     /// Which edit of the reader this belongs to.
     pub edit: u64,
     title: PageTitle,
     head: Head,
-    blocks: Arc<Blocks>,
+    surface: Arc<Surface>,
     /// The document as it was at the last `load` / `take_ops` of the editor contract.
     pub(super) loaded: fs_components_editor::Doc,
 }
 
 impl BlockEditor {
     /// The editor for `draft`, a page called `title`. A first block that is a level-1 heading saying the title is
-    /// the title field and no block; another first heading stays a block. There is always at least one block.
+    /// the title field and no block; another first heading stays a block. There is always a place to write.
     pub fn new(edit: u64, draft: &str, title: &str) -> Self {
         let mut parts = split_blocks(draft);
         let in_text = parts.first().is_some_and(|b| says_title(b, title));
@@ -97,9 +95,6 @@ impl BlockEditor {
         } else {
             String::new()
         };
-        if parts.is_empty() {
-            parts.push(String::new());
-        }
         Self {
             edit,
             title: PageTitle::new(&TitleLabels::default(), title),
@@ -108,19 +103,19 @@ impl BlockEditor {
                 first_title: title.to_owned(),
                 lead,
             },
-            blocks: Blocks::new(&parts),
+            surface: Surface::new(&parts.join("\n\n")),
             loaded: fs_components_editor::Doc::parse(draft),
         }
     }
 
-    /// The whole text now, from the title field and the blocks.
+    /// The whole text now, from the title field and the surface.
     fn whole(&self) -> impl Fn() -> String + Send + Sync + 'static {
-        let (head, title, blocks) = (
+        let (head, title, surface) = (
             self.head.clone(),
             self.title.clone(),
-            Arc::clone(&self.blocks),
+            Arc::clone(&self.surface),
         );
-        move || assemble(&head, &title.text(), &blocks.values())
+        move || assemble(&head, &title.text(), &split_blocks(&surface.text()))
     }
 
     /// Does the text lead with its title as a heading (then the title field draws it; no second big title)?
@@ -134,9 +129,10 @@ impl BlockEditor {
         (self.whole())()
     }
 
-    /// The text of every block now (for hosts that drive the window from outside, and for the tests).
+    /// The text of every block of the surface now, the empty one at the end if the person is about to write there (for hosts
+    /// that drive the window from outside, and for the tests).
     pub fn block_texts(&self) -> Vec<String> {
-        self.blocks.values()
+        self.surface.block_texts()
     }
 
     /// Is the title a heading line of the text (then it is block 0 of the document and no block of the editor)?
@@ -154,101 +150,81 @@ impl BlockEditor {
         self.title.set_text(text);
     }
 
-    /// Type into block `i` of the editor.
+    /// Type into block `i` of the surface (a block that is not blank).
     pub(super) fn blocks_type(&self, i: usize, at: usize, text: &str) {
-        self.blocks.type_at(i, at, text);
+        self.surface.type_at(i, at, text);
+    }
+
+    /// Press Enter in block `i` of the surface (a block that is not blank).
+    pub(super) fn blocks_enter(&self, i: usize, at: usize) {
+        self.surface.enter_at(i, at);
     }
 
     /// Is the block menu open?
     pub fn menu_open(&self) -> bool {
-        self.blocks.menu_open()
+        self.surface.menu_open()
     }
 
-    /// Press Enter at the end of the last block (for pictures).
+    /// Press Enter at the end of the text and write a second block there (for pictures).
     pub fn press_enter_at_end(&self) {
-        let last = self.blocks.len() - 1;
-        let end = self
-            .blocks
-            .area(last)
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner)
-            .value()
-            .len();
-        self.blocks.enter_at(last, end);
+        self.enter_at_end();
+        self.type_in(usize::MAX, 0, "Next block");
     }
 
-    /// A new empty block after the last one, with `/` typed into it: the block menu is open there (for pictures).
+    fn enter_at_end(&self) {
+        let end = self.surface.text().len();
+        self.surface.put_cursor(usize::MAX, end);
+        self.surface.enter_at_cursor();
+    }
+
+    /// A new empty block at the end with `/` typed into it: the block menu is open there (for pictures).
     pub fn open_menu_in_new_block(&self) {
-        let last = self.blocks.len() - 1;
-        let end = self
-            .blocks
-            .area(last)
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner)
-            .value()
-            .len();
-        self.blocks.enter_at(last, end);
-        self.blocks.type_at(last + 1, 0, "/");
+        self.enter_at_end();
+        self.type_in(usize::MAX, 0, "/");
     }
 
-    /// Type into block `i` of the editor, as the keyboard would.
+    /// Type into block `i` of the surface, as the keyboard would; a block that is not there is the empty one at the end.
     pub fn type_in(&self, i: usize, at: usize, text: &str) {
-        self.blocks.type_at(i, at, text);
+        self.surface.type_in_block(i, at, text);
     }
 
-    /// Press Enter in block `i` of the editor.
-    pub(super) fn blocks_enter(&self, i: usize, at: usize) {
-        self.blocks.enter_at(i, at);
-    }
-
-    /// How many blocks there are.
+    /// How many blocks there are (the empty one at the end counts).
     #[cfg(test)]
     pub fn count(&self) -> usize {
-        self.blocks.len()
-    }
-
-    /// The area of block `i`.
-    pub fn area(&self, i: usize) -> SharedTextAreaState {
-        self.blocks.area(i)
+        self.surface.block_texts().len()
     }
 
     /// The block that has the keyboard, if any.
     pub fn focused(&self) -> Option<usize> {
-        self.blocks.focused()
+        self.surface.focused_block()
     }
 
-    /// Give the keyboard to block `i`, the cursor `column` characters into its first line.
+    /// Give the keyboard to block `i`, the cursor `column` bytes into it.
     pub fn put_cursor(&self, i: usize, column: usize) {
-        let area = self.blocks.area(i);
-        {
-            let mut d = area
-                .lock()
-                .unwrap_or_else(std::sync::PoisonError::into_inner);
-            let width = d.lines.first().map_or(0, |l| l.chars().count());
-            d.cursor = blinc_layout::widgets::text_area::TextPosition::new(0, column.min(width));
-        }
-        focus_text_area(&area);
+        self.surface.put_cursor(i, column);
     }
 
-    /// The big title field above the blocks (Enter in it moves on to the first block).
+    /// The big title field above the surface (Enter in it moves on to the first block).
     pub fn title_view(&self, labels: &WikiLabels, report: &Report) -> Div {
         self.title.set_placeholder(&labels.title_hint);
         let report = Arc::clone(report);
-        let (head, blocks) = (self.head.clone(), Arc::clone(&self.blocks));
+        let (head, surface) = (self.head.clone(), Arc::clone(&self.surface));
         let field = self
             .title
             .clone()
-            .on_change(move |text| report(&assemble(&head, text, &blocks.values())))
-            .on_enter(jump_to(Arc::clone(&self.blocks)));
+            .on_change(move |text| {
+                report(&assemble(&head, text, &split_blocks(&surface.text())));
+            })
+            .on_enter(jump_to(Arc::clone(&self.surface)));
         div()
             .class("fs-wk-b-title-field")
             .w_full()
             .child(field.build())
     }
 
-    /// The column of blocks. `report` gets the whole text after each change.
+    /// The writing surface. `report` gets the whole text after each change.
     pub fn view(&self, labels: &WikiLabels, report: &Report) -> Div {
-        self.blocks.view(
+        self.surface.view(
             &labels.block_hint,
             &labels.slash,
             report,

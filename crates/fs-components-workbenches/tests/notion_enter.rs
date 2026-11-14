@@ -14,6 +14,7 @@ use common::{Editable, Fake};
 use fs_components_workbenches::{Labels, Layout, ReaderWidget, WikiLabels};
 
 const ENTER: u32 = 13;
+const BACKSPACE: u32 = 8;
 
 fn init() {
     let tmp = std::env::temp_dir().join(format!("fs-enter-{}.png", std::process::id()));
@@ -53,29 +54,26 @@ fn enter(tree: &mut RenderTree) {
     tree.process_pending_subtree_rebuilds();
 }
 
-fn shown(tree: &RenderTree, i: usize) -> bool {
-    tree.query_by_id(&format!("fs-wk-blk-{i}")).is_some()
-}
-
 #[test]
-fn enter_at_the_end_makes_a_new_block_below_and_focuses_it() {
+fn enter_at_the_end_makes_a_new_block_below_and_keeps_the_keyboard_going() {
     let (widget, mut tree) = editing();
     assert_eq!(widget.block_texts(), ["first line"]);
-    assert!(
-        shown(&tree, 0) && !shown(&tree, 1),
-        "before Enter: one block"
-    );
     widget.focus_block(0, 10);
     assert_eq!(widget.focused_block(), Some(0));
     enter(&mut tree);
-    assert_eq!(widget.block_texts(), ["first line", ""], "model");
-    assert!(shown(&tree, 1), "the new block is in the window at once");
+    assert_eq!(
+        widget.block_texts(),
+        ["first line", ""],
+        "the new block is there at once"
+    );
     assert_eq!(widget.focused_block(), Some(1), "the keyboard moved on");
-    // Enter again in the empty block: a third one.
+    // An empty block is not written: the draft is as before.
+    let draft = widget.with_reader(|r| r.editing().unwrap().draft.clone());
+    assert_eq!(draft, "# Handbook\n\nfirst line\n");
+    // Enter again in the empty block: more room, still the one new block, the keyboard stays.
     enter(&mut tree);
-    assert_eq!(widget.block_texts(), ["first line", "", ""]);
-    assert!(shown(&tree, 2));
-    assert_eq!(widget.focused_block(), Some(2));
+    assert_eq!(widget.block_texts(), ["first line", ""]);
+    assert_eq!(widget.focused_block(), Some(1));
 }
 
 #[test]
@@ -84,7 +82,6 @@ fn enter_in_the_middle_splits_the_block_and_the_draft_follows() {
     widget.focus_block(0, 5);
     enter(&mut tree);
     assert_eq!(widget.block_texts(), ["first", " line"]);
-    assert!(shown(&tree, 1));
     assert_eq!(widget.focused_block(), Some(1));
     let draft = widget.with_reader(|r| r.editing().unwrap().draft.clone());
     assert_eq!(
@@ -119,7 +116,84 @@ fn enter_in_a_list_carries_the_list_on_and_an_empty_item_leaves_it() {
     enter(&mut tree);
     assert_eq!(widget.block_texts(), ["- a", ""]);
     assert_eq!(widget.focused_block(), Some(1));
-    assert!(shown(&tree, 1));
+}
+
+/// Backspace at the start of a block joins it to the one above, and in an empty block it takes the block away: as in Notion.
+#[test]
+fn backspace_at_the_start_of_a_block_joins_it_to_the_one_above() {
+    init();
+    let source = Editable::with(&[("b.md", "# B\n\nalpha\n\nbeta\n")]);
+    source
+        .heading_titles
+        .store(true, std::sync::atomic::Ordering::Relaxed);
+    let widget = ReaderWidget::new(Arc::new(source), Labels::default(), None)
+        .layout(Layout::Notion, WikiLabels::default());
+    widget.with_reader(|r| {
+        r.open("b.md");
+        r.begin_edit();
+    });
+    let mut tree = RenderTree::from_element(&widget.build(1000.0, 600.0));
+    widget.focus_block(1, 0);
+    tree.broadcast_key_event(KEY_DOWN, BACKSPACE, false, false, false, false);
+    tree.process_pending_subtree_rebuilds();
+    assert_eq!(
+        widget.block_texts(),
+        ["alphabeta"],
+        "the block is joined to the one above"
+    );
+    assert_eq!(widget.focused_block(), Some(0));
+    // An empty block at the end: Backspace takes it away.
+    widget.focus_block(0, 9);
+    enter(&mut tree);
+    assert_eq!(widget.block_texts(), ["alphabeta", ""]);
+    tree.broadcast_key_event(KEY_DOWN, BACKSPACE, false, false, false, false);
+    tree.process_pending_subtree_rebuilds();
+    assert_eq!(widget.block_texts(), ["alphabeta"]);
+    assert_eq!(widget.focused_block(), Some(0));
+}
+
+/// The finding of 2026-11-14: moving on into a new field, the content of the one left behind vanished and came back with the
+/// next key. On the surface there is one text and one state, so a switch is only the cursor moving: every block keeps its text
+/// through every move, Enter and typing, with the window drawing in between.
+#[test]
+fn moving_between_blocks_never_loses_a_block() {
+    init();
+    let source = Editable::with(&[("m.md", "# M\n\nalpha\n\nbeta\n\ngamma\n")]);
+    source
+        .heading_titles
+        .store(true, std::sync::atomic::Ordering::Relaxed);
+    let widget = ReaderWidget::new(Arc::new(source), Labels::default(), None)
+        .layout(Layout::Notion, WikiLabels::default());
+    widget.with_reader(|r| {
+        r.open("m.md");
+        r.begin_edit();
+    });
+    let mut tree = RenderTree::from_element(&widget.build(1000.0, 600.0));
+    let held = |w: &ReaderWidget| w.block_texts().join("|");
+    assert_eq!(held(&widget), "alpha|beta|gamma");
+    // Into a new block after alpha, write in it, back into beta, write there, into gamma, Enter at its end.
+    widget.focus_block(0, 5);
+    enter(&mut tree);
+    assert_eq!(held(&widget), "alpha||beta|gamma");
+    widget.type_in_block(1, 0, "new");
+    tree.process_pending_subtree_rebuilds();
+    tree.compute_layout(1000.0, 600.0);
+    assert_eq!(
+        held(&widget),
+        "alpha|new|beta|gamma",
+        "nothing vanished when the new block was written"
+    );
+    widget.focus_block(2, 4);
+    widget.type_in_block(2, 4, "!");
+    assert_eq!(held(&widget), "alpha|new|beta!|gamma");
+    widget.focus_block(3, 5);
+    enter(&mut tree);
+    assert_eq!(held(&widget), "alpha|new|beta!|gamma|");
+    let draft = widget.with_reader(|r| r.editing().unwrap().draft.clone());
+    assert_eq!(
+        draft, "# M\n\nalpha\n\nnew\n\nbeta!\n\ngamma\n",
+        "Save writes every block"
+    );
 }
 
 /// The pictures of the finding: the page with one block, and the same page after Enter at the end of it (two blocks).
@@ -161,24 +235,21 @@ fn the_window_shows_the_new_block_after_enter() {
         }
         shots.push(pixels(&file));
     }
-    // The edges of a block box are long light-grey lines; the second box adds its own.
-    let edges = |img: &image::RgbaImage| {
+    // The second block is on the surface: its text is drawn below the first, with a gap of one blank line.
+    assert_ne!(
+        shots[0].as_raw(),
+        shots[1].as_raw(),
+        "the second block is drawn"
+    );
+    let ink_rows = |img: &image::RgbaImage| {
         (0..img.height())
-            .filter(|&y| {
-                (330..920)
-                    .filter(|&x| {
-                        let p = img.get_pixel(x, y);
-                        p[0] < 245 && p[0] > 150 && p[0].abs_diff(p[1]) < 8
-                    })
-                    .count()
-                    > 400
-            })
+            .filter(|&y| (330..900).any(|x| common::draw::dark(*img.get_pixel(x, y))))
             .count()
     };
     assert!(
-        edges(&shots[1]) >= edges(&shots[0]) + 2,
-        "the second block box is drawn: {} edge rows before, {} after",
-        edges(&shots[0]),
-        edges(&shots[1])
+        ink_rows(&shots[1]) > ink_rows(&shots[0]) + 8,
+        "more ink rows with the second block: {} vs {}",
+        ink_rows(&shots[0]),
+        ink_rows(&shots[1])
     );
 }

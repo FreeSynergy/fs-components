@@ -36,7 +36,7 @@ pub enum Step {
     Expand(String),
     /// Open the block menu of the Notion-like editor in a new empty block at the end (as typing `/` there does).
     BlockMenu,
-    /// Press Enter at the end of the last block of the Notion-like editor.
+    /// Press Enter at the end of the text of the Notion-like editor and write a second block ("Next block") there.
     BlockEnter,
 }
 

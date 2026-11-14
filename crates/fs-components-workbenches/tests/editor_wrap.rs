@@ -102,8 +102,28 @@ fn the_confluence_editor_wraps_at_the_right_edge_of_its_box() {
     );
 }
 
+/// Lines of text (runs of rows with dark ink) in the rows `y0..y1` right of `x0`, and how wide the ink is.
+fn text_lines(img: &image::RgbaImage, x0: u32, y0: u32, y1: u32) -> (usize, u32) {
+    let (mut runs, mut inside) = (0, false);
+    let (mut left, mut right) = (u32::MAX, 0);
+    for y in y0..y1.min(img.height()) {
+        let ink: Vec<u32> = (x0..img.width())
+            .filter(|&x| dark(*img.get_pixel(x, y)))
+            .collect();
+        if let (Some(&l), Some(&r)) = (ink.first(), ink.last()) {
+            left = left.min(l);
+            right = right.max(r);
+        }
+        if !ink.is_empty() && !inside {
+            runs += 1;
+        }
+        inside = !ink.is_empty();
+    }
+    (runs, right.saturating_sub(left))
+}
+
 #[test]
-fn a_notion_block_wraps_at_the_right_edge_and_shows_all_its_lines() {
+fn the_notion_surface_wraps_at_the_width_of_the_column_and_shows_all_its_lines() {
     let Some(img) = shoot(
         Layout::Notion,
         1400,
@@ -112,10 +132,11 @@ fn a_notion_block_wraps_at_the_right_edge_and_shows_all_its_lines() {
     ) else {
         return;
     };
-    let (slack, left, right) = slack(&img, 1130, 420);
+    // The text starts below the title (y 300); the column is 640 px wide: about nine lines of 560 to 640 px, none cut off.
+    let (lines, ink) = text_lines(&img, 480, 300, 690);
+    assert!(lines >= 8, "all lines of the text are drawn: {lines}");
     assert!(
-        slack < 90,
-        "lines wrap at the edge of the block (slack {slack} px of {})",
-        right - left
+        ink >= 520,
+        "the lines run to the edge of the column ({ink} px of ink)"
     );
 }

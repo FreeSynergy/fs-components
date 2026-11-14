@@ -52,7 +52,7 @@ fn a_page_with_only_its_title_still_has_a_block_to_type_in() {
         "# Handbook\n",
         "the empty block is not written"
     );
-    editor.area(0).lock().unwrap().set_value("Now text");
+    editor.type_in(0, 0, "Now text");
     assert_eq!(editor.text(), "# Handbook\n\nNow text\n");
 }
 
@@ -60,12 +60,9 @@ fn a_page_with_only_its_title_still_has_a_block_to_type_in() {
 fn enter_in_the_title_gives_the_keyboard_to_the_first_block() {
     for draft in ["# Handbook\n", "# Handbook\n\nIntro\n"] {
         let editor = BlockEditor::new(1, draft, "Handbook");
-        assert!(!editor.area(0).lock().unwrap().is_focused(), "before Enter");
-        jump_to(Arc::clone(&editor.blocks))();
-        assert!(
-            editor.area(0).lock().unwrap().is_focused(),
-            "after Enter: {draft:?}"
-        );
+        assert_eq!(editor.focused(), None, "before Enter");
+        jump_to(Arc::clone(&editor.surface))();
+        assert_eq!(editor.focused(), Some(0), "after Enter: {draft:?}");
     }
 }
 

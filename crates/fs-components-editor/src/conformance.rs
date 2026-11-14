@@ -69,6 +69,7 @@ pub fn check(make: &dyn Fn() -> Box<dyn TextEditor>) {
         );
         unchanged_stays_the_same(make, name, case, text);
         edits_are_visible_as_operations(make, name, case, text);
+        switching_between_blocks_loses_nothing(make, name, case, text);
     }
 }
 
@@ -152,4 +153,66 @@ fn edits_are_visible_as_operations(
             "{name}/{case}/{k}: operations are given once"
         );
     }
+}
+
+/// The group "switching between blocks": moving on from one block to the next (Enter, then typing elsewhere, then back) never
+/// loses what a block held (the finding of the user test of 2026-11-14: the content of the block left behind vanished and came
+/// back with the next key). Every character of the loaded document is still there, in order, after the edits, and the
+/// operations still give exactly the document the editor holds.
+fn switching_between_blocks_loses_nothing(
+    make: &dyn Fn() -> Box<dyn TextEditor>,
+    name: &str,
+    case: &str,
+    text: &str,
+) {
+    let doc = Doc::parse(text);
+    let first_len = doc.blocks[0].len();
+    let last = doc.blocks.len() - 1;
+    let steps = [
+        Edit::Enter {
+            block: 0,
+            at: first_len.min(2),
+        },
+        Edit::Type {
+            block: last.min(1),
+            at: 0,
+            text: "x".into(),
+        },
+        Edit::Enter {
+            block: last.min(1),
+            at: 0,
+        },
+        Edit::Type {
+            block: 0,
+            at: 0,
+            text: "y".into(),
+        },
+    ];
+    let (mut editor, loaded) = loaded(make, text);
+    for step in &steps {
+        editor.edit(step);
+        // After each step, not only at the end: every character of the loaded text is still held, in order.
+        let held = editor.document().to_markdown();
+        assert!(
+            keeps_in_order(text, &held),
+            "{name}/{case}: after {step:?} the editor lost content: {held:?}"
+        );
+    }
+    let ops = editor.take_ops();
+    let mut replayed = loaded;
+    apply(&mut replayed, &ops).unwrap_or_else(|e| panic!("{name}/{case}: {e}"));
+    assert_eq!(
+        replayed,
+        editor.document(),
+        "{name}/{case}: the operations do not give the document"
+    );
+}
+
+/// Are the characters of `original` (white space left out) all in `held` in the same order (others may lie between)?
+fn keeps_in_order(original: &str, held: &str) -> bool {
+    let mut rest = held.chars().filter(|c| !c.is_whitespace());
+    original
+        .chars()
+        .filter(|c| !c.is_whitespace())
+        .all(|c| rest.any(|h| h == c))
 }
