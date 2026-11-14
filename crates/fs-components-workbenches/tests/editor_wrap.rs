@@ -53,7 +53,8 @@ fn border(p: image::Rgba<u8>) -> bool {
 }
 
 /// The slack, in pixels, between the right edge of the box and the ink of the longest text line inside it, for a box
-/// through the point (`x`, `y`) that lies inside it.
+/// through the point (`x`, `y`) that lies inside it; `x` is a column right of every line of text (the scan up and down
+/// along it meets only the frame, whatever the font).
 fn slack(img: &image::RgbaImage, x: u32, y: u32) -> (u32, u32, u32) {
     let w = img.width();
     let right = (x..w)
@@ -92,7 +93,7 @@ fn the_confluence_editor_wraps_at_the_right_edge_of_its_box() {
         return;
     };
     // Inside the box, below the first lines.
-    let (slack, left, right) = slack(&img, 680, 400);
+    let (slack, left, right) = slack(&img, 995, 400);
     assert!(right - left > 400, "the box is wide: {left}..{right}");
     assert!(
         slack < 90,
@@ -111,7 +112,7 @@ fn a_notion_block_wraps_at_the_right_edge_and_shows_all_its_lines() {
     ) else {
         return;
     };
-    let (slack, left, right) = slack(&img, 600, 420);
+    let (slack, left, right) = slack(&img, 1130, 420);
     assert!(
         slack < 90,
         "lines wrap at the edge of the block (slack {slack} px of {})",
